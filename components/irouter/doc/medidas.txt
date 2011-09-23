@@ -1,0 +1,618 @@
+/////////////////////////////////////////////////////////////////////////
+//
+// ISABEL: A group collaboration tool for the Internet
+// Copyright (C) 2009 Agora System S.A.
+// 
+// This file is part of Isabel.
+// 
+// Isabel is free software: you can redistribute it and/or modify
+// it under the terms of the Affero GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Isabel is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// Affero GNU General Public License for more details.
+// 
+// You should have received a copy of the Affero GNU General Public License
+// along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+//
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+//
+// $Id: medidas.txt 20206 2010-04-08 10:55:00Z gabriel $
+//
+/////////////////////////////////////////////////////////////////////////
+
+------------------
+ MEDIAS DE TRAFICO
+------------------
+
+
+1) MAXIMO TRAFICO CURSADO POR EL IROUTER:
+
+   1.1) Una entrada, una salida (FS que recibe
+        trafico en un puerto y lo copia a un sitio remoto):
+
+         --------       ---------       ------
+        | apollo |---->| mmonroe |---->| hada |
+         --------       ---------       ------
+
+        1.1.1) Con paquetes grandes, 1000 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 1000 -r 4400
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer hada
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+                mmonroe Input = 36 Mbps
+                mmonroe Output = 36,4 Mbps (normal, irouter 
+                                            mete overhead) 
+
+        1.1.2) Con paquetes pequeños, 100 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 100 -r 5600
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer hada
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+                mmonroe Input = 6,1 Mbps
+                mmonroe Output = 7 Mbps (normal, irouter 
+                                          mete overhead) 
+
+   1.2) Una entrada, dos salidas (FS que recibe
+        trafico en un puerto y lo copia a dos sitios remotos):
+
+         --------       ---------       ------
+        | apollo |---->| mmonroe |---->| hada |
+         --------       --------- \     ------
+                                   \
+                                    |
+                                    V
+                                 --------
+                                | toledo |
+                                 --------
+
+        1.2.1) Con paquetes grandes, 1000 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 1000 -r 3100
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000 -linkMgr
+                   -downStreamBw 100000000 -flowServer hada
+
+            en toledo:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+                mmonroe Input = 25,8 Mbps
+                mmonroe Output = 51,1 Mbps (normal, irouter 
+                                            mete overhead) 
+
+            RESULTADO (segun iptraf en hada):
+                hada Input = 25,5 Mbps
+
+
+        1.2.2) Con paquetes pequeños, 100 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 100 -r 5600
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000 -linkMgr
+                   -downStreamBw 100000000 -flowServer hada
+
+            en toledo:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+                mmonroe Input = 4 Mbps
+                mmonroe Output = 9,2 Mbps (normal, irouter 
+                                           mete overhead) 
+
+            RESULTADO (segun iptraf en hada):
+                hada Input = 4,6 Mbps
+
+
+   1.3) Una entrada, tres salidas (FS que recibe
+        trafico en un puerto y lo copia a tres sitios remotos):
+
+         --------       ---------       ------
+        | apollo |---->| mmonroe |---->| hada |
+         --------       --------- \     ------
+                            |      \
+                            |       |
+                            |       V
+                            |       --------
+                            |      | toledo |
+                            |       --------
+                            V
+                        ---------
+                       | cebolla |
+                        ---------
+
+        1.3.1) Con paquetes grandes, 1000 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 1000 -r 2050
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000 -linkMgr
+                   -downStreamBw 100000000 -flowServer hada
+
+            en toledo:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en cebolla:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+                mmonroe Input = 17 Mbps
+                mmonroe Output = 52 Mbps (normal, irouter 
+                                           mete overhead) 
+
+        1.3.2) Con paquetes pequeños, 100 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 100 -r 2600
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000 -linkMgr
+                   -downStreamBw 100000000 -flowServer hada
+
+            en toledo:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en cebolla:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+                mmonroe Input = 2,9 Mbps
+                mmonroe Output = 10,2 Mbps (normal, irouter 
+                                           mete overhead) 
+
+
+   1.4) Una entrada, cuatro salidas (FS que recibe
+        trafico en un puerto y lo copia a cuatro sitios remotos):
+
+         --------       ---------       ------
+        | apollo |---->| mmonroe |---->| hada |
+         --------       --------- \     ------
+                          |    |   \
+                          |    |    |
+                          |    |    V
+                          |    |    --------
+                          |    |   | toledo |
+                          |    |    --------
+                          V     \
+                    ---------    ->  --------
+                   | cebolla |      | lamata |
+                    ---------        --------
+
+        1.4.1) Con paquetes grandes, 1000 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 1000 -r 1650
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000 -linkMgr
+                   -downStreamBw 100000000 -flowServer hada
+
+            en toledo:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en lamata:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en cebolla:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+                mmonroe Input = 13,7 Mbps
+                mmonroe Output = 56 Mbps (normal, irouter 
+                                           mete overhead) 
+
+        1.4.2) Con paquetes pequeños, 100 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 100 -r 1800
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000 -linkMgr
+                   -downStreamBw 100000000 -flowServer hada
+
+            en toledo:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en cebolla:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en lamata:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 100000000
+                   -downStreamBw 100000000 -flowServer mmonroe
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+                mmonroe Input = 2,0 Mbps
+                mmonroe Output = 9,5 Mbps (normal, irouter 
+                                           mete overhead) 
+
+
+
+
+2) LIMITANDO EL TRAFICO A 2 Mbps
+
+
+   FACTORES A TENER EN CUENTA EN LA LIMITACION DEL TRAFICO:
+
+      - La limitacion que se configura en el irouter, no es
+        la que en realidad se usa. Se utiliza el 90% del
+        valor especificado por la linea de comando, para 
+        "tener en cuenta" la sobrecarga de cabeceras de 
+        protocolos inferiores, UDP, IP, Ethernet... Por 
+        ejemplo: si configuramos irouter a 2Mbps, en realidad
+        estara haciendo traffic shaping a 1,8Mbps.
+
+      - Dado un valor concreto de trafico de entrada, el
+        trafico de salida del irouter siempre sera mayor (si
+        no hay limitacion de trafico) ya que el irouter añade
+        sobrecarga de trayler.
+
+      - El trafico medido siempre es con iptraf, a nivel fisico
+        no a nivel de aplicacion.
+
+   2.1) Una entrada, una salida (FS que recibe
+        trafico en un puerto y lo copia a un sitio remoto):
+
+         --------       ---------       ------
+        | apollo |---->| mmonroe |---->| hada |
+         --------       ---------       ------
+
+        2.1.1) Con paquetes grandes, 1000 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 1000 -r <valor>
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 2000000
+                   -downStreamBw 2000000 -flowServer hada
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+
+             --------------------------------------------------- 
+            | param -r | mmonroe | mmonroe | Numero de Paquetes |
+            | de mgen  |  Input  | Output  | perdidos por sec   |
+            |(pkt/sec) |  (Mbps) |  (Mbps) |                    |
+            |----------|---------|---------|--------------------|
+            |   220    |  1,83   |  1,87   |         0          |
+            |----------|---------|---------|--------------------|
+            |   223    |  1,859  |  1,9    |         0          |
+            |----------|---------|---------|--------------------|
+            |   224    |  1,867  |  1,875  |        13          |
+            |----------|---------|---------|--------------------|
+            |   225    |  1,875  |  1,875  |        16          |
+            |----------|---------|---------|--------------------|
+            |   230    |  1,91   |  1,875  |        30          |
+            |----------|---------|---------|--------------------|
+            |   300    |  2,5    |  1,87   |       240          |
+             --------------------------------------------------- 
+
+   2.2) Una entrada, cuatro salidas (FS que recibe
+        trafico en un puerto y lo copia a cuatro sitios remotos):
+
+         --------       ---------       ------
+        | apollo |---->| mmonroe |---->| hada |
+         --------       --------- \     ------
+                          |    |   \
+                          |    |    |
+                          |    |    V
+                          |    |    --------
+                          |    |   | toledo |
+                          |    |    --------
+                          V     \
+                    ---------    ->  --------
+                   | cebolla |      | lamata |
+                    ---------        --------
+
+        2.2.1) Con paquetes grandes, 1000 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 1000 -r <valor>
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 2000000 -linkMgr
+                   -downStreamBw 2000000 -flowServer hada
+
+            en toledo:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 2000000
+                   -downStreamBw 2000000 -flowServer mmonroe
+
+            en lamata:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 2000000
+                   -downStreamBw 2000000 -flowServer mmonroe
+
+            en cebolla:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 2000000
+                   -downStreamBw 2000000 -flowServer mmonroe
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+
+             -------------------------------------------------------------
+            | param -r | mmonroe | mmonroe | Numero de Paquetes |Numero   |
+            | de mgen  |  Input  | Output  | perdidos por sec y |paq total|
+            |(pkt/sec) |  (Mbps) |  (Mbps) | por cada sitio     |perdidos |
+            |----------|---------|---------|--------------------|---------|
+            |   215    |  1,75   |  7,15   |         0          |    0    |
+            |----------|---------|---------|--------------------|---------|
+            |   220    |  1,79   |  7,32   |         0          |    0    |
+            |----------|---------|---------|--------------------|---------|
+            |   222    |  1,85   |  7,49   |         7          |   28    |
+            |----------|---------|---------|--------------------|---------|
+            |   223    |  1,85   |  7,5    |        10          |   40    |
+            |----------|---------|---------|--------------------|---------|
+            |   225    |  1,87   |  7,49   |        16          |   64    |
+            |----------|---------|---------|--------------------|---------|
+            |   230    |  1,92   |  7,49   |        31          |  124    |
+            |----------|---------|---------|--------------------|---------|
+            |   250    |  2,08   |  7,49   |        91          |  364    |
+            |----------|---------|---------|--------------------|---------|
+            |   300    |  2,5    |  7,5    |       240          |  960    |
+             -------------------------------------------------------------
+
+
+3) LIMITANDO EL TRAFICO A 128 kbps
+
+
+   3.1) Una entrada, una salida (FS que recibe
+        trafico en un puerto y lo copia a un sitio remoto):
+
+         --------       ---------       ------
+        | apollo |---->| mmonroe |---->| hada |
+         --------       ---------       ------
+
+        3.1.1) Con paquetes 500 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 500 -r <valor>
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 128000
+                   -downStreamBw 128000 -flowServer hada
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+
+             --------------------------------------------------- 
+            | param -r | mmonroe | mmonroe | Numero de Paquetes |
+            | de mgen  |  Input  | Output  | perdidos por sec   |
+            |(pkt/sec) |  (kbps) |  (kbps) |                    |
+            |----------|---------|---------|--------------------|
+            |   25     |  109,7  |  132,2  |         0          |
+            |----------|---------|---------|--------------------|
+            |   27     |  117,4  |  122,3  |         0          |
+            |----------|---------|---------|--------------------|
+            |   29     |  127,7  |  125,3  |         5          |
+            |----------|---------|---------|--------------------|
+            |   30     |  130,5  |  125,5  |         8          |
+            |----------|---------|---------|--------------------|
+            |   32     |  139,1  |  125,5  |        14          |
+            |----------|---------|---------|--------------------|
+            |   35     |  151,4  |  124,8  |        22          |
+            |----------|---------|---------|--------------------|
+            |   60     |  260    |  124,6  |        98          |
+             --------------------------------------------------- 
+
+
+        3.1.2) Con paquetes 1000 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 1000 -r <valor>
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 128000
+                   -downStreamBw 128000 -flowServer hada
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+
+             --------------------------------------------------- 
+            | param -r | mmonroe | mmonroe | Numero de Paquetes |
+            | de mgen  |  Input  | Output  | perdidos por sec   |
+            |(pkt/sec) |  (kbps) |  (kbps) |                    |
+            |----------|---------|---------|--------------------|
+            |    13    |  108,4  |  110,9  |         0          |
+            |----------|---------|---------|--------------------|
+            |    14    |  117,4  |  119,9  |         0          |
+            |----------|---------|---------|--------------------|
+            |    15    |  125,3  |  119,8  |         3          |
+            |----------|---------|---------|--------------------|
+            |    16    |  134,7  |  121    |         6          |
+            |----------|---------|---------|--------------------|
+            |    20    |  166,1  |  121,1  |        18          |
+            |----------|---------|---------|--------------------|
+            |    30    |  252,2  |  120    |        48          |
+             --------------------------------------------------- 
+
+
+   3.2) Una entrada, cuatro salidas (FS que recibe
+        trafico en un puerto y lo copia a cuatro sitios remotos):
+
+         --------       ---------       ------
+        | apollo |---->| mmonroe |---->| hada |
+         --------       --------- \     ------
+                          |    |   \
+                          |    |    |
+                          |    |    V
+                          |    |    --------
+                          |    |   | toledo |
+                          |    |    --------
+                          V     \
+                    ---------    ->  --------
+                   | cebolla |      | lamata |
+                    ---------        --------
+
+        3.2.1) Con paquetes de 500 octetos
+
+            en apollo:
+                ~> mgen -b mmonroe:32000 -s 500 -r <valor>
+
+            en mmonroe:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 128000 -linkMgr
+                   -downStreamBw 128000 -flowServer hada
+
+            en toledo:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 128000
+                   -downStreamBw 128000 -flowServer mmonroe
+
+            en lamata:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 128000
+                   -downStreamBw 128000 -flowServer mmonroe
+
+            en cebolla:
+                ~> iptraf
+                ~> isabel_irouter -upStreamBw 128000
+                   -downStreamBw 128000 -flowServer mmonroe
+
+            en hada:
+                ~> isabel_irouter -linkMgr
+
+
+            RESULTADO (segun iptraf de mmonroe):
+
+             -------------------------------------------------------------
+            | param -r | mmonroe | mmonroe | Numero de Paquetes |Numero   |
+            | de mgen  |  Input  | Output  | perdidos por sec y |paq total|
+            |(pkt/sec) |  (kbps) |  (kbps) | por cada sitio     |perdidos |
+            |----------|---------|---------|--------------------|---------|
+            |    25    |  100,8  |  454,9  |         0          |    0    |
+            |----------|---------|---------|--------------------|---------|
+            |    27    |  118,2  |  490,8  |         0          |    0    |
+            |----------|---------|---------|--------------------|---------|
+            |    29    |  126,6  |  495,9  |         4          |   16    |
+            |----------|---------|---------|--------------------|---------|
+            |    30    |  131,9  |  495,1  |         8          |   32    |
+            |----------|---------|---------|--------------------|---------|
+            |    32    |  140,2  |  495,1  |        16          |   64    |
+            |----------|---------|---------|--------------------|---------|
+            |    35    |  153    |  496,3  |        23          |   92    |
+            |----------|---------|---------|--------------------|---------|
+            |    60    |  259,7  |  496,3  |        98          |  392    |
+             -------------------------------------------------------------
+
+
+
+3) RETRASO AL ATRAVESAR IROUTER:
+
+   3.1 Un solo irouter:
+       Recibe un flujo local a una velocidad, lo copia a la red
+       y lo trata internamente como si lo hubiera recibido de un sitio
+       remoto (echo). Lo que se mide es el tiempo que el irouter tarda en 
+       copiar ese flujo y recibirlo a la vez.
+     
+       Medidas:
+
+          TAMAÑO  | PERIOD | TRAFF (kbps) |  BW (kbps)| RETARDO EN  | PKT    |
+          PKT(oct)|  (ms)  |GENERADO(iptr)| IROUTER   | IROUTER (ms)|PERDIDOS|
+          --------|--------|--------------|-----------|-------------|--------|
+           960    |  30    |     320      |  2000     |    1        |  0     |
+          --------|--------|--------------|-----------|-------------|--------|
+           500    |  30    |     170      |  2000     |    1        |  0     |
+          --------|--------|--------------|-----------|-------------|--------|
+           960    |  30    |     320      |   128     |    100      |  70    |
+          --------|--------|--------------|-----------|-------------|--------|
+           500    |  30    |     170      |   128     |    80       |  42    |
+          --------------------------------------------------------------------

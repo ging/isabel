@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Start Session Server
+Comment=Start a new session
+Exec=/usr/local/isabel/bin/isrv_StartServer.sh
+Icon=/usr/local/isabel/lib/images/gif/data_net.gif
+Terminal=false
+Type=Application
+StartupNotify=true

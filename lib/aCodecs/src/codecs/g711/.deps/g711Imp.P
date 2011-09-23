@@ -1,0 +1,3 @@
+g711Imp.o: g711Imp.cxx g711Imp.h
+g711Imp.cxx :
+g711Imp.h :

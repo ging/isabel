@@ -1,0 +1,72 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+# $args is a list of class names
+proc CheckClass {value args} {
+
+    foreach classname $args {
+	if { [$value isa $classname] } {
+	    return
+	}
+    }
+
+    set emsg "Unexpected class. Waiting for a $args class value, but received:: \"$value\""
+
+    ErrorTraceMsg $emsg 
+    
+    error $emsg
+}
+
+
+set uniq_objs_tcc ""
+
+# Comprueba que el objeto pasado como parametro es unico.
+proc CheckUnique {obj} {
+    global uniq_objs_tcc
+    
+    if {[lsearch -exact $uniq_objs_tcc $obj] != -1} {
+	set emsg "ERROR:: Duplicated reference to [$obj prettyPrinter] object."
+
+	ErrorTraceMsg $emsg 
+	
+	error $emsg
+    }
+
+    lappend uniq_objs_tcc $obj
+}
+
+
+proc CheckStrings {str1 args} {
+
+    foreach _str2 $args {
+	if {$str1 == $_str2} return
+    }
+
+    set emsg "ERROR: Bad \"$str1\" value. Valid values: \"$args\"."
+
+    ErrorTraceMsg $emsg 
+    
+    error $emsg
+}
+
+

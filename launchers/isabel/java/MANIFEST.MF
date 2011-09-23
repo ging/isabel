@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: isabel.launcher.Start
+Class-Path: /usr/local/isabel/libexec/isabel_lib.jar /usr/local/isabel/libexec/isabel_tunnel.jar /usr/local/isabel/libexec/isabel_seco.jar /usr/local/isabel/libexec/isabel_gapi.jar /usr/local/isabel/libexec/isabel_gwsip.jar /usr/local/isabel/libexec/isabel_mjsip.jar /usr/local/isabel/libexec/isabel_gwflash.jar /usr/local/isabel/libexec/isabel_red5.jar /usr/local/isabel/libexec/xuggle-xuggler.jar /usr/local/isabel/libexec/commons-cli.jar
+Sealed: true
+

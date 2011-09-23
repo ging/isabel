@@ -1,0 +1,661 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vd.itcl
+#
+# Class to access to the vga daemon.
+#
+#########################################################################
+
+class VgaDaemonC {
+
+    # Directory to save configuration files
+    private variable cfg_dir      
+
+    # vga packet size
+    private variable bucket 0
+
+    # vga bandwidth
+    private variable bw 1
+
+    # vga framerate
+    private variable framerate 25
+
+    # Multiply factor to apply to the vga bandwidth.
+    private variable bwfactor 
+
+    # Multiply factor to apply to the vga framerate.
+    private variable frameratefactor 
+
+    # Multiply factor to apply to the vga grab size.
+    private variable grabsizefactor 
+
+    # Multiply factor to apply to the image quality.
+    private variable qltyfactor 
+
+    # Local grab size
+    private variable grabsize 128x96
+
+    # Current codec name.
+    private variable codec ""
+
+    # Current image quality.
+    private variable qlty 30
+
+    # Video daemon task object
+    private variable vdtObj 
+
+    constructor {_vdtObj} {}
+
+    destructor {}
+
+    public method Nop {} {}
+
+    public method RDO {cmd} 
+    public method RPC {cmd} 
+    public method RCB {cmd cb}
+
+    public method SetBucket {b}
+    public method GetBucket {}
+
+    public method SetBW {_bw}
+    public method GetBW {}
+    public method SetBWFactor {f}
+    public method GetBWFactor {}
+
+    public method SetFramerate {_fr}
+    public method GetFramerate {}
+    public method SetFramerateFactor {f}
+    public method GetFramerateFactor {}
+
+    public method SetLocalGrabSize {gs}
+    public method GetLocalGrabSize {}
+    public method SetGrabSizeFactor {f}
+    public method GetGrabSizeFactor {}
+
+    public method SetQlty {q}
+    public method SetQltyFactor {f}
+    public method GetQltyFactor {}
+
+    public method SetGeometry {siteId geometry}
+
+    public method SetLocalCodec {c}
+    public method GetLocalCodec {}
+
+    public method SetLocalConfiguration {_framerate _grabsize _codec _bw} 
+
+    public method SetCurrentCamera    {c}
+    public method GetCurrentCamera    {}
+    public method GetAvailableCameras {}
+
+    public method SetNorm        {c}
+    public method SetFlickerFreq {c}
+
+    public method VgaSetFlip   {c}
+    public method VgaSetMirror {c}
+
+    # Send all the needed commands to configure the vga C daemon state.
+    # Used when the vga C daemon state is restarted.
+    public method ReapplyState {} 
+
+    #------------------------
+
+    public method Info {}
+
+    public method ExecDaemonCmd {cmd {cb ""}}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+
+    #------------------------
+
+    # Saves into the vga.source file the current source
+    public method Save {_source}
+    
+    # Reads the source value stores in the vga.source file.
+    public method Load {_default}
+
+}
+
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::constructor {_vdtObj} {
+
+    set vdtObj $_vdtObj
+
+    set cfg_dir [session Environ cget -config_dir]/vga
+    file mkdir $cfg_dir
+    
+    set bwfactor        [session Activity GetResource Video bwfactor        1]
+    set frameratefactor [session Activity GetResource Video frameratefactor 1]
+    set grabsizefactor  [session Activity GetResource Video grabsizefactor  1]
+    set qltyfactor      [session Activity GetResource Video qltyfactor      1]
+
+    # Bucket size:
+    SetBucket 900
+}
+
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::destructor {} {
+
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::RDO {cmd} {
+
+    $vdtObj RDO $cmd
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::RPC {cmd} {
+
+    $vdtObj RPC $cmd
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::RCB {cmd cb} {
+
+    $vdtObj RCB $cmd $cb
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetBucket {b} {
+    set bucket $b
+    RDO video_bucket_size($bucket)
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetBucket {} {
+    return $bucket
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetBW {_bw} {
+
+    set bw $_bw
+
+    set me [SiteManager::MySiteId]
+
+    VgaLayoutInfoC::BW $me $_bw
+    
+    #--  Adapt line bw (network headers, rtp headers, et.) to codec bw (only image bits)
+    if {[catch {expr $_bw*0.8} res]} {
+	set emsg "Vga Error: Invalid bw value: \"$bw\""
+	ErrorTraceMsg "- $emsg"
+	return 
+    }
+    set _bw $res
+
+    #---- Reduce bw if protection FEC is used
+    set _fec_k [session Activity GetResource Video FEC.K 0]
+    
+    if {$_fec_k != "" && $_fec_k != "0"} {
+	if { ! [catch "expr 1.0 * $_bw * $_fec_k / ($_fec_k + 1)" _res]} {
+	    set _bw $_res
+	}
+    }
+    
+    #-- Check limits
+
+    if {$_bw < 0.01} {set _bw 0.01}
+    set _bw [expr $_bw*$bwfactor]
+
+    RDO video_channel_bandwidth([VgaComponentC::MyVgaId],$_bw)
+} 
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetBW {} {
+    return $bw
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetBWFactor {f} {
+
+    if {$f == 0} {
+	ErrorTraceMsg "Vga: Invalid bandwidth factor $f"
+	return 
+    }
+    set bwfactor $f
+
+    VgaLayoutInfoC::BWFactor $f
+
+    SetBW $bw
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetBWFactor {} {
+
+    return $bwfactor
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetFramerate {_fr} {
+
+    set framerate $_fr
+
+    set me [SiteManager::MySiteId]
+
+    VgaLayoutInfoC::Framerate $me $_fr
+
+    if {$_fr == 0} {set _fr 0.1}
+    set _fr [expr $_fr*$frameratefactor]
+    RDO video_frame_rate([VgaComponentC::MyVgaId],$_fr)
+} 
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetFramerate {} {
+    return $framerate
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetFramerateFactor {f} {
+
+    if {$f == 0} {
+	ErrorTraceMsg "Vga: Invalid framerate factor $f"
+	return 
+    }
+    set frameratefactor $f
+
+    VgaLayoutInfoC::FramerateFactor $f
+
+    SetFramerate $framerate
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetFramerateFactor {} {
+
+    return $frameratefactor
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetLocalGrabSize {gs} {
+
+    if {[catch {
+	set grabsize $gs
+	regexp {^0*([0-9]+)x0*([0-9]+)} $gs all w h
+	set w16 [expr round($w*$grabsizefactor/16)]
+	set h16 [expr round($h*$grabsizefactor/16)]
+	set w [expr $w16*16]
+	set h [expr $h16*16]
+	set gs "${w}x${h}"
+
+	set me [SiteManager::MySiteId]
+
+	VgaLayoutInfoC::GrabSize $me $grabsize
+
+	RDO video_grab_size([VgaComponentC::MyVgaId],$gs)
+    } msgerr]} {
+	ErrorTraceMsg "Vga: I can't set local grab size \"$gs\": $msgerr"
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetLocalGrabSize {} {
+
+    return $grabsize
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetGrabSizeFactor {f} {
+
+    if {$f == 0} {
+	ErrorTraceMsg "Vga: Invalid vga grab size factor $f"
+	return 
+    }
+    set grabsizefactor $f
+
+    VgaLayoutInfoC::GrabSizeFactor $f
+
+    SetLocalGrabSize $grabsize
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetGrabSizeFactor {} {
+
+    return $grabsizefactor
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetQlty {q} {
+
+    set qlty $q
+
+    set me [SiteManager::MySiteId]
+
+    VgaLayoutInfoC::Qlty $me $qlty
+
+    set fq [expr round($q*$qltyfactor)]
+    if {$fq < 1}   {set fq 1}
+    if {$fq > 100} {set fq 100}
+    RDO video_codec_quality([VgaComponentC::MyVgaId],$fq)
+} 
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetQltyFactor {f} {
+
+    if {$f == 0} {
+	ErrorTraceMsg "Vga: Invalid vga quality factor $f"
+	return 
+    }
+    set qltyfactor $f
+
+    VgaLayoutInfoC::QltyFactor $f
+
+    SetQlty $qlty
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetQltyFactor {} {
+
+    return $qltyfactor
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetGeometry {siteId geometry} {
+
+    set geom [dvirtual V2R_Geometry $geometry 1 1 1 NW]
+
+    set _chid [VgaComponentC::SiteId2VgaChId $siteId]	
+
+    RDO video_window_geometry($_chid,$geom)
+
+    VgaLayoutInfoC::Geometry $siteId $geom
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetLocalCodec {c} {
+
+    set me [VgaComponentC::MyVgaId]
+
+    set res [RPC video_select_codec($me,$c)]
+
+    if {[string first "ERROR" $res] == 0} {
+	ErrorTraceMsg "Vga: codec \"$c\" not supported."
+	return
+    }
+
+    set codec $c
+
+    VgaLayoutInfoC::Codec $me $c
+
+    set qlty [GetOptionListValue $c -qlty 50]
+    SetQlty $qlty
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetLocalCodec {} {
+    
+    return $codec
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetCurrentCamera {c} {
+
+    RDO video_select_source([VgaComponentC::MyVgaId],$c)
+
+    Save $c
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetCurrentCamera {} {
+
+    RPC video_current_source([VgaComponentC::MyVgaId])
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::GetAvailableCameras {} {
+
+    set cameras [RPC video_list_sources()]
+    regsub -all {,} $cameras \}\ \{ cameras
+
+    return $cameras
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetNorm {c} {
+
+    RDO video_set_norm([VgaComponentC::MyVgaId],$c)
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetFlickerFreq {c} {
+
+    RDO video_set_flickerfreq([VgaComponentC::MyVgaId],$c)
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::VgaSetFlip {c} {
+
+    RDO video_set_flip([VgaComponentC::MyVgaId],$c)
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::VgaSetMirror {c} {
+
+    RDO video_set_mirror([VgaComponentC::MyVgaId],$c)
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::SetLocalConfiguration {_framerate _grabsize _codec _bw} {
+
+    set me [SiteManager::MySiteId]
+
+    #--- codec and img qlty ----
+    set codecname [lindex $_codec 0]
+    set qlty      [GetOptionListValue $_codec -qlty 50]
+	
+    set fq [expr round($qlty*$qltyfactor)]
+    if {$fq < 1}   {set fq 1}
+    if {$fq > 100} {set fq 100}
+
+    VgaLayoutInfoC::Codec     $me $codecname
+    VgaLayoutInfoC::Qlty      $me $qlty
+
+    #--- Frame rate ----
+
+    set framerate $_framerate
+
+    VgaLayoutInfoC::Framerate $me $framerate
+
+    if {$_framerate <= 0} {set _framerate 0.1}
+    set _framerate [expr $_framerate*$frameratefactor]
+
+    #--- Grabsize ----
+
+    if {[catch {
+	set grabsize $_grabsize
+	regexp {^0*([0-9]+)x0*([0-9]+)} $_grabsize all w h
+	set w16 [expr round($w*$grabsizefactor/16)]
+	set h16 [expr round($h*$grabsizefactor/16)]
+	set w [expr $w16*16]
+	set h [expr $h16*16]
+	set _grabsize "${w}x${h}"
+
+    } msgerr]} {
+	ErrorTraceMsg "Vga: I can't set local grab size \"$gs\": $msgerr"
+	set grabsize  ""
+	set _grabsize ""
+    }
+
+    VgaLayoutInfoC::GrabSize  $me $grabsize
+
+    #--- BW
+
+    set bw $_bw
+
+    VgaLayoutInfoC::BW        $me $_bw
+
+    #--  Adapt line bw (network headers, rtp headers, et.) to codec bw (only image bits)
+    if {[catch {expr $_bw*0.8} res]} {
+	set emsg "Vga Error: Invalid bw value: \"$bw\""
+	ErrorTraceMsg "- $emsg"
+	return 
+    }
+    set _bw $res
+
+    #---- Reduce bw if protection FEC is used
+    set _fec_k [session Activity GetResource Video FEC.K 0]
+    
+    if {$_fec_k != "" && $_fec_k != "0"} {
+	if { ! [catch "expr 1.0 * $_bw * $_fec_k / ($_fec_k + 1)" _res]} {
+	    set _bw $_res
+	}
+    }
+
+    #--  check limits
+    
+    if {$_bw < 0.01} {set _bw 0.01}
+    set _bw [expr $_bw*$bwfactor]
+
+    #--- DO IT
+
+    RDO video_configure_channel([VgaComponentC::MyVgaId],$_framerate,$_grabsize,$codecname,$fq,$_bw)
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::ReapplyState {} {
+
+    # Bucket size:
+    SetBucket $bucket
+
+    SetLocalConfiguration $framerate $grabsize $codec $bw 
+
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::Info {} {
+    global vgaD
+
+    set res " o Vga Daemon:\n"
+
+    append res "     base bandwidth = $bw\n"
+    append res "   bandwidth factor = $bwfactor\n"
+    append res "     base framerate = $framerate\n"
+    append res "   framerate factor = $frameratefactor\n"
+    append res "          grab size = $grabsize\n"
+    append res "        bucket size = $bucket\n"
+    append res "      current codec = $codec\n"
+    return $res
+}
+
+#--------------------------------------------------------------------------
+
+body VgaDaemonC::ExecDaemonCmd {cmd {cb ""}} {
+
+    if {$cb == ""} {
+	RDO $cmd
+    } else {
+	RCB $cmd $cb
+    }
+}
+
+#--------------------------------------------------------------
+#--------------------------------------------------------------
+#--------------------------------------------------------------
+
+#---------------------------------------------------------------
+
+body VgaDaemonC::Save {_source} {
+
+    if {[catch { 
+	set _fd [open $cfg_dir/vga.source w]
+	puts $_fd $_source
+	close $_fd
+    } emsg]} {
+	ErrorTraceMsg "Vga ($filename): $emsg"
+    }
+    return
+    
+}
+
+#---------------------------------------------------------------
+
+body VgaDaemonC::Load {_default} {
+
+    if {[catch {
+	set _fd [open $cfg_dir/vga.source r]
+	gets $_fd _v
+	close $_fd
+    } emsg]} {
+	return $_default
+    }
+    if {$_v == ""} {
+	return $_default
+    } else {
+	return $_v
+    }
+}
+
+#---------------------------------------------------------------

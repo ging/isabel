@@ -1,0 +1,165 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# interface.itcl
+#
+# User interface (base)
+#
+#
+#
+#
+#########################################################################
+
+class CommonInterfaceC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {defaulttitle} {}
+
+    destructor {}
+
+    # Create frames to display the ISABEL logo and the $msg message.
+    public method OpenLogo {{msg ""}}
+
+    # Write a logo message.
+    public method LogoMsg {msg}
+
+    # Destroy the ISABEL logo and the messages bar.
+    public method DestroyLogo {}
+
+    # Trace messages
+    public method WriteMsg {msg {key ""}} 
+    public method DebugMsg {msg {level 1}} 
+    public method ErrorMsg msg 
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Object created in the logo canvas to display messages 
+    private variable textobj ""
+}
+
+#---------------------------------------------
+
+body CommonInterfaceC::constructor {defaulttitle} {
+
+    set title [customercfg GetValue actionWindowTitle $defaulttitle]
+
+    wm title    . $title
+    wm iconname . $title
+}
+    
+#---------------------------------------------
+
+body CommonInterfaceC::destructor {} {
+
+    if {[winfo exists .logo]} {
+	bind .logo <Destroy> ""
+	destroy .logo
+    }
+}
+
+#---------------------------------------------
+
+body CommonInterfaceC::OpenLogo {{msg ""}} {
+
+    CreateImage isabel_logo [customercfg GetValue startLogo gif/isabel3.gif]
+
+    CreateImage isabel_logo gif/isabel3.gif
+
+    regexp {.*(..)$} [clock clicks] all offset
+    regsub {^0*([0-9]+)} $offset {\1} offset
+    set ilwx [expr [winfo screenwidth .]/2-250+$offset]
+    set ilwy [expr [winfo screenheight .]/2-220+$offset]
+
+    wm geometry . 420x300+$ilwx+$ilwy
+    wm resizable . 0 0
+
+    canvas .logo -width 420 \
+	    -height 300  \
+	    -borderwidth 0 \
+	    -highlightthickness 0 
+    pack   .logo -expand 1 -fill both
+    
+    .logo create image 0 0 \
+	    -image isabel_logo \
+	    -anchor nw
+    
+    .logo create text 20 225 -text "ISABEL is under Affero GNU General Public License." -anchor w
+    .logo create text 20 240 -text $msg -anchor w
+
+    bind .logo <Destroy> {
+	WarningTraceMsg "User interface destroyed (maybe) by user. Exiting ISABEL."
+	exit 1
+    }
+
+    update 
+}
+
+#---------------------------------------------
+
+body CommonInterfaceC::DestroyLogo {} {
+    
+    if {[winfo exists .logo]} {
+	bind .logo <Destroy> ""
+	destroy .logo
+	wm geometry . ""
+    }
+    wm withdraw .
+    update
+}
+
+#---------------------------------------------
+
+body CommonInterfaceC::LogoMsg {msg} {
+
+    if {[winfo exists .logo]} {
+	.logo delete $textobj
+	set textobj [.logo create text 20 255 -text $msg -anchor w]
+	update idletasks	  
+    }
+}
+
+#---------------------------------------------
+
+body CommonInterfaceC::WriteMsg {msg {key ""}} {
+    WriteTraceMsg $msg $key
+}
+
+#---------------------------------------------
+
+body CommonInterfaceC::DebugMsg {msg {level 1}} {
+    DebugTraceMsg $msg $level
+}
+
+#---------------------------------------------
+
+body CommonInterfaceC::ErrorMsg msg {
+    ErrorTraceMsg $msg 
+}
+
+#---------------------------------------------

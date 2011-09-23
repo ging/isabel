@@ -1,0 +1,20 @@
+-----------------------------
+
+- libreria: XEDLMixerTools
+
+- Descripción: clase para generar los ficheros local.xml y el fichero xedl global de una sesion a partir de los ficheros parciales y de sesion. ver javadoc.
+
+- Paquete: isabel.lib.xlim
+
+- Clases:  
+	* XEDLMixerTools
+	* XEDLMixerException
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimlib
+	* Ficheros: 
+		· xlimlib/isabel/lib/xlim/XEDLMixerTools.java
+		· xlimlib/isabel/lib/xlim/XEDLMixerException.java
+
+- Temas pendientes:
+-----------------------------

@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RTP", "RTP.vcproj", "{B52A4896-2073-4358-BEB9-FA831821CCB2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41B39295-DF16-460C-A90A-477B5468957D} = {41B39295-DF16-460C-A90A-477B5468957D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ICF2", "..\..\..\ICF2\WinXP\ICF2.vcproj", "{41B39295-DF16-460C-A90A-477B5468957D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		DebugNonThreaded|Win32 = DebugNonThreaded|Win32
+		DebugThreaded|Win32 = DebugThreaded|Win32
+		ReleaseNonThreaded|Win32 = ReleaseNonThreaded|Win32
+		ReleaseThreaded|Win32 = ReleaseThreaded|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.DebugNonThreaded|Win32.ActiveCfg = DebugNonThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.DebugNonThreaded|Win32.Build.0 = DebugNonThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.DebugThreaded|Win32.ActiveCfg = DebugThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.DebugThreaded|Win32.Build.0 = DebugThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.ReleaseNonThreaded|Win32.ActiveCfg = ReleaseNonThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.ReleaseNonThreaded|Win32.Build.0 = ReleaseNonThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.ReleaseThreaded|Win32.ActiveCfg = ReleaseThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.ReleaseThreaded|Win32.Build.0 = ReleaseThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.DebugNonThreaded|Win32.ActiveCfg = DebugNonThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.DebugNonThreaded|Win32.Build.0 = DebugNonThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.DebugThreaded|Win32.ActiveCfg = DebugThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.DebugThreaded|Win32.Build.0 = DebugThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.ReleaseNonThreaded|Win32.ActiveCfg = ReleaseNonThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.ReleaseNonThreaded|Win32.Build.0 = ReleaseNonThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.ReleaseThreaded|Win32.ActiveCfg = ReleaseThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.ReleaseThreaded|Win32.Build.0 = ReleaseThreaded|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

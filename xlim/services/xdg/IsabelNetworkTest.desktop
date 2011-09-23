@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=NetworkTest
+Comment=NetworkTest
+Exec=/usr/local/isabel/bin/isrv_NetworkTest.sh
+Icon=/usr/local/isabel/lib/images/gif/networkTestIco.gif
+Terminal=false
+Type=Application
+StartupNotify=true

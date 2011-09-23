@@ -1,0 +1,327 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+##############################################################
+#
+#   Description:
+#     slide browser.
+#
+############## Public variables and methods ####################
+# 
+#      - getDir   {}
+#      - setDir   {dir}
+#      - getSld   {}
+#      - setSld   {dir filename}
+#      - getAllSlds  {}
+#      - apply    {}
+#      - setState {state}
+#
+################################################################
+
+
+#===============================================================
+#
+# Slides Browser Class definition.
+#
+# Create a window to select a slide presentation.
+#
+#===============================================================
+
+class SldBrowserClass {
+    
+    # Widget where the browser window will be packed.
+    private variable wroot .
+    
+    # Absolute path to the directory to browse.
+    public variable root 
+    
+    # Callback to execute when a slide is double clicked.
+    # Arguments:
+    #  - directory path to slide.
+    #  - list of all the slides in that directory.
+    #  - the selected slide (one from the previous list).
+    # These three values are relative paths of $root 
+    public variable cb ""
+    
+    # Title,
+    public variable title Slides
+    
+    # The explorer object
+    private variable explorerobj    
+    
+    # Options: -root  -cb -title
+    constructor {widget args} {}
+    
+    destructor {}
+    
+    # Return the selected directory.
+    # This value is a relative path of $root 
+    public method getDir  {}
+
+    # Set the selected directory.
+    # $dir is a relative path of $root 
+    public method setDir  {dir}
+
+    # Return the selected slide.
+    # It is a filename without any path.
+    public method getSld  {}
+
+    # Set the selected slide.
+    # $dir is a relative path of $root 
+    # $filename is the slide filename without any path.
+    public method setSld  {dir filename}
+
+    # Return a list with all the slide paths for the selected directory.
+    # All paths are relative paths of $root 
+    public method getAllSlds {}
+    
+    # Applies the double click callback over the current selection.
+    public method apply {}
+
+    # Set the state of the browser to normal or to disabled
+    public method setState {state}
+
+    # This method is invoked when the user performs a double click over
+    # a slide filename. 
+    # Also, this method calls $cb.
+    # $dir is a relative path of $root.
+    private method UserCB {dir file} {}
+
+    # This object manages relative directory paths of $ISABEL_WORKDIR/pres.
+    # However, the explorer object manages relative directory paths of 
+    # $ISABEL_WORKDIR, so it is necesary to make translation between both kinds
+    # of paths.
+    # The method RemovePres is used to remove the "/pres" prefix.
+    # The method AddPres is used to add the "/pres" prefix.
+    private method RemovePres {paths} {}
+    private method AddPres    {paths} {}
+
+    # Method to execute when CLEAN button is pressed.
+    private method Clean {} {}
+
+    # Method to execute when OK button is pressed.
+    # It must be equal to double click over a slide file. 
+    private method OK {} {}
+} 
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::constructor {widget args} {
+    
+    set wroot $widget
+    eval configure $args
+    
+    frame $wroot.select -relief groove -borderwidth 3
+    pack  $wroot.select -side left -expand 1 -fill both \
+	    -ipadx 5 -ipady 5 -padx 5 -pady 5
+    
+    if {$title != ""} {
+	label $wroot.select.label \
+		-text $title 
+	pack  $wroot.select.label -side top -fill x 
+    }
+    
+    set explorerobj [ExplorerC #auto $wroot.select.explorer $root \
+	    [code $this UserCB] \
+            450 200 \
+	    -relief groove \
+	    -borderwidth 3 ]
+
+    frame $wroot.select.b
+    grid columnconfigure $wroot.select.b 0 -weight 1 -pad 5
+    grid columnconfigure $wroot.select.b 1 -weight 1 -pad 5
+    grid columnconfigure $wroot.select.b 2 -weight 1 -pad 5
+
+    button $wroot.select.b.update \
+	    -text update \
+            -borderwidth 5 \
+	    -command [code $explorerobj Refresh]
+
+    grid   $wroot.select.b.update -row 0 -column 0 
+
+    button $wroot.select.b.ok \
+	    -text OK \
+            -borderwidth 5 \
+	    -command [code $this OK]
+
+    button $wroot.select.b.clean \
+	    -text clean \
+            -borderwidth 5 \
+	    -command [code $this Clean]
+
+    if {$cb != ""} {
+	grid   $wroot.select.b.clean -row 0 -column 1 
+	grid   $wroot.select.b.ok    -row 0 -column 2 
+    }
+
+    pack   $wroot.select.b \
+	    -side bottom
+
+    pack $wroot.select.explorer -expand 1 -fill both -padx 5
+    
+    #--
+
+    frame $wroot.select.destroy
+    bind $wroot.select.destroy <Destroy> "delete object $this"
+    
+}
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::destructor {} {
+    
+    catch {bind $wroot.select.destroy <Destroy> ""}
+    if {[winfo exists $wroot.select]} {
+	destroy $wroot.select
+    }
+}
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::getDir  {} {
+
+    return [RemovePres [$explorerobj GetCurrentDir]]
+}
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::setDir  {dir} {
+
+    $explorerobj SetCurrentDir [AddPres $dir]
+}
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::getSld  {} {
+
+    return [file tail [$explorerobj GetCurrentFile]]
+}
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::setSld  {dir filename} {
+
+    $explorerobj SetCurrentFile [AddPres $dir/$filename]
+}
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::getAllSlds {} {
+    
+    return [RemovePres [$explorerobj GetAllFiles]]
+}
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::setState {state} {
+
+    $wroot.select.b.update configure -state $state
+
+    $explorerobj SetState $state
+}
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::apply {} {
+    
+    set dir [$explorerobj GetCurrentDir]
+    set sld [file tail [$explorerobj GetCurrentFile]]
+    UserCB $dir $sld
+}
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::UserCB {dir file} {
+
+    if {$cb != ""} {
+
+	set l   [RemovePres [$explorerobj GetDirFiles]]
+	set f   [RemovePres $dir/$file]
+	set dir [RemovePres $dir]
+
+	if {[catch {uplevel #0 $cb [list $dir] [list $l] [list $f]} error]} {
+	    error "SldBrowserClass error: $error"
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body SldBrowserClass::RemovePres {paths} {
+
+    set res ""
+    foreach path $paths {
+	set path /[string range $path 5 end]
+	lappend res $path
+    }
+    regsub -all /+ $res / res
+    return $res
+}
+
+#----------------------------------------------------------------
+
+body SldBrowserClass::AddPres {paths} {
+
+    set res ""
+    foreach path $paths {
+	if {$path == "/"} {
+	    set path /pres
+	} else {
+	    set path /pres$path
+	}
+	lappend res $path
+    }
+    return $res
+}
+
+#----------------------------------------------------------------
+
+body SldBrowserClass::Clean {} {
+
+    $explorerobj Unselect
+}
+
+#----------------------------------------------------------------
+
+body SldBrowserClass::OK {} {
+    
+    if {$cb != ""} {
+	set l   [RemovePres [$explorerobj GetDirFiles]]
+	set dir [getDir]
+        set f   [getSld]
+	if {$f == ""} {
+	    set f [lindex $l 0]
+	} else {
+	    set f $dir/$f
+	}
+	regsub -all /+ $f / f
+
+	if {[catch {uplevel #0 $cb [list $dir] [list $l] [list $f]} error]} {
+	    error "SldBrowserClass error: $error"
+	}
+    }
+
+}
+
+#----------------------------------------------------------------
+
+
+

@@ -1,0 +1,399 @@
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# supecho.itcl
+#
+# Audio Echo Suppressor configuration.
+#
+#########################################################################
+
+class AudioSupEchoConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    constructor {_siteId w _acdobj} {}
+    destructor {}
+
+    # Build the gui.
+    public method MakeGui {}
+
+    public method GetEchoSuppresorActive {}
+    public method SetEchoSuppresorActive {a}
+
+    public method GetEchoSuppresorCaptureAttenuation {}
+    public method SetEchoSuppresorCaptureAttenuation {ca}
+
+    public method GetEchoSuppresorPlaybackThreshold {}
+    public method SetEchoSuppresorPlaybackThreshold {pt}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # SiteId of the site
+    private variable siteId
+
+    # root widget
+    private variable wroot ""
+
+    # Audio C daemon object
+    private variable acdobj
+
+    # Current echo suppressor values
+    private variable echoSuppresorActive ""
+    private variable echoSuppresorCaptureAttenuation  ""
+    private variable echoSuppresorPlaybackThreshold  ""
+
+    # Initialize attributes
+    private method InitEchoSuppresor {}
+
+    # Send new value to the SMS server
+    private method UpdateSmsSupEcho {args}
+    private method UpdateSmsSupEchoNow {}
+
+    # Process SMS received data
+    #
+    # Sets the echo suppessor state for the given site 
+    #
+    # $args has this format:
+    #     -site_id <site_id> -active <0|1> -cAttenuation <#> -pThreshold <#>
+    private method ProcessSmsSupEcho {args}
+
+    # Configure the audio daemon
+    private method ApplyDaemon {}
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::constructor {_siteId w _acdobj} {
+
+    set siteId $_siteId
+    set wroot  $w
+    set acdobj $_acdobj
+
+    InitEchoSuppresor
+
+    sms joinKey Audio_supecho_$siteId [code $this ProcessSmsSupEcho]
+
+    set _mySiteId [SiteManager::MySiteId]
+    if {$siteId == $_mySiteId} {
+	
+	sms forceState Audio_supecho_$siteId add \
+	    -site_id $siteId \
+	    -active       $echoSuppresorActive \
+	    -cAttenuation $echoSuppresorCaptureAttenuation \
+	    -pThreshold   $echoSuppresorPlaybackThreshold
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::destructor {} {
+
+    sms leaveKey Audio_supecho_$siteId
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::InitEchoSuppresor {} {
+
+    set _mySiteId [SiteManager::MySiteId]
+    
+    if {$siteId == $_mySiteId} {
+
+	set echoSuppresorActive             [AudioConfigC::Load audio.echosup.active 1]
+	set echoSuppresorCaptureAttenuation [AudioConfigC::Load audio.echosup.capture 30]
+	set echoSuppresorPlaybackThreshold  [AudioConfigC::Load audio.echosup.playback -30]
+	
+	ApplyDaemon
+	
+	UpdateSmsSupEcho
+
+    } else {
+
+	set echoSuppresorActive             ""
+	set echoSuppresorCaptureAttenuation ""
+	set echoSuppresorPlaybackThreshold  ""
+
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::MakeGui {} {
+
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    frame $wroot  -relief sunken -bd 1
+    
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+
+    #--
+
+    checkbutton $wroot.active \
+	-text " Echo Suppresor. Default: Checked." \
+	-padx 0 -pady 0 \
+	-highlightthickness 0 \
+	-onvalue  1 \
+	-offvalue 0 \
+	-variable [scope echoSuppresorActive] \
+	-command  [code $this UpdateSmsSupEcho]
+
+    if {[catch "$wroot.active cget -tristatevalue"]} {
+	$wroot.active configure -selectcolor green
+    }
+
+    set bg [$wroot.active cget -background]
+    $wroot.active conf -activebackground $bg
+    
+    balloon add $wroot.active "Echo Suppresor switch"
+
+    #--
+
+    label $wroot.lcapatt \
+	-relief flat \
+        -justify left \
+	-font $font \
+	-text "    Capture attenuation (dBs):"
+
+    scale $wroot.capatt \
+	-showvalue 1 \
+	-from 10 -to 50 \
+	-resolution 10 \
+	-orient horizontal \
+	-width 10 \
+	-borderwidth 1 \
+	-state normal  \
+	-highlightthickness 0 \
+	-variable [scope echoSuppresorCaptureAttenuation]
+    InitScaleValue $wroot.capatt $echoSuppresorCaptureAttenuation [code $this UpdateSmsSupEcho]
+
+    balloon add $wroot.capatt "Capture Attenuation (dBs)"
+
+    label $wroot.hcapatt \
+	-relief flat \
+	-justify left \
+	-font $font \
+	-text "Default: 30"
+
+    #--
+
+    label $wroot.lplathr \
+	-relief flat \
+        -justify left \
+	-font $font \
+	-text "    Playback threshold (dBs):"
+
+    scale $wroot.plathr \
+	-showvalue 1 \
+	-from -45 -to -10 \
+	-orient horizontal \
+	-width 10 \
+	-borderwidth 1 \
+	-state normal  \
+	-highlightthickness 0 \
+	-variable [scope echoSuppresorPlaybackThreshold]
+    InitScaleValue $wroot.plathr $echoSuppresorPlaybackThreshold [code $this UpdateSmsSupEcho]
+
+    balloon add $wroot.plathr "Playback Threshold (dBs)"
+
+    label $wroot.hplathr \
+	-relief flat \
+	-justify left \
+	-font $font \
+	-text "Default: -30"
+
+    #--
+
+    set _mySiteId [SiteManager::MySiteId]
+    if { ! [AudioConfigC::ControlSite] && $siteId != $_mySiteId} {
+	$wroot.active  configure -state disabled
+	$wroot.lcapatt configure -state disabled
+	$wroot.capatt  configure -state disabled
+	$wroot.hcapatt configure -state disabled
+	$wroot.lplathr configure -state disabled
+	$wroot.plathr  configure -state disabled
+	$wroot.hplathr configure -state disabled
+    }
+
+    #--
+
+    grid $wroot.active  -row 1 -column 0 -pady 1 -ipadx 6  -sticky w -columnspan 3
+    grid $wroot.lcapatt -row 2 -column 0 -pady 1 -ipadx 6  -sticky es 
+    grid $wroot.capatt  -row 2 -column 1 -pady 1 -ipadx 6  -sticky wes 
+    grid $wroot.hcapatt -row 2 -column 2 -pady 1 -ipadx 6  -sticky ws 
+    grid $wroot.lplathr -row 3 -column 0 -pady 1 -ipadx 6  -sticky es 
+    grid $wroot.plathr  -row 3 -column 1 -pady 1 -ipadx 6  -sticky wes 
+    grid $wroot.hplathr -row 3 -column 2 -pady 1 -ipadx 6  -sticky ws 
+
+    grid columnconfigure $wroot 1 -weight 1
+
+    grid rowconfigure $wroot 0 -weight 1
+    grid rowconfigure $wroot 1 -weight 0
+    grid rowconfigure $wroot 2 -weight 0
+    grid rowconfigure $wroot 3 -weight 0
+    grid rowconfigure $wroot 4 -weight 1
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::GetEchoSuppresorActive {} {
+    
+    return $echoSuppresorActive
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::SetEchoSuppresorActive {a} {
+    
+    if {$echoSuppresorActive != $a} {
+	set echoSuppresorActive $a
+
+	set _mySiteId [SiteManager::MySiteId]
+	if {$siteId == $_mySiteId} {
+	    ApplyDaemon
+	    AudioConfigC::Save audio.echosup.active $echoSuppresorActive
+	}
+	
+	UpdateSmsSupEchoNow
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::GetEchoSuppresorCaptureAttenuation {} {
+    
+    return $echoSuppresorCaptureAttenuation
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::SetEchoSuppresorCaptureAttenuation {ca} {
+    
+    if {$echoSuppresorCaptureAttenuation != $ca} {
+	set echoSuppresorCaptureAttenuation $ca
+
+	set _mySiteId [SiteManager::MySiteId]
+	if {$siteId == $_mySiteId} {
+	    ApplyDaemon
+	    AudioConfigC::Save audio.echosup.capture $echoSuppresorCaptureAttenuation
+	}
+	
+	UpdateSmsSupEchoNow
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::GetEchoSuppresorPlaybackThreshold {} {
+    
+    return $echoSuppresorPlaybackThreshold
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::SetEchoSuppresorPlaybackThreshold {pt} {
+
+    if {$echoSuppresorPlaybackThreshold != $pt} {
+	set echoSuppresorPlaybackThreshold $pt
+
+	set _mySiteId [SiteManager::MySiteId]
+	if {$siteId == $_mySiteId} {
+	    ApplyDaemon
+	    AudioConfigC::Save audio.echosup.playback $echoSuppresorPlaybackThreshold
+	}
+	
+	UpdateSmsSupEchoNow
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::UpdateSmsSupEcho {args} {
+
+    after cancel [code $this UpdateSmsSupEchoNow]
+    
+    after 200 [code $this UpdateSmsSupEchoNow]
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::UpdateSmsSupEchoNow {} {
+
+    after cancel [code $this UpdateSmsSupEchoNow]
+
+    sms forceState Audio_supecho_$siteId add \
+	-site_id $siteId \
+	-active $echoSuppresorActive \
+	-cAttenuation $echoSuppresorCaptureAttenuation \
+	-pThreshold $echoSuppresorPlaybackThreshold
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::ProcessSmsSupEcho {args} {
+
+    # set _site_id [getOptionListValue $args -site_id ""]
+
+    set _active [getOptionListValue $args -active 1]
+    set _catt   [getOptionListValue $args -cAttenuation 30]
+    set _pthres [getOptionListValue $args -pThreshold -30]
+
+    set echoSuppresorActive             $_active
+    set echoSuppresorCaptureAttenuation $_catt
+    set echoSuppresorPlaybackThreshold  $_pthres
+
+    set _mySiteId [SiteManager::MySiteId]
+    if {$siteId == $_mySiteId} {
+	ApplyDaemon
+	
+	AudioConfigC::Save audio.echosup.active   $echoSuppresorActive
+	AudioConfigC::Save audio.echosup.capture  $echoSuppresorCaptureAttenuation
+	AudioConfigC::Save audio.echosup.playback $echoSuppresorPlaybackThreshold
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSupEchoConfigC::ApplyDaemon {} {
+    
+    $acdobj RDO audio_set_echo_window(2)
+    $acdobj RDO audio_set_echo_threshold($echoSuppresorPlaybackThreshold)
+    if {$echoSuppresorActive} {
+	set _v [expr $echoSuppresorCaptureAttenuation/10]
+	$acdobj RDO audio_set_echo_suppresor($_v)
+    } else {
+	$acdobj RDO audio_set_echo_suppresor(0)
+    }
+}
+
+#---------------------------------------------------------------------------
+

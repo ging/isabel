@@ -1,0 +1,309 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# lse.tcl
+#
+# LSE component.
+#
+#########################################################################
+
+class VideoLSEComponentC {
+    
+    # Video Daemon Task Object
+    private variable vdtObj ""
+    
+    # Lse Daemon Object
+    private variable vdObj ""
+    
+    # Lse Layout Manager Object
+    private variable vgObj ""
+    
+    # Lse Channel Object vcObj
+    private variable vcObj ""
+    
+    constructor {_vdtObj} {}
+    
+    destructor {}
+    
+    public method AddMe {}
+    public method AddSite {_site_id new}
+    public method DelSite {_site_id}
+    
+    private method ApplyLayout {}
+    
+    private method BWFactor        {f}
+    private method FramerateFactor {f}
+    private method GrabSizeFactor  {f}
+    private method QltyFactor      {f}
+    
+    public method Nop {} {}
+    
+    public method Info {}
+    
+    public method ExecDaemonCmd {cmd {cb ""}}
+    
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+    
+    # Send all the needed commands to configure the lse C daemon state.
+    # Used when the lse C daemon state is restarted.
+    public method ReapplyState {} 
+    
+    #
+    # The ChId used to send the LSE video image is the same for all the sites.
+    # SPG
+    public proc LseChId {}
+    
+    
+    # Processes SMS messages:
+    private method processLseState {args}
+    private method processLseFactorsState {args}
+    
+    
+    # The SMS state.
+    # These are the values received in a Video_Lse SMS message.
+    # These values must be applied when the SMS message is received, and when an 
+    # AddRemoteSite message is received.
+    # This is an array with these values:
+    #    sms_state(layout)
+    # SPG
+    private variable sms_state 
+    
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::constructor {_vdtObj} {
+    
+    set sms_state(layout) ""
+    
+    set vdtObj $_vdtObj
+    
+    if {[catch {LseDaemonC "#auto" [code $vdtObj]} vdObj]} {
+	ErrorTraceMsg "Video: Lse daemon creation aborted."
+	error "$vdObj"
+    }
+    
+    set vgObj [LseLayoutMgrC "#auto" [code $vdObj]]
+    
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::destructor {} {
+    
+    LseLayoutInfoC::Cleanup
+    
+    if {$vdObj != ""} {	
+	delete object $vdObj 
+	set vdObj "" 
+    }
+    
+    if {$vgObj != ""} {	
+	delete object $vgObj 
+	set vgObj "" 
+    }
+    
+    if {$vcObj != ""} {	
+	delete object $vcObj
+	set vcObj ""
+    }
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::AddMe {} {
+    global env
+    
+    set _lse_i_am_the_client 0
+    if {[info exists env(ISABEL_LSE_SERVER_HOST)]} {
+	if {$env(ISABEL_LSE_SERVER_HOST) != ""} {
+	    set _lse_i_am_the_client 1
+	}
+    }
+
+    set _me [SiteManager::MySiteId]
+    
+    if {$_lse_i_am_the_client} {
+	
+	if {[catch {LseLocalC #auto $_me [code $vdObj]} res]} {
+	    ErrorTraceMsg "Lse: local channel creation aborted."
+	    delete object $vdObj
+	    error "$res"
+	}
+	
+	set vcObj $res
+	
+	$vgObj AddChannel [LseChId] [code $vcObj]
+	
+	# Send local lse
+	WriteTraceMsg "- Binding local lse." Lse
+	$vcObj Bind
+	
+    } else {
+	
+	WriteTraceMsg "- Adding LSE channel for me" Lse
+	
+	# Create the new remote channel
+	if {[catch {LseRemoteC #auto $_me [code $vdObj]} res]} {
+	    ErrorTraceMsg "Lse: remote channel creation produces: $res"
+	    return -1
+	}
+	
+	set vcObj $res
+	
+	WriteTraceMsg "- Create remote channel to receive lse video." Lse
+	
+	$vgObj AddChannel [LseChId] [code $vcObj]
+    }
+
+    # Global SMS messages which I want to receive:
+    sms joinKey Video_Lse         [code $this processLseState]
+    sms joinKey Video_Lse_factors [code $this processLseFactorsState]
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::AddSite {site_id new} {
+    
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::DelSite {site_id} {
+    
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::ApplyLayout {} {
+
+    $vgObj ApplyLayout $sms_state(layout)
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::BWFactor {f} {
+    
+    $vdObj SetBWFactor $f
+    LseConfigC::SetBWFactor $f
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::FramerateFactor {f} {
+    
+    $vdObj SetFramerateFactor $f
+    LseConfigC::SetFramerateFactor $f
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::GrabSizeFactor {f} {
+    
+    $vdObj SetGrabSizeFactor $f
+    LseConfigC::SetGrabSizeFactor $f
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::QltyFactor {f} {
+    
+    $vdObj SetQltyFactor $f
+    LseConfigC::SetQltyFactor $f
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::Info {} {
+    
+    set res "Lse component state:\n"
+    append res [$vdObj Info]
+    append res [$vgObj Info]
+    append res [$vcObj Info]
+    
+    return $res
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::ExecDaemonCmd {cmd {cb ""}} {
+    $vdObj ExecDaemonCmd $cmd $cb
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::GetOptionListValue {list optname {default ""}} {
+    
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::ReapplyState {} {
+    
+    # Reapply state:
+    $vcObj  ReapplyState
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::LseChId {} {
+    
+    return 2
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::processLseState {args} {
+    
+    set sms_state(layout)  [GetOptionListValue $args -layout ""]
+    
+    ApplyLayout
+}
+
+#--------------------------------------------------------------
+
+body VideoLSEComponentC::processLseFactorsState {args} {
+    
+    set _framerate_factor  [GetOptionListValue $args -framerate_factor   1]
+    set _bw_factor         [GetOptionListValue $args -bw_factor          1]
+    set _grabsize_factor   [GetOptionListValue $args -grabsize_factor    1]
+    set _image_qlty_factor [GetOptionListValue $args -image_qlty_factor  1]
+    
+    FramerateFactor $_framerate_factor
+    BWFactor        $_bw_factor
+    GrabSizeFactor  $_grabsize_factor 
+    QltyFactor      $_image_qlty_factor
+}
+
+#--------------------------------------------------------------

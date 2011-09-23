@@ -1,0 +1,255 @@
+__target:$(TARGET:%=$(OBJDIR)/%)
+__subdirs.pre:
+	@SUBDIRS="$(SUBDIRS.PRE)"   ;   \
+	for i in $$SUBDIRS          ;   \
+	do                              \
+	    if [ -d $$i ]           ;   \
+	    then                        \
+	    (                           \
+	        cd $$i              ;   \
+	        $(MAKE) $(MKFLAGS) $(MKCMD) ;   \
+	    )                       ;   \
+	        if [ $$? != 0 ]     ;   \
+	        then                    \
+	            exit 1          ;   \
+	        fi                  ;   \
+	    else                        \
+	        echo skipping $$i   ;   \
+	    fi                      ;   \
+	done
+
+__subdirs.post:
+	@SUBDIRS="$(SUBDIRS.POST)"  ;   \
+	for i in $$SUBDIRS          ;   \
+	do                              \
+	    if [ -d $$i ]           ;   \
+	    then                        \
+	    (                           \
+	        cd $$i              ;   \
+	        $(MAKE) $(MKFLAGS) $(MKCMD) ;   \
+	    )                       ;   \
+	        if [ $$? != 0 ]     ;   \
+	        then                    \
+	            exit 1          ;   \
+	        fi                  ;   \
+	    else                        \
+	        echo skipping $$i   ;   \
+	    fi                      ;   \
+	done
+
+__distrib:
+	$(MAKE) dist
+
+__subdirsDist.pre:
+	@SUBDIRS="$(SUBDIRS.PRE)"   ;   \
+	for i in $$SUBDIRS          ;   \
+	do                              \
+	    if [ -d $$i ]           ;   \
+	    then                        \
+	    (                           \
+	        cd $$i              ;   \
+	        $(MAKE) distrib ;   \
+	    )                       ;   \
+	        if [ $$? != 0 ]     ;   \
+	        then                    \
+	            exit 1          ;   \
+	        fi                  ;   \
+	    else                        \
+	        echo skipping $$i   ;   \
+	    fi                      ;   \
+	done
+
+__subdirsDist.post:
+	@SUBDIRS="$(SUBDIRS.POST)"  ;   \
+	for i in $$SUBDIRS          ;   \
+	do                              \
+	    if [ -d $$i ]           ;   \
+	    then                        \
+	    (                           \
+	        cd $$i              ;   \
+	        $(MAKE) distrib ;   \
+	    )                       ;   \
+	        if [ $$? != 0 ]     ;   \
+	        then                    \
+	            exit 1          ;   \
+	        fi                  ;   \
+	    else                        \
+	        echo skipping $$i   ;   \
+	    fi                      ;   \
+	done
+
+
+__subdirsClean.pre:
+	@SUBDIRS="$(SUBDIRS.PRE)"   ;   \
+	for i in $$SUBDIRS          ;   \
+	do                              \
+	    if [ -d $$i ]           ;   \
+	    then                        \
+	    (                           \
+	        cd $$i              ;   \
+	        $(MAKE) clean ;   \
+	    )                       ;   \
+	        if [ $$? != 0 ]     ;   \
+	        then                    \
+	            exit 1          ;   \
+	        fi                  ;   \
+	    else                        \
+	        echo skipping $$i   ;   \
+	    fi                      ;   \
+	done
+
+__subdirsClean.post:
+	@SUBDIRS="$(SUBDIRS.POST)"  ;   \
+	for i in $$SUBDIRS          ;   \
+	do                              \
+	    if [ -d $$i ]           ;   \
+	    then                        \
+	    (                           \
+	        cd $$i              ;   \
+	        $(MAKE) clean ;   \
+	    )                       ;   \
+	        if [ $$? != 0 ]     ;   \
+	        then                    \
+	            exit 1          ;   \
+	        fi                  ;   \
+	    else                        \
+	        echo skipping $$i   ;   \
+	    fi                      ;   \
+	done
+
+__subdirsCleanAll.pre:
+	@SUBDIRS="$(SUBDIRS.PRE)"   ;   \
+	for i in $$SUBDIRS          ;   \
+	do                              \
+	    if [ -d $$i ]           ;   \
+	    then                        \
+	    (                           \
+	        cd $$i              ;   \
+	        $(MAKE) cleanall ;   \
+	    )                       ;   \
+	        if [ $$? != 0 ]     ;   \
+	        then                    \
+	            exit 1          ;   \
+	        fi                  ;   \
+	    else                        \
+	        echo skipping $$i   ;   \
+	    fi                      ;   \
+	done
+
+__subdirsCleanAll.post:
+	@SUBDIRS="$(SUBDIRS.POST)"  ;   \
+	for i in $$SUBDIRS          ;   \
+	do                              \
+	    if [ -d $$i ]           ;   \
+	    then                        \
+	    (                           \
+	        cd $$i              ;   \
+	        $(MAKE) cleanall ;   \
+	    )                       ;   \
+	        if [ $$? != 0 ]     ;   \
+	        then                    \
+	            exit 1          ;   \
+	        fi                  ;   \
+	    else                        \
+	        echo skipping $$i   ;   \
+	    fi                      ;   \
+	done
+
+
+__subdirsANew.pre:
+	@SUBDIRS="$(SUBDIRS.PRE)"   ;   \
+	for i in $$SUBDIRS          ;   \
+	do                              \
+	    if [ -d $$i ]           ;   \
+	    then                        \
+	    (                           \
+	        cd $$i              ;   \
+	        $(MAKE) cleanall ;   \
+	        $(MAKE)         ;   \
+	    )                       ;   \
+	        if [ $$? != 0 ]     ;   \
+	        then                    \
+	            exit 1          ;   \
+	        fi                  ;   \
+	    else                        \
+	        echo skipping $$i   ;   \
+	    fi                      ;   \
+	done
+
+__subdirsANew.post:
+	@SUBDIRS="$(SUBDIRS.POST)"  ;   \
+	for i in $$SUBDIRS          ;   \
+	do                              \
+	    if [ -d $$i ]           ;   \
+	    then                        \
+	    (                           \
+	        cd $$i              ;   \
+	        $(MAKE) cleanall ;   \
+	        $(MAKE)         ;   \
+	    )                       ;   \
+	        if [ $$? != 0 ]     ;   \
+	        then                    \
+	            exit 1          ;   \
+	        fi                  ;   \
+	    else                        \
+	        echo skipping $$i   ;   \
+	    fi                      ;   \
+	done
+
+
+
+#.PHONY: $(SUBDIRS.PRE) $(SUBDIRS.POST) $(SUBDIRS.PRE:%=%/) $(SUBDIRS.POST:%=%/)
+#$(SUBDIRS.PRE) $(SUBDIRS.POST) $(SUBDIRS.PRE:%=%/) $(SUBDIRS.POST:%=%/):
+#	$(MAKE) -C $@ $(MKFLAGS)
+
+.PHONY: $(SUBDIRS.PRE) $(SUBDIRS.POST) 
+$(SUBDIRS.PRE) $(SUBDIRS.POST):
+	$(MAKE) -C $@ $(MKFLAGS)
+
+
+print::
+	mpage -2 -bA4 -s4 -H -X `find . \( -name "*.c" -o -name "*.h" -o -name "*.cc" -name "*.cpp" -o -name "*.hh" \) -print` >$@.ps
+
+
+
+
+
+#
+# autodep here
+#
+depend:
+	-rm -f $(OBJDIR)/.depend.$(TARGET.OS)
+ifneq ($(SUBDIRS.PRE),)
+	$(MAKE) $(MKFLAGS) MKCMD=depend __subdirs.pre
+endif
+	$(MAKE) $(MKFLAGS)      $(OBJDIR)/.depend.$(TARGET.OS)
+ifneq ($(SUBDIRS.POST),)
+	$(MAKE) $(MKFLAGS) MKCMD=depend __subdirs.post
+endif
+
+
+ifneq ($(OBJDIR),)
+include $(OBJDIR)/.depend.$(TARGET.OS)
+endif
+
+LOCALSRC.c :=$(wildcard *.c)
+LOCALSRC.cc:=$(wildcard *.cc)
+LOCALSRC.cpp:=$(wildcard *.cpp)
+LOCALSRC.h :=$(wildcard *.h)
+LOCALSRC.hh:=$(wildcard *.hh)
+
+ifeq ($(TARGET.OS),BeOS)
+.depend.$(TARGET.OS):
+	touch $@
+else
+$(OBJDIR)/.depend.$(TARGET.OS): \
+        $(PROJECT_ROOT_DIR)/Makefile.user \
+        $(ICF.include.files) $(SDK.include.files) \
+        $(LOCALSRC.c) $(LOCALSRC.cc) $(LOCALSRC.cpp) $(LOCALSRC.h) $(LOCALSRC.hh)
+	@echo "GS mkdir -p $(OBJDIR)"
+	mkdir -p $(OBJDIR)
+	cp -f /dev/null $@
+	makedepend -f $@ -p$(OBJDIR)/ $(MKDEPVERSION) $(MKDEPFLAGS) $(LOCALSRC.c) $(LOCALSRC.cc) $(LOCALSRC.cpp)
+	-rm -f $@.bak
+endif
+

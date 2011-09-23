@@ -1,0 +1,276 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# compManager.itcl
+#
+# Defines (Master site) the ComponentManager class.
+#
+#########################################################################
+
+class ComponentManager {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Start the component $compName for the $iste_id site.
+    public proc StartComponent {site_id compName}
+
+    # Master is informed about a successful component start.
+    public proc StartComponentSuccess {site_id compName}
+
+    # Site exits from the application "compName"
+    public proc KillComponent {site_id compName} 
+
+    # Configure components as specified in the $imname interaction mode.
+    # $site_id_list is a list of site_ids.
+    # $args is a list of option-value pairs (ex: -opt1 v1 -opt v2 ...)
+    public proc InteractionModeRequest {imname site_id_list args} 
+
+    # Sets a callback to be executed when a component is started.
+    # $op must be a CBManagerC method name. 
+    # When the callbacks are executed, $site_id and component name are added as arguments.
+    public proc StartComponentCB {op cb}
+
+    # Sets a callback to be executed when a component start is confirmed.
+    # $op must be a CBManagerC method name. 
+    # When the callbacks are executed, $site_id and component name are added as arguments.
+    public proc StartComponentSuccessCB {op cb}
+
+    # Sets a callback to be executed when a component is killed.
+    # $op must be a CBManagerC method name. 
+    # When the callbacks are executed, $site_id and component name are added as arguments.
+    public proc KillComponentCB {op cb} 
+
+    # Restart the component $compName for the $site_id site.
+    public proc RestartComponent {site_id compName {_delay 1000}}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Objects to manage callbacks.
+    private common startcompCB ""
+    private common startsuccCB ""
+    private common killcompCB  ""
+
+    # Checks that component defined by "siteid" and "compName" has started
+    # successfully.
+    # If not, it is removed.
+    private proc CheckCompCreation {siteid compName} 
+
+    # Counter used to create secuence numbers for the interaction modes.
+    private common im_nsec 0
+
+    # Counter used to create unique component instance numbers.
+    private common instance_cont 0
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::StartComponent {site_id compName} {
+
+    set _chid [SiteManager::GetSiteInfo $site_id chid] 
+
+   # check that site is alive.
+   if {![SiteManager::SiteConnected $site_id]} {
+      return -1
+   }
+
+   # Check that compName is a valid component
+   if {[lsearch -exact [session Activity GetComponents] $compName] == -1} {
+       network SiteRequest $site_id \
+	       UI ErrorMsg "- Unknown component name: $compName."
+       return -1
+   }
+
+   # If the site is not allowed to start the component
+   if {[GlobalState::GetState $site_id $compName]=="Disabled"} {
+       return -1
+   }
+
+   # Check if the component has already been invoked.
+   if {[lsearch -exact [GlobalState::GetComponentsByState $site_id "Waiting Running"] $compName] != -1} {
+	   network SiteRequest $site_id UI DebugMsg \
+		   "- You are already connected to component $compName" 1
+	   return
+   }       
+
+   set first 1
+   if {[GlobalState::ComponentExists $compName]} {
+       set first 0
+   }
+
+   incr instance_cont
+
+   GlobalState::SetState $site_id $compName Waiting $first $instance_cont
+   GlobalState::RefreshSiteConnections
+
+   # Evaluates callback
+   if {$startcompCB != ""} {
+       $startcompCB Exec $site_id $compName
+   }
+
+   # if component does no connect after 1.5 minutes, it is removed.
+   after 90000 [code CheckCompCreation $site_id $compName]
+
+   return ""
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::CheckCompCreation {site_id compName} {
+
+    if {[GlobalState::GetState $site_id $compName] != "Running"} {
+	network SiteRequest $site_id UI ErrorMsg "- I can't create $compName"
+
+	KillComponent $site_id $compName
+    }
+} 
+
+
+#---------------------------------------------------------------
+
+body ComponentManager::StartComponentSuccess {site_id compName} {
+
+    set _chid [SiteManager::GetSiteInfo $site_id chid] 
+
+    # If either the component or the site does not exist, then return
+    if {![GlobalState::ComponentExists $compName] || ![SiteManager::SiteConnected $site_id] } {
+	return
+    }
+
+    # Component $compName of site $site_id has been killed previously.
+    if {[lsearch -exact [GlobalState::GetComponentsByState $site_id "Waiting"] $compName] == -1} {
+	return 
+    }
+
+    DebugTraceMsg "- Component $compName of site $site_id created successfully." 1
+    GlobalState::SetState $site_id $compName Running
+    GlobalState::RefreshSiteConnections
+
+    # Evaluates callback
+    if {$startsuccCB != ""} {
+	$startsuccCB Exec $site_id $compName
+    }
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::KillComponent {site_id compName} {
+
+    set userid [SiteManager::GetSiteInfo $site_id chid] 
+
+    # If either the component or the site does not exist, then return
+    if {![GlobalState::ComponentExists $compName] || ![SiteManager::SiteConnected $site_id] } {
+	return
+    }
+
+    # Checks that it is running or waiting, else returns.
+    set state [GlobalState::GetState $site_id $compName]
+    if {[lsearch -exact "Running Waiting" $state] == -1} {
+	return 
+    }
+
+    after cancel [code CheckCompCreation $site_id $compName]
+    
+    GlobalState::SetState $site_id $compName Stopped 0 0
+    GlobalState::RefreshSiteConnections
+
+   # Evaluates callback
+    if {$killcompCB != ""} {
+	$killcompCB Exec $site_id $compName
+    }
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::InteractionModeRequest {imname site_id_list args} {
+    
+    if 0 {
+	echo =======================
+	echo IM >> imname=$imname
+	echo       sites=$site_id_list
+	echo       args=$args
+	echo =======================
+    }
+
+    incr im_nsec
+
+    foreach _c [session Activity GetComponents] {
+	if {[itcl::is class ${_c}_IMM_Class]} {
+	    if {[catch {${_c}_IMM_Class::SetInteractionMode $imname $im_nsec $site_id_list $args} _err]} {
+		ErrorTraceMsg "Master - Applying \"$imname\" interaction mode for \"$_c\" component produces: $_err"
+	    }
+	}
+    }
+
+    network RDOSync components 1 "CM InteractionModeNotify [list $imname] $im_nsec [list $site_id_list] $args"
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::StartComponentCB {op cb} {
+
+    if {$startcompCB == ""} {
+	set startcompCB [CBManagerC #auto]
+    }
+    $startcompCB $op $cb
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::StartComponentSuccessCB {op cb} {
+
+    if {$startsuccCB == ""} {
+	set startsuccCB [CBManagerC #auto]
+    }
+    $startsuccCB $op $cb
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::KillComponentCB {op cb} {
+    
+    if {$killcompCB == ""} {
+	set killcompCB [CBManagerC #auto]
+    }
+    $killcompCB $op $cb
+}
+
+#------------------------------------------------------------------
+
+body ComponentManager::RestartComponent {site_id compName {_delay 1000}} {
+
+    after idle ComponentManager::KillComponent $site_id $compName
+    after idle after $_delay ComponentManager::StartComponent $site_id $compName
+
+}
+
+#---------------------------------------------------------------
+
+
+

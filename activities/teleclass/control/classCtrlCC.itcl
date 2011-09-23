@@ -1,0 +1,131 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# classCtrlCC.itcl
+#
+# Tele-Class controller component.
+#
+#########################################################################
+
+
+class ClassCtrlComponentClass {
+    inherit Component
+    
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec useridlist args}
+    public method ShowHideApplToplevel {{hmode withdraw}}
+    public method Cmd {args}
+
+    constructor {} {   
+	Component::constructor ClassCtrl
+    } {
+    }
+
+    destructor {}
+
+}
+
+#---------------------------------------------------------------
+
+body ClassCtrlComponentClass::constructor {} {
+
+}
+
+#---------------------------------------------------------------
+
+body ClassCtrlComponentClass::destructor {} {
+
+    catch {delete object cwobj}
+}
+
+#---------------------------------------------------------------
+
+body ClassCtrlComponentClass::Create {first} {
+    global env
+
+    WriteTraceMsg "- ClassCtrl: Creating new ClassCtrl component" $name
+
+    if {[catch {TeleClassControllerPannelC ::cwobj} errmsg]} {
+	ErrorTraceMsg "- ERROR: $name component can not be created.\n$errmsg"
+	return -1
+    }
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body ClassCtrlComponentClass::AddMySite {} {
+
+    cwobj AddMe 
+}
+
+#---------------------------------------------------------------
+
+body ClassCtrlComponentClass::AddRemoteSite {site_id new} {
+
+    cwobj AddRemoteSite $site_id $new
+}
+
+#---------------------------------------------------------------
+
+body ClassCtrlComponentClass::DelMySite {} {
+
+    cwobj DelMe
+}
+
+#---------------------------------------------------------------
+
+body ClassCtrlComponentClass::DelRemoteSite {site_id} {
+
+    cwobj DelRemoteSite $site_id
+}
+
+#---------------------------------------------------------------
+
+body ClassCtrlComponentClass::SetInteractionMode {imname nsec useridlist args} {
+
+}
+
+#---------------------------------------------------------------
+
+body ClassCtrlComponentClass::ShowHideApplToplevel {{hmode withdraw}} {
+
+    cwobj ShowHideGUI
+}
+
+#---------------------------------------------------------------
+
+body ClassCtrlComponentClass::Cmd {args} {
+
+    eval cwobj $args
+}
+
+#---------------------------------------------------------------
+

@@ -1,0 +1,33 @@
+-----------------------------
+
+- Servicio: XlimServicePanel
+
+- Descripción: clase utilizada para generar los paneles graficos de los servicios connect to, iris, startsessionserver, C2c, load xedl, edit session... Esta clase genera paneles divididos en cuatro zonas:
+
+	* superior-izquierda: zona del logo, utilizada para incluir alguna imagen que identifique el servicio, o algun logo.
+	* inferior-izquierda: zona de instrucciones, utilizada para presentar las isntrucciones para el servicio.
+	* superior-derecha: panel superior del servicio
+	* inferior-derecha: panel inferior del servicio (si es necesario).
+
+ver ppt sobre interfaces graficas de servicios xlim. ver javadoc.
+
+- Paquete: isabel.xlim.services.guis
+
+- Clases:  
+	* XlimServicePanel: clase principal que se encarga de generar el panel.
+	* ServiceDefinitions: interfaz donde se definen los servicios que utilizan el XlimServicePanel, asi como las cuatro zonas del interfaz.
+	* SiteDataPanel: panel inferior para los servicios connnect_to, startsessionserver, loadxedl, iris, C2c.
+	* IrisSessionDataPanel: panel superior para el srvicio IRIS.
+	* SessionDataPanel: panel superior para los servicios connect_to, startsessionserver, loadxedl.
+	* ContactDataPanel: panel superior para el servicio C2C
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimservices
+	* Ficheros: 
+		· xlimservices/isabel/xlim/services/guis/
+
+- Temas Pendientes:
+
+	* Se podria poner la zona de instrucciones utilizando otra clase de java (creo que era JEditorPanel) que permite incluir documentos html.
+
+-----------------------------

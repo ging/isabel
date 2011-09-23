@@ -1,0 +1,30 @@
+\renewcommand{\encodingdefault}{T1}
+
+\documentstyle[spanish]{article}
+\title{piggyBox}
+\author{mpetit \and echeva}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+
+
+\input abstract.itex
+\input dlm.itex
+
+\input format.itex
+
+\input image.itex
+
+\input factory.itex
+
+\input codec.itex
+\input grabber.itex
+\input player.itex
+
+\newpage
+\tableofcontents
+
+\end{document}

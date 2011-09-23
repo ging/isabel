@@ -1,0 +1,606 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+class AudioMixerC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # $_audobj - The audio component object
+    # $_acdobj - The C++ audio daemon.
+    # $_vcdobj - The C++ vumeter daemon.
+    # $_agui   - The audio GUI object.
+    constructor {_audobj _acdobj _vcdobj _agui} {}
+    destructor  {} 
+
+    # Adds or removes remmote sites. 
+    public method AddChannel {site_id}
+    public method DelChannel {site_id}
+
+    # Methods to manage mute, gain and tone switches.
+    # site_id_list is a list of site site_id (* means all).
+    # site_id is a site iste_id.
+    public method SetMute {site_id_list on}
+    public method GetMute {site_id}
+    public method SetGain {site_id n}
+    public method GetGain {site_id}
+    public method SetInputTone {site_id on}
+    public method GetInputTone {site_id}
+    public method SetOutputTone {site_id on}
+    public method GetOutputTone {site_id}
+    public method ShowToneButtons {b}
+
+    # Apply my gain:
+    # Invoke the neccessary commands to apply my gain value.
+    # This method is used by SetGain to avoid executing a lot of commands 
+    # when the gain slider is moved quickly. 
+    private method ApplyMyGain {}
+
+    # Resolve the function y=f(x), where f is a rect passing by the
+    # (x0,y0) and (x1,y1) points.
+    # Returns y.
+    private method Rect {x x0 y0 x1 y1}
+
+    # Dumps state.
+    public method Dump {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Audio Component object
+    private variable audobj
+
+    # Audio C daemon object
+    private variable acdobj
+
+    # Vumeter C daemon object
+    private variable vcdobj
+
+    # Audio SWC gui object
+    private variable agui
+
+    # Values asociated to each mixer site.
+    #   - gain($site_id)       Gain for site $site_id.
+    #   - mute($site_id)       Mute state for site $site_id.
+    #   - vuId($site_id)       Vumeter identifier of site $site_id.
+    #   - afterVu($site_id)    After descriptor used to create the $site_id site vumeter.
+    #   - inputtone($site_id)  1 if the input tone is on, else 0.
+    #   - outputtone($site_id) 1 if the output tone is on, else 0.
+    private variable gain
+    private variable mute
+    private variable vuId
+    private variable afterVu
+    private variable inputtone
+    private variable outputtone
+
+    #------------------------
+
+    # After descriptor used to create the mixer output volume vumeter.
+    private variable afterVolumeVumeter 
+
+    #------------------------
+
+    # If I am a control site, all mixer gui elements must be enabled.
+    # $ctrlsite - 1 if I am a control site, otherwise 0.
+    private variable ctrlsite
+
+    #------------------------
+
+    # Update the GUI with the input ports.
+    private method UpdateGUI {}
+
+    # Create a new channel in the mixer gui.
+    private method CreateGUIChannel {site_id}
+
+
+    # Create a vumeter for the channel $site_id.
+    # $window is the frame where the vumeter will be inserted.
+    public method CreateChannelVumeter {window site_id} 
+
+    # Create a vumeter for the global volume (output).
+    # $window is the frame where the vumeter will be inserted.
+    public method CreateOutputVumeter {window} 
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::constructor {_audobj _acdobj _vcdobj _agui} {
+
+    set audobj $_audobj
+    set acdobj $_acdobj
+    set vcdobj $_vcdobj
+    set agui   $_agui
+
+    # Am I a control site?
+    set ctrlsiteroles [session Activity GetResource Audio ctrlsites ""]
+    if {$ctrlsiteroles == ""} {
+	set ctrlsite 1
+    } else {
+	set ctrlsite 0
+	set myroles [SiteManager::GetMyRoles]
+	foreach r $ctrlsiteroles {
+	    if {[lsearch -exact $myroles $r] != -1} {
+		set ctrlsite 1
+		break
+	    }
+	}
+    }
+
+    UpdateGUI
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::destructor {} {
+
+    foreach i [array names afterVu] {
+	after cancel $afterVu($i)
+    }
+    
+    catch {after cancel $afterVolumeVumeter}
+    
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::CreateGUIChannel {site_id} {
+
+    set _mysite_id [SiteManager::MySiteId]
+
+    if {$_mysite_id == $site_id} {
+	set label local
+    } else {
+	set label [string range $site_id 0 4]
+    }
+
+    $agui Mixer Add $site_id $label
+    
+    #-----------------------------------------------------------
+    
+    if {$ctrlsite} {
+        $agui Mixer Channel $site_id GainActive
+    } else {
+        $agui Mixer Channel $site_id GainDeactive
+    }
+    
+    # This variable exists if I am the $site_id site, or if I have received a
+    # SetInitialState message from $site_id site.
+    if {![info exists gain($site_id)]} {
+	set gain($site_id) 60    
+    }
+    $agui Mixer Channel $site_id GainCmd "sms setState Audio_site_$site_id add -site_id $site_id -gain"
+    SetGain $site_id $gain($site_id)
+    
+    #-----------------------------------------------------------
+
+    # Create the vumeter
+    CreateChannelVumeter [$agui Mixer getChildsite $site_id] $site_id
+
+    #-----------------------------------------------------------
+
+    if {$ctrlsite} {
+	$agui Mixer Channel $site_id MuteActive
+    } else {
+	$agui Mixer Channel $site_id MuteDeactive
+    }
+    
+    $agui Mixer Channel $site_id MuteSetOnToOffCmd "sms setState Audio_site_$site_id add -site_id $site_id -capture 0"
+
+    $agui Mixer Channel $site_id MuteSetOffToOnCmd "sms setState Audio_site_$site_id add -site_id $site_id -capture 1"
+
+    # This variable exists if I am the $site_id site, or if I have received a
+    # SetInitialState message from $site_id site.
+    if {![info exists mute($site_id)]} {
+	set mute($site_id) 0
+    }
+    SetMute $site_id $mute($site_id)
+    
+    #---- Site Config window ------------------------------------------------
+    
+    $agui Mixer Channel $site_id ConfigCmd "AudioConfigC::SiteConfigCmd $site_id GUI ToggleShowHide"
+
+    #---- Tones ------------------------------------------------
+
+    $agui Mixer Channel $site_id LocalToneSetOnToOffCmd "sms setState Audio_site_$site_id add -site_id $site_id -output_tone 0"
+
+    $agui Mixer Channel $site_id LocalToneSetOffToOnCmd "sms setState Audio_site_$site_id add -site_id $site_id -output_tone 1"
+
+    $agui Mixer Channel $site_id SendToneSetOnToOffCmd  "sms setState Audio_site_$site_id add -site_id $site_id -input_tone 0"
+
+    $agui Mixer Channel $site_id SendToneSetOffToOnCmd  "sms setState Audio_site_$site_id add -site_id $site_id -input_tone 1"
+
+    # These variables exist if I am the $site_id site, or if I have received a
+    # SetInitialState message from $site_id site.
+    if {![info exists outputtone($site_id)]} {
+	set outputtone($site_id) 0
+    }
+    if {![info exists inputtone($site_id)]} {
+	set inputtone($site_id) 0
+    }
+    SetOutputTone $site_id $outputtone($site_id) 
+    SetInputTone  $site_id $inputtone($site_id) 
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::AddChannel {site_id} {
+   global ISABEL_DIR
+
+    set _chid [SiteManager::GetSiteInfo $site_id chid]
+
+    set _mysite_id [SiteManager::MySiteId]
+
+    if {$_mysite_id == $site_id} {
+	
+	# Create local channel.
+	set r [$acdobj RPC audio_assign_channel($_chid)]
+	if {[string range $r 0 1] != "OK"} {
+	    set res "- I can't create local audio channel."
+	    ErrorTraceMsg "$res $r"
+	    error "$res $r"
+	}
+	$acdobj RDO audio_stop_sending()
+	
+	# Set mixer local values.
+	if {[catch "exec $ISABEL_DIR/bin/pulse_isabel_audio.sh" _gain]} {
+	    set _gain 60
+	}
+	set gain($site_id) $_gain
+	if {[session Activity GetResource Audio myinitmute 1] == 0} {
+	    set mute($site_id) 1
+	} else {
+	    set mute($site_id) 0
+	}
+
+	# Bind
+	$acdobj Bind
+	
+    } else {
+	
+	# Create remote channel.
+	$acdobj RDO audio_new_channel($_chid)
+	
+    }
+    
+    AudioConfigC::CreateSiteConfiguration $site_id
+
+    CreateGUIChannel $site_id
+    
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::DelChannel {site_id} {
+
+    if {[info exists vuId($site_id)]} {
+	catch {$vcdobj RDO vumeter_del($vuId($site_id))}
+    }
+    
+    catch {$agui Mixer Del $site_id}
+    
+    if {[info exist afterVu($site_id)]} {
+	after cancel $afterVu($site_id)
+	unset afterVu($site_id)
+    }
+    
+    set _chid [SiteManager::GetSiteInfo $site_id chid]
+    $acdobj RDO audio_delete_channel($_chid)
+    
+    if {[info exists mute($site_id)]} {
+	unset mute($site_id)
+    }
+    if {[info exists gain($site_id)]} {
+	unset gain($site_id)
+    }
+    if {[info exists inputtone($site_id)]} {
+	unset inputtone($site_id)
+    }
+    if {[info exists outputtone($site_id)]} {
+	unset outputtone($site_id)
+    }
+
+    #--
+
+    AudioConfigC::DestroySiteConfiguration $site_id
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::CreateChannelVumeter {window site_id} {
+
+    # NOTE:
+    # $vuWinId is the window identifier where the vumeter will be packed. 
+    #
+    if {![winfo exists $window]} {
+	catch {unset afterVu($site_id)}
+	return
+    }
+    
+    set mapped  [winfo ismapped $window]
+    if {$mapped} {
+	set vuWinId [winfo id $window]
+
+	set _chid [SiteManager::GetSiteInfo $site_id chid]
+
+	$vcdobj RDO vumeter_new($vuWinId,$_chid)
+    } else {
+	set afterVu($site_id) [after 5000 [code $this CreateChannelVumeter $window $site_id]]
+    }
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::CreateOutputVumeter {window} {
+
+    # NOTE:
+    # $vuWinId is the window identifier where the vumeter will be packed. 
+    #
+    
+    set mapped  [winfo ismapped $window]
+    if {$mapped} {
+	set vuWinId [winfo id $window]
+	$vcdobj RDO vumeter_new($vuWinId,0)
+    } else {
+	set afterVolumeVumeter [after 5000 [code $this CreateOutputVumeter $window]]
+    }
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::GetMute {site_id} {
+    return $mute($site_id)
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::GetGain {site_id} {
+    return $gain($site_id)
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::GetInputTone {site_id} {
+    return $inputtone($site_id)
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::GetOutputTone {site_id} {
+    return $outputtone($site_id)
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::SetMute {site_id_list on} {
+
+    if {[lsearch -exact "0 1" $on] == -1} {
+	set msg "$on invalid boolean value. Use 0 or 1."
+	ErrorTraceMsg "Audio SetMute: $msg."
+	return
+    }
+
+    if {$site_id_list == "*"} {
+	set site_id_list [SiteManager::GetSites]
+    }
+
+    foreach _sid $site_id_list {
+
+	set mute($_sid) $on
+	
+	if {[lsearch -exact [SiteManager::GetSites] $_sid] == -1} continue
+	
+	if {$on} {	 
+	    if {$_sid == [SiteManager::MySiteId]} {
+		$acdobj RDO audio_start_sending()
+	    }
+	    $agui Mixer Channel $_sid MuteOn
+	} else {
+	    if {$_sid == [SiteManager::MySiteId]} {
+		$acdobj RDO audio_stop_sending() 
+	    }
+	    $agui Mixer Channel $_sid MuteOff
+	}
+    }
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::SetGain {site_id n} {
+
+    if {[regexp {^[0-9]*$} $n] != 1} {
+	set msg "  Input gain must be an integer value."
+	ErrorTraceMsg "Audio: \"$n\" invalid input gain.\n$msg"
+	return
+    }
+
+    if {[expr $n < 0] || [expr $n > 100]} {
+	set msg "  Input gain must be an value between 0 and 99."
+	ErrorTraceMsg "Audio: \"$n\" invalid input gain.\n$msg"
+	return
+    }
+	    
+    set gain($site_id) $n
+    
+    if {[lsearch -exact [SiteManager::GetSites] $site_id] == -1} continue
+
+    $agui Mixer Channel $site_id SetGain $n
+    
+    if {$site_id == [SiteManager::MySiteId]} {
+
+	after cancel [code $this ApplyMyGain]
+
+	after idle [code $this ApplyMyGain]
+    }	
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::ApplyMyGain {} {
+   global ISABEL_DIR
+
+    set _mySiteId [SiteManager::MySiteId]
+
+    set n $gain($_mySiteId)
+    
+    set _GAIN_SLIDER_MIN        0 
+    set _GAIN_SLIDER_MIDDLE_1   2
+    set _GAIN_SLIDER_MIDDLE_2  90
+    set _GAIN_SLIDER_MAX      100
+    
+    set _PULSE_CAPTURE_MIN        0
+    set _PULSE_CAPTURE_MIDDLE_1   0
+    set _PULSE_CAPTURE_MIDDLE_2 100
+    set _PULSE_CAPTURE_MAX      100
+    
+    set _DIGITAL_GAIN_MIN       -50
+    set _DIGITAL_GAIN_MIDDLE_1    0
+    set _DIGITAL_GAIN_MIDDLE_2    0
+    set _DIGITAL_GAIN_MAX        15
+    
+    if {$n > $_GAIN_SLIDER_MIDDLE_2} {
+	
+	# Set analogic capture to 100%
+	set _ac [Rect $n $_GAIN_SLIDER_MIDDLE_2 $_PULSE_CAPTURE_MIDDLE_2 $_GAIN_SLIDER_MAX $_PULSE_CAPTURE_MAX]
+	
+	# set digital amplification between 0 and 40 dB
+	set _da [Rect $n $_GAIN_SLIDER_MIDDLE_2 $_DIGITAL_GAIN_MIDDLE_2 $_GAIN_SLIDER_MAX $_DIGITAL_GAIN_MAX]
+	
+    } elseif {$n < $_GAIN_SLIDER_MIDDLE_1} {
+	
+	# Set analogic capture to 0%
+	set _ac [Rect $n $_GAIN_SLIDER_MIN $_PULSE_CAPTURE_MIN $_GAIN_SLIDER_MIDDLE_1 $_PULSE_CAPTURE_MIDDLE_1]
+	
+	# set digital amplification between 20 and 40 dB
+	set _da [Rect $n $_GAIN_SLIDER_MIN $_DIGITAL_GAIN_MIN $_GAIN_SLIDER_MIDDLE_1 $_DIGITAL_GAIN_MIDDLE_1]
+	
+    } else {
+	
+	# Set analogic capture between 0% and 100%.
+	set _ac [Rect $n $_GAIN_SLIDER_MIDDLE_1 $_PULSE_CAPTURE_MIDDLE_1 $_GAIN_SLIDER_MIDDLE_2 $_PULSE_CAPTURE_MIDDLE_2]
+	
+	# set digital amplification to 0 dB
+	set _da [Rect $n $_GAIN_SLIDER_MIDDLE_1 $_DIGITAL_GAIN_MIDDLE_1 $_GAIN_SLIDER_MIDDLE_2 $_DIGITAL_GAIN_MIDDLE_2]
+    }
+    
+    catch "exec $ISABEL_DIR/bin/pulse_isabel_audio.sh $_ac"
+    
+    $acdobj RDO audio_set_input_gain($_da)
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::Rect {x x0 y0 x1 y1} {
+
+    # y = a*x + b
+
+    set _a [expr 1.0*($y1-$y0)/($x1-$x0)]
+    set _b [expr $y0 - $_a*$x0]
+
+    expr round($_a * $x + $_b)
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::SetInputTone {site_id on} {
+
+    if {[lsearch -exact "0 1" $on] == -1} {
+	set msg "$on invalid boolean value. Use 0 or 1."
+	ErrorTraceMsg "Audio SetInputTone: $msg."
+	return
+    }
+
+    set inputtone($site_id) $on
+    
+    if {[lsearch -exact [SiteManager::GetSites] $site_id] == -1} continue
+    
+    if {$on} {	 
+	if {$site_id == [SiteManager::MySiteId]} {
+	    $acdobj RDO audio_tone_generator($on)
+	}
+	$agui Mixer Channel $site_id SendToneOn
+    } else { 
+	if {$site_id == [SiteManager::MySiteId]} {
+	    $acdobj RDO audio_tone_generator($on)
+	}
+	$agui Mixer Channel $site_id SendToneOff
+    }
+}        
+
+#---------------------------------------------------------
+
+body AudioMixerC::SetOutputTone {site_id on} {
+
+    if {[lsearch -exact "0 1" $on] == -1} {
+	set msg "$on invalid boolean value. Use 0 or 1."
+	ErrorTraceMsg "Audio SetOutputTone: $msg"
+	return
+    }
+    
+    set outputtone($site_id) $on
+
+    if {[lsearch -exact [SiteManager::GetSites] $site_id] == -1} continue
+
+    if {$on} {
+	if {$site_id == [SiteManager::MySiteId]} {
+	    $acdobj RDO audio_local_tone_generator($on)
+	}
+	$agui Mixer Channel $site_id LocalToneOn
+    } else {
+	if {$site_id == [SiteManager::MySiteId]} {
+	    $acdobj RDO audio_local_tone_generator($on)
+	}
+	$agui Mixer Channel $site_id LocalToneOff
+    }
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::ShowToneButtons {b} {
+
+    $agui Mixer SetEnableTones $b
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::UpdateGUI {} {
+
+    $agui Mixer SetEnableTones 0
+
+    set initchannels [session Activity GetResource Audio initchannels 10]
+    $agui Mixer CreateEmptyChannels $initchannels
+
+    # volume control
+    CreateOutputVumeter [$agui Mixer GetMixerVumeterSite]
+}
+
+#---------------------------------------------------------
+
+body AudioMixerC::Dump {} {
+
+
+}
+
+#---------------------------------------------------------
+
+

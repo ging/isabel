@@ -1,0 +1,134 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#--------------------------------------------
+# Service
+#--------------------------------------------
+
+# Maximun number of sites:
+#                                                   10M,  2M   1M 512K 384K 256K 128K 300K/1M 128/256K
+defParZ(`ISABEL_QUALITY',_ISERV_MAX_SITES,          100, 100, 100, 100, 100, 100, 100,    100,     100)
+
+#--------------------------------------------
+# Audio
+#--------------------------------------------
+
+#
+# Codecs
+#                                                      10M          2M          1M       512K       384K      256K      128K   300K/1M  128/256K
+defParZ(`ISABEL_QUALITY',_ISERV_AUDIO_CODEC,     none-48KHz,  mp3-48KHz,  gsm-32KHz, gsm-16KHz, gsm-8KHz, gsm-8KHz, gsm-8KHz, gsm-8KHz, gsm-8KHz)
+1
+#
+# Activate audio mixer in the irouter daemons (1) or not (0).
+#                                                       10M  2M 1M 512K 384K 256K 128K 300K/1M  128/256K
+defParZ(`ISABEL_QUALITY',_ISERV_AUDIO_MIXER,              0,  0, 0,   0,   0,   0,   0,      0,        0)
+
+#
+# Maximum audio BW
+#                                                10M   2M    1M  512K  384K  256K 128K  300K/1M 128/256K
+defParZ(`ISABEL_QUALITY',_ISERV_AUDIO_MAXBW,    1000, 300,   100,   50,   50,   20,  20,    20,       20)
+
+
+#--------------------------------------------
+# Video: Vga
+#--------------------------------------------
+
+#
+# Vga Bandwidth usage:
+#
+#                                                      10M   2M   1M 512K 384K 256K 128K 300K/1M 128/256K
+defParZ(`ISABEL_QUALITY',_ISERV_VGA_BW,               5000, 950, 450, 250, 165, 100,  45,   140,      60)
+
+#--------------------------------------------
+# Video: Cameras
+#--------------------------------------------
+
+#
+# Video Bandwith usage:
+#
+#                                                  10M    2M     1M   512K   384K   256K   128K  300K/1M 128/256K
+
+defParZ(`ISABEL_QUALITY',_ISERV_VID_CHAT2_BW,     4000,  700,   400,   200,   150,   100,    50,   240,       85)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_CHAT3_BW,     2700,  500,   270,   134,   100,    67,    34,   240,       70)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_CHAT4_BW,     2000,  375,   200,   100,    75,    50,    25,   220,       50)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_CHAT5_BW,     1600,  300,   160,   080,    60,    40,    20,   180,       40)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_CHAT9_BW,      900,  167,    90,    44,    34,    22,    11,   100,       23)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_CHAT25_BW,     320,   60,    33,    17,    12,     7,     3,    37,        7)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_CHAT36_BW,     223,   42,    23,    11,     9,     5,     2,    25,        5)
+
+defParZ(`ISABEL_QUALITY',_ISERV_VID_ONE_BW,       6500, 1200,   512,   350,   250,   150,    55,   180,       80)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_QUESTIONS_BW, 4000,  750,   300,   200,   140,   100,    40,   180,       85)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_VGA_BW,       1500,  250,   150,   120,    90,    60,    20,   100,       20)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_APPSHARING_BW,1500,  400,   250,   150,    90,    60,    20,   100,       20)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_NPAD_BW,      6500, 1000,   500,   290,   220,   130,    55,   180,       80)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_WB_BW,        6500, 1000,   500,   290,   220,   130,    55,   180,       80)
+
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER2LQ_BW,  750,  150,    50,    20,    17,    15,    11,    200,       40)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER3LQ_BW,  500,  100,    33,    13,    12,    10,     7,    167,       27)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER4LQ_BW,  375,   75,    25,    10,     9,     8,     6,    125,       20)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER5LQ_BW,  300,   60,    20,     8,     7,     6,     5,    100,       16)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER10LQ_BW, 150,   30,    10,     4,     4,     3,     2,     50,        8) 
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER25LQ_BW,  60,   12,     4,     2,     2,     1,     1,     20,        3)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER36LQ_BW,  42,    8,     3,     1,     1,     1,     1,     14,        2)
+
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER2HQ_BW,  750,  250,   100,    50,    35,    28,    13,    200,       50)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER3HQ_BW,  500,  167,    67,    33,    23,    18,     9,    200,       33)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER4HQ_BW,  375,  125,    50,    25,    18,    14,     7,    150,       25)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER5HQ_BW,  300,  100,    40,    20,    14,    11,     5,    120,       20)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER10HQ_BW, 150,   50,    20,    10,     7,     6,     3,     60,       10)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER25HQ_BW,  60,   20,     8,     4,     3,     2,     1,     24,        4)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_OTHER36HQ_BW,  42,   14,     6,     3,     2,     2,     1,     17,        3)
+
+#
+# Video Display Sizes:
+#
+#                                               10M   2M   1M 512K 384K 256K 128K 300K/1M 128/256K
+defParZ(`ISABEL_QUALITY',_ISERV_VID_ONE_SIZE,   640, 640, 640, 640, 640, 640, 640,   640,     640)
+defParZ(`ISABEL_QUALITY',_ISERV_VID_DOC_SIZE,   768, 768, 768, 768, 768, 768, 768,   768,     768)
+
+
+#--------------------------------------------
+# Shared Display:
+#--------------------------------------------
+
+#                                                     10M      2M      1M    512K    384K    256K    128K  300K/1M 128/256K
+# Shdisplay PDU size.
+defParZ(`ISABEL_QUALITY',_ISERV_SHDIS_PDU_SIZE,       900,    900,    900,    900,    900,    900,    900,    900,     900)
+
+# ShDisplay Bandwidth usage.
+defParZ(`ISABEL_QUALITY',_ISERV_SHDIS_BW,             1000,   600,    400,    300,    200,    100,     45,     80,      60)
+
+# ShDisplay codec.
+defParZ(`ISABEL_QUALITY',_ISERV_SHDIS_CODEC,         MPEG-4, MPEG-4, MPEG-4, MPEG-4, MPEG-4, MPEG-4, MPEG-4, MPEG-4 MPEG-4)
+
+# ShDisplay quality.
+defParZ(`ISABEL_QUALITY',_ISERV_SHDIS_QLTY,            50,     50,     50,     50,     50,     50,     50,     50,      50)
+
+#--------------------------------------------
+# FTP:
+#--------------------------------------------
+
+defParZ(`ISABEL_QUALITY',_ISERV_WB_FTP_BW,            4500,   1500,   700,   356,   292,   128,   64,   100,    64)
+defParZ(`ISABEL_QUALITY',_ISERV_ITL_FTP_BW,           4500,   1500,   700,   356,   292,   128,   64,   100,    64)
+
+#--------------------------------------------

@@ -1,0 +1,138 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# snmpagentCC.itcl
+#
+# Description
+#
+#  Monitor component.
+#
+#########################################################################
+
+
+class MonitorComponentClass {
+    inherit Component
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args} {}
+    public method Cmd {args}
+
+    constructor {} {   
+	Component::constructor Monitor
+    } {
+    }
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Object that implements the component behaviour
+    private variable mobj ""
+}
+
+#---------------------------------------------------------------
+
+body MonitorComponentClass::destructor {} {
+
+    if {$mobj != ""} {
+	delete object $mobj
+	set mobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body MonitorComponentClass::Create {first} {
+
+    WriteTraceMsg "- Monitor: Creating new Monitor component" Monitor
+
+    if {[catch {MonitorC "#auto"} res]} {
+	ErrorTraceMsg "Monitor: component can not be created.\n$res"
+	return -1
+    }
+    set mobj $res
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body MonitorComponentClass::AddMySite {} {
+
+}
+
+#---------------------------------------------------------------
+
+body MonitorComponentClass::AddRemoteSite {site_id new} {
+
+}
+
+#---------------------------------------------------------------
+
+body MonitorComponentClass::DelMySite {} {
+
+}
+
+#---------------------------------------------------------------
+
+body MonitorComponentClass::DelRemoteSite {site_id} {
+
+}
+
+#---------------------------------------------------------------
+
+body MonitorComponentClass::Cmd {args} {
+
+    if {$mobj == ""} return
+    
+    eval $mobj $args
+}
+
+#---------------------------------------------------------------
+
+
+######################################################################
+#
+#  Send a command to the object that implements the behaviour of 
+#  the Monitor component.
+#
+######################################################################
+
+process MonitorCmd {args} {
+
+    eval component Cmd $args
+}
+
+#---------------------------------------------------------------

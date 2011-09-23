@@ -1,0 +1,439 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: ACODECS - Win32 Uni Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP334.tmp" with contents
+[
+/nologo /Zp4 /MDd /W4 /Zi /Od /X /I "\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\INC" /I "\Symbian\8.0a\S60_2nd_FP2\EPOC32\INCLUDE" /I "\Symbian\8.0a\S60_2nd_FP2\EPOC32\INCLUDE\LIBC" /D "__SYMBIAN32__" /D "__VC32__" /D "__WINS__" /D "__DLL__" /D "_DEBUG" /D "_UNICODE" /FR"\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB/" /Fo"\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB/" /Fd"\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\ACODECS.PDB" /GF /c 
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\code.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\decode.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_destroy.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_option.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\preprocess.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\table.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codec.cxx"
+"C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx"
+]
+Creating command line "cl.exe @C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP334.tmp" 
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP335.bat" with contents
+[
+@echo off
+echo Doing first-stage link by name
+nmake -nologo -f "\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS.SUP.MAKE" PRELINKUDEB
+if errorlevel 1 nmake -nologo -f "\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS.SUP.MAKE" STOPLINKUDEB
+]
+Creating command line "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP335.bat"
+Compiling...
+add.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(25) : warning C4244: 'return' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(31) : warning C4244: 'return' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(37) : warning C4244: 'return' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(46) : warning C4244: 'return' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(52) : warning C4244: 'return' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(150) : warning C4244: 'return' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(164) : warning C4244: 'return' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(166) : warning C4244: 'return' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(185) : warning C4244: 'return' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(187) : warning C4244: 'return' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\add.cxx(190) : warning C4244: 'return' : conversion from 'int' to 'short', possible loss of data
+code.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\code.cxx(83) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+decode.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\decode.cxx(28) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\decode.cxx(29) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\decode.cxx(30) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+gsm.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm.cxx(72) : warning C4100: 'codec' : unreferenced formal parameter
+gsm_decode.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(257) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(259) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(260) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(261) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(263) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(264) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(266) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(267) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(268) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(269) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(271) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(272) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(274) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(275) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(276) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(278) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(279) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(280) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(281) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(282) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(284) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(285) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(286) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(288) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(289) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(290) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(291) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(293) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(294) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(296) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(297) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(298) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(300) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(301) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(302) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(303) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(304) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(306) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(307) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(308) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(310) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(311) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(312) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(313) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(315) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(316) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(318) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(319) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(320) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(322) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(323) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(324) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(325) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(326) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(328) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(329) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(330) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(332) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(333) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(334) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(335) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(337) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(338) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(340) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(341) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(342) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(344) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(345) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(346) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(347) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(348) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(350) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(351) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(352) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(354) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_decode.cxx(355) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+gsm_destroy.cxx
+gsm_encode.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(349) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(351) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(353) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(356) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(359) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(361) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(364) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(368) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(371) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(374) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(378) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(381) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(383) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(386) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(390) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(393) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(396) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(400) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(403) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(405) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(408) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(412) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(415) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(418) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(422) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(425) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(427) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(430) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(434) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(437) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(440) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(444) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_encode.cxx(447) : warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
+gsm_option.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm_option.cxx(28) : warning C4244: '=' : conversion from 'int' to 'char', possible loss of data
+long_term.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(176) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(188) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(195) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(232) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(275) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(276) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(858) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(858) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(859) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(859) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(860) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(860) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(861) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(861) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(867) : warning C4100: 'S' : unreferenced formal parameter
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(937) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\long_term.cxx(938) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+lpc.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(46) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(55) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(77) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(78) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(79) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(80) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(200) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(213) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(222) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(228) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(229) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(232) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(233) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(235) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(236) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(263) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(277) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(310) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(310) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(310) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(310) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(310) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(311) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(311) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(311) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(311) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(311) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(312) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(312) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(312) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(312) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(312) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(313) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(313) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(313) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(313) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(313) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(315) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(315) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(315) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(315) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(315) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(316) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(316) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(316) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(316) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(316) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(317) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(317) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(317) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(317) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(317) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(318) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(318) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(318) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(318) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(318) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\lpc.cxx(324) : warning C4100: 'S' : unreferenced formal parameter
+preprocess.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\preprocess.cxx(41) : warning C4244: 'initializing' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\preprocess.cxx(60) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\preprocess.cxx(77) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\preprocess.cxx(90) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\preprocess.cxx(91) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\preprocess.cxx(104) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\preprocess.cxx(105) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\preprocess.cxx(106) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+rpe.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(109) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(233) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(234) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(242) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(276) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(284) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(290) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(297) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(300) : warning C4244: 'argument' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(300) : warning C4244: 'argument' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(325) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(332) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(333) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(334) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(335) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(374) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(378) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(379) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(450) : warning C4100: 'S' : unreferenced formal parameter
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\rpe.cxx(472) : warning C4100: 'S' : unreferenced formal parameter
+short_term.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(59) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(59) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(59) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(59) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(60) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(60) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(60) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(60) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(61) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(61) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(61) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(61) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(62) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(62) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(62) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(62) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(64) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(64) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(64) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(64) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(65) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(65) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(65) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(65) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(66) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(66) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(66) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(66) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(67) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(67) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(67) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(67) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(99) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(100) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(112) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(125) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(126) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(167) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(170) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(175) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(214) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(215) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(217) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(218) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(288) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(290) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(297) : warning C4244: '=' : conversion from 'int' to 'short', possible loss of data
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\short_term.cxx(299) : warning C4244: '=' : conversion from 'long' to 'short', possible loss of data
+table.cxx
+codec.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codec.cxx(4) : warning C4273: 'CodecInit' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codec.cxx(9) : warning C4273: 'CodecReset' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codec.cxx(14) : warning C4273: 'CodecDelete' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codec.cxx(19) : warning C4273: 'CodecEncode' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codec.cxx(24) : warning C4273: 'CodecDecode' : inconsistent dll linkage.  dllexport assumed.
+codecs.cxx
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(57) : warning C4273: 'CodecNew' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(77) : warning C4273: 'CodecRegistered' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(94) : warning C4273: 'PayloadTypeForCodec' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(95) : warning C4127: conditional expression is constant
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(114) : warning C4273: 'CodecNameForPayloadType' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(113) : warning C4100: 'pt' : unreferenced formal parameter
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(131) : warning C4273: 'GetCodecList' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(155) : warning C4273: 'GetCodecPTList' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(161) : warning C4018: '==' : signed/unsigned mismatch
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(176) : warning C4273: 'GetCodecBandwidth' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(193) : warning C4273: 'GetCodecDescription' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(211) : warning C4273: 'GetCodecRate' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(228) : warning C4273: 'GetCodecRate' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(245) : warning C4273: 'GetCodecChannels' : inconsistent dll linkage.  dllexport assumed.
+C:\repositorio\isabel\lib\aCodecs\lib\codecs.cxx(261) : warning C4273: 'GetCodecMSPerPacket' : inconsistent dll linkage.  dllexport assumed.
+Generating Code...
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm.cxx(22) : warning C4706: assignment within conditional expression
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm.cxx(26) : warning C4706: assignment within conditional expression
+C:\repositorio\isabel\lib\aCodecs\lib\codecs\gsm\gsm.cxx(60) : warning C4706: assignment within conditional expression
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP336.tmp" with contents
+[
+"\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\EDLL.LIB" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\euser.lib" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\estlib.lib" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\openfix.lib" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.exp" /nologo /entry:"_E32Dll" /subsystem:windows /dll /incremental:yes /pdb:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB/ACODECS.pdb" /debug /machine:IX86 /nodefaultlib /include:"?_E32Dll@@YGHPAXI0@Z" /out:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB/ACODECS.dll" /implib:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB/ACODECS.lib" /WARN:3 
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\Acodecs.uid.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\Acodecsdllmain.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\add.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\code.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\decode.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\gsm.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\gsm_create.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\gsm_decode.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\gsm_destroy.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\gsm_encode.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\gsm_option.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\long_term.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\lpc.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\preprocess.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\rpe.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\short_term.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\table.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\codec.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\codecs.obj
+]
+Creating command line "link.exe @C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP336.tmp"
+
+Doing first-stage link by name
+ link.exe @C:\DOCUME~1\isabel\CONFIG~1\Temp\nma01956.
+   Creating library \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.lib and object \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.exp
+LINK : warning LNK4005: no objects used from library \Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\openfix.lib
+EDLL.LIB(UP_DLL.obj) : warning LNK4099: PDB "edll.pdb" was not found with "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\EDLL.LIB" or at "C:\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\edll.pdb"; linking object as if no debug info
+ del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.DLL"
+ del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.exp"
+ dumpbin /exports /out:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.inf" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.lib"
+Microsoft (R) COFF Binary File Dumper Version 6.00.8168
+Copyright (C) Microsoft Corp 1992-1998. All rights reserved.
+
+ del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.lib"
+ perl -S makedef.pl -Inffile "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.inf" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def"
+MAKEDEF WARNING: 18 export(s) not yet Frozen:
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(3) : ?CodecDecode@@YAHPAUCodec@@PAEH1@Z @1
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(4) : ?CodecDelete@@YAHPAUCodec@@@Z @2
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(5) : ?CodecEncode@@YAHPAUCodec@@PAEH1@Z @3
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(6) : ?CodecInit@@YAHPAUCodec@@@Z @4
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(7) : ?CodecNameForPayloadType@@YAPBDF@Z @5
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(8) : ?CodecNew@@YAPAUCodec@@F@Z @6
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(9) : ?CodecRegistered@@YAHF@Z @7
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(10) : ?CodecReset@@YAHPAUCodec@@@Z @8
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(11) : ?E32Dll@@YAHW4TDllReason@@@Z @9
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(12) : ?GetCodecBandwidth@@YAHPAD@Z @10
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(13) : ?GetCodecChannels@@YAHPAD@Z @11
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(14) : ?GetCodecDescription@@YAPADPAD@Z @12
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(15) : ?GetCodecList@@YAHPADH@Z @13
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(16) : ?GetCodecMSPerPacket@@YAHPAD@Z @14
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(17) : ?GetCodecPTList@@YAHPAHH@Z @15
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(18) : ?GetCodecRate@@YAGF@Z @16
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(19) : ?GetCodecRate@@YAGPAD@Z @17
+  \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def(20) : ?PayloadTypeForCodec@@YAFPBD@Z @18
+ del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.inf"
+ lib.exe  /nologo /machine:i386 /nodefaultlib /name:"ACODECS.DLL" /def:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\ACODECS.def" /out:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.lib"
+   Creating library \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.lib and object \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.exp
+ copy "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.lib" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\ACODECS.lib"
+        1 archivos copiados.
+ del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.lib"
+First-stage link successful
+<h3>Output Window</h3>
+Linking...
+LINK : warning LNK4005: no objects used from library \Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\openfix.lib
+EDLL.LIB(UP_DLL.obj) : warning LNK4099: PDB "edll.pdb" was not found with "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\EDLL.LIB" or at "C:\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\edll.pdb"; linking object as if no debug info
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP33B.bat" with contents
+[
+@echo off
+nmake -nologo -f "\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS.SUP.MAKE" POSTBUILDUDEB
+]
+Creating command line "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP33B.bat"
+
+ if exist "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.exp" del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSITORIO\ISABEL\LIB\ACODECS\SYMBIAN\GROUP\ACODECS\WINS\UDEB\ACODECS.exp"
+
+
+
+<h3>Results</h3>
+ACODECS.dll - 0 error(s), 305 warning(s)
+</pre>
+</body>
+</html>

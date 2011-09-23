@@ -1,0 +1,4 @@
+cftp_create_channel(1)   
+cftp_bind(3,1,zorro,4567)
+cftp_send(1,/tmp,test)
+

@@ -1,0 +1,96 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class ServerHintTCC {
+    inherit NodeTCC
+
+    public variable hint
+
+    constructor {_agendaobj _hint} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+    
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+
+    public method getTitle {}
+    public method getNodes {}
+}
+
+#-----------------------------------------
+
+body ServerHintTCC::constructor {_agendaobj _hint} {
+
+    set hint     $_hint
+}
+
+#-----------------------------------------
+
+body ServerHintTCC::destructor {} {
+
+}
+
+#-----------------------------------------
+
+body ServerHintTCC::parse {agendaobj str} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class ServerHint
+ 
+    set hint [lindex $str 1]
+
+    WriteTraceMsg "ica: parsing server hint \"$hint\""
+
+    set me [ServerHintTCC ::#auto $agendaobj $hint]
+
+    return $me
+}
+
+#-----------------------------------------
+
+body ServerHintTCC::prettyPrinter {{offset 0}} {
+
+    list \
+	ServerHint \
+	$hint
+}
+
+#-----------------------------------------
+
+body ServerHintTCC::getTitle {} {
+
+    return "VNC Server - Hint=$hint"
+}
+
+#-----------------------------------------
+
+body ServerHintTCC::getNodes {} {
+
+    return ""
+}
+
+#-----------------------------------------
+

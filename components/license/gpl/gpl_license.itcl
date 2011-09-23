@@ -1,0 +1,81 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# register.itcl
+#
+# Description
+#
+#   Main program to update the ISABEL license.
+#
+#########################################################################
+
+
+wm withdraw .
+
+wm geometry . 800x425+100+100
+wm title . "AGPL License"
+
+CreateImage isalogo gif/isabel_logo_small.gif
+label .logo -image isalogo -padx 20
+
+
+text .text \
+	-relief flat \
+	-width 1 \
+	-height 1 \
+	-wrap word \
+	-spacing1 1 \
+	-spacing2 1 \
+	-spacing3 5
+.text insert end \
+"ISABEL: A group collaboration tool for the Internet
+Copyright (C) 2009-2010 Agora System S.A.
+
+Isabel is free software: you can redistribute it and/or modify it
+under the terms of the Affero GNU General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+ISABEL is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+Affero GNU General Public License for more details.
+
+You should have received a copy of the Affero GNU General Public License
+along with ISABEL. If not, see <http://www.gnu.org/licenses/>.
+
+For details please see <$env(ISABEL_DIR)/COPYING>"
+
+.text configure -state disabled
+
+button .ok -text ok \
+    -command exit
+
+pack .ok   -side bottom -pady 10
+pack .logo -side left -padx 20
+pack .text -side top -expand 1 -fill both -padx 20 -pady 20
+
+wm deiconify .
+
+

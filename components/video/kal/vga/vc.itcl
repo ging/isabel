@@ -1,0 +1,393 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vc.itcl
+#
+# vga channel objects.
+#
+#########################################################################
+
+#==============================================================
+# Vga channel: Parent of local and remote channels.
+#==============================================================
+
+class VgaChannelC {
+
+    # long window title. 
+    protected variable ltitle
+
+    # short window title. 
+    protected variable stitle
+
+    # Site identifier
+    protected variable siteId
+
+    # channel identifier
+    protected variable chId
+
+    # Is the channel mapped
+    protected variable mapped 0
+
+    # Current geometry
+    protected variable geometry 0x0+0+0
+
+    # Vga Daemon Object reference
+    protected variable vdObj ""
+
+    constructor {siteid vd} {}
+
+    destructor {}
+
+    public method CreateChannel {} {}
+
+    public method nop {} {}
+
+    public method Map {} {}
+    public method Unmap {} {}
+    public method IsMapped {} {}
+
+    public method SetGeometry {geom}
+
+    # Is a local channel
+    public method IsLocal {}
+
+    # Send all the needed commands to configure the vga C daemon state.
+    # Used when the vga C daemon state is restarted.
+    protected method ReapplyState {} 
+
+    public method Info {}
+}
+
+#--------------------------------------------------------------
+
+body VgaChannelC::constructor {siteid vd} {
+
+    set siteId $siteid
+
+    set chId [VgaComponentC::SiteId2VgaChId $siteid]
+
+    set vdObj $vd
+
+    set ltitle [session Activity GetResource Video vga.ltitle VGA]
+    set stitle [session Activity GetResource Video vga.stitle VGA]
+}
+
+#--------------------------------------------------------------
+
+body VgaChannelC::destructor {} {
+
+}
+
+#--------------------------------------------------------------
+
+body VgaChannelC::Map {} {
+
+    set mapped 1
+    $vdObj RDO video_map_channel($chId)
+}
+
+#--------------------------------------------------------------
+
+body VgaChannelC::Unmap {} {
+
+    set mapped 0
+    $vdObj RDO video_unmap_channel($chId)
+}
+
+#--------------------------------------------------------------
+
+body VgaChannelC::IsMapped {} {
+
+    return $mapped
+}
+
+#--------------------------------------------------------------
+
+body VgaChannelC::SetGeometry {geom} {
+
+    set geometry $geom
+    $vdObj SetGeometry $siteId $geom
+}
+
+#--------------------------------------------------------------
+
+body VgaChannelC::IsLocal {} {
+    return 0
+}
+
+#--------------------------------------------------------------
+
+body VgaChannelC::ReapplyState {} {
+
+    CreateChannel
+
+}
+
+#--------------------------------------------------------------
+
+body VgaChannelC::Info {} {
+
+    set    res " o Channel $siteId\n"
+    append res "    channel Id = $chId\n"
+    append res "    stitle = $stitle\n"
+    append res "    ltitle = $ltitle\n"
+    append res "    mapped = $mapped\n"
+    append res "    geometry = $geometry\n"
+    return $res
+}
+
+#--------------------------------------------------------------
+
+
+#==============================================================
+# Local vga channel
+#==============================================================
+
+class VgaLocalC {
+    inherit VgaChannelC
+
+    # communication port base.
+    private variable data_port 51017
+
+    # binding: bind assigned to send my vga flow.
+    private variable binding 0
+
+    constructor {siteid vd} {
+	VgaChannelC::constructor $siteid $vd
+    } {}
+
+    destructor {}
+
+    public method CreateChannel {}
+
+    public method SetGeometry {geom}
+
+    # Send video flow to the irouter daemon
+    public method Bind {}
+    private method SetBindId {bindId}
+
+    # Stop sending video flow.
+    public method Unbind {}
+
+    public method Map {} {}
+    public method Unmap {} {}
+
+    # Is a local channel
+    public method IsLocal {}
+
+    # Send all the needed commands to configure the vga C daemon state.
+    # Used when the vga C daemon state is restarted.
+    public method ReapplyState {} 
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::constructor {siteid vd} {
+
+    CreateChannel
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::destructor {} {
+
+
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::CreateChannel {} {
+    global env
+
+    set _source [$vdObj Load NONE]
+
+    $vdObj RDO video_rec_channel($chId,$_source)
+    
+    $vdObj RDO video_window_title($chId,$stitle,$ltitle)
+
+    if {[info exists env(ISABEL_VGA_AVATAR_FILENAME)] && $env(ISABEL_VGA_AVATAR_FILENAME) != ""} {
+	set _afn $env(ISABEL_VGA_AVATAR_FILENAME)
+    } else {
+	set _afn $env(ISABEL_DIR)/lib/images/jpg/cajuste.jpg
+    }
+    $vdObj RDO video_avatar($chId,$_afn)
+
+    $vdObj RDO video_avatar_timeout($chId,5)
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::SetGeometry {geom} {
+
+    VgaChannelC::SetGeometry $geom
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::Bind {} {
+    global env
+
+    set host 127.0.0.1
+
+    # data port should be a pair number, RTP compliant
+    set port 51018
+
+    $vdObj RCB video_bind($chId,$host,$port) [code $this SetBindId]
+
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::SetBindId {bindId} {
+
+    if {[catch {set binding [expr $bindId]} res]} {
+	ErrorTraceMsg "Vga: daemon is not working properly."
+        ErrorTraceMsg "         Bind request failure."
+	set binding 0
+    }
+
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::Unbind {} {
+
+    if {binding != 0} {
+	$vdObj RDO video_unbind($chId,$binding)
+	set binding 0
+    }
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::Map {} {
+    
+    VgaChannelC::Map
+    
+    $vdObj RDO video_send($chId,1)
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::Unmap {} {
+
+    VgaChannelC::Unmap 
+
+    $vdObj RDO video_send($chId,0)
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::IsLocal {} {
+    return 1
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::ReapplyState {} {
+
+    VgaChannelC::ReapplyState
+
+    if {[IsMapped]} {
+	$vdObj ReapplyState
+
+	SetGeometry $geometry
+	Map
+    } else {
+	Unmap
+    }
+
+    Bind
+}
+
+#--------------------------------------------------------------
+
+#==============================================================
+# Remote vga channels
+#==============================================================
+
+class VgaRemoteC {
+    inherit VgaChannelC
+
+    constructor {siteid vd} {
+	VgaChannelC::constructor $siteid $vd
+    } {}
+
+    destructor {}
+
+    private method CreateChannel {}
+
+    # Send all the needed commands to configure the vga C daemon state.
+    # Used when the vga C daemon state is restarted.
+    public method ReapplyState {} 
+}
+
+#--------------------------------------------------------------
+
+body VgaRemoteC::constructor {siteid vd} {
+
+    CreateChannel
+}
+
+#--------------------------------------------------------------
+
+body VgaRemoteC::destructor {} {
+
+
+}
+
+#--------------------------------------------------------------
+
+body VgaRemoteC::CreateChannel {} {
+    global env
+
+    $vdObj RDO video_play_channel($chId)
+    $vdObj RDO video_window_title($chId,$stitle,$ltitle)
+
+    if {[info exists env(ISABEL_VGA_AVATAR_FILENAME)] && $env(ISABEL_VGA_AVATAR_FILENAME) != ""} {
+	set _afn $env(ISABEL_VGA_AVATAR_FILENAME)
+    } else {
+	set _afn $env(ISABEL_DIR)/lib/images/jpg/cajuste.jpg
+    }
+    $vdObj RDO video_avatar($chId,$_afn)
+
+    $vdObj RDO video_avatar_timeout($chId,5)
+}
+
+#--------------------------------------------------------------
+
+body VgaRemoteC::ReapplyState {} {
+
+    VgaChannelC::ReapplyState
+    
+    if {[IsMapped]} {
+	VgaChannelC::SetGeometry $geometry
+	VgaChannelC::Map
+    } else {
+	VgaChannelC::Unmap
+    }
+}
+
+#--------------------------------------------------------------
+

@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vUtils", "vUtils.vcproj", "{2AE697C8-B644-4132-A254-EE319D65BCEF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A94F4E26-0E7A-49AF-89E6-94FB58784F47} = {A94F4E26-0E7A-49AF-89E6-94FB58784F47}
+		{B52A4896-2073-4358-BEB9-FA831821CCB2} = {B52A4896-2073-4358-BEB9-FA831821CCB2}
+		{41B39295-DF16-460C-A90A-477B5468957D} = {41B39295-DF16-460C-A90A-477B5468957D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ICF2", "..\..\..\ICF2\WinXP\ICF2.vcproj", "{41B39295-DF16-460C-A90A-477B5468957D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vCodecs", "..\..\..\vCodecs\Win32\vCodecs.vcproj", "{A94F4E26-0E7A-49AF-89E6-94FB58784F47}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RTP", "..\..\..\RTP\Win32\RTP\RTP.vcproj", "{B52A4896-2073-4358-BEB9-FA831821CCB2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41B39295-DF16-460C-A90A-477B5468957D} = {41B39295-DF16-460C-A90A-477B5468957D}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2AE697C8-B644-4132-A254-EE319D65BCEF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2AE697C8-B644-4132-A254-EE319D65BCEF}.Debug|Win32.Build.0 = Debug|Win32
+		{2AE697C8-B644-4132-A254-EE319D65BCEF}.Release|Win32.ActiveCfg = Release|Win32
+		{2AE697C8-B644-4132-A254-EE319D65BCEF}.Release|Win32.Build.0 = Release|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Debug|Win32.ActiveCfg = DebugThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Debug|Win32.Build.0 = DebugThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Release|Win32.ActiveCfg = ReleaseThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Release|Win32.Build.0 = ReleaseThreaded|Win32
+		{A94F4E26-0E7A-49AF-89E6-94FB58784F47}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A94F4E26-0E7A-49AF-89E6-94FB58784F47}.Debug|Win32.Build.0 = Debug|Win32
+		{A94F4E26-0E7A-49AF-89E6-94FB58784F47}.Release|Win32.ActiveCfg = Release|Win32
+		{A94F4E26-0E7A-49AF-89E6-94FB58784F47}.Release|Win32.Build.0 = Release|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.Debug|Win32.ActiveCfg = DebugThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.Debug|Win32.Build.0 = DebugThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.Release|Win32.ActiveCfg = DebugThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.Release|Win32.Build.0 = DebugThreaded|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

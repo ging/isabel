@@ -1,0 +1,454 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+################################################################
+#
+############## Description #####################################
+#
+#   List widget.
+#
+############## Summary of Data Structures ######################
+#
+#  Classes: 
+#
+#    - ListWidgetC: A canvas with a scrollbar to display info.
+#    - ListNodeWidgetC: Each entry to display in the list.
+#
+############## Public variables and methods ####################
+#
+#    - ListWidgetC:
+#
+#       o Add {name icon tags} 
+#       o Del {name} 
+#       o DelAll {} 
+#       o SetSelection {name} 
+#       o GetSelection {} 
+#       o GetAll {} 
+#       o SetState {st} 
+#
+#    - ListNodeWidgetC:
+#
+#       o  name
+#       o  icon
+#       o  tags
+#       o  highlight_w
+#
+################################################################
+
+
+class ListWidgetC {
+
+    # Font
+    private common font "-adobe-helvetica-medium-r-normal-*-11-80-100-100-p-56-iso8859-1"
+
+    # name de la entrada seleccionada.
+    private variable selection ""
+
+    # nombre del widget que implementa la caja azul 
+    # utilizada para resaltar la seleccion actual.
+    private variable bluebox ""
+
+    # $nodes($name) es el objeto que implementa el nodo asociado a $name.
+    private variable nodes
+
+    # $namew($w): Si $w es un widget que se ha creado para pintar graficamente
+    # algun nodo de la lista, entonces $namew($w) es el name de ese nodo. 
+    private variable namew
+
+    # widget: canvas usado para pintar.
+    private variable wroot
+
+    # I am waiting for "Draw" to start
+    private variable drawPending 0
+
+    # User specified callback to execute when a selection is done.
+    # $name is added as argument.
+    private variable selectionCB
+
+    # User specified callback to execute when a double click is done.
+    # $name is added as argument.
+    private variable doubleClickCB
+
+    # Widget state: normal or disabled.
+    # It only affects to the SetSelection and ExecDoubleClick methods.
+    private variable state
+
+    # Text color for normal and disables states.
+    private common normalcolor   black
+    private common disabledcolor #aaaaaa
+
+    # Constructor.
+    # Arguments:
+    #    w: widget name
+    #    sCB: selection callback
+    #    dcCB: double click callback
+    #    args: args to build the internal canvas
+    constructor {w sCB dcCB args} {}
+
+    destructor {}
+
+    # Add a new element to the list.
+    # $name is the name of the entry.
+    # $icon is the icon to display for this entry.
+    # $tags are external tags for this entry.
+    public method Add {name icon tags} {}
+
+    # Removes a entry from the list.
+    public method Del {name} {}
+
+    # Removes all the entries from the list.
+    public method DelAll {} {}
+
+    # Change the selection to the indicated name
+    public method SetSelection {name} {}
+
+    # Retrieve the current selected name
+    public method GetSelection {} {}
+
+    # Retunrs all the values in the list
+    public method GetAll {} {}
+
+    # Set the state to normal or disabled
+    public method SetState {st} {}
+
+    # Execute the double click callback over $name.
+    private method ExecDoubleClickCB {name} {}
+
+    # Draw the selection highlight
+    private method DrawSelection {} {}
+
+    # Draw the list.
+    private method Draw {} {}
+
+    # Call "Draw" when idle
+    private method DrawWhenIdle {} {}
+
+    # Return the name of the widget that is located
+    # at real coordinates $x, $y
+    private method LabelAt {x y} {}
+}
+
+#----------------------------------------------------------------
+
+body ListWidgetC::constructor {w sCB dcCB args} {
+
+    set bg [IsabelColorsC::GetResource textBackground Background white]
+    set fg [IsabelColorsC::GetResource foreground     Foreground black]
+
+    #-----------------
+    
+    set selectionCB   $sCB
+    set doubleClickCB $dcCB
+
+    set state normal
+
+    #-----------------
+
+    frame $w -bg $bg
+
+    set wroot $w.l
+
+    canvas $wroot \
+	-highlightthickness 0  \
+	-yscrollcommand "$w.sb set" \
+	-bg $bg
+    eval $wroot configure $args
+
+    scrollbar $w.sb -orient vertical -command "$wroot yview" \
+	-width 10 \
+	-bg $bg 
+
+
+    pack $w.sb -side right -fill y
+    pack $wroot -side left -fill both -expand 1 -padx 5 -pady 5
+
+    #-----------------
+
+    frame $wroot.destroy
+    bind $wroot.destroy <Destroy> "delete object $this"
+
+    $wroot bind x <1> \
+	    "$this SetSelection \[[code $this LabelAt %x %y]\]"
+
+    $wroot bind x <Double-1> \
+	[code $this ExecDoubleClickCB \[[code $this LabelAt %x %y]\]]
+}
+
+
+#----------------------------------------------------------------
+
+body ListWidgetC::destructor {} {
+
+    catch {bind $wroot.destroy <Destroy> ""}
+    if {[winfo exists $wroot]} {
+        destroy $wroot
+    }
+
+    foreach n [array names nodes] {
+	delete object $nodes($n)
+    }
+}
+
+
+#----------------------------------------------------------------
+
+body ListWidgetC::Add {name icon tags} {
+    
+    if {[info exists nodes($name)]} {
+	error "item \"$name\" already exists"
+    }
+    
+    set nodes($name) [ListNodeWidgetC #auto $name $icon $tags]
+
+    DrawWhenIdle
+}
+
+#----------------------------------------------------------------
+
+body ListWidgetC::Del {name} {
+    
+    if {![info exists nodes($name)]} return
+    
+    delete object $nodes($name)
+    unset nodes($name)
+
+    if {$selection == $name} {
+	set selection ""
+	set bluebox   ""
+    }
+    
+    foreach i [array names namew] {
+	if {$namew($i) == $name} {
+	    unset namew($i)
+	}
+    }
+
+    DrawWhenIdle
+}
+
+#----------------------------------------------------------------
+
+body ListWidgetC::DelAll {} {
+
+    foreach i [array names nodes] {
+	delete object $nodes($i)
+	unset nodes($i)
+    }
+	
+    set selection ""
+    set bluebox   ""
+    
+    foreach i [array names namew] {
+	unset namew($i)
+    }
+
+    DrawWhenIdle
+}
+
+
+#----------------------------------------------------------------
+
+body ListWidgetC::SetSelection {name} {
+
+    if {$state != "normal"} return
+
+    set selection $name
+    DrawSelection
+
+    if {$name != ""} {
+	if {$selectionCB != ""} {
+	    if {[catch {uplevel #0 $selectionCB $name} error]} {
+		error "ListWidgetC error: $error"
+	    }
+	}
+    }
+}
+
+#----------------------------------------------------------------
+
+body ListWidgetC::GetSelection {} {
+
+  return $selection
+}
+
+#----------------------------------------------------------------
+
+body ListWidgetC::ExecDoubleClickCB {name} {
+
+    if {$state != "normal"} return
+
+    if {$name != ""} {
+	if {$doubleClickCB != ""} {
+	    if {[catch {uplevel #0 $doubleClickCB $name} error]} {
+		error "ListWidgetC error: $error"
+	    }
+	}
+    }
+
+}
+
+#----------------------------------------------------------------
+
+body ListWidgetC::DrawSelection {} {
+
+    if {$bluebox != ""} {
+	$wroot delete $bluebox
+    }
+    set name $selection
+    
+    if {$name == ""} return
+    
+    set wst [$nodes($name) cget -highlight_w]
+    if {$wst == ""} return
+
+    set bbox [$wroot bbox $wst]
+    if {[llength $bbox]==4} {
+	set i [eval $wroot create rectangle $bbox -fill skyblue -outline {{}}]
+	set bluebox $i
+	$wroot lower $i
+    } else {
+	set bluebox {}
+    }
+}
+
+#----------------------------------------------------------------
+
+body ListWidgetC::Draw {} {
+
+    $wroot delete all
+    
+    set drawPending 0
+    
+    set y 10
+    
+    foreach c [GetAll] {
+	set x  5
+	set taglist [$nodes($c) cget -tags]
+	lappend taglist x
+
+	set icon [$nodes($c) cget -icon]
+	if {$icon != ""} {
+	    set k [$wroot create image $x $y -image $icon -anchor w -tags $taglist]
+	    incr x 20
+	    set namew($k) $c
+	}
+
+	set j [$wroot create text $x $y -text $c -font $font \
+		-anchor w -tags $taglist -fill [subst \$${state}color]]
+	set namew($j) $c
+	$nodes($c) configure -highlight_w $j
+
+	incr y 17
+    }
+
+    $wroot config -scrollregion [$wroot bbox all]
+    
+    DrawSelection
+}
+
+#----------------------------------------------------------------
+
+body ListWidgetC::DrawWhenIdle {} {
+
+  if {$drawPending == 0} {
+    set drawPending 1
+    after idle [code $this Draw]
+  }
+}
+
+#----------------------------------------------------------------
+
+body ListWidgetC::LabelAt {x y} {
+
+    set x [$wroot canvasx $x]
+    set y [$wroot canvasy $y]
+    foreach m [$wroot find overlapping $x $y $x $y] {
+	if {[info exists namew($m)]} {
+	    return $namew($m)
+	}
+    }
+    return ""
+}
+
+#----------------------------------------------------------------
+
+body ListWidgetC::SetState {st} {
+
+    if {$st != "normal" && $st != "disabled"} {
+	error "Invalid state: Should be \"normal\" or \"disabled\"."
+    }
+    
+    set state $st
+
+    DrawWhenIdle
+}
+
+
+#----------------------------------------------------------------
+
+body ListWidgetC::GetAll {} {
+
+    return [lsort -dictionary [array names nodes]] 
+}
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+
+class ListNodeWidgetC {
+
+    # Name de este nodo
+    public variable name
+
+    # icono usado para pintar este nodo
+    public variable icon
+
+    # tags asociadas a este icono.
+    public variable tags
+
+    # widgets a iluminar si se selecciona este nodo
+    public variable highlight_w
+
+    constructor {_name _icon _tags} {}
+
+    destructor {} 
+}
+
+
+
+#----------------------------------------------------------------
+
+body ListNodeWidgetC::constructor {_name _icon _tags} {
+
+    set name          $_name
+    set icon          $_icon
+    set tags          $_tags
+    set highlight_w   ""
+}
+
+#----------------------------------------------------------------
+
+body ListNodeWidgetC::destructor {} {
+
+}
+
+#----------------------------------------------------------------
+

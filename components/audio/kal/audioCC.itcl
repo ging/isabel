@@ -1,0 +1,155 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# audioCC.itcl
+#
+# Audio component.
+#
+#########################################################################
+
+class AudioComponentClass {
+    inherit Component
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args}
+
+    public method Cmd {args}
+    public method SnmpCmd {args} {}
+
+    constructor {} {   
+	Component::constructor Audio
+    } {
+    }
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Object that implements the component behaviour
+    private variable audioobj ""
+}
+
+#---------------------------------------------------------------
+
+body AudioComponentClass::destructor {} {
+
+    if {$audioobj != ""} {
+	delete object $audioobj
+	set audioobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body AudioComponentClass::Create {first} {
+
+    if {[catch {AudioComponentC "#auto"} res]} {
+	ErrorTraceMsg "Audio component can not be created.\n$res"
+	return -1
+    }
+    set audioobj $res
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body AudioComponentClass::AddMySite {} {
+
+    if {$audioobj == ""} return
+
+    $audioobj AddMe
+}
+
+#---------------------------------------------------------------
+
+body AudioComponentClass::AddRemoteSite {site_id new} {
+
+    if {$audioobj == ""} return
+
+    $audioobj AddRemoteSite $site_id $new
+}
+
+#---------------------------------------------------------------
+
+body AudioComponentClass::DelMySite {} {
+
+    if {$audioobj == ""} return
+
+    $audioobj DelMe
+}
+
+#---------------------------------------------------------------
+
+body AudioComponentClass::DelRemoteSite {site_id} {
+
+    if {$audioobj == ""} return
+
+    $audioobj DelRemoteSite $site_id
+}
+
+#---------------------------------------------------------------
+
+body AudioComponentClass::SetInteractionMode {imname nsec site_id_list args} {
+
+}
+
+#---------------------------------------------------------------
+
+body AudioComponentClass::Cmd {args} {
+
+    if {$audioobj == ""} return
+
+    eval $audioobj $args
+}
+
+#---------------------------------------------------------------
+
+body AudioComponentClass::SnmpCmd {args} {
+ 
+    set _cmd [lindex $args 0]
+    
+    switch -- $_cmd {
+	MonitorStats {
+	    set args [lrange $args 1 end]
+	    eval Cmd MonitorStats $args
+	}
+	default {
+	    ErrorTraceMsg "Audio: Unknown SNMP command: \"$_cmd\""
+	}
+    }
+}
+
+#---------------------------------------------------------------

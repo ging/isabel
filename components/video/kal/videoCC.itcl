@@ -1,0 +1,330 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# videoCC.itcl
+#
+# Video component.
+#
+#########################################################################
+
+class VideoComponentClass {
+    inherit Component
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args}
+    public method Cmd {args}
+    public method SnmpCmd {args} {}
+    
+    constructor {} {   
+	Component::constructor Video
+    } {
+    }
+    
+    destructor {}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # 1 if the VGA subcomponed is enabled.
+    private variable vgaenabled 0
+    
+    # 1 if the LSE subcomponed is enabled.
+    private variable lseenabled 0
+    
+    # Objects which implement the camera (video) and vga component behaviour
+    private variable cameraobj ""
+    private variable vgaobj   ""
+    private variable lseobj   ""
+    
+    # Video Daemon Task Object
+    private variable vdtObj ""
+}
+
+#---------------------------------------------------------------
+
+body VideoComponentClass::constructor {} {
+    
+    if {[catch {VideoDaemonTaskC "#auto"} vdtObj]} {
+	ErrorTraceMsg "Video: daemon task creation aborted."
+	error "$vdtObj"
+    }
+    
+    # Load configuration tables
+    VideoConfigTablesC::Load
+    
+    # VGA enabled?
+    set vgaenabled [session Activity GetResource Video vga.enabled 0]
+    if {$vgaenabled == 1} {
+	WriteTraceMsg "Video: VGA subcomponent is enabled."
+    } else {
+	set vgaenabled 0
+	WriteTraceMsg "Video: VGA subcomponent is disabled."
+    }
+    
+    # LSE enabled?
+    set lseenabled [session Activity GetResource Video lse.enabled 0]
+    if {$lseenabled == 1} {
+	WriteTraceMsg "Video: LSE subcomponent is enabled."
+    } else {
+	set lseenabled 0
+	WriteTraceMsg "Video: LSE subcomponent is disabled."
+    }
+}
+
+#---------------------------------------------------------------
+
+body VideoComponentClass::destructor {} {
+    
+    if {$vdtObj != ""} {	
+	delete object $vdtObj 
+	set vdtObj "" 
+    }
+    
+    if {$cameraobj != ""} {
+	delete object $cameraobj
+	set cameraobj ""
+    }
+    
+    if {$vgaobj != ""} {
+	delete object $vgaobj
+	set vgaobj ""
+    }
+    
+    if {$lseobj != ""} {
+	delete object $lseobj
+	set lseobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body VideoComponentClass::Create {first} {
+    
+    WriteTraceMsg "- Video: Creating new video component" Video
+    
+    if {[catch {CameraComponentC "#auto" [code $vdtObj]} res]} {
+	ErrorTraceMsg "Video Camera: component can not be created.\n$res"
+	return -1
+    }
+    set cameraobj $res
+    $vdtObj AddListener "VideoCmd ReapplyState"
+    
+    if {$vgaenabled == 1} {
+	if {[catch {VgaComponentC "#auto" [code $vdtObj]} res]} {
+	    ErrorTraceMsg "Video Vga: component can not be created.\n$res"
+	    return -1
+	}
+	set vgaobj $res
+	$vdtObj AddListener "VgaCmd ReapplyState"
+    }
+    
+    if {$lseenabled == 1} {
+	if {[catch {VideoLSEComponentC "#auto" [code $vdtObj]} res]} {
+	    ErrorTraceMsg "Video Lse: component can not be created.\n$res"
+	    return -1
+	}
+	set lseobj $res
+	$vdtObj AddListener "LseCmd ReapplyState"
+    }
+    
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body VideoComponentClass::AddMySite {} {
+    
+    $cameraobj AddMe
+    
+    if {$vgaenabled == 1} {
+	$vgaobj AddMe
+    }
+    
+    if {$lseenabled == 1} {
+	$lseobj AddMe
+    }
+}
+
+#---------------------------------------------------------------
+
+body VideoComponentClass::AddRemoteSite {site_id new} {
+    
+    $cameraobj AddSite $site_id $new
+    
+    if {$vgaenabled == 1} {
+	$vgaobj AddSite $site_id $new
+    }
+    
+    if {$lseenabled == 1} {
+	$lseobj AddSite $site_id $new
+    }
+}
+
+#---------------------------------------------------------------
+
+body VideoComponentClass::DelMySite {} {
+    
+    $cameraobj DelSite [SiteManager::MySiteId]
+    
+    if {$vgaenabled == 1} {
+	$vgaobj DelSite [SiteManager::MySiteId]
+    }
+    
+    if {$lseenabled == 1} {
+	$lseobj DelSite [SiteManager::MySiteId]
+    }
+}
+
+#---------------------------------------------------------------
+
+body VideoComponentClass::DelRemoteSite {site_id} {
+    
+    $cameraobj DelSite $site_id
+    
+    if {$vgaenabled == 1} {
+	$vgaobj DelSite $site_id
+    }
+    
+    if {$lseenabled == 1} {
+	$lseobj DelSite $site_id
+    }
+}
+
+#---------------------------------------------------------------
+
+body VideoComponentClass::SetInteractionMode {imname nsec site_id_list args} {
+    # movido a IMM.
+}
+
+
+#---------------------------------------------------------------
+
+body VideoComponentClass::Cmd {args} {
+    
+    set who [lindex $args 0]
+    
+    switch $who {
+	Camera -
+	Video {
+	    # Video/Camera channel
+	    set args [lrange $args 1 end]
+	    if {$cameraobj == ""} return
+	    eval $cameraobj $args
+	}
+        VGA -
+	Vga {
+	    # Vga channel
+	    if {$vgaenabled == 1} {
+		# Vga channel
+		set args [lrange $args 1 end]
+		if {$vgaobj == ""} return
+		eval $vgaobj $args
+	    }
+	}
+        LSE -
+	Lse {
+	    # Lse channel
+	    if {$lseenabled == 1} {
+		# Lse channel
+		set args [lrange $args 1 end]
+		if {$lseobj == ""} return
+		eval $lseobj $args
+	    }
+	}
+	default {
+	    # Default is Video/Camera channel
+	    if {$cameraobj == ""} return
+	    eval $cameraobj $args
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body VideoComponentClass::SnmpCmd {args} {
+    
+    set _cmd [lindex $args 0]
+    
+    switch -- $_cmd {
+	MonitorStats {
+	    set args [lrange $args 1 end]
+	    eval Cmd Camera MonitorStats $args
+	}
+	default {
+	    ErrorTraceMsg "Video: Unknown SNMP command: \"$_cmd\""
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+
+######################################################################
+#
+#  Send a command to the object that implements the video behaviour
+#
+######################################################################
+
+process VideoCmd {args} {
+    
+    eval component Cmd $args
+}
+
+#---------------------------------------------------------------
+
+######################################################################
+#
+#  Send a command to the object that implements the vga behaviour
+#
+######################################################################
+
+process VgaCmd {args} {
+    
+    eval component Cmd Vga $args
+}
+
+#---------------------------------------------------------------
+
+######################################################################
+#
+#  Send a command to the object that implements the lse behaviour
+#
+######################################################################
+
+process LseCmd {args} {
+    
+    eval component Cmd Lse $args
+}
+
+#---------------------------------------------------------------

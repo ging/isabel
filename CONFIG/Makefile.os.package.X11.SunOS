@@ -1,0 +1,20 @@
+#
+# X11 configuration for SunOS
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.library       -- root of subsystem libraries
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+X11.topdir       :=# value not useful
+X11.include      :=-I/usr/openwin/include
+X11.include.files:=# value not useful
+X11.library      :=-L/usr/openwin/lib
+X11.library.libs :=-lX11
+
+
+CONFIG.generic.define+=
+CONFIG.generic.include+=$(X11.include)

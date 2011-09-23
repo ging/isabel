@@ -1,0 +1,49 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+mode9.whatis:      imode
+mode9.scene.name: video
+
+mode9.Audio:       -active 1 \
+                   -setmutes 1
+
+mode9.Video:       -active 1 -layout lmode9
+
+
+mode9.SldFtp:     -active 1 \
+                  -videobwfactor _ISERV_SLDFTP_VF_BW \
+                  -maxbw _ISERV_SLDFTP_FTP_BW
+
+#------------------------------------
+
+Video.layout.lmode9: \
+ {video 192x144+090+013 _ISERV_VID_MODE9_BW} \
+ {video 192x144+384+013 _ISERV_VID_MODE9_BW} \
+ {video 192x144+678+013 _ISERV_VID_MODE9_BW} \
+ {video 192x144+090+243 _ISERV_VID_MODE9_BW} \
+ {video 192x144+384+243 _ISERV_VID_MODE9_BW} \
+ {video 192x144+678+243 _ISERV_VID_MODE9_BW} \
+ {video 192x144+090+474 _ISERV_VID_MODE9_BW} \
+ {video 192x144+384+474 _ISERV_VID_MODE9_BW} \
+ {video 192x144+678+474 _ISERV_VID_MODE9_BW} 
+
+#------------------------------------

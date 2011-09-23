@@ -1,0 +1,120 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# videosite.itcl
+#
+# To create an object to set the video capture site.
+#
+#########################################################################
+
+class TC_VideoSiteC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the widget in $w
+    constructor {w} {}
+
+    # Returns the SITE_ID of the selected Video Site.
+    public method GetSite {}
+
+    # Set the SITE_ID of the selected Video Site.
+    public method SetSite {site_id}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget where it is packed
+    private variable topw
+
+    # The SITE_ID of the currently selected Video Site.
+    private variable video_site
+    
+    destructor {}
+
+    # Makes the GUI
+    private method MakeGUI {}
+}
+
+#---------------------------------------------------------------
+
+body TC_VideoSiteC::constructor {w} {
+
+    set topw $w
+
+    MakeGUI
+
+}
+
+#---------------------------------------------------------------
+
+body TC_VideoSiteC::destructor {} {
+
+    catch {bind $topw.destroy <Destroy> ""}
+    if {[winfo exists $topw]} {
+        destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_VideoSiteC::MakeGUI {} {
+
+    frame $topw \
+	-relief groove \
+	-borderwidth 1
+
+    iwidgets::entryfield $topw.site \
+	-textvariable [scope video_site] \
+	-labeltext "Video site:" \
+	-labelfont  [IsabelFontsC::GetFont medium medium] \
+	-labelpos w
+    pack $topw.site -padx 2 -pady 2 -fill x -anchor w
+
+    #--
+
+    frame $topw.destroy
+    bind $topw.destroy <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+
+body TC_VideoSiteC::GetSite {} {
+    
+    return $video_site
+}
+
+#---------------------------------------------------------------
+
+body TC_VideoSiteC::SetSite {site_id} {
+
+    set video_site $site_id
+}
+
+#---------------------------------------------------------------
+
+
+

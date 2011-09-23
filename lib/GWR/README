@@ -1,0 +1,42 @@
+
+1) GWR/include/gwr contiene las dos clases abstractas que hay que
+implementar en cada sistema de pintado, llamadas displayTask_t  
+y window_t.
+
+displayTask_t: lleva la gestión de las ventanas, inicialización del
+sistema de ventanas, cosas genericas. Gestiona los eventos sobre lasB  
+ventanas (cuando el usuario arrastra una esquina para cambiar el tamaño,
+o pincha en el boton de desmapeo, etc. Dispone de un método IOReady y uns
+heartbeat, que quizá haya que dejar vacío en algunos sistemas (como ...
+Windows :-)
+
+window_t: representa una ventana del sistema de
+pintado. Tiene métodos para pintar en primer plano, en background,
+escribir mensajes, cambiar el gamma, poner modo OverrideRedirect (no hace
+caso de nada), cargar fuentes...
+    
+Existen dos funciones de creación:
+
+displayTask_ref createDisplayTask(const char *kind, const char *options= NULL);
+    
+crea un displayTask de un cierto tipo, por ejemplo
+   createDisplayTask("X11") crea un gestor de ventanas para X11.
+
+Hay que escoger un nombre "adecuado" para cada sistema de ventanas.
+
+La otra función es createWindow, método público de displayTask.
+Sirve para construir una ventana dentro de un gestor. Por cierto, el
+gestor de ventanas de X11 guarda una lista con todas las ventanas creadas
+por él, para su posterior uso, quizá te sirva a ti.
+
+En gwr/lib/ hay un directorio por cada sistema de ventanas, por ejemplo, 
+hay uno llamado X11/, que contiene una implementación para X11. Otro
+directorio se llama OpenGL, que en realidad también es implementación de
+X11 pero pintando con OpenGL, en vez de con mis rutinas (no funciona
+todavía muy bien).
+
+Además, en gwrFactory.cc está la implementación de createDisplayTask, ace
+que debe aumentarse con cada nueva implementación.
+    
+
+

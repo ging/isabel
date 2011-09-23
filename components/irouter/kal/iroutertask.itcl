@@ -1,0 +1,316 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# iroutertask.itcl
+#
+# Description
+#
+#   Task to launch the irouter daemon.#
+#
+#########################################################################
+
+class IrouterTaskC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+    destructor {}
+
+    public method RDO {cmd}
+    public method RPC {cmd}
+    public method RCB {cmd cb}
+
+
+    # Objects that are warned when the daemon dies and
+    # it is restarted again.
+    # When the daemon is running again, this task executes 
+    # all the callbacks stored in the $listeners list.
+    public method AddListener    {cb}
+    public method RemoveListener {cb}
+    
+    # Activate or deactivate monitor statistics
+    public method MonitorStats {activate}
+
+    #----
+
+    # Activate traffic logs.
+    # date is used to create the logs file filename.
+    public method StartTrafficLogs {date}
+
+    # Stops traffic logs.
+    # $cb is a callback executed when the log file has been closed, and then
+    # I can use it.
+    public method StopTrafficLogs {cb}
+
+    # name of the traffic log file.
+    private variable trafficlogsfilename
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # 1 if the created object is working.
+    private variable active 
+    
+    # irouter daemon
+    private variable irouterobj
+
+    # Listeners.
+    # This is a list of methods to call when the irouter daemon restart.
+    private variable listeners
+
+    #----
+
+    # Indicates if the monitor statistics are active or not
+    private common doMonitorStats 0
+
+    #----
+
+    # Indicates if the monitor is generating traffics logs or not.
+    private common doTrafficLogs 0
+
+    #----
+
+    # Start the daemon.
+    private method CreateDaemon {}
+
+    # Executed when the daemon exits.
+    private method NoCCDaemon {}
+
+    # Executes all the callbacks stored in the $listeners list.
+    private method ExecListeners {}
+
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::constructor {} {
+    
+    set active     0
+    set irouterobj ""
+
+    set listeners ""
+    
+    CreateDaemon
+
+    # Inicializacion del modulo de generacion de logs de trafico
+    IrouterTrafficLogsC::Initialice
+
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::destructor {} {
+    
+    delete object $irouterobj
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::CreateDaemon {} {
+
+    if {$irouterobj != ""} return
+    
+    WriteTraceMsg "Irouter: Starting a Irouter daemon."
+
+    set no_cc_cb [code $this NoCCDaemon]
+    set irouterobj [DIrouterC "#auto" $no_cc_cb]
+    if {[catch {$irouterobj Start} res]} {
+	delete object $irouterobj
+	NoCCDaemon
+	ErrorTraceMsg "Irouter: Irouter daemon can not be created: $res"
+	return
+    }
+    
+    set active 1
+
+    #-------------------
+
+    # Video FEC:
+    set _fec_k [session Activity GetResource Video FEC.K 0]
+    
+    if {$_fec_k != "" && $_fec_k != "0"} {
+	set _fec_k_plus_1 [expr $_fec_k + 1]
+	$irouterobj RDO ir7_protect_flow(ALL,video,Parity,$_fec_k_plus_1,$_fec_k)
+    }
+    
+    #-------------------
+    
+    # Restore monitor statistics state:
+    $irouterobj RDO ir7_do_stats($doMonitorStats)
+    
+    #-------------------
+    
+    # Restore monitor traffic logs state:
+    if {$doTrafficLogs} {
+	global env
+
+	WriteTraceMsg "IrouterTask:: Restoring Traffic Logs state."
+	$irouterobj RDO ir7_start_measures($env(ISABEL_SESSION_LOGS_DIR)/itl/$trafficlogsfilename)
+    }
+    
+    #-------------------
+
+    ExecListeners
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::NoCCDaemon {} {
+    global env
+
+    set active     0
+    set irouterobj ""
+
+    if {[info exists env(ISABEL_AUTORESTART)]} {
+	
+	if {$env(ISABEL_AUTORESTART) != 0} {
+	    set restart 1
+	} else {
+	    set restart 0
+	}
+
+    } else {
+	set restart 1
+    }
+
+    if {$restart} {
+	after 1000 after idle [code $this CreateDaemon]
+    } else {
+	WarningTraceMsg "The Irouter daemon is dead and it will no be restarted."
+    }
+
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::RDO {cmd} {
+
+    if {! $active} return
+    
+    $irouterobj RDO $cmd
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::RPC {cmd} {
+
+    if {! $active} return
+    
+    $irouterobj RPC $cmd
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::RCB {cmd cb} {
+
+    if {! $active} return
+    
+    $irouterobj RCB $cmd $cb
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::AddListener {cb} {
+    
+    lappend listeners $cb
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::RemoveListener {cb} {
+
+    set listeners [lremove $listeners $cb]
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::ExecListeners {} {
+
+    foreach cb $listeners {
+	if {[catch {uplevel "#0" $cb} emsg]} {
+	    ErrorTraceMsg "- Irouter:: Callback error: \"$cb\" produces \"$emsg\"" 
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::MonitorStats {activate} {
+
+    if {$activate == 1} {
+	set doMonitorStats 1
+    } else {
+	set doMonitorStats 0
+    }
+    
+
+    if {! $active} return
+
+    $irouterobj RDO ir7_do_stats($doMonitorStats)
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::StartTrafficLogs {date} {
+    global env
+
+    WriteTraceMsg "IrouterTask:: Start Traffic Logs ($date)"
+
+    set doTrafficLogs 1
+    
+    set trafficlogsfilename itl_${date}_[session Environ cget -site_id]
+
+    catch "exec /bin/mkdir -p $env(ISABEL_SESSION_LOGS_DIR)/itl"
+
+    $irouterobj RDO ir7_start_measures($env(ISABEL_SESSION_LOGS_DIR)/itl/$trafficlogsfilename)
+}
+
+#---------------------------------------------------------------
+
+body IrouterTaskC::StopTrafficLogs {cb} {
+
+    WriteTraceMsg "IrouterTask:: Stop Traffic Logs"
+
+    set doTrafficLogs 0
+
+    if {$cb != ""} {
+	$irouterobj RCB ir7_stop_measures() "$cb $trafficlogsfilename"
+    } else {
+	$irouterobj RDO ir7_stop_measures()
+    }
+
+    if 0 {
+    if {$cb != ""} {
+
+	if {[catch {uplevel "#0" "$cb $trafficlogsfilename"} emsg]} {
+	    ErrorTraceMsg "IrouterTaskC::StopTrafficLogs callback produces: \"$emsg\""
+	}
+    }
+    }
+}
+
+#---------------------------------------------------------------

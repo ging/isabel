@@ -1,0 +1,101 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class ServerTCC {
+    inherit NodeTCC
+
+    public variable name
+
+    public variable password
+  
+    constructor {_agendaobj _name _password} {
+	NodeTCC::constructor $_agendaobj} {}
+    
+    destructor {}
+    
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+
+    public method getTitle {}
+    public method getNodes {}
+}
+
+#-----------------------------------------
+
+body ServerTCC::constructor {_agendaobj _name _password} {
+
+    set name     $_name 
+    set password $_password
+}
+
+#-----------------------------------------
+
+body ServerTCC::destructor {} {
+
+}
+
+#-----------------------------------------
+
+body ServerTCC::parse {agendaobj str} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class Server
+ 
+    set name     [lindex $str 1]
+    set password [lindex $str 2]
+
+    WriteTraceMsg "ica: parsing server \"$name\""
+
+    set me [ServerTCC ::#auto $agendaobj $name $password]
+
+    return $me
+}
+
+#-----------------------------------------
+
+body ServerTCC::prettyPrinter {{offset 0}} {
+
+    list \
+	Server \
+	$name \
+	$password
+}
+
+#-----------------------------------------
+
+body ServerTCC::getTitle {} {
+
+    return "VNC Server $name/$password"
+}
+
+#-----------------------------------------
+
+body ServerTCC::getNodes {} {
+
+    return ""
+}
+
+#-----------------------------------------
+

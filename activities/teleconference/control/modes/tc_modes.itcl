@@ -1,0 +1,384 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# tc_modes.tcl
+#
+# Widget with the interaction modes.
+#
+#########################################################################
+
+
+class TC_ModesC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the object.
+    # $_tcobj is a reference to the TeleConferenceControlC object
+    constructor {w _tcobj} {}
+
+    # Sets/Gets the current mode
+    public method SetCurrentMode {modename {unselect_scripts 0}}
+    public method GetCurrentMode {}
+
+    # Returns the number of partners for the current mode .
+    public method GetModeNUsers {}
+
+    # Apply the command of the current mode in order to set its insteraction mode.
+    public method Apply {}
+
+    # Returns the image associated to the given mode.
+    public method GetModeImage {_modename}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Root widget
+    private variable wroot
+
+    # $modeobj(modename): object that stores information about $modename mode.
+    private variable modeobj
+
+    # $cmdsobj is the object with the commands to set the interaction modes.
+    private variable cmdsobj
+ 
+    # Current mode
+    private variable current_mode
+
+    # Reference to the TeleConferenceControlC object.
+    private variable tcobj
+
+    destructor {}
+
+    # Defines all modes.
+    private method DefineModes {}
+
+    # Register a new mode.
+    # $name: Mode name.
+    # $gif:  Gif image shown in the mode button.
+    # $pos:  roe and column where button is gridded.
+    # $balloon: button balloon.
+    # $applycmd: Command to execute when mode is applyed.
+    # $vlabels: video labels. Its length must be equal to number of sites in the mode.
+    # $nlongroottitles: Number of long root titles in this mode.
+    # $nshortroottitles: Number of short root titles in this mode.
+    private method Add {name gif pos balloon applycmd vlabels nlongroottitles nshortroottitles} 
+
+    # Creates the user interface.
+    private method CreateGUI {} {}
+
+    # Returns the video labels for the current mode.
+    private method GetModeVideoLabels {}
+
+    # Create the images used to represent the interaction modes.
+    private method CreateIMImages {}
+}
+
+#----------------------------------------------------------------
+
+body TC_ModesC::constructor {w _tcobj} {
+
+    set wroot $w
+
+    set tcobj $_tcobj 
+
+    set cmdsobj [TC_ModeCmdsC "::#auto" $tcobj]
+
+    CreateIMImages
+    DefineModes
+    CreateGUI
+}    
+
+#----------------------------------------------------------------
+
+body TC_ModesC::destructor {} {
+
+    catch {bind $wroot.destroy <Destroy> ""}
+    if {[winfo exists $wroot]} {
+        destroy $wroot
+    }
+
+    delete object $cmdsobj
+    
+    foreach i [array names modeobj] {
+	catch {delete object $i}
+    }
+}
+
+
+#----------------------------------------------------------------
+	
+body TC_ModesC::DefineModes {} {
+    
+    Add mode1 \
+        icaim-one \
+	"1 1" \
+	"One video" \
+	"mode1" \
+	{"1 Site-1"} \
+	1 0
+    
+    Add mode2 \
+        icaim-mode2 \
+	"1 2" \
+	"Two videos" \
+	"mode2" \
+	{"1 Site-1" "2 Site-2"} \
+	2 0
+    
+    Add mode3 \
+        icaim-mode3 \
+	"1 3" \
+	"Three videos" \
+	"mode3" \
+	{"1 Site-1" "2 Site-2" "3 Site-3"} \
+	0 3
+    
+    Add mode4 \
+        icaim-mode4 \
+	"1 4" \
+	"Four videos" \
+	"mode4" \
+	{"1 Site-1" "2 Site-2" "3 Site-3" "4 Site-4"} \
+	0 0
+    
+    Add mode9 \
+        icaim-mode9 \
+	"1 5" \
+	"Nine videos" \
+	"mode9" \
+	"NW N NE W C E SW S SE" \
+	0 0
+    
+    Add modeall \
+        icaim-all \
+	"1 6" \
+	"All videos" \
+	"modeAll" \
+	"" \
+	0 0
+    
+    Add mode1N \
+        icaim-1n \
+	"1 7" \
+	"N+1 videos" \
+	"mode1N" \
+	{"S Speaker" "1 Site-1" "2 Site-2" "3 Site-3" "4 Site-4" "5 Site-5" "6 Site-6" "7 Site-7" "8 Site-8" "9 Site-9" "0 Site-0"} \
+	1 0
+    
+    Add cameradocmode  \
+        icaim-camdoc \
+	"1 10" \
+	"Document Camera" \
+	CameraDoc \
+	{"S Speaker" "C Chair"} \
+	0 0
+    
+    Add vgamode \
+        icaim-viddem \
+	"1 11" \
+	"Vga presentation" \
+	Vga \
+	{"S Speaker" "C Chair"} \
+	0 0
+
+    Add wbmode \
+        icaim-wb \
+	"1 20" \
+	"Whiteboard" \
+	Whiteboard \
+	{"S Speaker" "C Chair"} \
+	0 0
+
+    Add appsharingmode \
+        icaim-appsh \
+	"1 37" \
+	"Application Sharing" \
+	AppSharing \
+	{"S Speaker" "C Chair"} \
+	0 0
+
+    Add quesmode \
+        icaim-ques \
+	"1 40" \
+	"Questions (Speaker + Chair)" \
+	Questions \
+	{"S Speaker" "C Chair"} \
+	1 0
+
+    Add pannelmode \
+        icaim-panel \
+	"1 41" \
+	"Questions (5Speakers + Chair)" \
+	Pannel \
+	{"S1 Speaker-1" "S2 Speaker-2" "S3 Speaker-3" "S4 Speaker-4" "S5 Speaker-5" "C Chair"} \
+	0 0
+
+    Add idlemode \
+        icaim-idle \
+	"1 99" \
+	"Idle mode" \
+	Idle \
+	"" \
+	0 0
+}    
+
+#----------------------------------------------------------------
+
+body TC_ModesC::Add {name gif pos balloon applycmd vlabels nlongroottitles nshortroottitles} {
+
+    set cmd [eval code $cmdsobj $applycmd]
+    set modeobj($name) [tc_mode #auto \
+	    $name \
+	    $gif \
+	    $pos \
+	    $balloon \
+	    $cmd \
+	    [llength $vlabels] \
+	    $vlabels \
+            $nlongroottitles \
+            $nshortroottitles]
+}
+
+#----------------------------------------------------------------
+
+body TC_ModesC::CreateGUI {} {
+
+    frame $wroot -relief flat -borderwidth 0
+    
+    set disabledmodes [session Activity GetResource CtrlPanel disabledmodes ""]
+
+    foreach i [array names modeobj] {
+	if {[lsearch -exact $disabledmodes $i] != -1} continue
+	$modeobj($i) CreateRadioButton $wroot  \
+		[scope current_mode] \
+		[code $this SetCurrentMode $i 1]
+    } 
+
+    #--
+
+    frame $wroot.destroy
+    bind $wroot.destroy <Destroy> "delete object $this"
+}
+
+#----------------------------------------------------------------
+
+body TC_ModesC::SetCurrentMode {modename {unselect_scripts 0}} {
+
+    if {[lsearch -exact [array names modeobj] $modename] == -1} {
+	return -1
+    }	
+
+    set current_mode  $modename
+
+    set lrt [$modeobj($modename) cget -nlongroottitles]
+    set srt [$modeobj($modename) cget -nshortroottitles]
+    set _roottitlesobj [[$tcobj cget -detailsobj] cget -roottitlesobj]
+    $_roottitlesobj EnableRootTitles $lrt $srt
+
+    set _usersobj      [[$tcobj cget -detailsobj] cget -usersobj]
+    $_usersobj      SetVideoLabels [GetModeVideoLabels]
+
+
+    set _agendaobj [$tcobj cget -agendaobj]
+
+    if {$unselect_scripts} {
+	ScriptItemTCC::cleanSelection
+    }
+
+    $_agendaobj refresh
+
+    return 0
+}
+
+#----------------------------------------------------------------
+
+body TC_ModesC::GetCurrentMode {} {
+    return $current_mode
+}
+
+#----------------------------------------------------------------
+
+body TC_ModesC::Apply {} {
+
+    $modeobj($current_mode) Apply
+}
+
+#----------------------------------------------------------------
+
+body TC_ModesC::GetModeVideoLabels {} {
+    return [$modeobj($current_mode) cget -vlabels]
+}
+
+#----------------------------------------------------------------
+
+body TC_ModesC::GetModeNUsers {} {
+    return [$modeobj($current_mode) cget -nusers]
+}
+    
+#----------------------------------------------------------------
+
+body TC_ModesC::CreateIMImages {} {
+
+    CreateImage icaim-one    gif/ica/im-one.gif
+    CreateImage icaim-mode2  gif/ica/im-mode2.gif 
+    CreateImage icaim-mode3  gif/ica/im-mode3.gif 
+    CreateImage icaim-mode4  gif/ica/im-mode4.gif 
+    CreateImage icaim-mode9  gif/ica/im-mode9.gif 
+    CreateImage icaim-all    gif/ica/im-all.gif 
+    CreateImage icaim-1n     gif/ica/im-1n.gif
+    CreateImage icaim-camdoc gif/ica/im-doc.gif 
+    CreateImage icaim-viddem gif/ica/im-vid.gif 
+    CreateImage icaim-wb     gif/ica/im-wb.gif 
+    CreateImage icaim-appsh  gif/ica/im-vnc.gif 
+    CreateImage icaim-ques   gif/ica/im-ques.gif 
+    CreateImage icaim-panel  gif/ica/im-panel.gif 
+    CreateImage icaim-idle   gif/ica/im-idle.gif
+}
+
+#----------------------------------------------------------------
+
+body TC_ModesC::GetModeImage {_modename} {
+
+    if {[info exists modeobj($_modename)]} {
+
+	$modeobj($_modename) cget -image
+
+    } else {
+
+	CreateImage icaim-bug gif/bug.gif
+	return icaim-bug
+
+    }
+}
+
+#----------------------------------------------------------------
+
+
+
+
+
+

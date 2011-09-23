@@ -1,0 +1,122 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# tc_mode.tcl
+#
+# Each interaction mode button.
+#
+#########################################################################
+
+class tc_mode {
+
+    public variable name
+    public variable image
+    public variable pos
+    public variable balloon
+    public variable apply_cmd
+    public variable nusers
+    public variable vlabels
+    public variable nlongroottitles
+    public variable nshortroottitles
+
+    private variable topw
+
+    constructor {name_ image_ pos_ balloon_ acmd_ nusers_ vlabels_ nlongroottitles_ nshortroottitles_} {}
+
+    destructor {}
+
+    # Create a radiobutton for this mode.
+    # $w is the widget where the botton will be packed.
+    # $var is the radiobutton variable.
+    # $cmd is the command associated to the button.
+    public method CreateRadioButton {w var cmd}
+
+    # Apply the $apply_cmd command to set the interaction mode.
+    public method Apply {}
+}
+
+#-----------------------------------------------------------------------
+
+body tc_mode::constructor {name_ image_ pos_ balloon_ acmd_ nusers_ vlabels_ nlongroottitles_ nshortroottitles_} {
+    
+    set name        $name_
+    set image       $image_
+    set pos         $pos_
+    set balloon     $balloon_
+    set apply_cmd   $acmd_
+    set nusers      $nusers_
+    set vlabels     $vlabels_
+    set nlongroottitles $nlongroottitles_
+    set nshortroottitles $nshortroottitles_
+
+    set topw ""
+}
+
+#-----------------------------------------------------------------------
+
+body tc_mode::destructor {} {
+
+    catch {bind $topw <Destroy> ""}
+    if {[winfo exists $topw]} {
+        destroy $topw
+    }
+}
+
+#-----------------------------------------------------------------------
+
+body tc_mode::CreateRadioButton {w var cmd} {
+
+    set topw $w.b$name
+
+    radiobutton $topw \
+	-image $image \
+	-variable $var \
+	-value $name \
+	-indicator 0 \
+	-selectcolor yellow \
+	-activebackground yellow \
+	-bd 0 \
+	-relief flat \
+	-command $cmd
+
+    balloon add $topw $balloon
+
+    grid $topw -row    [lindex $pos 0] \
+	    -column [lindex $pos 1] 
+    
+    grid columnconfigure $w [lindex $pos 1] -weight 1
+
+    bind $topw <Destroy> "delete object $this"
+}
+
+#-----------------------------------------------------------------------
+
+body tc_mode::Apply {} {
+
+    eval $apply_cmd
+}
+
+#-----------------------------------------------------------------------
+
+

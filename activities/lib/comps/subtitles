@@ -1,0 +1,10 @@
+
+
+SubTitles.whatis:           component
+SubTitles.font:             *-courier-*-r-*-*-*-240-*-*-*-*-*-*
+SubTitles.font:             FreeSerif 32 normal
+SubTitles.fg:               yellow
+SubTitles.fg:               black
+SubTitles.bg:               #000077
+SubTitles.bg:               white
+SubTitles.overrideredirect: 0

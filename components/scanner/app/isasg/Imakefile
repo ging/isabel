@@ -1,0 +1,14 @@
+Library(isasg.conf)
+LibExecTool(isasg,isasg.c)
+
+/*
+ * Special case : kernel module
+ */
+CFLAGS=-I. -D_KERNEL -O -Dsparc
+LDFLAGS=-r
+KERNELLD=ld
+LD=$(KERNELLD)
+EXTRAOBJECTS=
+STDLIBS=
+LIB=
+

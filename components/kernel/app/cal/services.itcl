@@ -1,0 +1,92 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# services.itcl
+#
+# Services for the interactive isabel kernel.
+#
+# - P2PT: protocol to primitive translator
+#         Translate the protocol messages into tcl commands.
+#
+#########################################################################
+
+
+class ServicesC {
+
+    constructor {} {}
+    destructor  {}
+
+    # Translates the protocol message $msg into a tcl command.
+    public method P2PT {msg} 
+
+}
+
+
+#-----------------------------------------------------------------
+
+body ServicesC::constructor {} {
+
+}
+
+#-----------------------------------------------------------------
+
+body ServicesC::destructor {} {
+
+}
+
+#-----------------------------------------------------------------
+
+body ServicesC::P2PT {msg} {
+
+    set primitive [lindex $msg 0]
+    switch -regexp $primitive {
+	{^CAL$} { # Site Manager primitive
+	    set pref SiteManager::
+	}
+	{^SMSC$} { # SMS: State Messages Service
+	    set pref "sms processMessage "
+	}
+	{^SNMP$} { # SNMP Monitor primitive
+	    set pref "component SnmpCmd "
+	}
+	{^EI$} { # Event Info primitive
+	    set pref "session "
+	}
+	{^SERV$} { # Service primitive
+	    set pref "session Activity "
+	}
+	{^\w+::\w+} { # Static method a some class
+	    set pref "$primitive "
+	}
+	default { # Component Request primitive
+	    set pref "component $primitive "
+	}
+    }
+    set cmd $pref[lrange $msg 1 end]
+    return $cmd
+}
+
+#-----------------------------------------------------------------
+
+

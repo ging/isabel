@@ -1,0 +1,360 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+class ChairTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    public variable chair
+
+    #-- Building the tree
+
+    constructor {_agendaobj _chair} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+    
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+  
+    public method getTitle {}
+
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+    
+    public method getNodes {}
+
+    #-- References
+
+    # Counter: How many existing objects are pointing to me
+    public variable chairreferences 0
+
+    public method getReferenceTitle {}
+
+    #-- Accessors
+
+    public method getPerson {}
+
+    public method getAcronym {}
+    public method getName {}
+    public method getPosition {}
+    public method getOrganization {}
+    public method getSite {}
+
+    public method getSiteId {}
+    public method getFullname {}
+    public method getMain {}
+  
+    #-- Online  
+
+    public method online {}
+  
+    #-- Node edition
+
+    public method edit {}
+
+    #-- Selection
+
+    # Return 1 if the node can be selected
+    public method isSelectable {}
+
+    # Methods called when a node is selected or unselected.
+    public method select {} 
+    public method unselect {}
+
+    # Return 1 if the node is selected, otherwise returns 0.
+    public method isSelected {}
+    
+    #-- Scripts
+    
+    public method createScriptItems {}
+    
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+}
+
+#-----------------------------------------
+
+body ChairTCC::constructor {_agendaobj _chair} {
+
+    CheckClass  $_chair PersonTCC
+
+    set chair    $_chair
+
+    set _pr [$chair cget -personreferences]
+    $chair configure -personreferences [expr $_pr + 1]
+}
+
+#-----------------------------------------
+
+body ChairTCC::destructor {} {
+
+    if {[isSelected]} {
+        unselect
+    }
+
+    set _pr [$chair cget -personreferences]
+    $chair configure -personreferences [expr $_pr - 1]
+}
+
+#-----------------------------------------
+
+body ChairTCC::parse {agendaobj str} {
+
+    set _acronym [lindex $str 0]
+    set _id     [getOptionListValue $str -id]
+
+    WriteTraceMsg "ica: parsing chairman: \"$_acronym\""
+
+    set _personobj [PersonTCC::getPerson $_acronym]
+    if {$_personobj == ""} {
+	set emsg "ERROR:: There is nobody with the acronym \"$_acronym\"."
+	puts stderr $emsg
+	error $emsg 
+    }
+
+    set chair $_personobj
+
+    set _me [ChairTCC ::#auto $agendaobj $chair]
+    
+    if {$_id != ""} {
+	SessionListTCC::addObjTable $_id $_me
+    }
+
+    return $_me
+}
+
+#-----------------------------------------
+
+body ChairTCC::prettyPrinter {{offset 0}} {
+
+    if {$chairreferences == 0} {
+	return [list [$chair cget -acronym]]
+    } else  {
+	return [list [$chair cget -acronym] -id chair/[getMyUid]]
+    }
+}
+
+#-----------------------------------------
+
+body ChairTCC::getTitle {} {
+
+    return "Chair: [$chair getTitle]"
+}
+
+#-----------------------------------------
+
+body ChairTCC::getReferenceTitle {} {
+
+    if {$chairreferences != 0} {
+	return "\[$chairreferences\]"
+    } else {
+	return ""
+    }
+}
+
+#-----------------------------------------
+
+body ChairTCC::getMyNode {} {
+
+    if {[isSelected]} {
+	set tags "selected"
+    } else {
+	set tags ""
+    }
+    
+    if {[$chair online]} {
+    	set _icons ""
+    } else {
+     	set _icons icaoffline
+    }
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+    
+    list \
+	[getMyUid] \
+	"Chair: [$chair getTitle] [getReferenceTitle]" \
+	"chair leaf $tags" \
+	"icachair $_icons"
+}
+
+#-----------------------------------------
+
+body ChairTCC::getNodes {} {
+
+}
+
+#-----------------------------------------
+
+body ChairTCC::getPerson {} {
+
+   return $chair
+}
+
+#-----------------------------------------
+
+body ChairTCC::getAcronym {} {
+
+    $chair getAcronym
+}
+
+#-----------------------------------------
+
+body ChairTCC::getName {} {
+
+    $chair getName
+}
+
+#-----------------------------------------
+
+body ChairTCC::getPosition {} {
+
+    $chair getPosition
+}
+
+#-----------------------------------------
+
+body ChairTCC::getOrganization {} {
+
+    $chair getOrganization
+}
+
+#-----------------------------------------
+
+body ChairTCC::getSite {} {
+
+    $chair getSite
+}
+
+#-----------------------------------------
+
+body ChairTCC::getSiteId {} {
+
+    [getSite] getSiteId 
+}
+
+#-----------------------------------------
+
+body ChairTCC::getFullname {} {
+
+    [getSite] getFullname
+}
+
+#-----------------------------------------
+
+body ChairTCC::getMain {} {
+
+    [getSite] getMain
+}
+
+#-----------------------------------------
+
+body ChairTCC::online {} {
+
+    [getSite] online
+}
+
+#-----------------------------------------
+
+body ChairTCC::edit {} {
+
+    $chair edit
+}
+
+#-----------------------------------------
+
+body ChairTCC::isSelectable {} {
+
+    return 1
+}
+
+#-----------------------------------------
+
+body ChairTCC::select {} {
+
+    [$agendaobj getSelection] select $this
+}
+
+#-----------------------------------------
+
+body ChairTCC::unselect {} {
+
+    [$agendaobj getSelection] unselect $this
+}
+
+#-----------------------------------------
+
+body ChairTCC::isSelected {} {
+
+    [$agendaobj getSelection] isSelected $this
+}
+
+#-----------------------------------------
+
+body ChairTCC::createScriptItems {} {
+
+    set _session [getParent]
+    
+    set _script [$_session cget -script]
+    
+    $_script generateItem mode1    $this ""
+    $_script generateItem mode1N   $this ""
+    $_script generateItem quesmode $this ""
+}
+
+#-----------------------------------------
+
+body ChairTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "Edit Person" \
+	-command [code $this edit]
+
+    $menu add separator
+
+    set _selobj [$agendaobj getSelection]
+
+    $menu add command -label "Select me" \
+	-command "$_selobj unselectAll ; [code $this select]" 
+
+    $menu add command -label "Create some Scripts" \
+	-command "[code $this createScriptItems]" 
+
+    return $menu   
+}
+
+#-----------------------------------------
+

@@ -1,0 +1,222 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+################################################################
+#
+#  Previewer widget for the scanner dialog window.
+#
+################################################################
+
+
+class ScanPreviewC {
+
+    private variable width   216
+    private variable height  304
+
+    # widget path
+    private variable wroot
+
+
+    private variable selecting 0
+    private variable x0 0
+    private variable y0 0
+    private variable x1
+    private variable y1
+    private variable color yellow
+
+    private variable rectId ""
+
+    private variable scanobj 
+
+    # Callback to execute when selection is modified
+    private variable selectionCB ""
+
+    constructor {w _scanobj} {}
+    destructor {}
+
+    public method SetSelectionCB {selcb} {}
+
+    private method StartSelection {x y} {}
+    private method EndSelection {} {}
+    private method SetSelection {x y} {}
+
+    private method SelectAll {} {}
+
+    private method DrawBox {} {}
+
+    # Return the selected area as <x y width height> in mm.
+    public method GetSelection {} {}
+
+    public method StartPreview {brightness contrast doneCB} {}
+    public method StopPreview {} {}
+    private method PreviewDone {fileout} {}
+}
+
+#-----------------------------------------
+
+body ScanPreviewC::constructor {w _scanobj} {
+
+    set scanobj $_scanobj
+
+    frame $w -relief groove -bd 3 
+
+    set wroot $w.c
+
+    canvas $wroot -width $width -height $height -highlightthickness 0 \
+	    -background white
+    pack $wroot -expand 1 -fill both -padx 5 -pady 5
+
+    set x1 [expr $width-1]
+    set y1 [expr $height-1]
+    
+    bind $wroot <ButtonPress-1>   [code $this StartSelection %x %y]
+    bind $wroot <ButtonRelease-1> [code $this EndSelection]
+    bind $wroot <B1-Motion>       [code $this SetSelection %x %y]
+    bind $wroot <Double-1>        [code $this SelectAll]
+
+    DrawBox
+}
+#-----------------------------------------
+
+body ScanPreviewC::StartSelection {x y} {
+
+    set selecting 1
+    set x0 $x
+    set y0 $y
+    set x1 $x
+    set y1 $y
+
+    DrawBox
+}
+
+#-----------------------------------------
+
+body ScanPreviewC::EndSelection {} {
+
+    set selecting 0
+}
+
+#-----------------------------------------
+
+body ScanPreviewC::SetSelection {x y} {
+
+    if {$selecting} {
+
+	if {$x > $width-1} {
+	    set x1 [expr $width-1]
+	} elseif {$x < 0} {
+	    set x1 0
+	} else {
+	    set x1 $x
+	}
+	if {$y > $height-1} {
+	    set y1 [expr $height-1]
+	} elseif {$y < 0} {
+	    set y1 0
+	} else {
+	    set y1 $y
+	    
+	}
+    DrawBox
+    }
+}
+
+#-----------------------------------------
+
+body ScanPreviewC::SelectAll {} {
+
+    set x0 0
+    set y0 0
+    set x1 [expr $width-1]
+    set y1 [expr $height-1]
+
+    DrawBox
+}
+
+#-----------------------------------------
+
+body ScanPreviewC::DrawBox {} {
+
+    $wroot delete $rectId
+    set rectId [$wroot create rectangle $x0 $y0 $x1 $y1 -outline $color -width 2]
+    $wroot raise $rectId
+
+    if {$selectionCB != ""} {
+	uplevel $selectionCB
+    }
+}
+
+#-----------------------------------------
+
+body ScanPreviewC::GetSelection {} {
+    
+    set x [expr round(($x0 > $x1 ? $x1 : $x0)*25.4/26)]
+    set y [expr round(($y0 > $y1 ? $y1 : $y0)*25.4/26)]
+    set w [expr round(abs($x0-$x1)*25.4/26)]
+    set h [expr round(abs($y0-$y1)*25.4/26)]
+
+    return [list $x $y $w $h]
+}
+
+#-----------------------------------------
+
+body ScanPreviewC::StartPreview {brightness contrast doneCB} {
+
+    $scanobj Scan Grayscale 26 $brightness $contrast \
+	    0 0 210 296 0 /tmp/preview[clock clicks].gif \
+	    $doneCB [code $this PreviewDone] "" puts
+}
+
+#-----------------------------------------
+
+body ScanPreviewC::PreviewDone {fileout} {
+    
+    image create photo preview -file $fileout 
+    $wroot create image 0 0 -image preview -anchor nw
+    file delete $fileout
+    DrawBox
+}
+
+#-----------------------------------------
+
+body ScanPreviewC::StopPreview {} {
+
+}
+
+#-----------------------------------------
+
+body ScanPreviewC::SetSelectionCB {selcb} {
+
+    set selectionCB $selcb
+}
+
+#-----------------------------------------
+
+
+
+
+
+
+
+
+
+

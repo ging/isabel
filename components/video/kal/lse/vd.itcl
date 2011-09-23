@@ -1,0 +1,478 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vd.itcl
+#
+# Class to access to the lse daemon.
+#
+#########################################################################
+
+class LseDaemonC {
+    
+    # Directory to save configuration files
+    private variable cfg_dir      
+    
+    # lse packet size
+    private variable bucket 0
+    
+    # lse bandwidth
+    private variable bw 1
+    
+    # Multiply factor to apply to the lse bandwidth.
+    private variable bwfactor 
+    
+    # Multiply factor to apply to the lse grab size.
+    private variable grabsizefactor 
+    
+    # Multiply factor to apply to the image quality.
+    private variable qltyfactor 
+    
+    # Local grab size
+    private variable grabsize 128x96
+    
+    # Current codec name.
+    private variable codec ""
+    
+    # Current image quality.
+    private variable qlty 30
+    
+    # Video daemon task object
+    private variable vdtObj 
+    
+    constructor {_vdtObj} {}
+    
+    destructor {}
+    
+    public method Nop {} {}
+    
+    public method RDO {cmd} 
+    public method RPC {cmd} 
+    public method RCB {cmd cb}
+    
+    public method SetBucket {b}
+    public method GetBucket {}
+    
+    public method SetBW {_bw}
+    public method GetBW {}
+    public method SetBWFactor {f}
+    public method GetBWFactor {}
+    
+    public method SetLocalGrabSize {gs}
+    public method GetLocalGrabSize {}
+    public method SetGrabSizeFactor {f}
+    public method GetGrabSizeFactor {}
+    
+    public method SetQlty {q}
+    public method SetQltyFactor {f}
+    public method GetQltyFactor {}
+    
+    public method SetGeometry {chId geometry}
+    
+    public method SetLocalCodec {c}
+    public method GetLocalCodec {}
+    
+    public method SetLocalConfiguration {_grabsize _codec _bw} 
+    
+    # Send all the needed commands to configure the lse C daemon state.
+    # Used when the lse C daemon state is restarted.
+    public method ReapplyState {} 
+    
+    #------------------------
+    
+    public method Info {}
+    
+    public method ExecDaemonCmd {cmd {cb ""}}
+    
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+    
+    #------------------------
+}
+
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::constructor {_vdtObj} {
+    
+    set vdtObj $_vdtObj
+    
+    set cfg_dir [session Environ cget -config_dir]/lse
+    file mkdir $cfg_dir
+    
+    set bwfactor        [session Activity GetResource Video bwfactor        1]
+    set grabsizefactor  [session Activity GetResource Video grabsizefactor  1]
+    set qltyfactor      [session Activity GetResource Video qltyfactor      1]
+    
+    # Bucket size:
+    SetBucket 900
+}
+
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::destructor {} {
+    
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::RDO {cmd} {
+    
+    $vdtObj RDO $cmd
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::RPC {cmd} {
+    
+    $vdtObj RPC $cmd
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::RCB {cmd cb} {
+    
+    $vdtObj RCB $cmd $cb
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::SetBucket {b} {
+    set bucket $b
+    RDO video_bucket_size($bucket)
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::GetBucket {} {
+    return $bucket
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::SetBW {_bw} {
+    
+    set bw $_bw
+    
+    LseLayoutInfoC::BW [VideoLSEComponentC::LseChId] $_bw
+    
+    #--  Adapt line bw (network headers, rtp headers, et.) to codec bw (only image bits)
+    if {[catch {expr $_bw*0.8} res]} {
+	set emsg "Lse Error: Invalid bw value: \"$bw\""
+	ErrorTraceMsg "- $emsg"
+	return 
+    }
+    set _bw $res
+    
+    #---- Reduce bw if protection FEC is used
+    set _fec_k [session Activity GetResource Video FEC.K 0]
+    
+    if {$_fec_k != "" && $_fec_k != "0"} {
+	if { ! [catch "expr 1.0 * $_bw * $_fec_k / ($_fec_k + 1)" _res]} {
+	    set _bw $_res
+	}
+    }
+    
+    #-- Check limits
+    
+    if {$_bw < 0.01} {set _bw 0.01}
+    set _bw [expr $_bw*$bwfactor]
+    
+    RDO video_channel_bandwidth([VideoLSEComponentC::LseChId],$_bw)
+} 
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::GetBW {} {
+    return $bw
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::SetBWFactor {f} {
+    
+    if {$f == 0} {
+	ErrorTraceMsg "Lse: Invalid bandwidth factor $f"
+	return 
+    }
+    set bwfactor $f
+    
+    LseLayoutInfoC::BWFactor $f
+    
+    SetBW $bw
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::GetBWFactor {} {
+    
+    return $bwfactor
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::SetLocalGrabSize {gs} {
+    
+    if {[catch {
+	set grabsize $gs
+	regexp {^0*([0-9]+)x0*([0-9]+)} $gs all w h
+	set w16 [expr round($w*$grabsizefactor/16)]
+	set h16 [expr round($h*$grabsizefactor/16)]
+	set w [expr $w16*16]
+	set h [expr $h16*16]
+	set gs "${w}x${h}"
+	
+	LseLayoutInfoC::GrabSize [VideoLSEComponentC::LseChId] $grabsize
+	
+	RDO video_grab_size([VideoLSEComponentC::LseChId],$gs)
+    } msgerr]} {
+	ErrorTraceMsg "Lse: I can't set local grab size \"$gs\": $msgerr"
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::GetLocalGrabSize {} {
+    
+    return $grabsize
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::SetGrabSizeFactor {f} {
+    
+    if {$f == 0} {
+	ErrorTraceMsg "Lse: Invalid lse grab size factor $f"
+	return 
+    }
+    set grabsizefactor $f
+    
+    LseLayoutInfoC::GrabSizeFactor $f
+    
+    SetLocalGrabSize $grabsize
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::GetGrabSizeFactor {} {
+    
+    return $grabsizefactor
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::SetQlty {q} {
+    
+    set qlty $q
+    
+    LseLayoutInfoC::Qlty [VideoLSEComponentC::LseChId] $qlty
+    
+    set fq [expr round($q*$qltyfactor)]
+    if {$fq < 1}   {set fq 1}
+    if {$fq > 100} {set fq 100}
+    RDO video_codec_quality([VideoLSEComponentC::LseChId],$fq)
+} 
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::SetQltyFactor {f} {
+    
+    if {$f == 0} {
+	ErrorTraceMsg "Lse: Invalid lse quality factor $f"
+	return 
+    }
+    set qltyfactor $f
+    
+    LseLayoutInfoC::QltyFactor $f
+    
+    SetQlty $qlty
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::GetQltyFactor {} {
+    
+    return $qltyfactor
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::SetGeometry {chId geometry} {
+    
+    set geom [dvirtual V2R_Geometry $geometry 1 1 1 NW]
+    RDO video_window_geometry($chId,$geom)
+    LseLayoutInfoC::Geometry $chId $geom
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::SetLocalCodec {c} {
+    
+    set me [VideoLSEComponentC::LseChId]
+    
+    set res [RPC video_select_codec($me,$c)]
+    
+    if {[string first "ERROR" $res] == 0} {
+	ErrorTraceMsg "Lse: codec \"$c\" not supported."
+	return
+    }
+    
+    set codec $c
+    
+    LseLayoutInfoC::Codec $me $c
+    
+    set qlty [GetOptionListValue $c -qlty 50]
+    SetQlty $qlty
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::GetOptionListValue {list optname {default ""}} {
+    
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::GetLocalCodec {} {
+    
+    return $codec
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::SetLocalConfiguration {_grabsize _codec _bw} {
+    
+    set me [VideoLSEComponentC::LseChId]
+    
+    #--- codec and img qlty ----
+    set codecname [lindex $_codec 0]
+    set qlty      [GetOptionListValue $_codec -qlty 50]
+    
+    set fq [expr round($qlty*$qltyfactor)]
+    if {$fq < 1}   {set fq 1}
+    if {$fq > 100} {set fq 100}
+    
+    LseLayoutInfoC::Codec     $me $codecname
+    LseLayoutInfoC::Qlty      $me $qlty
+    
+    #--- Grabsize ----
+    
+    if {[catch {
+	set grabsize $_grabsize
+	regexp {^0*([0-9]+)x0*([0-9]+)} $_grabsize all w h
+	set w16 [expr round($w*$grabsizefactor/16)]
+	set h16 [expr round($h*$grabsizefactor/16)]
+	set w [expr $w16*16]
+	set h [expr $h16*16]
+	set _grabsize "${w}x${h}"
+	
+    } msgerr]} {
+	ErrorTraceMsg "Lse: I can't set local grab size \"$gs\": $msgerr"
+	set grabsize  ""
+	set _grabsize ""
+    }
+    
+    LseLayoutInfoC::GrabSize  $me $grabsize
+    
+    #--- BW
+    
+    set bw $_bw
+    
+    LseLayoutInfoC::BW        $me $_bw
+    
+    #--  Adapt line bw (network headers, rtp headers, et.) to codec bw (only image bits)
+    if {[catch {expr $_bw*0.8} res]} {
+	set emsg "Lse Error: Invalid bw value: \"$bw\""
+	ErrorTraceMsg "- $emsg"
+	return 
+    }
+    set _bw $res
+    
+    #---- Reduce bw if protection FEC is used
+    set _fec_k [session Activity GetResource Video FEC.K 0]
+    
+    if {$_fec_k != "" && $_fec_k != "0"} {
+	if { ! [catch "expr 1.0 * $_bw * $_fec_k / ($_fec_k + 1)" _res]} {
+	    set _bw $_res
+	}
+    }
+    
+    #--  check limits
+    
+    if {$_bw < 0.01} {set _bw 0.01}
+    set _bw [expr $_bw*$bwfactor]
+    
+    #--- DO IT
+    
+    RDO video_configure_channel($me,0,$_grabsize,$codecname,$fq,$_bw)
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::ReapplyState {} {
+    
+    # Bucket size:
+    SetBucket $bucket
+    
+    SetLocalConfiguration $grabsize $codec $bw 
+    
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::Info {} {
+    global lseD
+    
+    set res " o Lse Daemon:\n"
+    
+    append res "     base bandwidth = $bw\n"
+    append res "   bandwidth factor = $bwfactor\n"
+    append res "          grab size = $grabsize\n"
+    append res "        bucket size = $bucket\n"
+    append res "      current codec = $codec\n"
+    return $res
+}
+
+#--------------------------------------------------------------------------
+
+body LseDaemonC::ExecDaemonCmd {cmd {cb ""}} {
+    
+    if {$cb == ""} {
+	RDO $cmd
+    } else {
+	RCB $cmd $cb
+    }
+}
+
+#--------------------------------------------------------------
+

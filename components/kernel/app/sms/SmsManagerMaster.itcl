@@ -1,0 +1,310 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#
+# SmsManagerMaster.itcl
+#
+#  Clase que proporciona un servicio general de gestion de estados.
+#  Este servicio puede usarse por los componentes para mantener su estado 
+#  particular, por el gestor de modos de interaccion para almacenar el modo 
+#  actual, etc.
+#
+#  El funcionamiento del servicio es el siguiente:
+#     - Los estados se mantienen en el master.
+#     - Se mantienen varios estados independientes, cada uno asociado a 
+#       una clave distinta.
+#     - Cualquier sitio puede enviar un mensaje al master para cambiar el 
+#       estado asociado a una clave.
+#       El formato del mensaje recibido por el master es:
+#              "SMSM" <key> <nsec> <origen> <operacion> <lista_de_opciones_y_valores>
+#     - Cuando se produce un cambio que modifica los datos (opciones o valores) de un 
+#       estado, el master envia un mensaje de sincronismo con SINCR=TRUE al grupo 
+#       isabel_sms_state_<clave> con el nuevo estado.
+#       El formato del mensaje enviado es:
+#	       "SMSC" <key> "state" <nsec> <lista_de_opciones_y_valores>
+#     - Cuando se produce un cambio en el numero de secuencia de un estado, pero sin
+#       modificar los datos del estado, el master envia un mensaje de sincronismo 
+#       con SINCR=TRUE al grupo isabel_sms_nsec_<clave> informando del nuevo numero de secuencia.
+#       El formato del mensaje enviado es:
+#	       "SMSC" <key> "nsec" <nsec> 
+#
+#  Notas que los prefijos de los mensajes enviado al master, y de los enviados a los clientes
+#  son diferentes: SMSM y SMSC
+#
+#  El valor de los estados se almacena en un objeto SmsState, que es un HashMap con los
+#  pares (opcion,valor) que definen el estado. 
+#  SmsState contiene ademas un contador (nsec) para saber cual es el ultimo estado valido.
+#  SmsState tambien mantiene un valor llamado Origin que se usa para resolver conflictos
+#  cuando tengo varios estados con el mismo nsec.
+#    - Si tengo un estado con un determinado nsec, y llega un nuevo mensaje con un estado
+#      con un valor inferior de nsec, entonces ignoro el nuevo mensaje.
+#    - Si el nuevo estado tiene el mismo nsec, entonces solo actualizo el estado si los 
+#      valores de origin son iguales. 
+#    - Y si el nuevo estado tiene un nsec mayor, entonces lo uso como nuevo estado.
+#
+
+class SmsManagerMaster {
+    
+    #
+    #  Prefijo que se antepone a la clave para formar el nombre del grupo.
+    #
+    public variable GROUP_PREFIX_STATE "isabel_sms_state_"
+    public variable GROUP_PREFIX_NSEC  "isabel_sms_nsec_"
+
+    # Tabla que mantiene los estados.
+    # Las claves de esta tabla son los strings que se usan para identificar a
+    # cada grupo de estados independientes.
+    # El valor asociado a cada clave es el nombre de un objeto SmsState, que es un HashMap en el 
+    # que se mantienen los pares (opcion,valor), y que ademas incluye un contador nsec y un 
+    # valor origin, que se usan para saber cual es el ultimo estado valido.
+    private variable table
+    
+    #
+    # Crea un objeto SmsManagerMaster.
+    #
+    constructor {} {} {
+	WriteTraceMsg "Creating a SMS object."
+
+	makeGUI
+    }
+
+    #
+    # Este metodo se invoca para procesar un mensaje recibido de SeCo, y
+    # que contiene el valor de un estado.
+    #
+    # $key Clave que identifica el estado a actualizar.
+    #
+    # $nsec es el numero de secuencia de este estado. Si este valor es menor que el del estado
+    # estado actual, entonces ignoro el mensaje.
+    # Sin embargo, el numero de secuencia 0 significa el valor actual mas 1. Se usa para forzar a que
+    # se acepte el mensaje. Se usa al inicio, cuando no se sabe cual es el numero de secuencia inicial,
+    # o cuando se quiere forzar un valor.
+    #
+    # $origin es el valor usador para resolver conflictos cuando colisionan dos nsec.
+    #
+    # $ope Es la operacion a realizar. Valores validos: "set", "add" o "del".
+    # "set" se borrar todos los valores del estado y sustituir por los nuevos.
+    # "add" se usa para añadir mas parejas (opcion valor) al estado actual.
+    # "del2 para borrar una serie dada de opciones (y su valor asociado).
+    #
+    # $args puede ser:
+    #   - Si la operacion es "set" o "add":
+    #           lista con los pares {$opcion $valor} que formaran el nuevo estado.
+    #   - Si la operacion es "del":
+    #           lista con las opciones unicamente. Sin los valores.
+    #
+    # Si el estado recibido es mas moderno que el actual, guardo el nuevo estado y lo retransmito
+    # por el grupo "isabel_sms_<key>" de SeCo como un mensaje de sincronismo. <key> es la clave 
+    # del estado al que se refiere el mensaje.
+    #
+    public method processMessage {key nsec origin ope args} {
+
+	if 0 {
+	    
+	    echo ---------------------- SmsManagerMaster::processMessage key=$key nsec=$nsec origin=$origin ope=$ope args=$args
+	    
+	}
+
+	# Which type of message should I send? state, nsec or nothing.
+	set _send_msg ""
+
+        if { ! [info exists table($key)]} {
+	    set table($key) [SmsState "#auto" $nsec $origin]
+	    set _send_msg "state"
+	}
+	
+	if { ! [$table($key) applicable $nsec $origin]} {
+	    # Older state: ignoring it.
+	    return 
+	}
+	
+	
+	$table($key) setOrigin $origin
+	
+	if {$nsec > [$table($key) getNSec]} {
+	    $table($key) setNSec $nsec
+	    set _send_msg "nsec"
+	}
+	
+	switch -- xx$ope {
+	    xxadd {
+		if { ! [$table($key) included $args]} {
+		    set _send_msg "state"
+		    if {$nsec == 0} {
+			$table($key) incrNSec
+		    }
+		    eval $table($key) add $args
+		}
+	    }
+	    xxset {
+		if { ! [$table($key) equals $args]} {
+		    set _send_msg "state"
+		    if {$nsec == 0} {
+			$table($key) incrNSec
+		    }
+		    $table($key) cleanup
+		    eval $table($key) add $args
+		}
+	    }
+	    xxdel {
+		if { ! [$table($key) disjoint $args]} {
+		    set _send_msg "state"
+		    if {$nsec == 0} {
+			$table($key) incrNSec
+		    }
+		    eval $table($key) del $args
+		}
+	    }
+	}
+	
+	# Retransmitir el nuevo estado completo por el grupo isabel_sms_<key>. 
+	switch -- $_send_msg {
+	    nsec {
+		set _nsec [$table($key) getNSec]
+		network RDOSync "${GROUP_PREFIX_NSEC}${key}" 1 "SMSC $key nsec $_nsec" 1
+		
+	    }
+	    state {
+		set _nsec [$table($key) getNSec]
+		set _opva [$table($key) list]
+		network RDOSync "${GROUP_PREFIX_STATE}${key}" 1 "SMSC $key state $_nsec $_opva" 1
+	    }
+	}
+	
+	updateGUI
+    }
+    
+
+    # toplevel widget name
+    private variable toplevel .sms_state 
+
+    private variable wrapmode none
+
+
+    private method changeWrapMode {} {
+	$toplevel.t configure -wrap $wrapmode
+    }
+
+    
+    private method makeGUI {} {
+	global env
+	
+	if {[info exists env(ISABEL_SHOW_SMS)]} {
+	    
+	    set display [session Environ cget -ctrl_display]
+	    toplevel $toplevel -screen $display
+	    
+	    frame  $toplevel.top
+	    label  $toplevel.top.l -text "SMS"
+	    checkbutton $toplevel.top.w \
+		-text "wrap" \
+		-offvalue none \
+		-onvalue char \
+		-variable [scope wrapmode] \
+		-command [code $this changeWrapMode]
+
+	    text $toplevel.t \
+		-wrap none \
+		-xscrollcommand "$toplevel.sbx set" \
+		-yscrollcommand "$toplevel.sby set"
+	    
+	    scrollbar $toplevel.sbx -orient horizontal -command "$toplevel.t xview"
+
+	    scrollbar $toplevel.sby -orient vertical -command "$toplevel.t yview"
+
+
+	    pack $toplevel.top -side top -fill x 
+	    pack $toplevel.top.l -side left -expand 1 -fill both
+	    pack $toplevel.top.w -side right
+
+	    pack $toplevel.sbx -side bottom -fill x -padx 5
+	    pack $toplevel.sby -side right -fill y -pady 5
+	    pack $toplevel.t  -side left -expand 1 -fill both -padx 2 -pady 5
+
+	    $toplevel.t tag configure title \
+		-font -adobe-*-bold-r-*-*-16-*-*-*-*-*-*-* \
+		-foreground black
+
+	    $toplevel.t tag configure cont \
+		-foreground darkgreen
+
+	    $toplevel.t tag configure opt \
+		-foreground black
+
+	    $toplevel.t tag configure val \
+		-foreground blue
+
+	    $toplevel.t conf -state disabled
+	}
+    }
+
+    # Current vertical scrollbar position
+    private variable ysb ""
+    
+    private method refreshViewPort {} {
+	
+	if {$ysb == ""} return
+
+	if {$ysb == "0.0"} {
+	    set ysb ""
+	    return
+	}
+
+	eval $toplevel.t yview moveto $ysb
+	set ysb ""
+    }
+
+
+    private method updateGUI {} {
+
+	if {[winfo exists $toplevel]} {
+
+	    $toplevel.t conf -state normal
+	    
+	    if {$ysb == ""} {
+		set ysb [lindex [$toplevel.sby get] 0]
+		after 100 after idle [code $this refreshViewPort]
+	    }
+
+	    $toplevel.t delete 0.0 end
+	    
+	    foreach key [lsort -dictionary [array names table]] {
+
+		$toplevel.t insert end $key title
+		$toplevel.t insert end "  ([$table($key) getNSec]/[$table($key) getOrigin])" cont
+
+		set _current_tag opt
+		foreach _i [$table($key) list] {
+		    $toplevel.t insert end " $_i" $_current_tag
+		    set _current_tag [expr {$_current_tag == "opt" ? "val" : "opt"}]
+		}
+		#$toplevel.t insert end "  [$table($key) list]\n"
+		$toplevel.t insert end "\n"
+	    }
+
+	    $toplevel.t conf -state disabled
+
+	}
+
+    }    
+}
+

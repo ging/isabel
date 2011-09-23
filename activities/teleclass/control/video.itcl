@@ -1,0 +1,302 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# video.itcl
+#
+# Widget to select the main sites, i.e. those sites with a visible video window.
+#
+# Notes:
+#   The key used to identify the sites (connected or not) is their site key.
+#
+#########################################################################
+
+class TeleClass_CP_Video {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the widget in $w
+    constructor {w} {}
+    
+    # add a site.
+    public method add {site_id}    
+
+    # remove a site.
+    public method rem {site_id}    
+
+    # Returns a list with the site_id of the selected sites.
+    public method GetSelected {} 
+
+    # Returns a list with the site_ of the selected and connected sites.
+    public method GetSelectedAndConnected {} 
+
+    # For the site with the $site_id given, set the state of his Video checkbutton to $bool
+    public method SetState {site_id bool}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget to create.
+    private variable topw
+
+    # list with the site_id of the connected sites.
+    private variable connected
+
+    # list with the site_id of the declared sites.
+    private variable declared ""
+
+    # $cbutton(site_id): 1 if the site with this site_id is selected.
+    private variable cbutton
+
+    private variable bg
+    private variable fg
+
+    destructor {}
+
+    # Makes the GUI
+    private method MakeGUI {}
+
+    # Declare a future user
+    private method declare {site_id descr} 
+
+    # Transform the given site_id in an only alphabetic string. 
+    private method alphabeticesiteid {site_id}
+
+    # Adds or removes the given site to the main sites list, and sends a SMS message
+    # with the updated list.
+    private method SmsUpdateMainSites {site_id}
+
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::constructor {w} {
+
+    set topw $w
+
+    set connected ""
+
+    MakeGUI
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::destructor {} {
+
+    catch {bind $topw <Destroy> ""}
+    if {[winfo exists $topw]} {
+        destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::MakeGUI {} {
+
+    button .bvbub
+    set bg [lindex [.bvbub config -bg] 4]
+    set fg [lindex [.bvbub config -fg] 4]
+    destroy .bvbub
+
+    iwidgets::scrolledframe $topw \
+	-labeltext "Main Sites" \
+	-relief flat \
+	-width 120 \
+	-height 1 \
+	-vscrollmode dynamic \
+	-hscrollmode dynamic
+    
+    set topw [$topw childsite]
+
+    #--- Partners -----------
+    
+    frame $topw.partners \
+	    -width 150 \
+	    -height 200
+
+    pack  $topw.partners -side top -padx 5
+
+    bind $topw <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::declare {site_id descr} {
+    global env
+
+    set ask [alphabeticesiteid $site_id]
+
+    if {[lsearch -exact $declared $site_id] == -1} {
+
+	lappend declared $site_id
+
+	set row [llength $declared]
+
+	#--- site_id ---
+	label $topw.partners.acro$ask \
+	    -text $site_id \
+	    -font [IsabelFontsC::GetFont medium medium] \
+	    -padx 0 -pady 0 -bd 0 \
+	    -anchor w \
+	    -bg $bg \
+	    -fg red
+	grid  $topw.partners.acro$ask \
+		-row $row \
+		-column 1 
+
+	#--- Control ------------
+	if {![info exists cbutton($site_id)]} {
+	    if {[info exists env(ISABEL_CHAIR_SITES)]} {
+		if {$env(ISABEL_CHAIR_SITES) == ""} {
+		    set cbutton($site_id) 1
+		} else {
+		    set cbutton($site_id) 0
+		    foreach _s $env(ISABEL_CHAIR_SITES) {
+			if {[string match $_s $site_id]} {
+			    set cbutton($site_id) 1
+			    break
+			}
+		    }	
+		}
+	    } else {
+		set cbutton($site_id) 1
+	    }
+	}
+	
+	checkbutton $topw.partners.ctrl$ask \
+		-variable [scope cbutton($site_id)] \
+		-padx 0 -pady 0 \
+		-bd 1 \
+		-highlightthickness 0   \
+		-onvalue  1 \
+		-offvalue 0 \
+		-activebackground $bg \
+		-command [code $this SmsUpdateMainSites $site_id]
+
+	if {[catch "$topw.partners.ctrl$ask cget -tristatevalue"]} {
+	    $topw.partners.ctrl$ask configure -selectcolor green
+	}
+	
+	grid $topw.partners.ctrl$ask \
+		-row $row \
+		-column 0
+	
+    }
+    
+    balloon add $topw.partners.acro$ask $descr
+    
+    return $ask
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::add {site_id} {
+
+    if {[lsearch -exact $connected $site_id] != -1} return
+
+    set name    [SiteManager::GetSiteInfo $site_id name]
+
+    set ask [declare $site_id $name]
+
+    $topw.partners.acro$ask configure -foreground $fg
+
+    lappend connected $site_id
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::rem {site_id} {
+
+    if {[lsearch -exact $connected $site_id] == -1} return
+
+    set ask [alphabeticesiteid $site_id]
+
+    if {[winfo exists $topw.partners.acro$ask]} {
+        $topw.partners.acro$ask configure -foreground red
+    }
+    set connected [ldelete $connected $site_id]
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::alphabeticesiteid {site_id} {
+
+    regsub -all {\.|:} $site_id {_} ask
+    return $ask
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::GetSelected {} {
+
+    set res {}
+    foreach sid $declared {
+	if {$cbutton($sid) == 1} {
+	    lappend res $sid
+	}
+    }
+    return $res
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::GetSelectedAndConnected {} {
+
+    set _res {}
+    foreach sid $connected {
+	if {$cbutton($sid) == 1} {
+	    lappend _res $sid
+	}
+    }
+    return $_res
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::SetState {site_id bool} {
+
+    set cbutton($site_id) $bool
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_Video::SmsUpdateMainSites {site_id} {
+    
+    sms forceState ClassCtrl_site_$site_id add \
+	-site_id $site_id \
+	-main $cbutton($site_id)
+}
+
+#---------------------------------------------------------------
+
+
+
+
+
+
+
+
+

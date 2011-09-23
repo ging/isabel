@@ -1,0 +1,411 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# config.itcl
+#
+# Description
+#
+#   irouter config.
+#
+#########################################################################
+
+class IrouterConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Start component
+    public proc Start {}
+
+    # Set State
+    public proc SetState {}
+
+
+    # Change user interface visibility.
+    public proc Show {}
+    public proc Hide {}
+    public proc ToggleShowHide {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # toplevel widget.
+    private common wroot .irouter_config_tl
+    private common wcolor
+
+    # Audio Mixer enabled or not
+    private common audMixerEnabled 1
+    private proc SetAudioMixer {}
+    private proc SyncAudioMixer {}
+
+    # Current flow value and list of available flows.
+    private common flow     ""
+    private common flowList {audio video shDisplay ALL}
+
+    # List of available FEC codes.
+    private common fecList {Parity None}
+    private proc SetFEC {}
+
+    # Current link value and list of available links.
+    private common link     ""
+    private common linkList {}
+
+    # update links
+    private proc UpdateLinks {}
+    # set current link protection level
+    private proc SetProtLevel {}
+
+    # Current K value.
+    private common currentK  10
+
+    # Create the user interface.
+    private proc GUI {}
+
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::Start {} {
+    # llamado nada más construir el objeto, para valores por defecto, etc.
+    
+    GUI
+    Hide
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::SetState {} {
+#called when irouter is launched and relaunched
+
+    if { ! [winfo exist $wroot]} {
+        GUI
+        Hide
+    }
+
+    # audio mixer
+    set audMixerEnabled [session Activity GetResource Audio irouter.mixer 1]
+
+    # FEC info
+    UpdateLinks
+}
+
+
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::GUI {} {
+
+    if {[winfo exist $wroot]} {
+        return
+    }
+
+    toplevel $wroot -screen [session Environ cget -ctrl_display]
+
+    wm protocol $wroot WM_DELETE_WINDOW "wm withdraw $wroot"
+
+    wm title $wroot "Irouter Config"
+
+    #--
+
+    label $wroot.l -text "Irouter Configuration"
+    pack  $wroot.l -side top
+
+    ::iwidgets::Labeledframe $wroot.f \
+            -labeltext "Audio Mixer" \
+            -labelpos nw
+    pack  $wroot.f -side top -expand 1 -fill both \
+          -padx 5 -pady 5 -ipadx 5 -ipady 5
+
+    ::iwidgets::Labeledframe $wroot.g \
+            -labeltext "FEC" \
+            -labelpos nw
+    #
+    #
+    #
+    # pack  $wroot.g -side top -expand 1 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+    #
+    #
+    #
+    
+    button $wroot.kk
+    set font [$wroot.kk cget -font]
+    destroy $wroot.kk
+    
+    #--------------------------------
+    
+    button $wroot.close -text Dismiss -command IrouterConfigC::Hide
+    
+    pack $wroot.close -side bottom -pady 8
+    
+    #--------------------------------
+
+    label $wroot.f.laudMixer -text "Active:" -font $font
+    grid $wroot.f.laudMixer   -row 0 -column 0 -padx 7 -pady 7
+    
+    # Radiobuttons used in old 4.11 versions.
+    # They are used to sinchronize all the isabel sites.
+    radiobutton $wroot.f.audMixerYes -text "yes" \
+        -value 1 -variable [scope audMixerEnabled] \
+        -command [code IrouterConfigC::SetAudioMixer]
+    radiobutton $wroot.f.audMixerNo  -text "no"  \
+        -value 0 -variable [scope audMixerEnabled] \
+        -command [code IrouterConfigC::SetAudioMixer]
+
+    # New radiobuttons which are packe in the gui.
+    radiobutton $wroot.f.audMixerYes_2 -text "yes" \
+        -value 1 -variable [scope audMixerEnabled] \
+        -command [code IrouterConfigC::SyncAudioMixer]
+    radiobutton $wroot.f.audMixerNo_2  -text "no"  \
+        -value 0 -variable [scope audMixerEnabled] \
+        -command [code IrouterConfigC::SyncAudioMixer]
+
+
+    grid $wroot.f.audMixerYes_2 -row 0 -column 1 -padx 7 -pady 7
+    grid $wroot.f.audMixerNo_2  -row 0 -column 2 -padx 7 -pady 7
+
+    #--------------------------------
+
+    label $wroot.g.llinks -text "Link:" -font $font
+
+    ::iwidgets::optionmenu $wroot.g.olinks \
+            -font $font
+
+    #--------------------------------
+
+    label $wroot.g.lflows -text "Flow:" -font $font
+
+    ::iwidgets::optionmenu $wroot.g.oflows \
+            -font $font
+
+    SetOptionmenuValues $wroot.g.oflows $flowList
+
+    #--------------------------------
+    label $wroot.g.lfec -text "Protection:" -font $font
+
+    ::iwidgets::optionmenu $wroot.g.ofec \
+            -font $font \
+            -command [code IrouterConfigC::SetFEC]
+
+    SetOptionmenuValues $wroot.g.ofec $fecList
+
+    #--------------------------------
+
+    label $wroot.g.lk -text "Protected Packets (k):" -font $font
+
+    scale $wroot.g.sk \
+	    -orient horizontal \
+	    -font $font \
+	    -from 10 -to 0 \
+            -variable [scope currentK]
+    $wroot.g.sk set $currentK
+
+    #--------------------------------
+
+    button $wroot.g.bupdate \
+            -text "Update" \
+            -font $font \
+            -command [code IrouterConfigC::UpdateLinks]
+
+    button $wroot.g.bapply \
+            -text "Apply" \
+            -font $font \
+            -command [code IrouterConfigC::SetProtLevel]
+
+    #--------------------------------
+
+    grid $wroot.g.llinks  -row 0 -column 0 -padx 7 -pady 7 -sticky es
+    grid $wroot.g.olinks  -row 0 -column 1 -padx 7 -pady 7 -sticky we
+
+    grid $wroot.g.lflows  -row 1 -column 0 -padx 7 -pady 7 -sticky es
+    grid $wroot.g.oflows  -row 1 -column 1 -padx 7 -pady 7 -sticky we
+
+    grid $wroot.g.lfec    -row 2 -column 0 -padx 7 -pady 7 -sticky es
+    grid $wroot.g.ofec    -row 2 -column 1 -padx 7 -pady 7 -sticky we
+
+    grid $wroot.g.lk      -row 3 -column 0 -padx 7 -pady 7 -sticky es
+    grid $wroot.g.sk      -row 3 -column 1 -padx 7 -pady 7 -sticky we
+
+    grid $wroot.g.bupdate -row 4 -column 0 -padx 7 -pady 7
+    grid $wroot.g.bapply  -row 4 -column 1 -padx 7 -pady 7
+
+    grid columnconfigure $wroot.g 1 -weight 1
+
+    #--------------------------------
+
+    # audio mixer
+    set audMixerEnabled [session Activity GetResource Audio irouter.mixer 1]
+
+    # FEC
+    UpdateLinks
+
+    # cache current color
+    set wcolor [$wroot.g.llinks cget -foreground]
+
+    #--------------------------------
+
+
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::Show {} {
+
+    if {![winfo exist $wroot]} {
+        GUI
+    } else {
+        wm deiconify $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::Hide {} {
+
+    if {[winfo exist $wroot]} {
+        wm withdraw $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::ToggleShowHide {} {
+
+    if {![winfo exist $wroot]} {
+        Show
+    } else {
+        if {[wm state $wroot] != "normal"} {
+            Show
+        } else {
+            Hide
+        }
+    }
+}
+
+#---------------------------------------------------------------------------
+#
+# Methods related with the irouter audio mixer.
+#
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::SyncAudioMixer {} {
+    
+    if {$audMixerEnabled == 0} {
+            network SiteBroadcast catch "$wroot.f.audMixerNo invoke"
+    } else {
+            network SiteBroadcast catch "$wroot.f.audMixerYes invoke"
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::SetAudioMixer {} {
+
+    set _current [session Activity GetResource Audio irouter.mixer]
+
+    if {$_current == $audMixerEnabled} {
+	return
+    }
+    
+    session Activity SetResource Audio irouter.mixer $audMixerEnabled
+    
+    if {$audMixerEnabled} {
+	
+	set _codec [session Activity GetResource Audio initialcodec gsm-8KHz] 
+	
+	::irouter RDO "ir7_mix_audio($_codec)"
+	
+    } else {
+	
+	::irouter RDO "ir7_no_mix_audio()"
+	
+    }
+}
+
+#---------------------------------------------------------------------------
+#
+# Methods related with Current Links.
+#
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::SetFEC {} {
+
+    return 
+
+
+    set fec    [$wroot.g.ofec   get]
+
+    if {$fec == "None"} {
+        $wroot.g.lk configure -fg darkgrey
+        $wroot.g.sk configure -fg darkgrey
+        $wroot.g.sk configure -state disabled
+    } else {
+        $wroot.g.lk configure -fg $wcolor
+        $wroot.g.sk configure -fg $wcolor
+        $wroot.g.sk configure -state normal
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::UpdateLinks {} {
+
+    return 
+
+    set ll [::irouter RPC "ir7_get_links()"]
+    regsub -all {\{|,|\}} $ll \  ll
+
+    lappend ll ALL
+
+    set pos [lsearch -exact $ll $link]
+
+    SetOptionmenuValues $wroot.g.olinks $ll
+
+    if {$pos == -1} {
+        set pos 0
+    }
+
+    $wroot.g.olinks select $pos
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterConfigC::SetProtLevel {} {
+
+    return 
+
+    set link   [$wroot.g.olinks get]
+    set media  [$wroot.g.oflows get]
+    set fec    [$wroot.g.ofec   get]
+    set n      "[expr $currentK + 1]"
+    set k      "$currentK"
+
+    if {$fec == "None"} {
+        ::irouter RDO ir7_unprotect_flow($link,$media)
+    } else {
+        ::irouter RDO ir7_protect_flow($link,$media,$fec,$n,$k)
+    }
+}
+
+#---------------------------------------------------------------------------

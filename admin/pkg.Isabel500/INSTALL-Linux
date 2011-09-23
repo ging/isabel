@@ -1,0 +1,44 @@
+#!/bin/sh
+
+#
+# Check variables
+#
+if [ -z "$PROJECT_ROOT_DIR" ] ; then echo "PROJECT_ROOT_DIR undefined" ; exit ; fi
+if [ -z "$PKG_DIR" ] ; then echo "PKG_DIR undefined" ; exit ; fi
+
+if [ -z "$DPKG_MAINTSCRIPT_PACKAGE" ] ; then echo "DPKG_MAINTSCRIPT_PACKAGE undefined" ; exit ; fi
+if [ -z "$ISA_RELDIR" ] ; then echo "ISA_RELDIR undefined" ; exit ; fi
+if [ -z "$DISTRIB_DIR" ] ; then echo "DISTRIB_DIR undefined" ; exit ; fi
+
+echo "DPKG_MAINTSCRIPT_PACKAGE= $DPKG_MAINTSCRIPT_PACKAGE"
+echo "PKG_DIR= $PKG_DIR"
+echo "ISA_RELDIR= $ISA_RELDIR"
+echo "DISTRIB_DIR= $DISTRIB_DIR"
+
+export SRC_DIR=$PROJECT_ROOT_DIR
+
+VERSION_FILE="$SRC_DIR/admin/pkg.Isabel500/version"
+if [ ! -f "$VERSION_FILE" ] ; then
+   echo "ERROR: missing version file: $VERSION_FILE"
+   exit 1
+fi
+    
+# Version number
+export VERSION=`$SRC_DIR/admin/version.mgr getVersion $VERSION_FILE`
+
+# Release number
+export RELEASE=`$SRC_DIR/admin/version.mgr getRelease $VERSION_FILE`
+
+echo ISABEL VERSION is $VERSION-$RELEASE
+
+#
+# Copy files to build the package
+#
+./mkPkg_copy.sh
+
+./postinst
+
+echo "* All done folks"
+
+exit 0
+

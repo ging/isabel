@@ -1,0 +1,105 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#
+#  Funcion que devuelve un numero entre 0 y 100 indicando lo parecido que son dos strings.
+#  No hace distincion entre mayusculas y minusculas.
+#
+
+class Parecidos { 
+
+    private proc compare {s1 s2} {
+	
+	set score  0
+	set s1l    0
+	set s2l    0
+	set s1r    [expr [string length $s1] - 1]
+	set s2r    [expr [string length $s2] - 1]
+	set looker $s2l
+	
+	set s1 [string tolower $s1]
+	set s2 [string tolower $s2]
+
+	# incrementa s1, barrer s2
+	while 1 {
+
+	    set c1 [string index $s1 $s1l]
+	    set c2 [string index $s2 $looker]
+	    if {$c1 == $c2} {
+
+		# got a match
+
+		# next position on everything
+		incr s1l      
+		incr looker
+		# pull up starting position marker
+		set s2l $looker   
+		incr score
+	    } else {
+		# no match, continue barrido
+		incr looker   
+	    }
+	    
+	    if {$looker > $s2r} {   
+		# el barrido de looker sobrepasa fin del string.
+
+		# restaura looker a la ultima posicion unmatched.
+		set looker $s2l     
+		if {$s2l > $s2r} {
+		    set s1l $s1r
+		}
+		# next char in first string for matching
+		incr s1l          
+	    }
+	    if {$s1l > $s1r} break
+	}
+	
+	return $score
+    }
+    
+    
+    public proc similar100 {st1 st2} {
+	
+	set score1 [compare $st1 $st2]
+	set score2 [compare $st2 $st1]
+	set len1 [string length $st1]
+	set len2 [string length $st2]
+	set score [expr ($score1+$score2)*100 / ($len1+$len2)]
+	return $score
+    }
+  
+  
+}
+
+
+if 0 {	
+    set a0 [lindex $argv 0]
+    set a1 [lindex $argv 1]
+    
+    puts $a0
+    puts $a1
+    puts [Parecidos::similar100 $a0 $a1]
+    
+    exit
+}
+
+    

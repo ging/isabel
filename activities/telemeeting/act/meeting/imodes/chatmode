@@ -1,0 +1,141 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#--------------------------------------------------------------------
+# INTERACTION MODE: chatmode
+#--------------------------------------------------------------------
+
+chatmode.whatis:       imode
+chatmode.scene.name:   video
+
+chatmode.Audio:        -active 1
+
+chatmode.Video:        -active 1 \
+                       -layout {chat2 chat3 chat4 chat5 chat9 chat25 chat36}
+
+# --------------------------------------------------------------------
+
+Video.layout.chat2: \
+ {video 448x336+026+184 _ISERV_VID_CHAT2_BW} \
+ {video 448x336+522+184 _ISERV_VID_CHAT2_BW}
+
+
+Video.layout.chat3: \
+ {video 256x192+358+039 _ISERV_VID_CHAT4_BW} \
+ {video 256x192+154+371 _ISERV_VID_CHAT4_BW} \
+ {video 256x192+564+371 _ISERV_VID_CHAT4_BW}
+
+
+Video.layout.chat4: \
+ {video 256x192+154+039 _ISERV_VID_CHAT4_BW} \
+ {video 256x192+564+039 _ISERV_VID_CHAT4_BW} \
+ {video 256x192+154+371 _ISERV_VID_CHAT4_BW} \
+ {video 256x192+564+371 _ISERV_VID_CHAT4_BW}
+
+
+Video.layout.chat5: \
+ {video 256x192+019+064 _ISERV_VID_CHAT5_BW} \
+ {video 256x192+357+064 _ISERV_VID_CHAT5_BW} \
+ {video 256x192+695+064 _ISERV_VID_CHAT5_BW} \
+ {video 256x192+019+378 _ISERV_VID_CHAT5_BW} \
+ {video 256x192+357+378 _ISERV_VID_CHAT5_BW}
+
+
+Video.layout.chat9: \
+ {video 192x144+090+013 _ISERV_VID_CHAT9_BW} \
+ {video 192x144+384+013 _ISERV_VID_CHAT9_BW} \
+ {video 192x144+678+013 _ISERV_VID_CHAT9_BW} \
+ {video 192x144+090+243 _ISERV_VID_CHAT9_BW} \
+ {video 192x144+384+243 _ISERV_VID_CHAT9_BW} \
+ {video 192x144+678+243 _ISERV_VID_CHAT9_BW} \
+ {video 192x144+090+474 _ISERV_VID_CHAT9_BW} \
+ {video 192x144+384+474 _ISERV_VID_CHAT9_BW} \
+ {video 192x144+678+474 _ISERV_VID_CHAT9_BW}
+
+
+Video.layout.chat25: \
+ {video 128x096+019+146 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+224+146 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+429+146 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+637+146 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+838+146 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+019+286 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+224+286 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+429+286 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+637+286 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+838+286 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+019+428 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+224+428 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+429+428 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+637+428 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+838+428 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+019+005 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+224+005 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+429+005 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+637+005 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+838+005 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+019+568 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+224+568 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+429+568 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+637+568 _ISERV_VID_CHAT25_BW} \
+ {video 128x096+838+568 _ISERV_VID_CHAT25_BW}
+
+
+Video.layout.chat36: \
+ {video 128x096+023+004 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+193+004 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+363+004 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+533+004 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+703+004 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+873+004 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+023+132 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+193+132 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+363+132 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+533+132 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+703+132 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+873+132 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+023+260 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+193+260 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+363+260 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+533+260 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+703+260 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+873+260 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+023+388 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+193+388 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+363+388 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+533+388 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+703+388 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+873+388 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+023+516 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+193+516 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+363+516 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+533+516 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+703+516 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+873+516 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+023+644 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+193+644 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+363+644 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+533+644 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+703+644 _ISERV_VID_CHAT36_BW} \
+ {video 128x096+873+644 _ISERV_VID_CHAT36_BW} 
+
+# --------------------------------------------------------------------

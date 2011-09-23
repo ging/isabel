@@ -1,0 +1,508 @@
+/////////////////////////////////////////////////////////////////////////
+//
+// $Id: ChangeLog.espanol 9972 2007-04-20 15:58:31Z gabriel $
+//
+// (C) Copyright 1993-99. Dpto Ingenieria Sistemas Telematicos UPM Spain
+// Dec 31, 1999 Transfered to Agora Systems S.A.
+// (C) Copyright 2000-2005. Agora Systems S.A.
+//
+/////////////////////////////////////////////////////////////////////////
+
+ISABEL ChangeLog
+
+4.11-0
+------
+
+General:
+o Integrados tuneles open_vpn: El trafico de isabel se canaliza a
+  través de un túnel, con los cual sólo es necesario abrir el
+  puerto 53018 (tcp y udp) en los firewalls
+
+o Si una sesion es cerrada, los participantes autorizados a entrar son los
+  indicados en la variable de entorno ISABEL_SESSION_SITES.
+  Cada elemento de esta lista es una expresion regular que se compara con el
+  SITE_ID del sitio.
+
+o Recolección de información del trafico (UDP) generado por cada
+  terminal Isabel de una sesión
+
+o Cambio del aspecto: colores, iconos, etc.
+
+o Sustituido la capa de mensajes de control por SeCo.
+
+Video:
+o Es posible usar una imagen como fuente de vídeo
+
+o Se puede girar y voltear la imagen del vídeo
+
+4.10-0
+------
+
+General
+  o Actualización automática de paquetes de Isabel
+    (sólo disponible en Ubuntu)
+  o Eliminados los mensajes a syslog
+  o Nueva actividad para ADSL (300L/1M)
+  o El "Media Server" no está disponible
+  o Las licencias de servidor pueden acumularse
+  o Se ha cambiado a Java 1.5
+  o Las actividades de teleconferencia y teleclase se incluyen en el
+    paquete isabel
+  o El master de isabel controla las mcus no interactivas de la sesión
+  o La teleconferencia admite varios controladores 
+  o Nueva actividad "localtest" para probar el hardware
+  o Se ha reducido la cantidad de logs generados
+
+Interfaz
+  o Nuevo editor gráfico de sesiones
+  o Integración de menú de isabel en escritorio (KDE, GNOME)
+  o Los menus de configuración se acceden desde el botón "toolbar"
+
+Video
+  o Mejor ajuste de la resolución de video y del frame rate según ancho de
+    banda
+  o Las cámaras USB pueden detectarse dinámicamente (sin necesidad de salir
+    y volver a entrar)
+  o La norma de video (NTSC, PAL, SECAM) puede cambiarse en ejecucion.
+  o Se pueden controlar también algunos parámetros de video como brillo,
+    contraste, saturación, matiz
+  o El control remoto de las cámaras sólo está activo en la actividad de
+    Telemeeting
+
+Audio
+  o Se puede controlar el "Mic Boost" de los sitios remotos
+  o Mejorado el GUI
+
+Compartición de aplicaciones
+  o El "modo de compartición de aplicaciones" ahora comparte el escritorio
+    (KDE, GNOME)
+  o El "modo de compartición de aplicaciones" permite elegir el transporte
+    entre RFB o RTP
+  o El modo VNC puede usar la red superpuesta de Isabel
+  o Un participante en una sesión puede esportar sus servidores VNC
+    al resto de participantes
+
+Presentaciones
+  o Se incluyen varias presentaciones por defecto, de Agora Systems S.A.
+    y para el Local Test
+
+Gestor de Licencias
+  o Interfaz de Usuario mejorado
+  o se incluye ayuda
+
+4.9-0
+-----
+
+o Systema de licencias basado en servidor: sólo el master necesita una
+  licencia, los sitios participantes (interactivos, grabadores, ...)
+  se conectan libremente.
+
+4.8-1
+-----
+
+o Sistema de especificación de eventos basado en lenguaje XEDL.
+
+o Actualizado el protocolo LIM, la nueva versión se llama XLIM. Permite el
+  control de RDSI, VPN, IPsec y otros sevicios (a definir), ademas del
+  arranque y la gestión dinámica de eventos ISABEL.
+
+o Video en modo CBR (Constant Bit Rate) a máximo frame rate usando MPEG-4.
+
+o Compartición de aplicaciones basado en el componente Shared Display
+  (similar al video, usando MPEG-4) o en reflectores VNC (NeReDa- Network
+  of Reflector Daemons, usando el protocolo RFB).
+
+o Control de puertos de entrada y salida de Audio mediante SAM
+  (SimpleAlsaMixer). Asignación en panel de audio.
+
+o Protección FEC a los flujos de medios en el Irouter. Configuración
+  estática y dinámica.
+
+o Añadida posibilidad de suma de audio en Irouter.
+
+o Mejoras en el control de la distribución de transparencias: ajuste de
+  ancho de banda y posibilidad de interrupción de flujo. Sólo un terminal
+  puede enviar transparencias.
+
+o En el modo Questions, los sitios se mantienen ordenados alfabéticamente.
+
+o Mejor ajuste de actividades con mayor calidad en los medios y mejor ajuste
+  y distribución del ancho de banda.
+
+o Mejora del sistema de scripts de la Teleconferencia.
+
+o Añadido soporte para sordomudos: canal de video de signos y canal de texto.
+
+o Añadido control de transparencias en panel de regidor en Teleclase.
+
+o Añadido un Gateway para acceder a una sesion Isabel desde windows.
+
+o Añadido un Servidor de Flujos para alimentar a grabadores y antenas
+  (distribuidores de medios).
+
+o Nueva versión del Grabador de Sesiones, completamente operativo.
+
+o Se han cambiado los puertos publicos y privados que usa isabel segun se
+  describe en el documentos de puertos.
+
+o La distribucion del software de Isabel se ha dividido en dos paquetes,
+  Isabel con el núcleo del programa e IsabelExtras, para pluggins de isabel.
+
+o Mejoras de legibilidad e información en la Mesa de Administración
+  (User info). Además de mejoras visuales, mantiene la lista ordenada
+  alfabéticamente. Se ha añadido información acerca del evento (QUALITY).
+
+o Actualización del servidor de licencias. Mejoras en la gestión de las mismas.
+
+o Pizarra compartida: se puede forzar que todo el mundo vea la misma página.
+
+4.7-p3
+------
+
+o Nuevas distribuciones de ventanas en el modo Questions
+
+o Integración del Puntero, Transparencias, Imagen de Fondo y Títulos
+  en una única herramienta
+
+o "Star topology setup" generalizado para conferencias simples (no sólo
+  topología en estrella)
+
+o el Panel de Control de Audio permite lanzar un mezclador de audio
+  (alsamizer o gamix)
+
+o La compartición de aplicaciones siempre se realiza a través de VNC
+
+o Aplanado de tráfico en los componentes de medios (el irouter ahora
+  no hace aplanado de tráfico)
+
+o 1024x768 es la resolución preferida
+
+o El Monitor SNMP funciona para todos los componentes
+
+o Antenna Web: nueva aplicación para seguir una sesión de Isabel de forma
+  no interactiva a través de una página Web.
+
+o Grabador disponible: produce un fichero .avi de gran calidad
+  (versión experimental, no disponible en el paquete)
+
+o ISABEL Gateway: un sitio puede actuar como pasarela con un Agente de
+  Usuario SIP al cual se pueden conectar otras aplicaciones
+  (versión experimental, no disponible en el paquete)
+
+o Mejoras en el demonio de FTP, mucho más rápido y fiable
+
+o El Protocolo de Control de ISABEL (TCP) sigue el mismo camino que
+  los flujos de medios (UDP), excepto en el modo multicast nativo
+
+o Motion JPEG (MJPEG) ya no se usa
+
+o Nuevas actividades: 10M (máxima calidad) y 128K/256K (ADSL)
+
+o Las actividades soportan hasta 36 usuarios simultáneos
+
+o XEDL (XML EDL) integrado
+
+o VPN integrado
+
+o Arreglados unos errores en la herramienta de licencias
+
+4.6-1
+-----
+
+o Prototipo con pasarela para terminales SIP
+
+o Registro de mensajes de RDSI en fichero $ISABEL_PROFILE_DIR/logs/ISDN.log
+
+o Negociación de direcciones IP en conexiones RDSI: el llamado es siempre
+  el 10.0.0.1 y asigna dirección IP a sitio(s) llamante(s)
+
+4.6-0
+-----
+
+o Corregidos errores en IPv6.
+
+o No se reescalan los siguientes componentes: Whiteboard, Notepad,
+  VNC, VMware y X-server.
+
+o Diferentes vistas del modo "preguntas".
+
+o Se avisa cuando la resolución de pantalla no coincide con la definida
+  en el servicio
+
+o En el compartidor de aplicaciones VNC se puede especificar diferentes
+  servidores para diferentes terminales Isabel.
+
+o Las trazas de ejecución de envían a /var/log/isabel. Se puede activar
+  la presentación en ventana desde el menú de lim_isabel.
+
+o Nuevas opciones en lim_isabel:
+  - acceso a explorador de WWW (Netscape)
+  - activación/desactivación de presentación de mensajes de isabel
+  - acceso a gestor de licencias
+
+o ISABEL requiere licencia de uso. Dispone de licencia de demo
+  en la distribución.
+
+o El interfaz del ftp permite incorporar nuevos envios en medio
+  de una transmisión
+
+o Corregidos errores en el "Shared Display": pérdidas de memoria,
+  manejo de codecs. Mejoras en las prestaciones.
+
+o Corregidos errores en codecs de vídeo: MPEG, deltaJPEG, H263,...
+
+o Nueva implementación del audio:
+  - se ha mejorado la gestión de codecs
+  - proporciona estadísticas de tráfico
+  - acceso a alsamixer o gamix desde ventana de control de audio
+  - nuevos tests de audio: locución y pitido
+
+o Las cámaras basadas en el driver "pwc" (Phillips 730, Quickcam 3000 Pro,
+  etc.) se ven sin el recuadro gris
+
+o Resuelto el problema con algunos escritorios que no permitian
+  ver las transparencias: ahora se muestran en ventana. El fondo
+  se gestiona de forma independiente.
+
+o EDL version 1.7: permite especificar un URL
+
+o Rediseño total del GUI del setup::
+  - proporciona una topología por defecto en estrella: el botón
+    "Start Master" lanza el master, y el botón "Connect to Master"
+    conecta un sitio interactivo a un master dado
+  - el lanzador de ISABEL es una aplicación separada
+  - las sesiones se ven en modo agenda, pudiéndose escoger entre URLs,
+    ficheros EDL externos y sessiones internas definidas por ISABEL
+  - el editor de sesiones permite editar sesiones de sitio único para
+    conexiones rápidas a un master dado
+  - una sesión puede consistir en un URL. El lanzador lo descarga y lo
+    lanza. Además, se mantiene una copia en caché. Se puede especificar
+    un proxy de red
+  - ficheros EDL externos pueden ser referenciados como sesiones ISABEL,
+    seleccionables mediante el botón "Choose file..."
+  - se puede importar/exportar ficheros EDL
+  - la calidad del servicio se seleccion en la ventana de parámetros
+    "Session data", en vez de una ventana separada
+  - los parámetros de la actividad se presentan en las páginas
+    "Global Parameters of Session" y "Local Parameters of Site"
+  - la identificación de sitios se ha rediseñado
+  - arreglado un error al poner las contraseñas (ahora se puede
+    borrar una contraseña)
+  - dispone de ayuda
+
+o Los flujos de vídeo y audio son conformes a RTP:
+  - El codec de vídeo MJPEG es ahora conforme a RTP (RTP/JPEG):
+    Posibilidad de decodificación parcial de la imagen.
+  - El codec de vídeo H.263 es ahora conforme a RTP (RTP/H.263).
+  - Nuevo codec de vídeo MPEG1 conforme a RTP (RTP/MPEG1).  
+
+4.5
+---
+
+o Si el "Public Name" se deja vacía, se usa el acronimo.
+  El campo "Public Name" permite 12 caracteres como máximo.
+
+o Añadido RDSI MSN -Multiple Suscribers Numbers- [Euro-ISDN E-DSS1]
+  (o EAZ -Endgeräte-Auswahl-Ziffer- en redes RDSI alemanas [protocolo 1TR6])
+
+o Las password se salvan criptografiadas
+
+o El setup lee y escribe la configuración de eventos en formato EDL.
+
+o Video adaptado a drivers que no asignan nombre a los puertos de
+  entrada de vídeo. Se espera que esto ocurra sólo cuando hay una
+  entrada posible de vídeo (típicamente, cámaras USB).
+
+o El protocolo de datos del video acepta que al enviar las imagenes
+  fragmentadas, estos fragmentos lleguen desordenados.
+
+o Eliminado isdn.conf.SITE. La configuración de RDSI se guarda en
+  isabelrc.SITE y esta disponible a través de isabel.source.SITE.
+  Los parámetros de RDSI son ISABEL_ISDN_NUMBERS como una lista de
+  números de teléfonos e ISABEL_ISDN_CHANNELS como la cantidad de
+  canales activos.
+
+o Añadido el identificador de sesión
+
+o Añadido boton "Cancel" en las paginas de configuration de eventos
+
+o Eliminado isabel.log
+
+o Configuration de sitio por defecto ("default") no se necesita
+
+o En la ultima pagina de la configuracion de sitios, la etiqueta
+  del boton derecho es "Finish", en vez de "Next"
+
+o Los directorios de transparencias se muestran ahora ordenando los
+  nombres igual a como aparecerian en un diccionario.
+
+o El fichero de configuracion de RDSI (isdn.conf.SITE)
+  se guarda en $ISABEL_PROFILE_DIR/setup
+
+o Anadido un nuevo componente: Speech Meter.
+
+o Nuevo demonio de audio. Si se necesita arrancar el demonio
+  de audio antiguo, hay que definir la variable de entorno
+  ISABEL_AUDIO_OLD.
+
+o La historia del multistart se ha unificado y se guarda
+  en $ISABEL_CONFIG_DIR/setuprc
+  isabelrc.EVENT ahora almacena solo VARIABLE VALOR
+
+o EL fichero v4l.conf (configuración de video4linux)
+  se guarda en $ISABEL_CONFIG_DIR
+
+o Los sitios se identifican por su Acronimo en vez de por su hostname.
+
+o Eliminada la configuración de displays de medios
+
+o Los ficheros $SITE.net y $SITE.user se han unido en participants.$SITE y
+  se localizan en $ISABEL_PROFILE_DIR/setup
+
+o Valores de ancho de banda para multicast y bajada y subida al flowserver
+
+o La página de participantes adaptada a los cambios de arriba
+
+o Se ha añadido a los ficheros de actividad un recurso nuevo, llamado 
+  requiredversions, que sirve para especificar que paquetes
+  relacionados con Isabel deben estar instalados en las maquinas para 
+  que puedan correr uns determinada sesion Isabel.
+
+o Simplificacion (menor) del SETUP
+
+o Activada la decoracion de las ventanas del Window Manager
+
+o El GUI del master solo se muestra para el role de master, y no se muestra
+  (es innecesario) para el role de master interactivo.
+
+o El componente de audio cierra con audio_quit() para evitar cuelgues del
+  driver de audio
+
+o Corregido el problema de identificacion de terminales: se usa un numero
+  magico en vez de la direccion IP
+
+o Los ficheros de configuracion se crean automaticamente cuando no existen
+  (la primera vez). Estos ficheros son para VMware, mimio, fake-server y
+  el control de camara
+
+o Los ficheros de configuracion residen en ISABEL_CONFIG_DIR.
+
+o El fichero de configuracion de mimio incluye el tamaño de la pizarra y
+  su orientacion
+
+o Teleconference: soporte para la generacion automatica de titulos
+
+o Irouter router ya no se trata como un componente, sino como una tarea interna
+
+o Irouter router soporta control de ancho de banda asimetrico cuando
+  se conecta a un FS. Se pueden definir anchos de banda diferentes para
+  el envio y la recepcion.
+
+o Irouter router permite una nueva configuracion de red, conectarse a un
+  FS y a la vez, radiar al multicast. Aparece un nuevo parametro, el ancho
+  de banda utilizado para radiar al multicast. Es problema del usuario realizar
+  un correcto diseño de red de irouters para evitar bucles.
+
+o Se soporta la configuración en estrella en el emulador de la LEVA sobre TCP
+
+o Cambio para el soporte de IPv6:
+
+  - actualizacion de la biblioteca ICF
+  - actualizacion de la biblioteca NLEVA
+  - emulador de LEVA sobre TCP
+
+o Correccion de varios errores menores
+
+o Reorganizacion de modulos
+
+4.4-4
+-----
+
+o Correción en la carga de GIF
+
+4.4-3
+-----
+
+o Audio: el codec de audio se resetea automaticamente cuando la calidad
+  degenera (en realidad, cada 3 minutos por razones de prestaciones)
+
+o El identificador unico de los irouters ya no depende de la direccion IP
+ 
+o Notepad: soporte de seleccion de tamaño de letra
+
+o Shared Whiteboard:
+  - Control de pintado con Mimio por testigo dinámico
+  - Mejoras en el borrado de la pizarra mimio
+  - Integracion del nuevo driver de mimio
+
+4.4-2
+-----
+
+o Teleclass: corregido bug en el mapeado de la ventana del regidor
+
+o Se proporcionan valores por defecto para la configuracion multicast
+
+o Unificada la configuracion de red para todos los roles
+
+o Eliminado el mensaje (SAVE_MCAST=0/1)
+
+o Corregido error en la pagina de participantes del SETUP
+
+o Corregido error en la Pizarra Compartida: Si un WP está conectado a una
+  sesion, cuando un nuevo terminal interactivo se incorpora, se le arrancaban
+  el Shared Display y la Pizarra Compartida (ahora se arranca solo la
+  Pizarra Compartida)
+
+o Eliminada la autodeteccion del capturador de video: si el usuario
+  selecciona un puerto de entrada sin camara conectada, se emite un video
+  azul, en vez de autoseleccionar automagicamente un puerto activo
+
+o Cuando se para un terminal master interactivo, tanto el interactivo como
+  el master son parados (antes, erroneamente, se paraba solo el interactivo)
+
+o Corregido error en la configuracion de multicast del irouter
+
+o Eliminado el grupo base de multicast (demasiado confuso-poca funcionalidad)
+
+o La configuracion multicast no se pide para sitio interactivos (el master
+  se la transmite)
+
+4.4-1
+-----
+
+o Los usuarios pueden seleccionar los puertos de entrada de video
+
+o Soporte para varias tarjetas capturadoras de video
+
+o Definicion, arranque y parada de conferencias
+
+o Repositorio de fuentes unico
+
+o Correccion de errores en WatchPoints
+
+o Correcion de errores menores de lexico en las paginas del SETUP
+
+o Corregido error en la confguracion de RDSI para flowservers
+
+o Eliminadas las configuraciones de red "Unicast" y "Unicast mesh..."
+
+o Añadidas (casi) todas las dependencias de ISABEL de otros paquetes software
+
+o ISABEL notifica si los escritorios kdesktop o nautilus estan siendo
+  ejecutados, ya que no permiten ver las transparencias, pues se presentan
+  en el fondo (ventana raiz). ISABEL puede, bajo peticion del usuario,
+  parar dichos escritorios
+
+4.4-0
+-----
+
+o Cambiado el nombre del paquete isabel de DITisabel a Isabel
+ 
+o Cambiado el nombre del paquete flowserver de DITflowserver a IsabelFlowserver
+ 
+o Cambiado el directorio de instalacion de /usr/local/ISABEL a /usr/local/isabel
+ 
+o El programa remote_isabel se ha renombrado a lim_isabel
+  (lim = local isabel manager), pues ahora proporciona mas servicios
+  ademas del arranque remoto
+

@@ -1,0 +1,397 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# remoteservers.itcl
+#
+# Create a frame with the gui to show and manage the defined remote servers.
+# This frame will be packet inside the windows to select a VNC server.
+#
+#########################################################################
+
+
+class VNCRemoteServersFrameC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Callback to execute when the ok button is pressed.
+    public variable ok_cb
+
+    # Callback to execute when the select button is pressed.
+    public variable select_cb
+
+    # Create the frame to manage remote servers.
+    # Parameters:
+    #   mapOkButton_: 1 if the OK button must be mapped, else 0.
+    #   mapSelectButton_: 1 if the Select button must be mapped, else 0.
+    #   wroot_: name of the frame widget which we must create.
+    constructor {mapOkButton_ mapSelectButton_ wroot_} {}
+
+    destructor {}
+
+    # Get a list of the servers of the given site.
+    # Each element in this list describe a vnc server, and it has this format:
+    #             {title server passwd descr}
+    # NOTE THAT IT IS A STATIC METHOD
+    public proc GetServers {site_id}
+
+    # Set the servers of a given site
+    # Parameters:
+    #   - site_id: site_id of the site owning the servers
+    #   - list of servers: It is a list of elements with this format: 
+    #             {title server passwd descr}
+    # NOTE THAT IT IS A STATIC METHOD
+    public proc SetSiteServers {site_id serverlist}
+
+    # Refresh the list of server of the given site.
+    public method RefreshSiteServers {site_id}
+
+    # Refresh the list of server of the current selected site.
+    public method RefreshCurrent {}
+
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # 1 if the OK button must be mapped, else 0.
+    private variable mapOkButton
+
+    # 1 if the Select button must be mapped, else 0.
+    private variable mapSelectButton
+
+    # toplevel widget.
+    private variable wroot
+
+    # PATCH
+    # itcl_find object is not returning al the created objects, so I have created this
+    # list to store their name
+    private common createdObjs ""
+
+    # Information about each VNCRemoteServerInfoC object is presented (its index or position)
+    # in the gui listbox widget.
+    # $lbindex($site_id,$pos) is the object presented in the $pos position for the site $site_id.
+    # NOTE THAT IT IS A STATIC ATTRIBUTE
+    private common lbindex
+
+
+    # Create browser widgets
+    private method CreateGUI {}
+
+    # Callback executed when a VNC server is selected to be applied (OK button was pressed).
+    private method OkVNCServer {}
+
+    # Callback executed when a VNC server is selected as the last used (Select button was pressed).
+    private method SelectVNCServer {}
+
+    # Update the server description in the GUI
+    private method UpdateDescr {}
+
+    #---
+
+    #---
+
+    # Reorganize the server list.
+    private method MoveUp {}
+    private method MoveDown {}
+
+}
+
+#------------------------------------------------------------------------
+
+body VNCRemoteServersFrameC::constructor {mapOkButton_ mapSelectButton_ wroot_} {
+
+    set mapOkButton $mapOkButton_
+    set mapSelectButton $mapSelectButton_
+
+    set wroot $wroot_
+
+    CreateGUI
+
+    # Load remote servers
+    set me [SiteManager::MySiteId]
+    foreach _sid [SiteManager::GetSites] {
+	if {$me == $_sid} continue
+	RefreshSiteServers $_sid
+    }
+
+    lappend createdObjs $this
+}
+
+#------------------------------------------------------------------------
+
+body VNCRemoteServersFrameC::destructor {} {
+
+     set createdObjs [ldelete $createdObjs $this]
+}
+
+#------------------------------------------------------------------------
+
+body VNCRemoteServersFrameC::GetServers {site_id} {
+
+    # create the list of servers.
+    set servers ""
+    set pos 0
+    while {[info exists lbindex($site_id,$pos)]} {
+	set title  [$lbindex($site_id,$pos) cget -title]
+	set server [$lbindex($site_id,$pos) cget -server]
+	set passwd [$lbindex($site_id,$pos) cget -passwd]
+	set descr  [$lbindex($site_id,$pos) cget -descr]
+	lappend servers [list $title $server $passwd $descr]
+	incr pos
+    }
+    return $servers
+}
+
+#------------------------------------------------------------------------
+
+body VNCRemoteServersFrameC::SetSiteServers {site_id serverlist} {
+
+    if {[SiteManager::MySiteId] == $site_id} return 
+    
+    # clean old values:
+    foreach ind [array names lbindex "$site_id,*"] {
+	delete object $lbindex($ind)
+	unset lbindex($ind)
+    }
+    
+    # set new values:
+    set pos 0
+    foreach srv $serverlist {
+	set title  [lindex $srv 0] 
+	set server [lindex $srv 1] 
+	set passwd [lindex $srv 2] 
+	set descr  [lindex $srv 3] 
+	
+	set lbindex($site_id,$pos) [VNCRemoteServerInfoC "\#auto" $site_id $title $server $passwd $descr]
+	incr pos
+    }
+
+    # Update the gui of all the existing windows
+    foreach obj $createdObjs {
+	$obj RefreshSiteServers $site_id
+    }
+}
+
+#------------------------------------------------------------------------
+
+body VNCRemoteServersFrameC::RefreshCurrent {} {
+    
+    RefreshSiteServers [$wroot.omsites get]
+}
+
+#------------------------------------------------------------------------
+
+body VNCRemoteServersFrameC::RefreshSiteServers {site_id} {
+    
+    # If it is a new site, then I create it.
+    if {[catch {$wroot.omsites index $site_id}]} {
+	$wroot.omsites insert end $site_id
+    }
+    
+    if {[$wroot.omsites get] != $site_id} return
+    
+    # clean old values:
+    $wroot.list delete 0 end 
+    
+    # insert new values:
+    set pos 0
+    while {[info exists lbindex($site_id,$pos)]} {
+	set title [$lbindex($site_id,$pos) cget -title]
+	$wroot.list insert end $title
+	incr pos
+    }
+}
+
+#------------------------------------------------------------------------
+
+body VNCRemoteServersFrameC::CreateGUI {} {
+    
+    frame $wroot \
+        -bd 3
+    
+    #----
+    
+    CreateImage vnclogo gif/vnc.gif
+    
+    label $wroot.img -image vnclogo
+    
+    #----
+    
+    iwidgets::scrolledlistbox $wroot.list \
+	-vscrollmode dynamic \
+	-hscrollmode none \
+	-selectmode single \
+	-exportselection 0 \
+	-selectioncommand "
+	    [code $this UpdateDescr] 
+	"
+    
+    text $wroot.msg \
+	-relief groove \
+	-width 1 \
+	-height 1 \
+        -padx 5 \
+        -pady 5 \
+	-wrap word \
+	-spacing1 1 \
+	-spacing2 1 \
+	-spacing3 5
+    $wroot.msg configure -state disabled
+
+    $wroot.msg tag add redtext end
+    $wroot.msg tag configure redtext -foreground red
+
+    $wroot.msg tag add blacktext end
+    $wroot.msg tag configure blacktext -foreground black
+
+    $wroot.msg tag add bluetext end
+    $wroot.msg tag configure bluetext -foreground blue
+
+
+    label $wroot.lsites -text "Site:"
+
+    ::iwidgets::optionmenu $wroot.omsites \
+	-command [code $this RefreshCurrent]
+
+    button $wroot.ok  \
+	-text "OK" \
+	-bd 8 \
+	-width 9 \
+	-command [code $this OkVNCServer]
+
+    button $wroot.lselect  \
+	-text "Select" \
+	-bd 8 \
+	-width 9 \
+	-command [code $this SelectVNCServer]
+
+    grid $wroot.img     -row 0 -column 0                -padx 10 -pady 10 -sticky n
+    grid $wroot.list    -row 0 -column 1 -rowspan 5     -padx 10 -pady 10 -sticky nswe
+    grid $wroot.msg     -row 0 -column 2 -rowspan 2     -padx 10 -pady 10 -sticky nswe
+
+    grid $wroot.lsites  -row 1 -column 0 -padx 20 
+    grid $wroot.omsites -row 2 -column 0 -padx 20 -sticky we
+
+    if {$mapOkButton} {
+	grid $wroot.ok      -row 2 -column 2 -padx 20 -pady 5 
+    }
+
+    if {$mapSelectButton} {
+	grid $wroot.lselect      -row 3 -column 2 -padx 20 -pady 5 
+    }
+
+    grid rowconfigure    $wroot 0 -weight 1
+    grid rowconfigure    $wroot 1 -weight 0
+    grid rowconfigure    $wroot 2 -weight 0
+    grid rowconfigure    $wroot 3 -weight 0
+
+    grid columnconfigure $wroot 0 -weight 0
+    grid columnconfigure $wroot 1 -weight 2
+    grid columnconfigure $wroot 2 -weight 1
+}
+
+#------------------------------------------------------------------------
+
+body VNCRemoteServersFrameC::OkVNCServer {} {
+
+    set pos [$wroot.list curselection]
+
+    set access_site_id [$wroot.omsites get]
+    
+    if {$pos != "" && $access_site_id != ""} {
+	set server [$lbindex($access_site_id,$pos) cget -server]
+	set passwd [$lbindex($access_site_id,$pos) cget -passwd]
+
+	set currentsender [VNCCmd GetCurrentSpeaker]
+	set distnet [VNCDistNetC::GetNet]
+
+	# Execute the ok_cb callback
+	if {$ok_cb != ""} {
+	    set _cmd $ok_cb
+	    lappend _cmd $distnet $access_site_id $server $passwd 
+	    if {[catch $_cmd _res]} {
+		ErrorTraceMsg "VNC: Executing a OK_CB ($_cmd), I get: $_res"
+	    }
+	}
+    }
+
+    wm withdraw [winfo toplevel $wroot]
+}
+
+#------------------------------------------------------------------------
+
+body VNCRemoteServersFrameC::SelectVNCServer {} {
+
+    set pos [$wroot.list curselection]
+
+    set access_site_id [$wroot.omsites get]
+    
+    if {$pos != "" && $access_site_id != ""} {
+	set server [$lbindex($access_site_id,$pos) cget -server]
+	set passwd [$lbindex($access_site_id,$pos) cget -passwd]
+
+	set currentsender [VNCCmd GetCurrentSpeaker]
+	set distnet [VNCDistNetC::GetNet]
+
+	# Execute the select_cb callback
+	if {$select_cb != ""} {
+	    set _cmd $select_cb
+	    lappend _cmd $distnet $access_site_id $server $passwd 
+	    if {[catch $_cmd _res]} {
+		ErrorTraceMsg "VNC: Executing a SELECT_CB ($_cmd), I get: $_res"
+	    }
+	}
+    }
+
+    wm withdraw [winfo toplevel $wroot]
+}
+
+#------------------------------------------------------------------------
+
+body VNCRemoteServersFrameC::UpdateDescr {} {
+
+    $wroot.msg configure -state normal
+
+    $wroot.msg delete 1.0 end
+
+    set site_id [$wroot.omsites get]
+
+    set pos [$wroot.list curselection]
+    if {$pos != ""} {
+
+	set title  [$lbindex($site_id,$pos) cget -title]
+	set server [$lbindex($site_id,$pos) cget -server]
+	set passwd [$lbindex($site_id,$pos) cget -passwd]
+	set descr  [$lbindex($site_id,$pos) cget -descr]
+
+	$wroot.msg insert 1.0 "$title\n" blacktext "$server\n" bluetext "$descr"
+    } 
+
+    $wroot.msg configure -state disabled
+}
+
+#------------------------------------------------------------------------
+

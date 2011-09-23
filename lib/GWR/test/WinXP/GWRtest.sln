@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GWRtest", "GWRtest.vcproj", "{AD1075CC-0EA8-486F-BCDE-ECADD1556352}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3DA31018-8445-4F0C-AD30-A694B820D2D9} = {3DA31018-8445-4F0C-AD30-A694B820D2D9}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ICF2", "..\..\..\ICF2\WinXP\ICF2.vcproj", "{41B39295-DF16-460C-A90A-477B5468957D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GWR", "..\..\winXP\GWR\GWR.vcproj", "{3DA31018-8445-4F0C-AD30-A694B820D2D9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41B39295-DF16-460C-A90A-477B5468957D} = {41B39295-DF16-460C-A90A-477B5468957D}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AD1075CC-0EA8-486F-BCDE-ECADD1556352}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AD1075CC-0EA8-486F-BCDE-ECADD1556352}.Debug|Win32.Build.0 = Debug|Win32
+		{AD1075CC-0EA8-486F-BCDE-ECADD1556352}.Release|Win32.ActiveCfg = Release|Win32
+		{AD1075CC-0EA8-486F-BCDE-ECADD1556352}.Release|Win32.Build.0 = Release|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Debug|Win32.ActiveCfg = DebugThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Debug|Win32.Build.0 = DebugThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Release|Win32.ActiveCfg = ReleaseThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Release|Win32.Build.0 = ReleaseThreaded|Win32
+		{3DA31018-8445-4F0C-AD30-A694B820D2D9}.Debug|Win32.ActiveCfg = DebugThreaded|Win32
+		{3DA31018-8445-4F0C-AD30-A694B820D2D9}.Debug|Win32.Build.0 = DebugThreaded|Win32
+		{3DA31018-8445-4F0C-AD30-A694B820D2D9}.Release|Win32.ActiveCfg = ReleaseThreaded|Win32
+		{3DA31018-8445-4F0C-AD30-A694B820D2D9}.Release|Win32.Build.0 = ReleaseThreaded|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,114 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+pannelmode.whatis:        imode
+pannelmode.scene.name: questions
+
+pannelmode.Audio:       -active 1 \
+                        -skip 1
+
+pannelmode.Questions: -active 1 \
+		      -ctrllayout "220x748+5+10 1 1" \
+                      -addmoderator 1 \
+                      -resetlayout {lresetpannel11 lresetpannel21 lresetpannel31 lresetpannel41 lresetpannel51} \
+                      -layout {lpannel11 lpannel21 lpannel31 lpannel41 lpannel51} \
+                      -setaudio 1
+
+pannelmode.Video:         -active 1 -skip 1
+
+
+pannelmode.SldFtp:     -active 1 \
+                       -videobwfactor _ISERV_SLDFTP_VF_BW \
+                       -maxbw _ISERV_SLDFTP_FTP_BW
+
+#-- 1+1 sites -----------------------
+
+Video.layout.lresetpannel11: \
+ {video 256x192+346+243 _ISERV_VID_PANNEL11_BW} \
+ {video 256x192+698+243 _ISERV_VID_PANNEL11_BW}
+
+Video.layout.lpannel11: \
+ {video 256x192+698+243 _ISERV_VID_PANNEL11_BW} \
+ {video 256x192+346+243 _ISERV_VID_PANNEL11_BW} 
+
+#-- 2+1 sites -----------------------
+
+Video.layout.lresetpannel21: \
+ {video 256x192+346+113 _ISERV_VID_PANNEL21_BW} \
+ {video 256x192+346+374 _ISERV_VID_PANNEL21_BW} \
+ {video 256x192+698+243 _ISERV_VID_PANNEL21_BW}
+
+Video.layout.lpannel21: \
+ {video 256x192+698+243 _ISERV_VID_PANNEL21_BW} \
+ {video 256x192+346+113 _ISERV_VID_PANNEL21_BW} \
+ {video 256x192+346+374 _ISERV_VID_PANNEL21_BW}
+
+#-- 3+1 sites -----------------------
+
+Video.layout.lresetpannel31: \
+ {video 256x192+346+013 _ISERV_VID_PANNEL31_BW} \
+ {video 256x192+346+243 _ISERV_VID_PANNEL31_BW} \
+ {video 256x192+346+474 _ISERV_VID_PANNEL31_BW} \
+ {video 256x192+698+243 _ISERV_VID_PANNEL31_BW}
+
+Video.layout.lpannel31: \
+ {video 256x192+698+243 _ISERV_VID_PANNEL31_BW} \
+ {video 256x192+346+013 _ISERV_VID_PANNEL31_BW} \
+ {video 256x192+346+243 _ISERV_VID_PANNEL31_BW} \
+ {video 256x192+346+474 _ISERV_VID_PANNEL31_BW}
+
+
+#-- 4+1 sites -----------------------
+
+Video.layout.lresetpannel41: \
+ {video 256x192+346+013 _ISERV_VID_PANNEL41_BW} \
+ {video 256x192+346+243 _ISERV_VID_PANNEL41_BW} \
+ {video 256x192+346+474 _ISERV_VID_PANNEL41_BW} \
+ {video 256x192+698+374 _ISERV_VID_PANNEL41_BW} \
+ {video 256x192+698+113 _ISERV_VID_PANNEL41_BW}
+
+Video.layout.lpannel41: \
+ {video 256x192+698+113 _ISERV_VID_PANNEL41_BW} \
+ {video 256x192+346+013 _ISERV_VID_PANNEL41_BW} \
+ {video 256x192+346+243 _ISERV_VID_PANNEL41_BW} \
+ {video 256x192+346+474 _ISERV_VID_PANNEL41_BW} \
+ {video 256x192+698+374 _ISERV_VID_PANNEL41_BW}
+
+#-- 5+1 sites -----------------------
+
+Video.layout.lresetpannel51: \
+ {video 256x192+346+013 _ISERV_VID_PANNEL51_BW} \
+ {video 256x192+346+243 _ISERV_VID_PANNEL51_BW} \
+ {video 256x192+346+474 _ISERV_VID_PANNEL51_BW} \
+ {video 256x192+698+243 _ISERV_VID_PANNEL51_BW} \
+ {video 256x192+698+474 _ISERV_VID_PANNEL51_BW} \
+ {video 256x192+698+013 _ISERV_VID_PANNEL51_BW}
+
+Video.layout.lpannel51: \
+ {video 256x192+698+013 _ISERV_VID_PANNEL51_BW} \
+ {video 256x192+346+013 _ISERV_VID_PANNEL51_BW} \
+ {video 256x192+346+243 _ISERV_VID_PANNEL51_BW} \
+ {video 256x192+346+474 _ISERV_VID_PANNEL51_BW} \
+ {video 256x192+698+243 _ISERV_VID_PANNEL51_BW} \
+ {video 256x192+698+474 _ISERV_VID_PANNEL51_BW}
+
+#------------------------------------

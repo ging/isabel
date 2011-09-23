@@ -1,0 +1,593 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#-----------------------------------------
+
+class SessionTCC {
+    inherit NodeTCC
+ 
+    #-- Node attributes
+
+    public variable name
+    public variable chair
+    public variable presentations
+    public variable script
+
+    #-- Building the tree
+
+    constructor {_agendaobj _name _chair _presentations _script} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    public proc parse {agendaobj str}
+    public proc parseScript {agendaobj str sessionobj}
+
+    public method prettyPrinter {{offset 0}}
+
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+
+    public method getNodes {}
+    
+    #-- Node edition
+    
+    # Auxiliar variables used to show the personal data of a participant.
+    # Used by new and edit
+    public common aux_acronym
+    public common aux_info
+
+    public method edit {}
+    
+    # Method used to validate the values modified when this node is edited.
+    # $tl is the object created to edit the values.
+    private method validateEdit {tl}
+    
+    # Method used to update the nod3e values with the edited values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the values.
+    private method updateEdit {tl}
+
+    #-- Node creation
+
+    # Create a new empty node, and opens an edition window to edit its values.
+    # If the node is created successfully, then this method returns a reference
+    # to the new created node; else it returns "".
+    # $agendaobj is a reference to the AgendaTCC object which will contain the created node.
+    public proc new {agendaobj}
+
+    # Method used to validate the values of the new node.
+    # $tl is the object created to edit the new values.
+    private proc validateNew {tl}
+
+    # Method used to create the new node with the validated values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the new values.
+    private proc updateNew {tl agendaobj}
+
+    # Create a new empty presentation child node.
+    public method newPresentationChild {}
+
+    # Create a new script item child node.
+    private method newScriptItemChild {_si}
+
+    #-- Node deletion
+
+    # Delete this node
+    public method deleteNode {}
+
+    #-- Scripts
+
+    public method createScriptItems {}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+
+    #-- Order
+
+    # Moves the node in the tree up.
+    public method moveUp {} {}
+
+    # Moves the node in the tree down.
+    public method moveDown {} {}
+}
+
+#-----------------------------------------
+
+body SessionTCC::constructor {_agendaobj _name _chair _presentations _script} {
+    
+    set name      $_name
+
+    CheckClass   $_chair ChairTCC
+    CheckUnique  $_chair
+    set chair $_chair
+    $chair setParent $this 
+
+    CheckClass   $_presentations PresentationListTCC
+    CheckUnique  $_presentations
+    set presentations $_presentations
+    $presentations setParent $this 
+
+    CheckClass   $_script ScriptItemListTCC
+    CheckUnique  $_script
+    set script $_script
+    $script setParent $this 
+}
+
+#-----------------------------------------
+
+body SessionTCC::destructor {} {
+
+    delete object $script
+    delete object $chair 
+    delete object $presentations 
+}
+
+#-----------------------------------------
+
+body SessionTCC::parse {agendaobj str} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class Session
+ 
+    set name   [getOptionListValue $str -name]
+
+    WriteTraceMsg "ica: parsing session \"$name\""
+
+    set chair         [ChairTCC::parse            $agendaobj [getOptionListValue $str -chair]]
+    set presentations [PresentationListTCC::parse $agendaobj [getOptionListValue $str -presentations]]
+    set script        [ScriptItemListTCC::parse   $agendaobj [getOptionListValue ""   -script]]
+
+    set me [SessionTCC ::#auto $agendaobj $name $chair $presentations $script]
+
+    $chair         setParent $me
+    $presentations setParent $me
+    $script        setParent $me
+
+    return $me
+}
+
+#-----------------------------------------
+
+body SessionTCC::parseScript {agendaobj str sessionobj} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class Session
+ 
+    set name   [getOptionListValue $str -name]
+
+    WriteTraceMsg "ica: parsing scripts of session \"$name\""
+
+    set script [ScriptItemListTCC::parse   $agendaobj [getOptionListValue $str -script]]
+    
+    set oldscript [$sessionobj cget -script]
+    delete object $oldscript
+
+    $sessionobj configure -script $script
+    $script        setParent $sessionobj
+
+    return
+}
+
+#-----------------------------------------
+
+body SessionTCC::prettyPrinter {{offset 0}} {
+
+    set _spc1 [NodeTCC::spaces $offset]
+    set _spc2 "$_spc1   "
+
+    set _res "${_spc1}\{Session\n"
+
+    set _res "$_res$_spc2-name [list $name]\n"
+
+    set _res "$_res$_spc2-chair [list [$chair prettyPrinter]]\n"
+
+    set _res "$_res$_spc2-presentations \{\n"
+    set _res "$_res[$presentations prettyPrinter [expr $offset + 6]]\n"
+    set _res "$_res$_spc2\}\n"
+
+    set _res "$_res$_spc2-script \{\n"
+    set _res "$_res[$script prettyPrinter [expr $offset + 6]]\n"
+    set _res "$_res$_spc2\}\n"
+
+    set _res "$_res${_spc1}\}"
+
+    return $_res
+}
+
+#-----------------------------------------
+
+body SessionTCC::getMyNode {} {
+    
+    set tags ""
+
+    #--
+    
+    set _icons ""
+    
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+    
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    set _show_mv_icons  [$_menubarobj cget -show_mv_icons]
+    if {$_show_mv_icons} {
+	if { ! [$parent firstSession $this]} {
+	    lappend _icons icafocusup
+	}
+	if { ! [$parent lastSession $this]} {
+	    lappend _icons icafocusdown         
+	}
+    }
+    
+    set _show_delete_icon  [$_menubarobj cget -show_delete_icon]
+    if {$_show_delete_icon} {
+	lappend _icons icadelete         
+    }
+    
+    #--
+    
+    list \
+	[getMyUid] \
+	"Session: $name" \
+	"session branch $tags" \
+	"$_icons"
+}
+
+#-----------------------------------------
+
+body SessionTCC::getNodes {} {
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_scripts  [$_menubarobj cget -show_scripts]
+    set _show_programs [$_menubarobj cget -show_programs]
+
+    set res ""
+    
+    if {$_show_programs} {
+	lappend res [$chair getMyNode]
+	foreach c [$presentations getNodes] {
+	    lappend res $c
+	}
+    }
+
+    if {$_show_scripts} {
+	    lappend res [$script  getMyNode]
+    }
+
+    return $res
+}
+
+#-----------------------------------------
+
+body SessionTCC::newPresentationChild {} {
+
+    set child [PresentationTCC::new $agendaobj]
+
+    if {$child != ""} {
+
+	$child setParent $presentations
+	
+	set _cs [$presentations cget -presentations]
+	lappend _cs $child
+	$presentations configure -presentations $_cs
+
+    }
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SessionTCC::newScriptItemChild {_si} {
+
+    $_si setParent $script
+    
+    set _sis [$script cget -scriptitems]
+    lappend _sis $_si
+    $script configure -scriptitems $_sis
+    
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SessionTCC::edit {} {
+
+    set tl [BaseFrameTCC #auto -title "Edit Session"]
+
+    $tl setValidationCmd [code $this validateEdit $tl]
+
+    $tl setUpdateCmd     [code $this updateEdit $tl]
+
+    set c [$tl getContent]
+
+    #--
+
+    iwidgets::entryfield $c.name \
+	-labeltext "Session Name:" \
+	-labelpos w
+    pack $c.name -padx 14 -pady 4 -fill x -expand 1 -anchor s
+    $c.name component entry insert 0 $name
+
+    #--
+
+    frame $c.f
+    pack $c.f -padx 14 -pady 4 -fill both -expand 1 
+
+    trace vdelete SessionTCC::aux_acronym w \
+	"PersonTCC::traceInfo SessionTCC::aux_info"
+    set aux_info ""
+    set aux_acronym   ""
+    trace variable SessionTCC::aux_acronym w \
+	"PersonTCC::traceInfo SessionTCC::aux_info"
+
+    ::iwidgets::combobox $c.f.ch \
+ 	-labeltext "Chair:" \
+	-labelpos w \
+	-textvariable SessionTCC::aux_acronym
+    pack $c.f.ch -side left -anchor n
+    $c.f.ch component entry insert 0 \
+	[$chair getAcronym]
+    foreach ch [array names PersonTCC::everybody] { 
+	$c.f.ch insert list end $ch
+    }
+
+    label $c.f.chdata \
+	-textvariable SessionTCC::aux_info \
+	-font [IsabelFontsC::GetFont medium medium]
+    pack $c.f.chdata -side left -anchor n
+
+    #--
+}
+
+#-----------------------------------------
+
+body SessionTCC::validateEdit {tl} {
+    
+    set c [$tl getContent]
+    
+
+    # No empty name
+    if {[string trim [$c.name get]] == ""} {
+	return "Session Name can not be empty"
+    }
+
+
+    # No empty chair:
+    if {[string trim [$c.f.ch get]] == ""} {
+	return "Chair can not be empty"
+    }
+
+    return ""
+}
+
+#-----------------------------------------
+
+body SessionTCC::updateEdit {tl} {
+
+    set c [$tl getContent]
+    
+    #--
+    
+    set name [string trim [$c.name get]]
+    
+    #--
+
+    # Create a new person if necessary
+    set _ch [string trim [$c.f.ch get]]
+    if {[PersonTCC::getPerson $_ch] == ""} {
+	set confobj [$agendaobj getConference]
+	$confobj createUnknownPerson $_ch
+    }
+
+    set _personobj [$chair cget -chair]
+    set _pr [$_personobj cget -personreferences]
+    $_personobj configure -personreferences [expr $_pr - 1]
+
+    set _personobj [PersonTCC::getPerson $_ch]
+    $chair configure -chair $_personobj
+    set _pr [$_personobj cget -personreferences]
+    $_personobj configure -personreferences [expr $_pr + 1]
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SessionTCC::new {agendaobj} {
+
+    set tl [BaseFrameTCC #auto -title "New Session"]
+    
+    $tl setValidationCmd [code validateNew $tl]
+    
+    $tl setUpdateCmd     [code updateNew $tl $agendaobj]
+    
+    set c [$tl getContent]
+    
+    #--
+
+    iwidgets::entryfield $c.name \
+	-labeltext "Session Name:" \
+	-labelpos w
+    pack $c.name -padx 14 -pady 4 -fill x -expand 1 -anchor s
+
+    #--
+
+    frame $c.f
+    pack $c.f -padx 14 -pady 4 -fill both -expand 1 
+
+    trace vdelete SessionTCC::aux_acronym w \
+	"PersonTCC::traceInfo SessionTCC::aux_info"
+    set aux_info ""
+    set aux_acronym   ""
+    trace variable SessionTCC::aux_acronym w \
+	"PersonTCC::traceInfo SessionTCC::aux_info"
+
+    ::iwidgets::combobox $c.f.ch \
+ 	-labeltext "Chair:" \
+	-labelpos w \
+	-textvariable SessionTCC::aux_acronym
+    pack $c.f.ch -side left -anchor n
+    foreach ch [array names PersonTCC::everybody] { 
+	$c.f.ch insert list end $ch
+    }
+
+    label $c.f.chdata \
+	-textvariable SessionTCC::aux_info \
+	-font [IsabelFontsC::GetFont medium medium]
+    pack $c.f.chdata -side left -anchor n
+
+    #--
+
+    set res [$tl waitFor]
+    
+    return $res
+
+}
+
+#-----------------------------------------
+
+body SessionTCC::validateNew {tl} {
+
+    set c [$tl getContent]
+   
+    # No empty session name:
+    if {[string trim [$c.name get]] == ""} {
+	return "Session Name can not be empty"
+    }
+
+    # No empty chair:
+    if {[string trim [$c.f.ch get]] == ""} {
+	return "Chair can not be empty"
+    }
+
+    return "" 
+}
+  
+#-----------------------------------------
+
+body SessionTCC::updateNew {tl agendaobj} {
+
+    set c [$tl getContent]
+
+    set _chair [string trim [$c.f.ch get]]
+
+    # Create a new person if necessary
+    if {[PersonTCC::getPerson $_chair] == ""} {
+	set confobj [$agendaobj getConference]
+	$confobj createUnknownPerson $_chair
+    }
+    
+    set _name         [string trim [$c.name get]]
+
+    set _session [list Session \
+		      -name $_name \
+		      -chair [list $_chair] \
+		      -presentations "" \
+		      -script ""  \
+		     ]
+    
+    set child [SessionTCC::parse $agendaobj $_session]
+
+    return $child
+}
+
+#-----------------------------------------
+
+body SessionTCC::createScriptItems {} {
+
+    $chair createScriptItems
+    
+    foreach _pres [$presentations cget -presentations] {
+	$_pres createScriptItems
+    }
+}
+    
+#-----------------------------------------
+
+body SessionTCC::deleteNode {} {
+
+    $parent deleteSession $this
+}
+    
+#-----------------------------------------
+
+body SessionTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "Edit Session" \
+	-command [code $this edit]
+
+    $menu add separator
+
+    $menu add command -label "New Presentation" \
+	-command [code $this newPresentationChild]
+    
+    $menu add separator
+
+    $menu add command -label "Create some Scripts" \
+	-command "[code $this createScriptItems]" 
+
+    $menu add separator
+
+    $menu add command -image icadelete \
+	-command [code $this deleteNode]
+    
+    if { ! [$parent firstSession $this]} {
+	$menu add command -image icafocusup \
+	    -command [code $this moveUp]
+    }
+    
+    if { ! [$parent lastSession $this]} {
+	$menu add command -image icafocusdown \
+	    -command [code $this moveDown]
+    }
+
+    return $menu   
+}
+
+#-----------------------------------------
+
+body SessionTCC::moveUp {} {
+
+    $parent moveSession $this -1
+}
+
+#-----------------------------------------
+
+body SessionTCC::moveDown {} {
+
+    $parent moveSession $this 1
+}
+
+#-----------------------------------------

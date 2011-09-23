@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Isabel Update
+Comment=Updates Isabel packages
+Exec=/usr/local/isabel/bin/isrv_update.sh
+Icon=/usr/local/isabel/lib/images/gif/recicla.gif
+Terminal=false
+Type=Application
+StartupNotify=true

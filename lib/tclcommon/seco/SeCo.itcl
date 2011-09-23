@@ -1,0 +1,542 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+################################################################
+#
+#  (C) Copyright 1993-2007;
+#      
+#  The interface with the SeCo daemon is provided by SeCoSession.itcl.
+#  This class make packets using the format that the SeCo daemon
+#  understand.
+#
+#  The ISASeCoRpcC class extends the SeCoSession class.
+#  Create the application message format:
+#       rdo <command>
+#       rpc <id> <originator> <command>
+#       response <id> <response>
+#       error <id> <msg>
+#  This class hides the method HandleMsg, and offers a new 
+#  handler: "CmdHandleMsg". This method evaluates the received messages.
+#  This method is redefined in devived classes.
+#  This class includes the echo of mensages. Echo was ewmoved in SeCoSession.
+#
+#  The ISASeCoHDC class extends the ISASeCoRpcC class adding methods
+#  to register callback functions to execute when abrupt disconnection
+#  happen.
+#
+#  The ISASeCoPrimC class extends the ISASeCoHDC class adding methods
+#  to parse the received primitives, translating them to tcl commands.
+#
+################################################################
+
+
+#===============================================================
+#
+# ISASeCoRpcC
+#
+#===============================================================
+
+
+#--------------------------------------------------------
+#
+# Queue of messages.
+#
+# The message formats are: 
+#       rdo <command>
+#       rpc <id> <originator> <command>
+#       response <id> <response>
+#       error <id> <msg>
+#
+#--------------------------------------------------------
+
+class SeCoQueueC {
+
+    # the queue
+    private variable queue
+
+    constructor {} {
+	set queue ""
+    }
+
+    destructor {
+    }
+
+    # Is the queue empty?
+    public method Empty {} {
+	if {$queue == ""} {
+	    return 1
+	} else {
+	    return 0
+	}
+    }
+    
+    # Get the next message from the queue
+    # $type will be rdo, rpc, response or error.
+    # $id will be present only for types rpc, response and error.
+    # $from is the originator of an rpc, and it will be present 
+    # only for rpc type.
+    # $cmd is either a command (rpc and rdo types), a response 
+    # (response type), or a error message (error type).
+    public method Get {type id from cmd} {
+	upvar $type t $id i $from f $cmd c
+	
+	set msg [lindex $queue 0]
+	set queue [lreplace $queue 0 0]
+
+	set t [lindex $msg 0]
+	switch -- $t {
+	    rdo {
+		set c [lrange $msg 1 end]
+	    }
+	    rpc {
+		set i [lindex $msg 1]
+		set f [lindex $msg 2]
+		set c [lrange $msg 3 end]
+	    }
+	    response {
+		set i [lindex $msg 1]
+		set c [lrange $msg 2 end]
+	    }
+	    error {
+		set i [lindex $msg 1]
+		set c [lrange $msg 2 end]
+	    }
+	}
+	return
+    }
+
+
+    # Put a message in the queue 
+    public method Put {msg} {
+	lappend queue $msg
+    }
+}
+
+
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+
+class ISASeCoRpcC {
+    inherit SeCoSession
+
+
+    # list of groups which I am joined
+    private variable mygroups
+
+    # list of local groups which I am joined
+    private variable mylocalgroups
+
+    # queue of messages
+    private variable queue
+
+    # variable donde me bloqueo esperando las respuestas de los mensajes rpc,
+    # y donde recibo las respuestas y los errores.
+    private common lock
+
+    # Donde se guarda ell mensaje de error de un rpc
+    private variable error
+    
+    # Contador para crear identificadores unicos para las rpc.
+    private variable cont 0 
+
+
+    constructor {host port {cdescr ""}} {
+	eval SeCoSession::constructor $host $port $cdescr
+    } {
+	set mygroups ""
+	set mylocalgroups ""
+	set queue [SeCoQueueC "#auto"]
+    }
+
+
+    destructor {
+	delete object $queue
+    }
+
+    #-----------
+
+    public method join_group {gname} {
+	if {[lsearch -exact $mygroups $gname] == -1} {
+	    lappend mygroups $gname
+	    SeCoSession::join_group $gname
+	}
+    }
+
+    public method join_local_group {gname} {
+	if {[lsearch -exact $mylocalgroups $gname] == -1} {
+	    lappend mylocalgroups $gname
+	    SeCoSession::join_local_group $gname
+	}
+    }
+
+    
+    public method leave_group {gname} {
+	set mygroups [ldelete $mygroups $gname]
+	SeCoSession::leave_group $gname
+    }
+
+    public method leave_local_group {gname} {
+	set mylocalgroups [ldelete $mylocalgroups $gname]
+	SeCoSession::leave_local_group $gname
+    }
+
+    #-----------
+    
+    public method send_msg {to cmd} {
+
+	if {$to == $myid} {
+	    $queue Put "rdo $cmd"
+	    after idle [code $this Flush]
+	} else {
+	    SeCoSession::send_msg $to "rdo $cmd"
+	}
+    }
+
+    public method send_group_msg {group cmd {echo 0}} {
+
+	if {$echo} {
+	    if {[lsearch -exact $mygroups $group] != -1} {
+		$queue Put "rdo $cmd"
+		after idle [code $this Flush]
+	    } 
+	}
+	SeCoSession::send_group_msg $group "rdo $cmd"
+    }
+
+    public method send_local_group_msg {group cmd {echo 0}} {
+
+	if {$echo} {
+	    if {[lsearch -exact $mylocalgroups $group] != -1} {
+		$queue Put "rdo $cmd"
+		after idle [code $this Flush]
+	    } 
+	}
+	SeCoSession::send_local_group_msg $group "rdo $cmd"
+    }
+
+
+    public method send_group_sync_msg {group sync cmd {echo 0}} {
+
+	if {$echo} {
+	    if {[lsearch -exact $mygroups $group] != -1} {
+		$queue Put "rdo $cmd"
+		after idle [code $this Flush]
+	    } 
+	}
+	SeCoSession::send_group_sync_msg $group $sync "rdo $cmd"
+    }
+
+    public method send_local_group_sync_msg {group sync cmd {echo 0}} {
+
+	if {$echo} {
+	    if {[lsearch -exact $mylocalgroups $group] != -1} {
+		$queue Put "rdo $cmd"
+		after idle [code $this Flush]
+	    } 
+	}
+	SeCoSession::send_local_group_sync_msg $group $sync "rdo $cmd"
+    }
+
+
+    #-----------
+
+    public method RDO {to cmd} {
+	send_msg $to $cmd
+    }
+
+
+    public method RDOGroup {group cmd {echo 0}} {
+	send_group_msg $group $cmd $echo
+    }
+
+    public method RDOLocalGroup {group cmd {echo 0}} {
+	send_local_group_msg $group $cmd $echo
+    }
+
+
+    public method RDOSync {group sync cmd {echo 0}} {
+	send_group_sync_msg $group $sync $cmd $echo
+    }
+
+    public method RDOLocalSync {group sync cmd {echo 0}} {
+	send_local_group_sync_msg $group $sync $cmd $echo
+    }
+
+
+    #-----------
+
+    public method RPC {to cmd} {
+	
+	incr cont
+	set id $this,$cont
+	set lock($id) ""
+	
+	if {$to == $myid} {
+	    $queue Put "rpc $id $myid $cmd"
+	    after idle [code $this Flush]
+	} else {
+	    SeCoSession::send_msg $to "rpc $id $myid $cmd"
+	}
+	
+	tkwait variable [scope lock($id)]
+	
+	if {$error($id)} {
+	    set errmsg $lock($id)
+	    unset lock($id) error($id)
+	    error $errmsg
+	} else {
+	    set response $lock($id)
+	    unset lock($id) error($id)
+	    return $response
+	}
+    }   
+
+    # Note: Send a message to the group, and returns the first received response.
+    public method RPCGroup {group cmd {echo 0}} {
+	
+    	incr cont
+	set id $this,$cont
+	set lock($id) ""
+	
+	if {$echo} {
+	    if {[lsearch -exact $mygroups $group] != -1} {
+		$queue Put "rpc $id $myid $cmd"
+		after idle [code $this Flush]
+	    } 
+	}
+	SeCoSession::send_group_msg $group "rpc $id $myid $cmd"
+	
+	tkwait variable [scope lock($id)]
+	
+	if {$error($id)} {
+	    set errmsg $lock($id)
+	    unset lock($id) error($id)
+	    error $errmsg
+	} else {
+	    set response $lock($id)
+	    unset lock($id) error($id)
+	    return $response
+	}
+    }
+
+    # Note: Send a message to the local group, and returns the first received response.
+    public method RPCLocalGroup {group cmd {echo 0}} {
+	
+    	incr cont
+	set id $this,$cont
+	set lock($id) ""
+	
+	if {$echo} {
+	    if {[lsearch -exact $mylocalgroups $group] != -1} {
+		$queue Put "rpc $id $myid $cmd"
+		after idle [code $this Flush]
+	    } 
+	}
+	SeCoSession::send_local_group_msg $group "rpc $id $myid $cmd"
+	
+	tkwait variable [scope lock($id)]
+	
+	if {$error($id)} {
+	    set errmsg $lock($id)
+	    unset lock($id) error($id)
+	    error $errmsg
+	} else {
+	    set response $lock($id)
+	    unset lock($id) error($id)
+	    return $response
+	}
+    }
+    
+    #-----------
+
+    public method RCB {to cmd cb {error_cb ""}} {
+	
+	incr cont
+	set id $this,$cont
+	set lock($id) ""
+	
+	if {$to == $myid} {
+	    $queue Put "rpc $id $myid $cmd"
+	    after idle [code $this Flush]
+	} else {
+	    SeCoSession::send_msg $to "rpc $id $myid $cmd"
+	}
+	
+	tkwait variable [scope lock($id)]
+	
+	if {$error($id)} {
+	    set errmsg $lock($id)
+	    unset lock($id) error($id)
+	    if {$error_cb != ""} {
+		uplevel #0 $error_cb $response
+	    } else {
+		error $errmsg
+	    }
+	} else {
+	    set response $lock($id)
+	    unset lock($id) error($id)
+	    uplevel #0 $cb $response
+	}
+    }
+
+
+    #-----------
+
+    private method HandleMsg {msg} {
+
+	$queue Put $msg 
+	after idle [code $this Flush]
+    }
+
+    
+    # Execute all the messages in the queue
+    private method Flush {} {
+
+	while {![$queue Empty]} {
+	    $queue Get type id from cmd	    
+	    
+	    switch -- $type {
+		rdo {
+		    if {[catch {CmdHandleMsg $cmd} emsg]} {
+			ErrorTraceMsg "SeCo CmdHandleMsg: $emsg\n\n$cmd\n\n"
+		    }
+		}
+		rpc {
+		    if {[catch {CmdHandleMsg $cmd} res]} {
+			ErrorTraceMsg "SeCo CmdHandleMsg: $res\n\n$cmd\n\n"
+			set backmsg [list error $id $res]
+		    } else {
+			set backmsg [list response $id $res]
+		    }
+		    
+		    if {$from == $myid} {
+			$queue Put $backmsg
+			after idle [code $this Flush]
+		    } else {
+			SeCoSession::send_msg $from $backmsg
+		    }
+		}
+		response {
+		    if {[info exists lock($id)]} {
+			set error($id) 0
+			set lock($id) $cmd
+		    }
+		}
+		error {
+		    if {[info exists lock($id)]} {
+			set error($id) 1
+			set lock($id) $cmd
+		    }
+		}
+		default {
+		    ErrorTraceMsg "SeCo eval: Unknown ISASeCoRpcC primitive: $type\n\n"
+		}
+	    }
+	}
+    }
+
+    private method CmdHandleMsg {cmd} {
+	uplevel #0 $cmd
+    }
+    
+}    
+
+
+
+#===============================================================
+#
+# ISASeCoHDC
+#
+#===============================================================
+
+
+class ISASeCoHDC {
+    inherit ISASeCoRpcC
+
+    private variable cdescr ""
+
+    # List of callbacks to execute when I received a HandleDisconnection.
+    private variable cblist ""
+
+
+    constructor {host port {_cdescr ""}} {
+	eval ISASeCoRpcC::constructor $host $port $_cdescr
+    } { 
+	set cdescr $_cdescr
+    }
+    
+    
+
+    protected method HandleDisconnection {{cid ""}} {
+	
+	if {$cid == ""} {
+	    puts stderr \
+		    "\n\n- Warning $cdescr: network connection closed. I leave session.\n"
+
+	    AtExit::Exit 1
+
+	} else {
+	    foreach cb $cblist {
+		if {$cb != ""} {
+		    if {[catch {uplevel #0 $cb $cid} res]} {
+			ErrorTraceMsg "SeCo Handle Disconnection produces: $res"
+		    }
+		}
+	    }
+	}
+    }
+
+
+    public method AddCB {cb} {
+	lappend cblist $cb
+    }
+
+    public method DelCB {cb} {
+	set cblist [ldelete $cblist $cb]
+    }
+
+}
+
+
+#===============================================================
+#
+# ISASeCoPrimC
+#
+#===============================================================
+
+
+class ISASeCoPrimC {
+    inherit ISASeCoHDC
+
+
+    constructor {host port {cdescr ""}} {
+	eval ISASeCoHDC::constructor $host $port $cdescr
+    } { }
+
+
+    private method CmdHandleMsg {cmd} {
+	
+	set cmd [services P2PT $cmd]
+	uplevel #0 $cmd
+    }
+
+}

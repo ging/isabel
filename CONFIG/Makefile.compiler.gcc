@@ -1,0 +1,7 @@
+CONFIG.CXX      :=gcc
+CONFIG.CXX.name :=gcc
+CONFIG.LD       :=gcc
+CONFIG.LD.SHARED:=gcc -shared
+CONFIG.LD.STATIC:=gcc -static -rdynamic
+
+include $(PROJECT_ROOT_DIR)/CONFIG/Makefile.compiler.$(CONFIG.COMPILER).$(TARGET.OS)

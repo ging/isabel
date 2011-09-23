@@ -1,0 +1,168 @@
+
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+class TestAudioOutputC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Starts testing
+    public proc Start {}
+
+    # Stops testing
+    public proc Stop {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # toplevel widget.
+    private common wroot .audio_test_output_tl
+    
+    # Create the user interface.
+    private proc GUI {}
+    
+    # Testing?
+    # 1 if I am testing now, else 0
+    private common testing 0
+    
+    # Update the progress bar
+    private proc DoStep {cont}
+}
+
+#---------------------------------------------------------------------------
+
+body TestAudioOutputC::GUI {} {
+
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    set display [session Environ cget -audio_ctrl_display]
+
+    toplevel $wroot -screen $display
+
+    wm protocol $wroot WM_DELETE_WINDOW "TestAudioOutputC::Stop"
+
+    wm title $wroot "Testing Playback"
+
+    label $wroot.l \
+	-text "Testing Playback" \
+	-font [IsabelFontsC::GetFont large medium] \
+	-pady 0
+
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+    
+    #--------------------------------
+
+    iwidgets::feedback $wroot.fb \
+	-steps 100
+
+    #--------------------------------
+
+  label $wroot.help \
+	-relief flat \
+        -justify left \
+	-font $font \
+	-text "You should listen a locution in your speakers."
+
+   #--------------------------------
+    # Dismiss
+    #--------------------------------
+
+    button $wroot.stop \
+	-text Stop \
+	-pady 3 \
+	-command TestAudioOutputC::Stop
+
+    #--------------------------------
+    # Packing
+    #--------------------------------
+    
+    pack $wroot.l    -padx 10 -pady 10 
+    pack $wroot.fb   -padx 10 -pady 10 -fill both -expand yes
+    pack $wroot.help -padx 10 -pady 10 -fill both -expand yes
+    pack $wroot.stop -padx 10 -pady 10 
+}
+
+#---------------------------------------------------------------------------
+
+body TestAudioOutputC::Start {} {
+
+    if {$testing} return
+
+    TestAudioInputC::Stop
+    
+    GUI
+    
+    set _mysite_id [SiteManager::MySiteId]
+    sms setState Audio_site_$_mysite_id add -site_id $_mysite_id -output_tone 1
+    
+    set testing 1
+    $wroot.fb reset
+    
+    wm deiconify $wroot
+    
+    DoStep 0
+}
+
+#---------------------------------------------------------------------------
+
+body TestAudioOutputC::DoStep {cont} {
+
+    if {! $testing} return
+
+    set _incr 2
+    
+    $wroot.fb step $_incr
+    
+    incr cont $_incr
+    
+    if {$cont >= 100} {
+	Stop
+	return
+    }
+    
+    after 500 [code TestAudioOutputC::DoStep $cont]
+}
+
+#---------------------------------------------------------------------------
+
+body TestAudioOutputC::Stop {} {
+
+    set testing 0
+
+    set _mysite_id [SiteManager::MySiteId]
+    sms setState Audio_site_$_mysite_id add -site_id $_mysite_id -output_tone 0
+
+    if {[winfo exist $wroot]} { 
+	wm withdraw $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+

@@ -1,0 +1,119 @@
+/*
+-----------------------------------------------------------------------------
+
+    aCodecsTest.rss - resource file
+
+-----------------------------------------------------------------------------
+*/
+
+//  Resource Identifier
+
+NAME DLLR
+
+
+//  Include Files
+
+#include <eikon.rh>         // Global command ids
+
+
+//  Resource File Sigunature
+
+RESOURCE RSS_SIGNATURE {}
+
+
+//  Default Document Name
+
+RESOURCE TBUF { buf=""; }
+
+
+//  Application Information
+
+RESOURCE EIK_APP_INFO
+    {
+    menubar = r_acodecstest_menubar;
+    cba = r_uikon_acodecstest_cba;
+    }
+
+
+/*
+-----------------------------------------------------------------------------
+    
+    R_ACODECSTEST_MENUBAR - Menu bar and menu pane
+
+-----------------------------------------------------------------------------
+*/
+
+RESOURCE MENU_BAR r_acodecstest_menubar
+    {
+    titles =
+        {
+        MENU_TITLE
+            {
+            txt = "File";
+            menu_pane = r_acodecstest_file_menu;
+            }
+        };
+    }
+
+
+RESOURCE MENU_PANE r_acodecstest_file_menu
+    {
+    items =
+        {
+        MENU_ITEM
+            {
+            txt = "Test 1";
+            command = EEikCmdFileOpen;
+            },
+        MENU_ITEM
+            {
+            txt = "Test 2";
+            command = EEikCmdFileOpenAnother;
+            },
+        MENU_ITEM
+            {
+            txt = "Close";
+            command = EEikCmdExit;
+            }
+        };
+    }
+
+
+/*
+-----------------------------------------------------------------------------
+    
+    R_UIKON_ACODECSTEST_CBA - Command buttons
+
+-----------------------------------------------------------------------------
+*/
+
+RESOURCE CBA r_uikon_acodecstest_cba
+    {
+    breadth = 80;
+    buttons =
+        {                                                                           
+        CBA_BUTTON
+            {
+            txt = "Test 1";
+            id = EEikCmdFileOpen;
+            }, 
+        CBA_BUTTON
+            {
+            txt = "Test 2";
+            id = EEikCmdFileOpenAnother; 
+            }, 
+        CBA_BUTTON
+            {
+            txt = "";
+            id = 0;
+            }, 
+        CBA_BUTTON 
+            {
+            txt = "Close";
+            id = EEikCmdExit;
+            }
+        };
+    }
+
+
+// End of file

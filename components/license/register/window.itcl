@@ -1,0 +1,138 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# window.itcl
+#
+# Description
+#
+#   This class provides the toplevel window where the main and button
+#   frames are inserted.
+#
+#########################################################################
+
+
+class LicenseWindowC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # initialice the class.
+    public proc Create {}
+
+    # Select the object that will display the frames.
+    public proc SetFrames {obj}
+
+    # Returns the frame where the main frame of the objects will be grided.
+    public proc GetMainSite {} {return .f.main}
+
+    # Returns the frame where the buttons frame of the objects will be grided.
+    public proc GetButtonsSite {} {return .f.buttons}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+}
+
+
+#----------------------------------------------------------
+
+body LicenseWindowC::Create {} {
+    global env
+
+    wm geometry . 700x550+100+100
+    wm title . "License manager"
+
+    frame .f -bd 2 -relief raised
+    pack  .f -expand 1 -fill both \
+	    -padx 5 -pady 5 \
+	    -ipadx 15 -ipady 15 
+
+
+    CreateImage isalogo gif/isabel-b.gif
+    label .f.isabel -image isalogo -padx 20
+
+    frame .f.sep0 -bg #111155
+
+    frame .f.main -bg white
+    
+    label .f.version \
+	-text "Version: Isabel $env(ISABEL_VERSION)-$env(ISABEL_RELEASE)"
+    button .f.font
+    .f.version configure -font [.f.font cget -font]
+    destroy .f.font 
+
+    frame .f.sep1 -bg #111155
+
+    frame .f.buttons -bg white
+
+    grid .f.isabel  -row 0 -column 0 -columnspan 2 -sticky w -padx 15 -pady 5
+    grid .f.sep0    -row 1 -column 0 -columnspan 2 -sticky nswe -padx 5 -ipady 1 -pady 0
+    grid .f.main    -row 2 -column 0 -columnspan 2 -sticky nswe -padx 15 -pady 5
+    grid .f.version -row 3 -column 0 -columnspan 2 -sticky sw   -padx 5
+    grid .f.sep1    -row 4 -column 0 -columnspan 2 -sticky nswe -padx 5 -ipady 1 -pady 0
+    grid .f.buttons -row 5 -column 0 -columnspan 2 -sticky nswe -padx 5 -pady 5
+
+    grid propagate .f.main false
+
+    grid rowconfigure    .f 2 -weight 1
+    grid columnconfigure .f 1 -weight 1
+
+    grid rowconfigure    .f.main 0 -weight 1
+    grid columnconfigure .f.main 0 -weight 1
+
+    grid rowconfigure    .f.buttons 0 -weight 1
+    grid columnconfigure .f.buttons 0 -weight 1
+}
+
+#----------------------------------------------------------
+
+body LicenseWindowC::SetFrames {obj} {
+
+    foreach slave [grid slaves .f.main] {
+	grid forget $slave
+    }
+    foreach slave [grid slaves .f.buttons] {
+	grid forget $slave
+    }
+
+    set mf [$obj GetMainFrame]
+    grid $mf -row 0 -column 0 -sticky nswe
+
+    set bf [$obj GetButtonsFrame]
+    grid $bf -row 0 -column 0 -sticky nswe
+}
+
+#----------------------------------------------------------
+
+
+
+
+
+
+
+
+
+

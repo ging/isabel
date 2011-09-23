@@ -1,0 +1,1583 @@
+--
+-- ISABEL: A group collaboration tool for the Internet
+-- Copyright (C) 2009 Agora System S.A.
+--
+-- This file is part of Isabel.
+--
+-- Isabel is free software: you can redistribute it and/or modify
+-- it under the terms of the Affero GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- Isabel is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- Affero GNU General Public License for more details.
+--
+-- You should have received a copy of the Affero GNU General Public License
+-- along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+--
+
+-- isabel.mib
+
+-- MIB de la aplicacion isabel
+--
+
+
+RFC1155-SMI DEFINITIONS ::= BEGIN
+    nullOID	OBJECT IDENTIFIER ::= { ccitt 0 }
+    internet      	OBJECT IDENTIFIER ::= { iso org(3) dod(6) 1 }
+    directory     	OBJECT IDENTIFIER ::= { internet 1 }
+    mgmt          	OBJECT IDENTIFIER ::= { internet 2 }
+    experimental  	OBJECT IDENTIFIER ::= { internet 3 }
+    private       	OBJECT IDENTIFIER ::= { internet 4 }
+    enterprises   	OBJECT IDENTIFIER ::= { private 1 }
+END
+
+ISABEL_MIB DEFINITIONS ::= BEGIN
+
+          IMPORTS
+                  mgmt, NetworkAddress, IpAddress, Counter, Gauge,
+                          TimeTicks
+                      FROM RFC1155-SMI
+                  OBJECT-TYPE
+                          FROM RFC-1212;
+
+
+          -- ISABEL-MIB 
+
+          upm      OBJECT IDENTIFIER ::= { enterprises 2781 }
+ 
+          isabel      OBJECT IDENTIFIER ::= { upm 1 }
+
+
+
+          -- textual conventions
+
+          DisplayString ::=
+              OCTET STRING
+          -- This data type is used to model textual information taken
+          -- from the NVT ASCII character set.  By convention, objects
+          -- with this syntax are declared as having
+
+
+          --
+          --      SIZE (0..255)
+
+
+          -- groups in ISABEL-MIB
+          registrador 	OBJECT IDENTIFIER ::= { isabel 1 }
+
+          irouter      	OBJECT IDENTIFIER ::= { isabel 2 }
+
+          network      	OBJECT IDENTIFIER ::= { isabel 3 }
+
+          audio        	OBJECT IDENTIFIER ::= { isabel 4 }
+
+          video        	OBJECT IDENTIFIER ::= { isabel 5 }
+
+          SlidesFtp    	OBJECT IDENTIFIER ::= { isabel 6 }
+
+          sharedDisplay OBJECT IDENTIFIER ::= { isabel 7 }
+
+
+          -- the Registrador group
+
+      -- The registrador group cantains all the information from the
+      -- registrador component of the application.
+
+
+          Role OBJECT-TYPE
+              SYNTAX  DisplayString (SIZE (0..255))
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable shows the functioning mode 
+                      of the host. It could be Server, Attendent"
+              ::= { registrador 1 }
+
+          Activity OBJECT-TYPE
+              SYNTAX  DisplayString (SIZE (0..255))
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This variable shows the kind of event that
+                      configures the application functioning. 
+                      Only the server station knows this value.
+                      Some possible values: telemeeting, teleconference"
+              ::= { registrador 2 }
+       
+          Open OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          true  (1),
+                          false (2)
+                        }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "It indicates if the conference is open or not."
+              ::= { registrador 3 }
+
+          MaxUsers OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Maximun number of partners."
+              ::= { registrador 4 }
+
+          IrouterInUse OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          true  (1),
+                          false (2)
+                        }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Is the irouter running on the machine?"
+              ::= { registrador 5 }
+
+          initTime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              ::= { registrador 6 }
+
+          NumUsersConnected OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Number of connected partners."
+              ::= { registrador 7 }
+
+           
+         -- The users table has the information from all
+         -- the nodes connected
+
+          usersTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF UsersEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "This table contains all the information related
+                       with the partners connected, it shows which components
+                       have started each one."
+              ::= { registrador 8 }
+
+          usersEntry OBJECT-TYPE
+              SYNTAX  UsersEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              INDEX   {userIndex }
+              ::= { usersTable 1 }
+
+          UsersEntry ::=
+              SEQUENCE {
+                  userIndex
+                      INTEGER,
+                  userDescriptor
+                      INTEGER,
+                  userIPAddr
+                      IpAddress,
+                  hostname
+                      DisplayString,
+                  displayControl
+                      DisplayString,
+                  displayApplication
+                      DisplayString,
+                  componentsConnected
+                      DisplayString,
+                  componentsStarting
+                      DisplayString,
+                  componentsDown
+                      DisplayString,
+                  partnerName
+                      DisplayString
+              }
+
+          userIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Table index for each user."
+              ::= { usersEntry 1 }
+
+          userDescriptor OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This descriptor is an integer asigned by the application
+                       at the connection time."
+              ::= { usersEntry 2 }
+
+          userIPAddr OBJECT-TYPE
+              SYNTAX  IpAddress
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "IP address of the partner."
+              ::= { usersEntry 3 }
+
+          hostname OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Hostname of the partner."
+              ::= { usersEntry 4 }
+
+          displayControl OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "displayControl of the partner."
+              ::= { usersEntry 5 }
+
+          displayApplication OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "displayApplication of the partner."
+              ::= { usersEntry 6 }
+
+          componentsConnected OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Set of components running properly on the machine."
+              ::= { usersEntry 7 }
+
+          componentsStarting OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Set of components starting on the machine."
+              ::= { usersEntry 8 }
+
+          componentsDown OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Set of components down on the machine."
+              ::= { usersEntry 9 }
+
+          partnerName OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Partner's war name."
+              ::= { usersEntry 10 }
+
+
+
+          -- Irouter group
+          -- 
+          -- This group has the information and statistics
+          -- of the packets of the application in the machine.
+
+          -- irouter OBJECT IDENTIFIER ::= { isabel 2 }
+          -- defined in first lines
+
+          
+          pid OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "pid of the irouter."
+              ::= { irouter 1 }
+
+          uid OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "uid of the irouter."
+              ::= { irouter 2 }
+
+                    
+          BandWidth OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Outgoing bandwidth for the packets sent by the irouter.
+                       Expressed in Kbps. It is a parameter of the irouter."
+              ::= { irouter 3 }
+
+          mcastMode OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          true(1),
+                          false(2)
+                        }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "It shows if the irouter can work with multicast
+                       packets."
+              ::= { irouter 4 }
+
+       
+          noClients OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          true(1),
+                          false(2)
+                        }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This parameter shows if there is any isabel application
+                       running on the machine."
+              ::= { irouter 5 }
+
+
+          Reset OBJECT-TYPE
+              SYNTAX  TimeTicks
+              ACCESS  read-write
+              STATUS  mandatory
+              DESCRIPTION
+                      "Making a set in this variable all the statistics of the
+                       irouter will be reset.
+                       It contains the time of the last reset."
+              ::= { irouter 6 }
+
+          helloInterval OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Interval between two hello signals. Used to build the 
+                       multicast plane. Expressed in seconds."
+              ::= { irouter 7 }
+
+          byeInterval OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "If this interval is exceeded without receiving
+                       a hello signal from a node, this node will be 
+                       eliminated from the server table. Used to build the 
+                       multicast map. Expresed in seconds."
+              ::= { irouter 8 }
+
+          flowServerMode OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          true(1),
+                          false(2)
+                        }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "If this variable is true, this station has unicast 
+                       flow served nodes to make them a traffic conversion."
+              ::= { irouter 9 }
+
+          flowServerAddr OBJECT-TYPE
+              SYNTAX  IpAddress
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Ip address of the flow server node that makes the 
+                       traffic conversion from multicast to unicast, serving
+                       this machine. Only the machines working in unicast 
+                       with a flowServer station have this value."
+              ::= { irouter 10 }
+
+          totalBytesFromNet OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Total bytes received from the net for this irouter."
+              ::= { irouter 11 }
+
+          totalPcktsFromNet OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Total packets received from the net for this irouter."
+              ::= { irouter 12 }
+
+          irouterLogFile OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Log file containing the last comands sent to the 
+                       irouter."
+              ::= { irouter 13 }
+
+          numSchedulers OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Number of schedulers running on the machine."
+              ::= { irouter 17 }
+
+
+
+          -- This group contains the information related to the nodes
+          -- that receive and send traffic to this station forward the
+          -- root node.
+
+          servedNodes OBJECT IDENTIFIER ::= { irouter 14 }
+
+          numServed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Number of served nodes."
+              ::= { servedNodes 1 }
+
+          servedTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF ServedEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "Information of the served nodes."
+              ::= { servedNodes 2 }
+
+          servedEntry OBJECT-TYPE
+              SYNTAX  ServedEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              INDEX   { servedId }
+              ::= { servedTable 1 }
+
+          ServedEntry ::=
+              SEQUENCE {
+                  servedId
+                        INTEGER,
+                  servedIPAddr
+                      IpAddress,
+                  trafficMode
+                      INTEGER
+              }
+
+
+          servedId OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Identifier of the served node."
+              ::= { servedEntry 1 }
+
+          servedIPAddr OBJECT-TYPE
+              SYNTAX  IpAddress
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "IP address of the served node."
+              ::= { servedEntry 2 }
+
+          trafficMode OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          multicast(1),
+                          unicast(2)
+                        }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "The trafficType Object shows the mode of each node
+                       is served. 
+                       multicast-> this station is mcastAdder of the one
+                                   which IpAddr is in this entry of the table.
+
+                       unicast ->  this station is flowServer of the one
+                                   which IpAddr is in this entry of the table."
+              ::= { servedEntry 3 }
+
+
+          -- The mediaTable stores all the information for
+          -- the different daemons launched by the aplicattion
+
+          mediaTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF MediaEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              ::= { irouter 15 }
+
+          mediaEntry OBJECT-TYPE
+              SYNTAX  MediaEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              INDEX   { mediaId }
+              ::= { mediaTable 1 }
+
+          MediaEntry ::=
+              SEQUENCE {
+                  mediaId
+                      INTEGER,
+                  mediaName
+                      DisplayString,
+                  mediaPriority
+                      INTEGER,
+                  mediaTTL
+                      INTEGER,
+                  mediaClustering
+                      INTEGER
+              }
+
+
+          mediaId OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Identifier of the media."
+              ::= { mediaEntry 1 }
+
+          mediaName OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "name of the media."
+              ::= { mediaEntry 2 }
+
+          mediaPriority OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Priority of the media, it will determine the irouter's
+                       behaviour with the packets originated by this media."
+              ::= { mediaEntry 3 }
+
+          mediaTTL OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Number of ticks that this media's packets will be
+                       waiting in a queue without dropping."
+              ::= { mediaEntry 4 }
+
+          mediaClustering OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          true(1),
+                          false(2)
+                        }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "It shows if this media's packets are related in 
+                       clusters or not."
+              ::= { mediaEntry 5 }
+
+
+
+          -- The clientComponentTable stores all the information for
+          -- each specific component running over the medias
+
+          clientComponentTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF ClientComponentEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              ::= { irouter 16 }
+
+          clientComponentEntry OBJECT-TYPE
+              SYNTAX  ClientComponentEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              INDEX   { clientCompId }
+              ::= { clientComponentTable 1 }
+
+          ClientComponentEntry ::=
+              SEQUENCE {
+                  mediaId
+                      INTEGER,
+                  clientCompId
+                      INTEGER,
+                  clientCompName
+                      DisplayString,
+                  clientCompMode
+                      INTEGER,
+                  BytesSentToClient
+                      Counter,
+                  BytesRecvFromClient
+                      Counter,
+                  PcktsSentToClient
+                      Counter,
+                  PcktsRecvFromClient
+                      Counter,
+                  ClusterSentToClient
+                      Counter,
+                  ClusterRecvFromClient
+                      Counter
+              }
+
+
+          mediaId OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Identifier of the media in which the client is 
+                       running over."
+              ::= { clientComponentEntry 1 }
+
+          clientCompId OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Identifier of the client."
+              ::= { clientComponentEntry 2 }
+
+          clientCompName OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Name of the client."
+              ::= { clientComponentEntry 3 }
+
+          clientCompMode OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          source(1),
+                          sink(2),
+                          both(3)
+                       }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "It shows if the client acts as a source, a sink or both."
+              ::= { clientComponentEntry 4 }
+
+          BytesSentToClient OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { clientComponentEntry 5 }
+
+          BytesRecvFromClient OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { clientComponentEntry 6 }
+
+          PcktsSentToClient OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { clientComponentEntry 7 }
+
+          PcktsRecvFromClient OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { clientComponentEntry 8 }
+
+          ClusterSentToClient OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { clientComponentEntry 9 }
+
+          ClusterRecvFromClient OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { clientComponentEntry 10 }
+
+
+          -- The schedulerTable stores all the information for
+          -- the scherdulers' traffic
+
+          schedulerTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF SchedulerEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              ::= { irouter 18 }
+
+          schedulerEntry OBJECT-TYPE
+              SYNTAX  SchedulerEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              INDEX   { schedulerID }
+              ::= { schedulerTable 1 }
+
+          SchedulerEntry ::=
+              SEQUENCE {
+                  schedulerId
+                      INTEGER,
+                  schDynamicChannel
+                      INTEGER,
+                  schTimeToDie
+                      INTEGER,
+                  schNominalBW
+                      INTEGER,
+                  schEffectiveBW
+                      INTEGER,
+                  schEmittedBW
+                      INTEGER,
+                  schEchoMode
+                      INTEGER,
+                  schStatistics
+                      NULL
+               }
+
+
+          schedulerId OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Identifier of the scheduler."
+              ::= { schedulerEntry 1 }
+
+          schDynamicChannel OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          dynamic(1),
+                          static(2)
+                        } 
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Only the initial scheduler of the irouter 
+                       will be static."
+              ::= { schedulerEntry 2 }
+
+          schTimeToDie OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "If it is a dynamic scheduler, this value will be 0."
+              ::= { schedulerEntry 3 }
+
+          schNominalBW OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-write
+              STATUS  mandatory
+              DESCRIPTION
+                      "Outgoing bandwidth for the packets sent by the scheduler.
+                       Expressed in Kbps. This bandwidth could be different
+                       for the different schedulers."
+              ::= { schedulerEntry 4 }
+
+          schEffectiveBW OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Effective bandwith used. It will be 90% of the previous
+                       one."
+              ::= { schedulerEntry 5 }
+
+          schEmittedBW OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Real bandwidth used."
+              ::= { schedulerEntry 6 }
+
+          schEchoMode OBJECT-TYPE
+              SYNTAX  INTEGER {
+                          true(1),
+                          false(2)
+                        }
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "This is a parameter for the irouter that determines
+                       if the irouter runs as multicast-adder or not."
+              ::= { schedulerEntry 7 }
+
+          schDestTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF SchDestEntry
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "It contains the IP address of the nodes served by
+                       this scheduler."
+              ::= { schedulerEntry 8 }
+
+          schDestEntry OBJECT-TYPE
+              SYNTAX  SchDestEntry
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              INDEX   { schIPAddr }
+              ::= { schDestTable 1 }
+
+          SchDestEntry ::=
+              SEQUENCE {
+                  schDestIPAddr
+                      IpAddress
+               }
+
+          schIPAddr OBJECT-TYPE
+              SYNTAX  IpAddress
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "IP address of ths node."
+              ::= { schDestEntry 1 }
+
+          -- The group schStatistics contains all the traffic 
+          -- statictics for a concrete scheduler
+
+          schStatistics OBJECT IDENTIFIER ::= { schedulerEntry 9 }
+
+          schGlobalStatistics OBJECT IDENTIFIER ::= { schStatistics 1 }
+
+          GlobalBytesOffered OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              ::= { schGlobalStatistics 1 }
+
+          GlobalBytesDelivered OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { schGlobalStatistics 2 }
+
+          GlobalBytesDropped OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { schGlobalStatistics 3 }
+
+          GlobalBytesSavedByClustering OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { schGlobalStatistics 4 }
+
+          GlobalBytesFromNet OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { schGlobalStatistics 5 }
+
+          GlobalPcktsOffered OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { schGlobalStatistics 6 }
+
+          GlobalPcktsDelivered OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { schGlobalStatistics 7 }
+
+          GlobalPcktsDropped OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { schGlobalStatistics 8 }
+
+          GlobalPcktsSavedByClustering OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { schGlobalStatistics 9 }
+
+          GlobalPcktsFromNet OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { schGlobalStatistics 10 }
+
+          -- The mediaStatTable contains the statistics of the traffic
+          -- from the different media served by each scheduler on
+          -- the irouter.
+
+          mediaStatTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF MediaStatEntry
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              ::= { schStatistics 2 }
+
+          mediaStatEntry OBJECT-TYPE
+              SYNTAX  MediaStatEntry
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "
+                      "
+              INDEX   { mediaId }
+              ::= { mediaStatTable 1 }
+
+          MediaStatEntry ::=
+              SEQUENCE {
+                  mediaId
+                      INTEGER,
+                  mediaBytesOffered
+                      Counter,
+                  mediaBytesDelivered
+                      Counter,
+                  mediaBytesDropped
+                      Counter,
+                  mediaBytesSavedByClustering
+                      Counter,
+                  mediaPcktsOffered
+                      Counter,
+                  mediaPcktsDelivered
+                      Counter,
+                  mediaPcktsDropped
+                      Counter,
+                  mediaPcktsSavedByClustering
+                      Counter
+               }
+
+          mediaId OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Identifier of the media."
+              ::= { mediaStatEntry 1 }
+
+          mediaBytesOffered OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { mediaStatEntry 2 }
+
+          mediaBytesDelivered OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { mediaStatEntry 3 }
+
+          mediaBytesDropped OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { mediaStatEntry 4 }
+
+          mediaBytesSavedByClustering OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { mediaStatEntry 5 }
+
+          mediaPcktsOffered OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { mediaStatEntry 6 }
+
+          mediaPcktsDelivered OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { mediaStatEntry 7 }
+
+          mediaPcktsDropped OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { mediaStatEntry 8 }
+
+          mediaPcktsSavedByClustering OBJECT-TYPE
+              SYNTAX  Counter
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "Obvious."
+              ::= { mediaStatEntry 9 }
+
+
+
+          -- the network group
+
+      -- The network group contains the variables relatted
+      -- to the network connectivity.
+
+          ping OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "When a manager station consults this variable, 
+               it sents an IP address and the agent returns the
+               time to arrive and return from that station (rtt).
+               The time is calculated sending a ICMP message"
+              ::= { network 1 }
+
+          echo OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      "When a manager station consults this variable, 
+               it sents an IP address and the agent returns the
+               time to arrive and return from that station (rtt).
+               The time is calculated sending an echo message"
+              ::= { network 2 }
+
+      -- the audio group
+      -- the audio goup contains the variables related
+      -- to the audio activity
+
+      audioTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF audioEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "This table contains one entry (row) for
+            each audio channel is activated. Inside each
+            row, you can find information about the trafic that
+            channel is receiving/generating"
+        ::= { audio 1 }
+
+      audioEntry OBJECT-TYPE
+        SYNTAX audioEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "Contains all available information about one audio
+            channel at any machine"
+        INDEX { audioChIndex }
+        ::= { audioTable 1 }
+
+    String audioChIndexOid          = "1.3.6.1.4.1.2781.1.4.1.1.1";
+    String audioCodecOid            = "1.3.6.1.4.1.2781.1.4.1.1.2";
+    String audioSentBWOid           = "1.3.6.1.4.1.2781.1.4.1.1.3";
+    String audioReceivedBWOid       = "1.3.6.1.4.1.2781.1.4.1.1.4";
+    String audioReceivedPacketsOid  = "1.3.6.1.4.1.2781.1.4.1.1.5";
+    String audioLostPacketsOid      = "1.3.6.1.4.1.2781.1.4.1.1.6";
+    String audioDupPacketsOid       = "1.3.6.1.4.1.2781.1.4.1.1.7";
+    String audioDisorderedPacketsOid= "1.3.6.1.4.1.2781.1.4.1.1.8";
+    String audioThrownPacketsOid    = "1.3.6.1.4.1.2781.1.4.1.1.9";
+    String audioJitterOid           = "1.3.6.1.4.1.2781.1.4.1.1.10";
+    String audioBufferedOid         = "1.3.6.1.4.1.2781.1.4.1.1.11";
+    String audioBufferingOid        = "1.3.6.1.4.1.2781.1.4.1.1.12";
+      audioEntry ::=
+        SEQUENCE {
+            audioChIndex
+                INTEGER,
+            audioCodec
+                DisplayString,
+            audioSentBW
+                INTEGER,
+            audioReceivedBW
+                INTEGER,
+            audioReceivedPackets
+                INTEGER,
+            audioLostPackets
+                INTEGER,
+            audioDupPackets
+                INTEGER,
+            audioDisorderedPackets
+                INTEGER,
+            audioThrownPackets
+                INTEGER,
+            audioJitter
+                INTEGER,
+            audioBuffereed
+                INTEGER,
+            audioBuffering
+                INTEGER,
+            }
+      audioChIndex OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the channel identificator
+            at the isabel application"
+        ::= { audioEntry 1 }
+
+      audioCodec OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the audio codec in use
+            at the isabel application"
+        ::= { audioEntry 2 }
+
+      audioSentBW OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the sent bandwidth at
+            a source channel"
+        ::= { audioEntry 3 }
+
+      audioReceivedBW OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the received bandwidth at
+            a receiver channel"
+        ::= { audioEntry 4 }
+
+      audioReceivedPackets OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the number of received packets at
+            a receiver channel"
+        ::= { audioEntry 5 }
+
+      audioLostPackets OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the number of lost packets at
+            a receiver channel"
+        ::= { audioEntry 6 }
+
+      audioDupPackets OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the number of duplicated packets at
+            a receiver channel"
+        ::= { audioEntry 7 }
+
+      audioDisorderedPackets OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the number of disordered packets at
+            a receiver channel"
+        ::= { audioEntry 8 }
+
+      audioThrownPackets OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the number of thrown packets at
+            a receiver channel"
+        ::= { audioEntry 9 }
+
+      audioJitter OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the current jitter value at
+            a receiver channel"
+        ::= { audioEntry 10 }
+
+      audioBuffered OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the current size of buffer (in milisecs) at
+            a receiver channel"
+        ::= { audioEntry 11 }
+
+      audioBuffering OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the maximun size of buffer (in milisecs) at
+            a receiver channel"
+        ::= { audioEntry 12 }
+      -- end of the audio group
+
+      -- the video group
+      -- the video goup contains the variables related 
+      -- to the video activity
+
+      videoTable OBJECT-TYPE 
+        SYNTAX SEQUENCE OF videoEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "This table contains one entry (row) for
+            each video channel is activated. Inside each 
+            row, you can find information about the trafic that
+            channel is generating"
+        ::= { video 1 }
+
+      videoEntry OBJECT-TYPE
+        SYNTAX VideoEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "Contains all avalaible information about one video 
+            channel at any machine"
+        INDEX { videoChIndex }
+        ::= { videoTable 1 }
+
+      VideoEntry ::=
+        SEQUENCE {
+            videoChIndex
+                INTEGER,
+            videoAcronym
+                DisplayString,
+            videoCodec
+                DisplayString,
+            videoImageSize
+                DisplayString,
+            videoDesiredFR
+                INTEGER,
+            videoDesiredBW
+                INTEGER,
+            videoCodecBW
+                INTEGER,
+            videoSentFR
+                INTEGER,
+            videoSentBW
+                INTEGER,
+            videoReceivedBW
+                INTEGER,
+            videoEnsembledFR
+                INTEGER,
+            videoPaintedFR
+                INTEGER
+            }
+      videoChIndex OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only 
+        STATUS mandatory
+        DESCRIPTION
+            "This is the channel identificator
+            at the isabel application"
+        ::= { videoEntry 1 }
+
+      videoAcronym OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "This is the video channel acronym in use
+            at the isabel application"
+        ::= { videoEntry 2 }
+
+      videoCodec OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "This is the video codec in use
+            at the isabel application"
+        ::= { videoEntry 3 }
+
+      videoImageSize OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "This is the video channel image size in use
+            at the isabel application"
+        ::= { videoEntry 4 }
+
+      videoDesiredFR OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "This is the desired frame rate at
+            a source channel"
+        ::= { videoEntry 5 }
+
+      videoDesiredBW OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "This is the desired bandwidth at
+            a source channel"
+        ::= { videoEntry 6 }
+
+      videoCodecBW OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only 
+        STATUS mandatory
+        DESCRIPTION
+            "This is the codec bandwidth at  
+            a source channel"
+        ::= { videoEntry 7 }
+ 
+      videoSentFR OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only 
+        STATUS mandatory
+        DESCRIPTION
+            "This is the sent frame rate at  
+            a source channel"
+        ::= { videoEntry 8 }
+ 
+      videoSentBW OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only 
+        STATUS mandatory
+        DESCRIPTION
+            "This is the RTP sent bandwidth at  
+            a source channel"
+        ::= { videoEntry 9 }
+ 
+      videoReceivedBW OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only 
+        STATUS mandatory
+        DESCRIPTION
+            "This is the received bandwidth at 
+            a sink channel"  
+        ::= { videoEntry 10 }
+ 
+      videoEnsembledFR OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only 
+        STATUS mandatory
+        DESCRIPTION
+            "This is the ensembled frame rate at
+            a sink channel"  
+        ::= { videoEntry 11 }
+ 
+      videoPaintedFR OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the painted FR in a channel 
+            that is mapped"
+        ::= { videoEntry 12 }
+      -- end of the video group
+
+      -- the sharedDisplay group
+      -- the sharedDisplay goup contains the variables related
+      -- to the sharedDisplay activity
+
+      sharedDisplayTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF sharedDisplayEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "This table contains one entry (row) for
+            each sharedDisplay channel is activated. Inside each
+            row, you can find information about the trafic that
+            channel is generating"
+        ::= { sharedDisplay 1 }
+
+      sharedDisplayEntry OBJECT-TYPE
+        SYNTAX sharedDisplayEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "Contains all avalaible information about one sharedDisplay
+            channel at any machine"
+        INDEX { sharedDisplayChIndex }
+        ::= { sharedDisplayTable 1 }
+
+      sharedDisplayEntry ::=
+        SEQUENCE {
+            sharedDisplayChIndex
+                INTEGER,
+            sharedDisplayCodec
+                DisplayString,
+            sharedDisplayDesiredFR
+                INTEGER,
+            sharedDisplayDesiredBW
+                INTEGER,
+            sharedDisplayCodecBW
+                INTEGER,
+            sharedDisplaySentFR
+                INTEGER,
+            sharedDisplaySentBW
+                INTEGER,
+            sharedDisplayReceivedBW
+                INTEGER,
+            sharedDisplayEnsembledFR
+                INTEGER,
+            sharedDisplayPaintedFR
+                INTEGER
+            }
+      sharedDisplayChIndex OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the channel identificator
+            at the isabel application"
+        ::= { sharedDisplayEntry 1 }
+
+      sharedDisplayCodec OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "This is the video codec in use
+            at the isabel application"
+        ::= { sharedDisplayEntry 2 }
+
+      sharedDisplayDesiredFR OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "This is the desired frame rate at
+            a source channel"
+        ::= { sharedDisplayEntry 3 }
+
+      sharedDisplayDesiredBW OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "This is the desired bandwidth at
+            a source channel"
+        ::= { sharedDisplayEntry 4 }
+
+      sharedDisplayCodecBW OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the codec bandwidth at
+            a source channel"
+        ::= { sharedDisplayEntry 5 }
+
+      sharedDisplaySentFR OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the sent frame rate at
+            a source channel"
+        ::= { sharedDisplayEntry 6 }
+
+      sharedDisplaySentBW OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the RTP sent bandwidth at
+            a source channel"
+        ::= { sharedDisplayEntry 7 }
+
+      sharedDisplayReceivedBW OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the received bandwidth at
+            a sink channel"
+        ::= { sharedDisplayEntry 8 }
+
+      sharedDisplayEnsembledFR OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the ensembled frame rate at
+            a sink channel"
+        ::= { sharedDisplayEntry 9 }
+
+      sharedDisplayPaintedFR OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This is the painted frame rate at
+            a channel"
+        ::= { sharedDisplayEntry 10 }
+      -- end of the sharedDisplay group
+
+END
+

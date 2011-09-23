@@ -1,0 +1,112 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+==============================================
+
+Definicion de los tipos de la Tele-conferencia
+
+Version: 16-Junio-2010
+
+
+Falta indicar que las referencia a chairs, autores, sites y participantes llevan 
+opcionalmente un "-id clave".
+
+
+==============================================
+
+o Conference = < version      : String,	
+                 name         : String, 
+                 sites        : SiteList, 
+                 people       : PersonList,
+                 resources    : ResourceList ,
+                 sessions     : SessionList 
+               >
+
+o Person = < acronym      : String ,
+             name         : String ,
+             position     : String ,
+             organization : String ,
+             site         : Site 
+           >
+
+o Site = < siteid     : String,
+           fullname   : String,
+           main       : Boolean
+           ctrl       : Boolean
+         >
+
+
+o Resource = < rid : String
+             >
+
+o AppSharingResource = Resource +
+                   < server       : ServerHint | Server
+                     distribution : String,
+                     accessSite   : Site | ""                     
+                   >
+
+o VideoResource = Resource +
+                      < site : Site >
+
+
+o ServerHint = < hint : String >
+
+o Server = < name     : String ,
+             password : String
+           >
+
+
+o Session = < name          : String,
+              chair         : Chair,
+              presentations : PresentationList,
+              script        : ScriptItemList
+          >
+
+o ScriptItem = < mode      : String,
+                 capss     : [Chair|Author|Person|Site] ... ,
+                 resources : [Resource] ... 
+               >
+
+o Chair = < chair : Person >
+
+
+
+o Presentation = < name      : String,
+                   speakers  : AuthorList
+                 >
+
+o Author = < person : Person
+              >
+
+XXXList = < [ XXX [, XXX [, ...]]] >
+
+o PersonList
+o AuthorList
+o ResourceList
+o SessionList
+o SiteList
+
+o PresentationList 
+
+o ScriptItemList
+
+o NodeTCC

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Xlim
+Comment=Xlim Services for Isabel
+Exec=/usr/local/isabel/bin/isabel -unmap
+Icon=
+Terminal=false
+Type=Application
+Categories=
+OnlyShowIn=KDE;GNOME;

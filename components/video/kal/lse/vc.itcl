@@ -1,0 +1,398 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vc.itcl
+#
+# lse channel objects.
+#
+#########################################################################
+
+#==============================================================
+# Lse channel: Parent of local and remote channels.
+#==============================================================
+
+class LseChannelC {
+    
+    # long window title. 
+    protected variable ltitle
+    
+    # short window title. 
+    protected variable stitle
+    
+    # Site identifier
+    protected variable siteId
+
+    # LSE channel identifier
+    protected variable chId
+    
+    # Is the channel mapped
+    protected variable mapped 0
+    
+    # Current geometry
+    protected variable geometry 0x0+0+0
+    
+    # Lse Daemon Object reference
+    protected variable vdObj ""
+    
+    constructor {siteid vd} {}
+    
+    destructor {}
+    
+    public method CreateChannel {} {}
+    
+    public method nop {} {}
+    
+    public method Map {} {}
+    public method Unmap {} {}
+    public method IsMapped {} {}
+    
+    public method SetGeometry {geom}
+    
+    # Is a local channel
+    public method IsLocal {}
+    
+    # Send all the needed commands to configure the lse C daemon state.
+    # Used when the lse C daemon state is restarted.
+    protected method ReapplyState {} 
+    
+    public method Info {}
+}
+
+#--------------------------------------------------------------
+
+body LseChannelC::constructor {siteid vd} {
+    
+    set siteId $siteid
+
+    set chId [VideoLSEComponentC::LseChId]
+    
+    set vdObj $vd
+    
+    set ltitle [session Activity GetResource Video lse.ltitle LSE]
+    set stitle [session Activity GetResource Video lse.stitle LSE]
+}
+
+#--------------------------------------------------------------
+
+body LseChannelC::destructor {} {
+    
+}
+
+#--------------------------------------------------------------
+
+body LseChannelC::Map {} {
+    
+    set mapped 1
+    $vdObj RDO video_map_channel($chId)
+}
+
+#--------------------------------------------------------------
+
+body LseChannelC::Unmap {} {
+    
+    set mapped 0
+    $vdObj RDO video_unmap_channel($chId)
+}
+
+#--------------------------------------------------------------
+
+body LseChannelC::IsMapped {} {
+    
+    return $mapped
+}
+
+#--------------------------------------------------------------
+
+body LseChannelC::SetGeometry {geom} {
+    
+    set geometry $geom
+    $vdObj SetGeometry $chId $geom
+}
+
+#--------------------------------------------------------------
+
+body LseChannelC::IsLocal {} {
+    return 0
+}
+
+#--------------------------------------------------------------
+
+body LseChannelC::ReapplyState {} {
+    
+    CreateChannel
+    
+}
+
+#--------------------------------------------------------------
+
+body LseChannelC::Info {} {
+    
+    set    res " o Channel LSE $siteId\n"
+    append res "    channel Id = $chId\n"
+    append res "    stitle = $stitle\n"
+    append res "    ltitle = $ltitle\n"
+    append res "    mapped = $mapped\n"
+    append res "    geometry = $geometry\n"
+    return $res
+}
+
+#--------------------------------------------------------------
+
+
+#==============================================================
+# Local lse channel
+#==============================================================
+
+class LseLocalC {
+    inherit LseChannelC
+    
+    # communication port base.
+    private variable data_port 51017
+    
+    # binding: bind assigned to send my lse flow.
+    private variable binding 0
+    
+    constructor {siteid vd} {
+	LseChannelC::constructor $siteid $vd
+    } {}
+    
+    destructor {}
+    
+    public method CreateChannel {}
+    
+    public method SetGeometry {geom}
+    
+    # Send video flow to the irouter daemon
+    public method Bind {}
+    private method SetBindId {bindId}
+    
+    # Stop sending video flow.
+    public method Unbind {}
+    
+    public method Map {} {}
+    public method Unmap {} {}
+    
+    # Is a local channel
+    public method IsLocal {}
+    
+    # Send all the needed commands to configure the lse C daemon state.
+    # Used when the lse C daemon state is restarted.
+    public method ReapplyState {} 
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::constructor {siteid vd} {
+    
+    CreateChannel
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::destructor {} {
+    
+    
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::CreateChannel {} {
+    global env
+
+    set _rtpport 53132
+    if {[info exists env(ISABEL_LSE_VIDEO_PORT)] && $env(ISABEL_LSE_VIDEO_PORT) != ""} {
+	set _rtpport $env(ISABEL_LSE_VIDEO_PORT)
+    }
+    set _rtcpport [expr $_rtpport+1]
+
+    $vdObj RDO video_net_channel($chId,$_rtpport,$_rtcpport)
+    
+    $vdObj RDO video_window_title($chId,$stitle,$ltitle)
+
+    if {[info exists env(ISABEL_LSE_AVATAR_FILENAME)] && $env(ISABEL_LSE_AVATAR_FILENAME) != ""} {
+	set _afn $env(ISABEL_LSE_AVATAR_FILENAME)
+    } else {
+	set _afn $env(ISABEL_DIR)/lib/images/jpg/cajuste.jpg
+    }
+    $vdObj RDO video_avatar($chId,$_afn)
+
+    $vdObj RDO video_avatar_timeout($chId,5)
+
+    #$vdObj RDO video_window_overrideredirect($chId,1)
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::SetGeometry {geom} {
+    
+    LseChannelC::SetGeometry $geom
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::Bind {} {
+
+    set host 127.0.0.1
+    
+    # data port should be a pair number, RTP compliant
+    set port 51018
+    
+    $vdObj RCB video_bind($chId,$host,$port) [code $this SetBindId]
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::SetBindId {bindId} {
+    
+    if {[catch {set binding [expr $bindId]} res]} {
+	ErrorTraceMsg "Lse: daemon is not working properly."
+        ErrorTraceMsg "         Bind request failure."
+	set binding 0
+    }
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::Unbind {} {
+    
+    if {binding != 0} {
+	$vdObj RDO video_unbind($chId,$binding)
+	set binding 0
+    }
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::Map {} {
+    
+    LseChannelC::Map
+    
+    $vdObj RDO video_send($chId,1)
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::Unmap {} {
+    
+    LseChannelC::Unmap 
+    
+    $vdObj RDO video_send($chId,0)
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::IsLocal {} {
+    return 1
+}
+
+#--------------------------------------------------------------
+
+body LseLocalC::ReapplyState {} {
+    
+    LseChannelC::ReapplyState
+    
+    if {[IsMapped]} {
+	$vdObj ReapplyState
+	
+	SetGeometry $geometry
+	Map
+    } else {
+	Unmap
+    }
+    
+    Bind
+}
+
+#--------------------------------------------------------------
+
+#==============================================================
+# Remote lse channels
+#==============================================================
+
+class LseRemoteC {
+    inherit LseChannelC
+    
+    constructor {siteid vd} {
+	LseChannelC::constructor $siteid $vd
+    } {}
+    
+    destructor {}
+    
+    private method CreateChannel {}
+    
+    # Send all the needed commands to configure the lse C daemon state.
+    # Used when the lse C daemon state is restarted.
+    public method ReapplyState {} 
+}
+
+#--------------------------------------------------------------
+
+body LseRemoteC::constructor {siteid vd} {
+    
+    CreateChannel
+}
+
+#--------------------------------------------------------------
+
+body LseRemoteC::destructor {} {
+    
+    
+}
+
+#--------------------------------------------------------------
+
+body LseRemoteC::CreateChannel {} {
+    global env
+    
+    $vdObj RDO video_play_channel($chId)
+    $vdObj RDO video_window_title($chId,$stitle,$ltitle)
+    
+    if {[info exists env(ISABEL_LSE_AVATAR_FILENAME)] && $env(ISABEL_LSE_AVATAR_FILENAME) != ""} {
+	set _afn $env(ISABEL_LSE_AVATAR_FILENAME)
+    } else {
+	set _afn $env(ISABEL_DIR)/lib/images/jpg/cajuste.jpg
+    }
+    $vdObj RDO video_avatar($chId,$_afn)
+
+    $vdObj RDO video_avatar_timeout($chId,5)
+
+    #$vdObj RDO video_window_overrideredirect($chId,1)
+}
+
+#--------------------------------------------------------------
+
+body LseRemoteC::ReapplyState {} {
+    
+    LseChannelC::ReapplyState
+    
+    if {[IsMapped]} {
+	LseChannelC::SetGeometry $geometry
+	LseChannelC::Map
+    } else {
+	LseChannelC::Unmap
+    }
+}
+
+#--------------------------------------------------------------
+

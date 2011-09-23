@@ -1,0 +1,28 @@
+#
+# ICF & SDK top directories are common for all OS
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.baselib       -- root of subsystem libraries
+#	*.library       -- root of subsystem libraries (-L)
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+FFMPEG.topdir   :=$(PROJECT_ROOT_DIR)/lib/ffmpeg/ffmpeg
+FFMPEG.include  := -I$(FFMPEG.topdir)
+
+FFMPEG.library      :=-L$(FFMPEG.topdir)/libavcodec -L$(FFMPEG.topdir)/libavutil -L$(FFMPEG.topdir)/libavformat
+FFMPEG.library.libs :=-lavformat -lavcodec -lavutil -lz
+
+# if LIBAVCODEC_VERSION_INT < ((52<<16)+(109<<8)+0)
+# FFMPEG.library+= -L$(FFMPEG.topdir)/libavcore
+# FFMPEG.library.libs :=-lavformat -lavcodec -lavcore -lavutil -lz
+
+# STDC_CONSTANT_MACROS needed to include ffmpeg library headers
+CONFIG.generic.include+= \
+            -D__STDC_CONSTANT_MACROS \
+            $(FFMPEG.include)
+
+LINK.FFMPEG:=$(FFMPEG.library) $(FFMPEG.library.libs)

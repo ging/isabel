@@ -1,0 +1,1 @@
+include $(PROJECT_ROOT_DIR)/CONFIG/Makefile.compiler.insure.$(TARGET.OS).$(TARGET.MACH)

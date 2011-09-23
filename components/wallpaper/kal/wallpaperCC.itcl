@@ -1,0 +1,99 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# WallpaperCC.itcl
+#
+# Description
+#
+#   Wallpaper component
+#
+#########################################################################
+
+class WallpaperComponentClass {
+    inherit Component
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {} {}
+    public method AddRemoteSite {site_id new} {}
+    public method DelMySite {} {}
+    public method DelRemoteSite {site_id} {}
+    public method SetInteractionMode {imname nsec site_id_list args}
+
+    constructor {} {   
+	Component::constructor Wallpaper
+    } {
+    }
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Objects that implements the component behaviour
+
+    # Desktop wallpaper:
+    private variable wpobj ""
+}
+
+#---------------------------------------------------------------
+
+body WallpaperComponentClass::destructor {} {
+
+    if {$wpobj != ""} {
+	delete object $wpobj
+	set wpobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body WallpaperComponentClass::Create {first} {
+
+    WriteTraceMsg "- Wallpaper: Creating new Slides component" Slides
+    
+    if {[catch {WallpaperC "#auto"} res]} {
+	ErrorTraceMsg "Wallpaper: component can not be created.\n$res"
+	return -1
+    }
+    set wpobj $res
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body WallpaperComponentClass::SetInteractionMode {imname nsec site_id_list args} {
+    
+    # Movido a IMM.
+}
+
+#---------------------------------------------------------------
+
+

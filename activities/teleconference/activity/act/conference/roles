@@ -1,0 +1,98 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+# --------------------------------------------------------------------
+
+Everybody.components:  ConferenceCtrl SpeechMeter \
+                       Audio Ftp Monitor Wallpaper Titles \
+                       Questions SldFtp Video Whiteboard \
+		       VNC MCU
+
+Everybody.actions:    Admon
+
+Everybody.menuitems:  AdminTool \
+                      VideoInfo VideoSource \
+                      MonitorStartOrStop \
+                      SelectVncServer \
+                      StreamControl \
+                      CreateAudio \
+                      QuitIsabel
+
+# --------------------------------------------------------------------
+
+FlashGateway.components: SpeechMeter \
+                       Ftp Wallpaper Titles \
+                       Questions SldFtp Video Whiteboard \
+		       VNC
+                       
+FlashGateway.actions: Admon
+
+FlashGateway.menuitems:  AdminTool  QuitIsabel
+
+# --------------------------------------------------------------------
+
+SipGateway.components: SpeechMeter \
+                       Ftp Wallpaper Titles \
+                       Questions SldFtp Video Whiteboard \
+		       VNC
+                       
+SipGateway.actions: Admon
+
+SipGateway.menuitems:  AdminTool QuitIsabel
+
+# --------------------------------------------------------------------
+
+GatewayClient.components:  Audio Questions Video ConferenceCtrl
+                       
+GatewayClient.actions:
+
+GatewayClient.menuitems:
+
+# --------------------------------------------------------------------
+
+Ctrl.sites:      ISABEL_SITE_ID NoEmptyExternalDefinition(`ISABEL_CTRL_SITES',*)
+
+Ctrl.components:  
+
+Ctrl.actions:   CtrlPanel 
+
+Ctrl.menuitems: CreateSldFtp \
+                ifelse(ISABEL_IROUTER_DEBUG,1,`IrouterTrafficLogs IrouterReset',)
+
+#               IrouterConfig
+
+# --------------------------------------------------------------------
+
+MCU.components: Monitor \
+ 	        VNC
+                       
+MCU.actions:     Admon
+
+MCU.menuitems:   AdminTool \
+                 IrouterConfig IrouterTrafficLogs \
+                 MonitorStartOrStop \
+                 SelectVncServer \
+                 QuitIsabel
+
+# --------------------------------------------------------------------
+
+

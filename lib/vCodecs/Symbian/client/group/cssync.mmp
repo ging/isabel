@@ -1,0 +1,37 @@
+/* Copyright (c) 2004, Nokia. All rights reserved */
+
+TARGET            CSSync.app
+TARGETTYPE        app
+UID               0x100039CE 0x10006BC8
+TARGETPATH        \system\apps\CSSync
+
+SOURCEPATH        ..\src
+SOURCE            CodecServerSession.cpp
+SOURCE            CSSync.cpp
+SOURCE            CSSyncApplication.cpp
+SOURCE            CSSyncAppView.cpp
+SOURCE            CSSyncAppUi.cpp
+SOURCE            CSSyncDocument.cpp
+
+SOURCEPATH        ..\data
+RESOURCE          CSSync.rss
+RESOURCE          CSSync_caption.rss
+
+USERINCLUDE       ..\inc
+USERINCLUDE       ..\..\common
+
+SYSTEMINCLUDE     \epoc32\include
+
+LIBRARY           euser.lib
+LIBRARY           apparc.lib
+LIBRARY           cone.lib
+LIBRARY           eikcore.lib
+LIBRARY           avkon.lib
+LIBRARY           efsrv.lib
+// avkon.lib eikcdlg.lib eikctl.lib 
+
+LANG SC
+
+AIF               CSSync.aif ..\aif CSSyncAif.rss c12 qgn_cssy_demo_cxt.bmp qgn_cssy_demo_cxt_mask.bmp qgn_cssy_demo_lst.bmp qgn_cssy_demo_lst_mask.bmp
+
+// End of File

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Home Page
+Comment=Starts web browser with the Isabel home page
+Exec=/usr/local/isabel/bin/isrv_IsabelHomepage.sh
+Icon=/usr/local/isabel/lib/images/gif/agorasa.gif
+Terminal=false
+Type=Application
+StartupNotify=true

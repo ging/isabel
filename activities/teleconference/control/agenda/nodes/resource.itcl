@@ -1,0 +1,201 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#-----------------------------------------
+
+class ResourceTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    # Unique resource identifier
+    public variable rid
+
+    #-- Building the tree
+  
+    constructor {_agendaobj _rId} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    # Cleanup - Destroy all the internal state information. 
+    # This method is called when the state of the agenda is inconsistent,
+    # so we will try to delete all the invalid information.
+    public proc cleanup {}
+
+    #-- References
+
+    # Counter: How many existing objects are pointing to me.
+    public variable resourcereferences 0
+
+    #-- All the created resources
+
+    # Array with all the created resources.
+    # $everyresource($rid) is the ResourceTCC object (or a subclass) associated to the given rid.
+    public common everyresource
+
+    # Returns the ResourceTCC object (or a subclass) associated to the given rid.
+    public proc getResource {rid}
+
+    #-- Selection
+
+    # Return 1 if the node can be selected
+    public method isSelectable {}
+
+    #-- Node deletion
+
+    # Delete this node
+    public method kill {}
+
+    # Delete this node
+    public method deleteNode {}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+
+    #-- Order
+
+    # Moves the node in the tree up.
+    public method moveUp {} {}
+
+    # Moves the node in the tree down.
+    public method moveDown {} {}
+}
+
+#-----------------------------------------
+
+body ResourceTCC::constructor {_agendaobj _rId} {
+
+    set rid $_rId
+
+    #--
+
+    if {[info exists everyresource($rid)]} {
+	set emsg "ERROR:: Another resource with the same rid (\"$rid\") has been already defined."
+	puts stderr $emsg
+	error $emsg 
+    }
+    set everyresource($rid) $this
+
+}
+
+#-----------------------------------------
+
+body ResourceTCC::destructor {} {
+
+    unset everyresource($rid)
+}
+
+#-----------------------------------------
+
+body ResourceTCC::cleanup {} {
+
+    foreach _rid [array names everyresource] {
+        catch {unset everyresource($_rid)}
+    }
+}
+
+#-----------------------------------------
+
+body ResourceTCC::getResource {rid} {
+    
+    if {[info exists everyresource($rid)]} {
+	return $everyresource($rid)
+    } else {
+	return ""
+    }
+}
+
+#-----------------------------------------
+
+body ResourceTCC::isSelectable {} {
+
+    return 1
+}
+
+#-----------------------------------------
+
+body ResourceTCC::kill {} {
+
+    if {$resourcereferences != 0} return
+
+    delete object $this
+}
+
+#-----------------------------------------
+
+body ResourceTCC::deleteNode {} {
+
+    $parent deleteResource $this
+}
+
+#-----------------------------------------
+
+body ResourceTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "Edit Resource" \
+	-command [code $this edit]
+    
+    $menu add separator
+    
+    if {$resourcereferences == 0} {
+	
+	$menu add command -image icadelete \
+	    -command [code $this deleteNode]
+	
+    }
+    
+    if { ! [$parent firstResource $this]} {
+	$menu add command -image icafocusup \
+	    -command [code $this moveUp]
+    }
+    
+    if { ! [$parent lastResource $this]} {
+	$menu add command -image icafocusdown \
+	    -command [code $this moveDown]
+    }
+
+    return $menu   
+}
+
+#-----------------------------------------
+
+body ResourceTCC::moveUp {} {
+
+    $parent moveResource $this -1
+}
+
+#-----------------------------------------
+
+body ResourceTCC::moveDown {} {
+
+    $parent moveResource $this 1
+}
+
+#-----------------------------------------
+

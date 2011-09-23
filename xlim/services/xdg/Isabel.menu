@@ -1,0 +1,61 @@
+<!DOCTYPE Menu
+  PUBLIC '-//freedesktop//DTD Menu 1.0//EN'
+  'http://standards.freedesktop.org/menu-spec/menu-1.0.dtd'>
+<Menu>
+   <Name>Applications</Name>
+   <Menu>
+      <Name>Isabel</Name>
+      <Directory>isabel/Isabel.directory</Directory>
+      <Include>
+         <Filename>isabel-IsabelConnectTo.desktop</Filename>
+         <Filename>isabel-IsabelLocalTest.desktop</Filename>
+         <Filename>isabel-IsabelStartSessionServer.desktop</Filename>
+         <Filename>isabel-IsabelEditLocalConfiguration.desktop</Filename>
+      </Include>
+      <Menu>
+         <Name>IsabelUtilities</Name>
+         <Directory>isabel/IsabelUtls.directory</Directory>
+         <Include>
+            <Filename>isabel-IsabelCleanup.desktop</Filename>
+            <Filename>isabel-IsabelLogs.desktop</Filename>
+            <Filename>isabel-IsabelSelectVersion.desktop</Filename>
+            <Filename>isabel-IsabelUpdate.desktop</Filename>
+         </Include>
+         <Layout>
+            <Filename>isabel-IsabelCleanup.desktop</Filename>
+            <Filename>isabel-IsabelLogs.desktop</Filename>
+            <Filename>isabel-IsabelSelectVersion.desktop</Filename>
+            <Filename>isabel-IsabelUpdate.desktop</Filename>
+            <Merge type="all"/>
+         </Layout>
+      </Menu>
+      <Menu>
+         <Name>IsabelHelp</Name>
+         <Directory>isabel/IsabelHelp.directory</Directory>
+         <Include>
+            <Filename>isabel-IsabelAbout.desktop</Filename>
+            <Filename>isabel-IsabelGpl.desktop</Filename>
+            <Filename>isabel-IsabelHomePage.desktop</Filename>
+            <Filename>isabel-IsabelContents.desktop</Filename>
+         </Include>
+         <Layout>
+            <Filename>isabel-IsabelAbout.desktop</Filename>
+            <Filename>isabel-IsabelGpl.desktop</Filename>
+            <Filename>isabel-IsabelHomePage.desktop</Filename>
+            <Filename>isabel-IsabelContents.desktop</Filename>
+            <Merge type="all"/>
+         </Layout>
+      </Menu>
+      <Layout>
+         <Filename>isabel-IsabelConnectTo.desktop</Filename>
+         <Filename>isabel-IsabelLocalTest.desktop</Filename>
+         <Filename>isabel-IsabelStartSessionServer.desktop</Filename>
+         <Separator/>
+         <Filename>isabel-IsabelEditLocalConfiguration.desktop</Filename>
+         <Separator/>
+         <Menuname>IsabelUtilities</Menuname>
+         <Menuname>IsabelHelp</Menuname>
+         <Merge type="all"/>
+      </Layout>
+   </Menu>
+</Menu>

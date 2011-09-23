@@ -1,0 +1,3 @@
+opercf.o: opercf.cxx opercf.h
+opercf.cxx :
+opercf.h :

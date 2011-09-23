@@ -1,0 +1,342 @@
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# codec.itcl
+#
+# Audio Codec configuration.
+#
+#########################################################################
+
+class AudioCodecConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {w _acdobj} {}
+
+    destructor {}
+
+    # Build the gui.
+    public method MakeGui {}
+
+    # Called by the Audio component to display the current codec. 
+    public method SetCurrentCodec {codec}
+
+    public method GetCurrentCodec {}
+
+    # Informs audio daemon about the new maximum BW (kbit per sec) that it can use.
+    # This method also changes to the given codec (see SetCodec for details).
+    # If codec is "", then it selects the best valid codec for the given bw.
+    public method SetMaxBW {bw {codec ""}}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # root widget
+    private variable wroot ""
+
+    # Audio C daemon object
+    private variable acdobj
+
+    # List of supported codecs.
+    private variable supported_codecs         
+
+    # codecbw($codec) is the bandwidth of the given codec.
+    private variable codecbw
+
+    # List of valid codecs.
+    # They are ordered from high bw usage, to low bw usage.
+    private variable valid_codecs
+    
+    private variable currentCodec ""
+
+    # Current maxbw value.
+    private variable current_maxbw 0 
+
+    private method ApplyCodec     {} {}
+
+    # Sets variable supported_codecs with ALL the codecs supported by the audio daemon.
+    # supported_codecs is ordered by BW used (from high to low).
+    # This method also fill the codecbw array.
+    private method SetSupportedCodecs {}
+
+    # Auxilar method used by SetSupportedCodecs
+    private method CmpBW {vq1 vq2}
+
+    # Sets variable valid_codecs with the valid codecs.
+    # Valid codecs are those whose used BW is less or equal to $bw.
+    # valid_codecs is ordered by BW used.
+    # Fills the codecs optionmenu.
+    private method SetValidCodecs {bw}
+
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioCodecConfigC::constructor {w _acdobj} {
+
+    set wroot $w
+
+    set acdobj $_acdobj
+
+    SetSupportedCodecs
+
+    set initialcodec [session Activity GetResource Audio initialcodec   ""]
+    set initialmaxbw [session Activity GetResource Audio initialmaxbw 2000]
+
+    SetMaxBW $initialmaxbw $initialcodec 
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioCodecConfigC::destructor {} {
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioCodecConfigC::MakeGui {} {
+
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    frame $wroot  -relief sunken -bd 1
+    
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+
+    #--
+
+    label $wroot.l -text "Session codec:" -font $font
+    
+    ::iwidgets::optionmenu $wroot.om \
+	-font $font \
+	-command [code $this ApplyCodec]
+    
+    [$wroot.om component menuBtn] configure -pady 1
+    
+    balloon add $wroot.om "Current session codec"
+    
+    if {$valid_codecs != ""} {
+	SetOptionmenuValues $wroot.om $valid_codecs
+	
+	if {$currentCodec != ""} {
+	    set pos [lsearch -exact $valid_codecs $currentCodec]
+	    
+	    if {$pos != -1} {
+		$wroot.om select $pos
+	    }
+	}
+    }
+
+    #--
+
+    grid $wroot.l  -row 0 -column 0 -pady 1 -ipadx 6 -sticky w
+    grid $wroot.om -row 0 -column 1 -pady 1 -ipadx 6 -sticky w
+    
+    grid columnconfigure $wroot 1 -weight 1
+}
+
+#---------------------------------------------------------------------------
+
+body AudioCodecConfigC::SetCurrentCodec {codec} {
+    global env 
+
+    set newcodec ""
+
+    # Gateway SIP: patch to select none-16KHz
+    switch $env(ISABEL_ROLE) {
+	SipGateway {
+	    set newcodec none-16KHz
+	}
+	FlashGateway {
+	    set newcodec ulaw-16KHz
+	}
+    }
+
+    if {$newcodec == ""} {
+	
+	if {$valid_codecs == ""} {
+	    set msg1 "I can't set codec \"$codec\"."
+	    set msg2 "There are no valid codecs."
+	    ErrorTraceMsg "Audio SetCodec: $msg1 $msg2" 
+	    return
+	}
+	
+	if {[lsearch -exact $supported_codecs $codec] == -1} {
+	    
+	    # select the best valid codec.
+	    set newcodec [lindex $valid_codecs 0]
+	    
+	    set msg1 "Unknown codec: \"$codec\"."
+	    set msg2 "Supported codecs: \"$supported_codecs\"."
+	    set msg3 "Selecting \"$newcodec\" as the best known codec for the current bandwidth ($current_maxbw)."
+	    
+	    WarningTraceMsg "Audio SetCodec: $msg1 $msg2 $msg3" 
+	    
+	} elseif {[lsearch -exact $valid_codecs $codec] == -1} {
+	    
+	    # select the best valid codec.
+	    set newcodec [lindex $valid_codecs 0]
+	    
+	    set msg1 "\"$codec\" invalid codec value  for the current bandwidth ($current_maxbw)."
+	    set msg2 "Valid values: \"$valid_codecs\"."
+	    set msg3 "Selecting \"$newcodec\" as the best codec (BW=$codecbw($newcodec))."
+	    
+	    WarningTraceMsg "Audio SetCodec: $msg1 $msg2 $msg3"
+	    
+	} else {
+	    
+	    set newcodec $codec
+	    
+	}
+	
+    }
+    
+
+    if {[winfo exists $wroot.om]} {
+	set pos [lsearch -exact $valid_codecs $newcodec]
+	
+	if {$pos != -1} {
+	    set bkcmd [$wroot.om cget -command]
+	    $wroot.om configure -command ""
+
+	    $wroot.om select $pos
+
+	    $wroot.om configure -command $bkcmd
+	}
+    }
+
+    if {$currentCodec == $newcodec} return
+    
+    set currentCodec $newcodec
+    
+    $acdobj RDO audio_set_codec($newcodec)
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioCodecConfigC::GetCurrentCodec {} {
+
+    return $currentCodec
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioCodecConfigC::ApplyCodec {} {
+
+    set c  [$wroot.om get]
+    
+    if {$c == ""} {
+	return
+    }
+
+    sms setState Audio_global add -codec $c
+}
+
+#---------------------------------------------------------------------------
+
+body AudioCodecConfigC::SetSupportedCodecs {} {
+
+    set supported_codecs [$acdobj RPC audio_query_codecs()]
+
+    # Fill codecbw
+    foreach c $supported_codecs {
+	set dm [$acdobj RPC audio_get_codec_bw($c)]
+	set codecbw($c) $dm
+    }
+
+    # Sort by BW
+    set supported_codecs [lsort -integer -command "CmpBW" $supported_codecs]
+}
+
+#---------------------------------------------------------
+
+body AudioCodecConfigC::CmpBW {c1 c2} {
+
+    return [expr $codecbw($c2) - $codecbw($c1)]
+}
+
+#---------------------------------------------------------
+
+body AudioCodecConfigC::SetValidCodecs {bw} {
+    global env
+
+    set valid_codecs ""
+
+    set _mcu_mixer_enabled [session Activity GetResource Audio irouter.mixer 1]
+    if {$_mcu_mixer_enabled} {
+
+	set valid_codecs none-48KHz
+
+    } else {
+	
+	# Gateway SIP: patch to select none-16KHz
+	switch $env(ISABEL_ROLE) {
+	    SipGateway {
+		set valid_codecs none-16KHz
+	    }
+	    FlashGateway {
+		set valid_codecs ulaw-16KHz
+	    }
+	}
+	
+    }
+    
+    if {$valid_codecs == ""} {
+	foreach c $supported_codecs {
+	    if {$codecbw($c) <= $bw} {
+		lappend valid_codecs $c
+	    }
+	}   
+    }
+}
+
+#---------------------------------------------------------
+
+body AudioCodecConfigC::SetMaxBW {bw {codec ""}} {
+
+    if {$current_maxbw != $bw} {
+	set current_maxbw $bw
+	
+	SetValidCodecs $bw
+    }
+
+    if {$codec == ""} {
+	# select the best valid codec.
+	set codec [lindex $valid_codecs 0]
+    }
+    SetCurrentCodec $codec
+}
+
+#---------------------------------------------------------
+

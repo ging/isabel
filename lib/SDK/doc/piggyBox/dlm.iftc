@@ -1,0 +1,181 @@
+\section{Módulos cargables}
+\label{dlm:chap}
+
+Los módulos cargables son simplemente bibliotecas de enlace dinámico que
+el núcleo del demonio se encarga de cargarlas según va siendo necesarias.
+De esta manera es posible extender el demonio con nuevas funcionalidades.
+En principio un módulo contendrá: grabbers, codecs, players, módulos
+para dialogar con ISABEL\footnote{el equivalente a los componentes actuales}
+y cualquier otra cosa que se nos antoje.
+El contenedor de los módulos cargables es el demonio {\tt piggyBox}
+que se basa en un sistema de registro de elementos combinables por
+el usuario para construir aplicaciones.
+
+
+
+
+\subsection{Anatomía de un módulo}
+
+Para facilitar la gestión desde el demonio, todo módulo contiene
+una estructura de datos de control. La forma de declarar esta
+estructura de datos es a través de la
+macro\footnote{\begin{tt}\#include <Isabel\_SDK/dlm.hh>\end{tt}}
+{\tt DLM\_CONTROL\_STRUCT}.
+
+Esta macro toma 7 parámetros:
+\begin{enumerate}
+  \item el número de versión del módulo --- {\tt u32}
+  \item el número de revisión del módulo --- {\tt u32}
+  \item el nombre del módulo --- {\tt const char * }
+  \item la descripción del módulo --- {\tt const char * }
+  \item el copyright del módulo --- {\tt const char * }
+  \item la función de iniciación --- {\tt int (*)(int argc, char *argv[])}
+  \item la función de clausura --- {\tt int (*)(void)}
+\end{enumerate}
+
+
+
+
+
+\subsubsection{La función de iniciación}
+
+El demonio llama a la función de iniciación justo después de cargar el
+módulo. Desde esta función el módulo debe registrarse en el demonio
+con todos los servicios que vaya a proveer. El módulo debe retrasar
+todos sus ritos iniciáticos hasta el momento en que esta función
+sea llamada. Esto implica, entre otras cosas,  que el módulo no debe
+declarar objetos globales cuyos constructores se invoquen automáticamente
+sin control del demonio.
+
+Si por alguna razón el módulo detecta que le es imposible
+funcionar\footnote{Por ejemplo si la máquina no dispone del
+hardware adecuado.} la función de iniciación debe retornar
+$-1$ en caso contrario debe retornar $0$.
+
+En caso de que el módulo retorne $-1$ el demonio llama inmediatamente
+a la función de clausura del módulo y después descargara el módulo
+de memoria.
+
+Los servicios que el módulo puede registrar en el demonio y la
+manera de hacerlo están descritos en secciones posteriores.
+
+
+
+
+
+\subsubsection{La función de clausura}
+
+Esta función es invocada por el demonio en dos casos:
+\begin{itemize}
+  \item Cuando la función de iniciación ha retornado con $-1$.
+  \item Al finalizar el programa.
+\end{itemize}
+
+En ambos casos la función de clausura deberá liberar cualquier
+recurso que hubiese sido adquirido por el módulo.
+
+De momento no se contempla la posibilidad de descargar demonios
+sin parar el demonio. Hay problemas técnicos que lo impiden,
+aunque con un poco más de código será posible hacerlo.\footnote{El código
+adicional simplemente lleva el registro de que objetos quedan ``flotando''
+y a que módulo pertenecen y difiere la descarga del módulo hasta
+que desaparezcan tales objetos. Peque\'na putada que debemos
+agradecer, entre otros, a las tablas de métodos virtuales.
+De cualquier forma el sistema no será a prueba de idiotas (es imposible)
+y puede producirse alguna inestabilidad por descarga módulos.}
+
+
+
+
+\subsection{Ejemplo de código: {\tt nullCodecModule.cc}}
+\begin{verbatim}
+
+#include <icf2/general.h>
+#include <Isabel_SDK/dlm.hh>
+
+unsigned const nullCodecModuleVersion = 1;
+unsigned const nullCodecModuleRevision= 0;
+
+char const * const nullCodecModuleName= "nullCodecModule";
+char const * const nullCodecModuleDescription= "null codec";
+char const * const nullCodecModuleCopyright= "(c) Copyright 2001";
+
+static  int nullCodecModuleInitFunction(int argc, const char *argv[]);
+static  int nullCodecModuleShutdownFunction(int argc, const char *argv[]);
+
+DLM_CONTROL_STRUCT(
+    nullCodecModuleVersion,
+    nullCodecModuleRevision,
+    nullCodecModuleName,
+    nullCodecModuleDescription,
+    nullCodecModuleCopyright,
+    nullCodecModuleInitFunction,
+    nullCodecModuleShutdownFunction
+);
+
+static int
+nullCodecModuleInitFunction(int argc, const char *argv[])
+{
+    // ...
+
+    if(!success)
+        return -1;
+
+    return 0
+}
+
+static int
+nullCodecModuleShutdownFunction(int argc, const char *argv[])
+{
+    // ...
+
+    return 0;
+}
+\end{verbatim}
+
+
+
+
+
+\subsection{Definición del símbolo para la carga
+dinámica: {\tt Isabel\_SDK/dlm.hh}}
+\begin{verbatim}
+
+#ifndef __DLM_H__
+#define __DLM_H__
+
+
+#include <icf2/general.h>
+#include <dlfcn.h>
+
+struct dlm_t {
+
+    u32   dlmVersion;
+    u32   dlmRevision;
+    char *dlmName;
+    char *dlmDescription;
+    char *dlmCopyright;
+
+    int (*dlmInit)(int argc, char *argv[]);
+    int (*dlmShutDown)(void);
+};
+typedef struct dlm_t dlm_t;
+
+
+#define DLM_CONTROL     dlm_t dlmControl
+#define DLM_NAME        dlmControl.dlmName
+#define DLM_DESCRIPTION dlmControl.dlmDescription
+#define DLM_COPYRIGHT   dlmControl.dlmCopyright
+#define DLM_VERSION     dlmControl.dlmVersion
+#define DLM_REVISION    dlmControl.dlmRevision
+
+#define DLM_CONTROL_STRUCT(a,b,c,d,e,f,g) dlm_t dlmControl={a,b,c,d,e,f,g}
+
+
+
+int loadDlm(char *dlmName, u32 minVer, u32 minRev, int argc, char *argv[]);
+int loadDlm_l(char *dlmName, u32 minVer, u32 minRev, ... );
+
+
+#endif
+\end{verbatim}

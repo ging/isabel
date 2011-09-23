@@ -1,0 +1,152 @@
+#!/bin/sh
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------------------
+# vCodecs directory.
+#-----------------------------------------------------
+if [ -z "$VCODECS_DIR" ] ; then
+  echo "error: set the VCODECS_DIR environment variable"
+  exit 1
+fi
+
+#
+# settings env. vars.
+#
+export PKG_NAME="vCodecs"
+
+export DISTRIB_DIR="/usr/tmp/$USER/vCodecs/distrib"    # directorio con la distribucion.
+export PKG_DIR="/usr/tmp/$USER/vCodecs/pkg.$PKG_NAME"  # directorio donde se hace el paquete.
+export VCODECS_RELDIR="usr/local/vCodecs"        # directorio de instalacion (relativo).
+
+#
+# selecting LINUX distrib
+#
+LINUX_DISTRIB=""
+if [ -f /etc/SuSE-release ] ; then
+    LINUX_DISTRIB="SuSE"
+    PKG_TYPE=rpm
+    RPM_DIR="/usr/src/packages/RPMS/i586"
+elif [ -f /etc/redhat-release ] ; then
+    LINUX_DISTRIB="redhat"
+    PKG_TYPE=rpm
+    RPM_DIR="/usr/src/redhat/RPMS/i586"
+elif [ "$(grep Ubuntu /etc/lsb-release > /dev/null ; echo $?)" -eq 0 ] ; then
+    LINUX_DISTRIB="Ubuntu"
+    PKG_TYPE=deb
+    DEB_DIR="/tmp"
+elif [ -f /etc/debian_version ] ; then
+    LINUX_DISTRIB="debian"
+    PKG_TYPE=deb
+    DEB_DIR="/tmp"
+else
+    echo "Linux distribution is unknown"
+    exit 1
+fi
+
+export PKG_TYPE
+export RPM_DIR
+export DEB_DIR
+
+echo "PACKAGE TYPE=$PKG_TYPE"
+
+#
+# version and release numbers
+#
+VERSION_FILE="$VCODECS_DIR/version"
+if [ ! -f "$VERSION_FILE" ] ; then
+   echo "ERROR: missing version file: $VERSION_FILE"
+   exit 1
+fi
+
+# Version number
+export VMAJOR=`awk '{print $1}' $VERSION_FILE`
+export VMINOR=`awk '{print $2}' $VERSION_FILE`
+export VERSION="$VMAJOR.$VMINOR"
+
+# Release number
+export RELEASE=`awk '{print $3}' $VERSION_FILE`
+
+echo "building ${PKG_NAME}_${VERSION}-${RELEASE}"
+
+#
+# Directorio donde se copia el paquete
+# dependiente de la distribucion
+#
+KERNEL_VERSION=$(uname -r)
+
+
+export VERSIONS_DIR="$HOME/Linux-$LINUX_DISTRIB-$KERNEL_VERSION/$PKG_NAME"
+
+if [ ! -d "$VERSIONS_DIR" ] ; then
+    mkdir -p $VERSIONS_DIR
+fi
+
+#
+# copy files to build the package
+#
+echo "Copying files..."
+./scripts/mkPkg_copy.sh
+echo "Copying files, done!"
+
+case $PKG_TYPE in
+    rpm)
+        echo "Generating RPM package for $LINUX_DISTRIB distribution..."
+
+        ./scripts/mkPkg_rpm.sh
+
+        RPMFILENAME=$PKG_NAME-$VERSION-$RELEASE.i586.rpm
+        mv $RPM_DIR/$RPMFILENAME $VERSIONS_DIR
+        chmod 644 $VERSIONS_DIR/$RPMFILENAME
+        rm -rf $PKG_DIR
+
+        echo "RPM package, done!"
+        ;;
+    deb)
+
+        echo "Generating DEB package for $LINUX_DISTRIB distribution..."
+
+        export DEBFILENAME=$(echo ${PKG_NAME}_${VERSION}-${RELEASE}_i586.deb | tr A-Z a-z)
+
+        ./scripts/mkPkg_deb.sh
+
+        echo "mv $DEB_DIR/$DEBFILENAME $VERSIONS_DIR"
+        mv $DEB_DIR/$DEBFILENAME $VERSIONS_DIR
+        chmod 644 $VERSIONS_DIR/$DEBFILENAME
+        rm -rf $PKG_DIR
+
+        echo "DEB package, done!"
+        ;;
+
+    *)
+
+        echo "Unknown package type, bailing out!"
+
+        rm -rf $PKG_DIR
+
+        exit 1
+
+esac
+
+rm -rf $PKG_DIR
+
+exit 0

@@ -1,0 +1,107 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+###############################################################
+#
+############## Description ####################################
+#
+#  Tele-conferences: Script Title Maker
+#
+###############################################################
+
+
+class tc_titles {
+
+    private variable n
+    private variable t
+
+    constructor {titles} {}
+
+    public method del {} 
+    public method add {}
+}
+
+
+body tc_titles::constructor {titles} {
+    toplevel .t
+
+
+    frame .t.up
+    frame .t.down
+
+    pack .t.up -side top
+    pack .t.down -side bottom
+
+    ::iwidgets::tabnotebook .t.up.tnb -width 5i -height 3i
+    pack .t.up.tnb -padx 4 -pady 4
+    
+#    set main [.t.up.tnb add -label "Titles"]
+    
+    set n 0
+
+    if {$titles!=""} {
+	foreach tit $titles {
+	   set t(title$n) [tc_title #auto [.t.up.tnb add -label "Title $n" -tabpos n] $tit]
+	    puts "Creamos $n : $t(title$n)"
+	    incr n
+	}
+
+	.t.up.tnb view 0
+    }
+
+    incr n -1
+
+    button .t.down.new -text "New" -command [code $this add] 
+    button .t.down.rem -text "Delete" -command [code $this del]
+
+    pack .t.down.new -side left
+    pack .t.down.rem -side right
+}
+
+
+body tc_titles::del {} {
+    if {$n!=-1} {
+	set v [.t.up.tnb view]
+	puts "Estamos en $v"
+	delete object $t(title$v)
+	puts "Borramos $t(title$v)"
+	for {set i [expr $v]} {$i<= [expr $n-1]} {incr i} {
+	    puts "Cambiamos $i por [expr $i+1] : $t(title$i) <--> $t(title[expr $i+1])"
+	    set t(title$i) $t(title[expr $i+1])
+	}
+	.t.up.tnb delete $v
+	puts "Borramos label $v"
+	incr n -1
+	if {$n!=-1} {	    
+	    for {set i 0} {$i<=$n} {incr i} {
+		.t.up.tnb pageconfigure $i -label "Title $i"
+	    }
+	    .t.up.tnb select 0
+	}
+    }
+    .t.up.tnb prev
+}
+
+body tc_titles::add {} {
+    incr n
+    set t(title$n) [tc_title #auto [.t.up.tnb add -label "Title $n" -tabpos n] ""]
+    .t.up.tnb select $n
+}

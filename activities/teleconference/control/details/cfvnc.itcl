@@ -1,0 +1,351 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# cfvnc.itcl
+#
+# To create an object to set the root background image.
+#
+#########################################################################
+
+class TC_VNCC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the widget in $w
+    constructor {w} {}
+
+    # Returns current selection type: "hint" or "server".
+    public method GetSelection {}
+
+    # Set the selection type: "hint" or "server".
+    public method SetSelection {_selection}
+
+    # Returns the VNC server name hint.
+    public method GetHint {}
+
+    # Set the hint value.
+    public method SetHint {_hint}
+
+    # Returns the VNC server name specified in section "selection=$server".
+    public method GetServer {}
+
+    # Set the server name specified in section "selection=$server".
+    public method SetServer {_server}
+
+    # Returns the VNC server password specified in section "selection=$server".
+    public method GetPassword {}
+
+    # Set the server password specified in section "selection=$server".
+    public method SetPassword {_pw}
+
+    # Returns the site_id of the VNC server access site.
+    public method GetAccessSite {}
+
+    # Set the site_id of the VNC server access site.
+    public method SetAccessSite {site_id}
+    
+    # Returns the distribution network (NeReDa or ShDisplay)
+    public method GetDistNet {}
+
+    # Sets the distribution network (NeReDa or ShDisplay)
+    public method SetDistNet {dn}
+
+    # refresh the site list.
+    public method Refresh {{site_id ""}}    
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget where it is packed
+    private variable topw
+
+    # Variable used to connect radiobuttons.
+    # Valid values:
+    #  - hint
+    #  - server
+    private common selection
+
+    # Hint use to select the server
+    private common hint
+
+    # Server used when $selection is "server".
+    private common server
+
+    # Password used when $selection is "server".
+    private common password
+
+    # VNC server access Site
+    private common accessSite
+
+    # Distribution net.
+    private common distnet
+
+    destructor {}
+
+    # Makes the GUI
+    private method MakeGUI {}
+
+    # add a site_id to the list of access sites
+    private method AddAccessSite {site_id}
+
+}
+
+
+#---------------------------------------------------------------
+
+body TC_VNCC::constructor {w} {
+
+    set topw $w
+
+    set selection hint
+    set distnet NeReDa
+
+    MakeGUI
+
+    Refresh
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::destructor {} {
+
+    catch {bind $topw <Destroy> ""}
+    if {[winfo exists $topw]} {
+        destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::MakeGUI {} {
+
+    frame $topw \
+	-relief groove \
+	-borderwidth 1
+
+    #--- Server selection:
+ 
+    label $topw.title \
+	-font [IsabelFontsC::GetFont medium medium] \
+	-text "Application Sharing:" \
+	-anchor w
+
+    #--- Use hint
+
+    radiobutton $topw.rbhint \
+	-text "Hint:" \
+	-font [IsabelFontsC::GetFont medium medium] \
+	-anchor w \
+	-variable [scope selection] \
+	-value hint
+
+    entry $topw.he -textvariable [scope hint]
+
+    #--- Force server
+
+    radiobutton $topw.rbforce \
+	-text "VNC server:" \
+	-font [IsabelFontsC::GetFont medium medium] \
+	-anchor w \
+	-variable [scope selection] \
+	-value server
+
+    entry $topw.se -textvariable [scope server]
+    
+    label $topw.pl \
+	-text "Password:" \
+	-font [IsabelFontsC::GetFont medium medium]
+    entry $topw.pe -textvariable [scope password] -show *
+
+    #--- Distribution network:
+
+    label $topw.ldn \
+	-text "Distribution method:" \
+	-font [IsabelFontsC::GetFont medium medium]
+
+    radiobutton $topw.nereda \
+	-text "As a VNC flow" \
+	-font [IsabelFontsC::GetFont medium medium] \
+	-variable [scope distnet] \
+	-value NeReDa
+
+    radiobutton $topw.shdisplay \
+	-text "As a Video flow" \
+	-font [IsabelFontsC::GetFont medium medium] \
+	-variable [scope distnet] \
+	-value ShDisplay
+
+    #--- NeReDa Access Site:
+
+    ::iwidgets::combobox $topw.ase \
+	-textvariable [scope accessSite] \
+	-labeltext "Access site:" \
+	-labelfont [IsabelFontsC::GetFont medium medium] \
+	-labelpos w
+
+    #--- grid
+
+    grid $topw.title      -row  0 -column 0 -columnspan 3 -pady 5 -sticky w
+
+    grid $topw.rbhint     -row  1 -column 1 -columnspan 2         -sticky w
+    grid $topw.he         -row  3 -column 2               -padx 2 -sticky nwe
+
+    grid $topw.rbforce    -row  4 -column 1 -columnspan 2         -sticky w
+    grid $topw.se         -row  6 -column 2               -padx 2 -sticky nwe
+    grid $topw.pl         -row  7 -column 2                       -sticky w
+    grid $topw.pe         -row  8 -column 2               -padx 2 -sticky nwe
+
+    grid $topw.ldn        -row  9 -column 0 -columnspan 3 -pady 5 -sticky nw
+    grid $topw.nereda     -row 10 -column 1 -columnspan 2          -sticky nw
+
+    grid $topw.ase        -row 12 -column 2               -padx 2  -sticky nwe
+
+    grid $topw.shdisplay  -row 13 -column 1 -columnspan 2         -sticky nw
+
+
+
+
+    grid columnconfigure $topw 0 -minsize 10
+    grid columnconfigure $topw 1 -minsize 10
+    grid columnconfigure $topw 2 -weight 1
+
+    grid rowconfigure $topw  14 -weight 1
+
+    #---
+
+    bind $topw <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::GetSelection {} {
+    
+    return $selection
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::SetSelection {_selection} {
+    
+    set selection $_selection
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::GetHint {} {
+    
+    return [string trim $hint]
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::SetHint {_hint} {
+    
+    set hint $_hint
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::GetServer {} {
+    
+    return [string trim $server]
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::SetServer {_server} {
+    
+    set server $_server
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::GetPassword {} {
+    
+    return [string trim $password]
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::SetPassword {_pw} {
+    
+    set password $_pw
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::GetAccessSite {} {
+
+    return [string trim $accessSite]
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::SetAccessSite {site_id} {
+
+    set accessSite $site_id
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::GetDistNet {} {
+
+    return $distnet
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::SetDistNet {dn} {
+
+    set distnet $dn
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::AddAccessSite {site_id} {
+
+    if {[catch {$topw.ase get $site_id}]} {
+	$topw.ase insert list end $site_id
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_VNCC::Refresh {{site_id ""}} {
+
+    if {$site_id == ""} {
+	set all [SiteManager::GetSites] 
+	
+	foreach _sid $all {
+	    AddAccessSite $_sid
+	}
+    } else {
+	AddAccessSite $site_id
+    }
+}
+
+#---------------------------------------------------------------

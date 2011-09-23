@@ -1,0 +1,22 @@
+; CSSync.pkg
+
+;Language - standard language definitions
+&EN
+
+; standard SIS file header
+#{"Cssync"},(0x10006BC8),1,0,0
+
+;Supports Series 60 v 2.0
+(0x101F7960), 0, 0, 0, {"Series60ProductID"}
+
+; Target
+"..\..\..\..\..\..\Symbian\8.0a\S60_2nd_FP2\epoc32\release\thumb\urel\CSSync.APP"
+-"!:\system\apps\CSSync\CSSync.app"
+"..\..\..\..\..\..\Symbian\8.0a\S60_2nd_FP2\epoc32\data\z\system\apps\CSSync\CSSync.rsc"
+-"!:\system\apps\CSSync\CSSync.rsc"
+"..\..\..\..\..\..\Symbian\8.0a\S60_2nd_FP2\epoc32\data\z\system\apps\CSSync\CSSync_caption.rsc"
+-"!:\system\apps\CSSync\CSSync_caption.rsc"
+"..\..\..\..\..\..\Symbian\8.0a\S60_2nd_FP2\epoc32\data\z\system\apps\CSSync\CSSync.aif"		
+-"!:\system\apps\CSSync\CSSync.aif"
+"..\..\..\..\..\..\Symbian\8.0a\S60_2nd_FP2\epoc32\release\thumb\urel\CodecServer.exe"
+-"!:\system\programs\CodecServer.exe"

@@ -1,0 +1,90 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+# SERVICE PARAMETERS AND CTES
+sinclude(act/lib/vars/defmacros)
+sinclude(act/lib/vars/qos.var)
+sinclude(act/lib/vars/audio.var)
+sinclude(act/lib/vars/video.var)
+sinclude(act/class/vars/qos)
+sinclude(act/class/vars/ctrl.var)
+sinclude(act/class/vars/ctes)
+
+# ACTIVITY DEFINITION
+sinclude(act/class/main)
+
+# ROLES DEFINITION
+sinclude(act/lib/roles/default)
+sinclude(act/class/roles)
+
+# USER VIEWS DEFINITION
+sinclude(act/class/actions)
+
+# MENUITEMS DEFINITION
+sinclude(act/lib/menuitems/admin)
+sinclude(act/lib/menuitems/monitor)
+sinclude(act/lib/menuitems/audio)
+sinclude(act/lib/menuitems/mcu)
+sinclude(act/lib/menuitems/video)
+
+sinclude(act/class/menuitems)
+
+# COMPONENTS
+sinclude(act/class/comps/classctrl)
+
+sinclude(act/lib/comps/ftp)
+sinclude(act/lib/comps/mcu)
+
+sinclude(act/lib/comps/audio)
+Audio.ctrlsites:    Ctrl Chair
+Audio.tonesites:    Ctrl
+Audio.bypass:       1
+Audio.myinitmute:   1
+
+sinclude(act/lib/comps/wallpaper)
+sinclude(act/lib/comps/vnc)
+sinclude(act/lib/comps/notepad)
+sinclude(act/lib/comps/whiteboard)
+
+sinclude(act/lib/comps/video)
+Video.vga.enabled: 1
+
+sinclude(act/lib/comps/questions)
+Questions.layout:  200x250+0+518 1 1
+
+sinclude(act/lib/comps/monitor)
+
+
+# INTERACTION MODES DEFINITION
+sinclude(act/class/imodes/mainsites)
+sinclude(act/class/imodes/chatmode)
+sinclude(act/class/imodes/quesmode)
+sinclude(act/class/imodes/onemainmode)
+sinclude(act/class/imodes/bigonemode)
+sinclude(act/class/imodes/onevgamode)
+sinclude(act/class/imodes/appsharingmode)
+sinclude(act/class/imodes/vgamode)
+sinclude(act/class/imodes/notepadmode)
+sinclude(act/class/imodes/whiteboardmode)
+
+
+

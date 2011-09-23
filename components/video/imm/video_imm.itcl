@@ -1,0 +1,140 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# video_imm.itcl
+#
+# Video: interaction mode manager.
+#
+#########################################################################
+
+
+class Video_IMM_Class {
+
+    public proc SetInteractionMode {imname nsec site_id_list _args}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private proc GetOptionListValue {list optname {default ""}}
+
+}
+
+#---------------------------------------------------------------
+
+body Video_IMM_Class::SetInteractionMode {imname nsec site_id_list _args} {
+
+    set scenary [session Activity GetResource $imname Video ""]
+    
+    set active  [GetOptionListValue $scenary -active 0]
+
+    # VGA enabled?
+    set vgaenabled [session Activity GetResource Video vga.enabled 0]
+
+    # LSE enabled?
+    set lseenabled [session Activity GetResource Video lse.enabled 0]
+
+    if {$active == 0} {
+
+	sms forceState Video_Cameras add \
+	    -sites "" \
+	    -main_layouts "" \
+	    -others_layouts "" \
+	    -map_others 0
+
+	if {$vgaenabled == 1} {
+	    
+	    sms forceState Video_Vga set \
+		-site "" \
+		-layout ""
+	}
+
+	if {$lseenabled == 1} {
+	    
+	    sms forceState Video_Lse set \
+		-layout ""
+	}
+    } else {
+	
+	#
+	# Cameras:
+	#
+	set skip [GetOptionListValue $scenary -skip 0]
+	if {$skip != 1} {
+	    
+	    set othermapped [GetOptionListValue $scenary -othermap]
+	    if {$othermapped == ""} {
+		set othermapped [session Activity GetResource Video othermap 1]
+	    }
+	    
+	    set mlayoutnames [GetOptionListValue $scenary -layout]
+	    set olayoutnames [GetOptionListValue $scenary -otherlayout]
+
+	    sms forceState Video_Cameras add \
+		-sites $site_id_list \
+		-main_layouts $mlayoutnames \
+		-others_layouts $olayoutnames \
+		-map_others $othermapped  
+	}
+	
+	#
+	# VGA:
+	#
+	if {$vgaenabled == 1} {
+	    set _layoutname [GetOptionListValue $scenary -vga.layout]
+	    
+	    set vgasite [GetOptionListValue $_args -vgasite ""]
+	    set vgasite [lindex $vgasite 0]
+
+	    sms forceState Video_Vga set \
+		-site   $vgasite \
+		-layout $_layoutname 
+	}
+	
+	#
+	# LSE:
+	#
+	if {$lseenabled == 1} {
+	    set _layoutname [GetOptionListValue $scenary -lse.layout]
+	    
+	    sms forceState Video_Lse set \
+		-layout $_layoutname 
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body Video_IMM_Class::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+
+#---------------------------------------------------------------

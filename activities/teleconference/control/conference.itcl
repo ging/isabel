@@ -1,0 +1,306 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# conference.tcl
+#
+# Tele-conferences control window.
+#
+#########################################################################
+
+class TeleConferenceControlC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Site connections and disconnections
+    public method AddSite {site_id} 
+    public method DelSite {site_id}
+
+    #
+    # References to internal objects
+    #
+
+    public variable menubarobj 
+    public variable applyobj 
+    public variable modesobj 
+    public variable agendaobj 
+    public variable detailsobj 
+    
+    # Create the object.
+    constructor {} {}
+
+    # Toggle the window visibility.
+    public method ShowHideGUI {}
+
+    # Change the view of the window
+    public method FullView {}
+    public method ReducedView {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # widget where it is packed
+    private variable topw
+
+    # Current view mode:
+    #  0 = unassigned initial value.
+    #  1 = Full view
+    #  2 = Reduced view
+    private variable viewmode 0
+
+    # Remember the full and reduced geometries in order to restore them. 
+    private variable fullgeometry ""
+    private variable reducedgeometry ""
+
+    # Activity geometry
+    private variable actgeometry ""
+
+    destructor {}
+
+    # Makes the GUI
+    private method MakeGUI {}
+
+}
+
+#---------------------------------------------------------------
+
+body TeleConferenceControlC::constructor {} {
+
+    set topw .tc_Ctrl
+
+    MakeGUI
+
+#    ReducedView
+
+    $modesobj SetCurrentMode idlemode
+}
+
+#---------------------------------------------------------------
+
+body TeleConferenceControlC::destructor {} {
+
+    catch {bind $topw.destroy <Destroy> ""}
+    if {[winfo exists $topw]} {
+	destroy $topw
+    }
+
+}
+
+#---------------------------------------------------------------
+
+body TeleConferenceControlC::MakeGUI {} {
+
+    #-------------------------------------------------
+    # Container
+    #-------------------------------------------------
+
+    toplevel $topw -screen [session Environ cget -scripts_ctrl_display]
+
+    wm protocol $topw WM_DELETE_WINDOW "wm withdraw $topw"
+
+    set title "Tele-Conference Control"
+    wm title    $topw $title
+    wm iconname $topw $title
+
+    set actgeometry [session Activity GetResource CtrlPanel geometry +200+100]
+    wm geometry $topw $actgeometry
+
+    #-------------------------------------------------
+    # Menubar
+    #-------------------------------------------------
+
+    set menubarobj  [TC_MenubarC  "::#auto" $topw.mb [code $this]]
+
+    #-------------------------------------------------
+    # Apply
+    #-------------------------------------------------
+
+    set applyobj    [TC_ApplyC "::#auto" $topw.apply [code $this]]
+
+    #-------------------------------------------------
+    # Modes
+    #-------------------------------------------------
+
+    set modesobj [TC_ModesC "::#auto" \
+		      $topw.modes \
+		      [code $this]]
+
+    #-------------------------------------------------
+    # Details - Paned window
+    #-------------------------------------------------
+
+    ::iwidgets::panedwindow $topw.pw -orient vertical -height 640 -width 950
+
+    $topw.pw add ica
+    set wleft    [$topw.pw childsite ica]
+    
+    $topw.pw add details
+    set wright [$topw.pw childsite details]
+    
+    $topw.pw fraction 40 60
+    
+    $topw.pw hide details
+    
+    #---
+    # Details - Agenda
+    #---
+    
+    set agendaobj [AgendaTCC "::#auto" \
+		       $wleft.agenda \
+		       [code $this]]
+    #---
+    # Details - Details
+    #---
+    
+    set detailsobj  [DetailsTCC "::#auto" \
+			 $wright.details \
+			 [code $this]]
+    
+    #---
+    # Packs and Grids
+    #---
+    
+    grid $topw.mb    -row 0 -column 0 -sticky w
+    grid $topw.modes -row 1 -column 0 -sticky nswe
+    grid $topw.pw    -row 2 -column 0 -sticky nswe
+    grid $topw.apply -row 3 -column 0 -ipadx 5 -ipady 3              
+
+    grid rowconfigure    $topw  0 -weight 0
+    grid rowconfigure    $topw  1 -weight 0
+    grid rowconfigure    $topw  2 -weight 1
+    grid rowconfigure    $topw  3 -weight 0
+
+    grid columnconfigure $topw 0 -weight 1
+
+    pack $wright.details -fill both -expand 1
+    pack $wleft.agenda   -fill both -expand 1
+
+    #---
+
+    frame $topw.destroy
+    bind $topw.destroy <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+
+body TeleConferenceControlC::ShowHideGUI {} {
+
+    switch [wm state $topw] {
+	normal    { 
+	    wm withdraw $topw 
+	}
+
+	withdrawn -
+	iconic    { 
+	    wm deiconify $topw
+	    after 100 raise  $topw
+	} 
+    }
+}
+
+#---------------------------------------------------------------
+
+body TeleConferenceControlC::FullView {} {
+
+    if {$viewmode == 1} return
+
+    if {$viewmode == 2} {
+	if {[wm state $topw] == "normal"} {
+	    if {[winfo width $topw] != 1} {
+		set reducedgeometry [wm geometry $topw]
+	    }
+	}
+    }
+
+    set viewmode 1
+
+    $topw.pw show details
+
+    if {$fullgeometry != ""} {
+	wm geometry $topw $fullgeometry
+    } else {
+	if {$reducedgeometry != ""} {
+	    wm geometry $topw $reducedgeometry
+	} else {
+	    wm geometry $topw $actgeometry
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body TeleConferenceControlC::ReducedView {} {
+
+    if {$viewmode == 2} return
+
+    if {$viewmode == 1} {
+	if {[wm state $topw] == "normal"} {
+	    if {[winfo width $topw] != 1} {
+		set fullgeometry [wm geometry $topw]
+	    }
+	}
+    }
+
+    set viewmode 2
+    
+    $topw.pw hide details
+    
+    if {$reducedgeometry != ""} {
+	wm geometry $topw $reducedgeometry
+    } else {
+	if {$fullgeometry != ""} {
+	    wm geometry $topw $fullgeometry
+	} else {
+	    wm geometry $topw $actgeometry
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body TeleConferenceControlC::AddSite {site_id} {
+
+    $agendaobj refreshConnections add $site_id
+
+    set _usersobj [$detailsobj cget -usersobj]
+    $_usersobj Refresh $site_id
+
+    set _vncobj [$detailsobj cget -vncobj]
+    $_vncobj Refresh $site_id
+}
+
+#---------------------------------------------------------------
+
+body TeleConferenceControlC::DelSite {site_id} {
+
+    $agendaobj refreshConnections del $site_id
+
+    set _usersobj [$detailsobj cget -usersobj]
+    $_usersobj Refresh $site_id
+}
+
+#---------------------------------------------------------------
+

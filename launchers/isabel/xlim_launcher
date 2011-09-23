@@ -1,0 +1,115 @@
+#! /bin/sh
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------------------
+# isabel directory.
+#-----------------------------------------------------
+if [ -z "$ISABEL_DIR" ] ; then
+  ISABEL_DIR=/usr/local/isabel
+  export ISABEL_DIR
+fi
+
+#-----------------------------------------------------
+# isabel common code
+#-----------------------------------------------------
+. $ISABEL_DIR/bin/isabel.common.sh
+
+#-----------------------------------------------------
+# isabel environment variables
+#-----------------------------------------------------
+. $ISABEL_DIR/bin/isabel.environ.sh
+
+#-----------------------------------------------------
+# Some log messages
+#-----------------------------------------------------
+WriteLogMsg "Launching isabel ($ISABEL_VERSION-$ISABEL_RELEASE)"
+
+#-----------------------------------------------------
+# Checking ISABEL requirements
+#-----------------------------------------------------
+. $ISABEL_DIR/bin/isabel.requires.sh
+CheckXmlRpcJar
+
+
+#-----------------------------------------------------
+# Checking that a license file exists.
+#-----------------------------------------------------
+# if [ ! -f $ISABEL_USER_DIR/license ] ; then
+#    $ISABEL_TCL $ISABEL_DIR/lib/isatcl/isabel_register -gotoagree -geometry 750x600+100+50
+#    if [ "$?" = "1" ] ; then
+#       exit "$?"
+#    fi
+# fi
+
+#-----------------------------------------------------
+# Cleanup
+#-----------------------------------------------------
+
+
+#-----------------------------------------------------
+# Creating configuration files.
+#-----------------------------------------------------
+mkdir -p $ISABEL_CONFIG_DIR/xlimconfig/menu
+for fcfg in contacts rpc ; do
+   touch $ISABEL_CONFIG_DIR/xlimconfig/$fcfg
+done
+
+
+#-----------------------------------------------------
+# Logs configuration.
+#-----------------------------------------------------
+if [ ! -f $ISABEL_CONFIG_DIR/logging.properties ] ; then
+   cp $ISABEL_DIR/lib/logging.properties $ISABEL_CONFIG_DIR/.
+fi
+
+#-----------------------------------------------------
+# Invoke remote
+#-----------------------------------------------------
+
+jarxmlrpc=$ISABEL_DIR/libexec/xmlrpc/commons-logging-1.1.jar:$ISABEL_DIR/libexec/xmlrpc/ws-commons-util-1.0.2.jar:$ISABEL_DIR/libexec/xmlrpc/xmlrpc-client-3.1.jar:$ISABEL_DIR/libexec/xmlrpc/xmlrpc-common-3.1.jar:$ISABEL_DIR/libexec/xmlrpc/xmlrpc-server-3.1.jar
+jarlim=$ISABEL_DIR/libexec/isabel_xlim.jar
+jarlib=$ISABEL_DIR/libexec/isabel_lib.jar
+
+WriteLogMsg "Launching LIM server."
+
+_xlimlogfn=$(CreateLogFilename xlim)
+
+$ISAJAVA -cp $jarxmlrpc:$jarlim:$jarlib:$ISABEL_DIR/lib:$ISABEL_DIR/doc \
+         -Djava.util.logging.config.file=$ISABEL_CONFIG_DIR/logging.properties \
+         -Dxlim.dir=$ISABEL_DIR/lib  \
+         -Dxlim.user.dir=$ISABEL_CONFIG_DIR \
+         -Disabel.dir=$ISABEL_DIR \
+         -Disabel.profiles.dir=$ISABEL_PROFILES_DIR \
+         -Disabel.sessions.dir=$ISABEL_SESSIONS_DIR \
+         -Disabel.user.dir=$ISABEL_USER_DIR \
+         -Disabel.config.dir=$ISABEL_CONFIG_DIR \
+          app.isabel.Server $* > $_xlimlogfn 2>&1 &
+
+
+#-----------------------------------------------------
+# Cleanup
+#-----------------------------------------------------
+
+
+exit 0
+

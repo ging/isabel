@@ -1,0 +1,335 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#########################################################################
+#
+# speechmeter.itcl
+#
+# Description
+#
+#   Class to create the SpeechMeter object.
+#
+#########################################################################
+
+
+class SpeechMeterC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Root window
+    private variable wroot
+
+    # $site_id of current chairman, or "" if none.
+    private variable chairman_site_id ""
+
+    # Is $wroot visible.
+    private variable visible
+
+    # Time light: intime, fiveminutes or timepassed
+    private variable time
+
+    # real geometry
+    private variable geometry
+
+    # (virtual) layout
+    private variable layout
+
+    # Makes the gui
+    private method MakeGUI {}
+    private method MoveDown {}
+    private method MoveDown2 {}
+
+    #------------------------------------------------
+
+    # Attend SMS messages
+    private method SetSmsState {args}
+
+    # Set the current local state.
+    private method SetState {_time _chairman_site_id}
+
+    # Deiconify or Iconify the control window.
+    private method SetVisible {_visible}
+
+    # Set window layout
+    private method SetLayout {_layout}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+}
+
+#---------------------------------------------------------------
+
+body SpeechMeterC::constructor {} {
+    
+    set time ""
+    set visible 0
+    set layout +0+0
+
+    MakeGUI
+
+    SetVisible $visible
+
+    # SMS messages which I want to receive:
+    sms joinKey SpeechMeter [code $this SetSmsState]
+    
+    # I send an empty state
+    # sms setState SpeechMeter add
+
+}
+
+#---------------------------------------------------------------
+
+body SpeechMeterC::destructor {} {
+
+    destroy $wroot
+}
+
+#---------------------------------------------------------------
+    
+body SpeechMeterC::MakeGUI {} {
+    global ISABEL_DIR
+    
+    set display [session Environ cget -scenary_display]
+    
+    set wroot .tSpeechMeter
+
+    toplevel $wroot -screen $display
+
+    frame $wroot.f -relief raised -bd 3 -bg white
+    pack  $wroot.f -expand 1 -fill both
+
+    set font [session Activity GetResource SpeechMeter font [IsabelFontsC::GetFont largest]]
+
+    CreateImage semaforogreen  gif/semaforo-green.gif
+    CreateImage semaforoyellow gif/semaforo-orange.gif
+    CreateImage semaforored    gif/semaforo-red.gif
+
+    label $wroot.f.img \
+	    -image semaforogreen \
+	    -highlightthickness 0 \
+	    -bd 0
+
+    radiobutton $wroot.f.timepassed \
+	    -text "Time Over" \
+	    -indicatoron 0 \
+	    -background white \
+	    -activebackground  white \
+	    -disabledforeground black \
+	    -selectcolor red \
+	    -state disabled \
+	    -font $font \
+	    -value timepassed \
+	    -variable [scope time] \
+	    -command "sms setState SpeechMeter add -time timepassed"
+    
+    radiobutton $wroot.f.fiveminutes \
+	    -text "5 Minutes" \
+	    -indicatoron 0 \
+	    -background white \
+	    -activebackground  white \
+	    -disabledforeground black \
+	    -selectcolor yellow \
+	    -state disabled \
+	    -font $font \
+	    -value fiveminutes \
+	    -variable [scope time] \
+	    -command "sms setState SpeechMeter add -time fiveminutes"
+
+    radiobutton $wroot.f.intime \
+	    -text "In Time" \
+	    -indicatoron 0 \
+	    -background white \
+	    -activebackground white \
+	    -disabledforeground black \
+	    -selectcolor green \
+	    -state disabled \
+	    -font $font \
+	    -value intime \
+	    -variable [scope time] \
+	    -command "sms setState SpeechMeter add -time intime"
+    
+    grid $wroot.f.img         -row 0 -column 0 -rowspan 3
+    grid $wroot.f.timepassed  -row 0 -column 1 -sticky we -padx 5
+    grid $wroot.f.fiveminutes -row 1 -column 1 -sticky we -padx 5
+    grid $wroot.f.intime      -row 2 -column 1 -sticky we -padx 5
+
+    set orr [session Activity GetResource SpeechMeter overrideredirect 0]
+    if $orr {
+	wm overrideredirect $wroot 1
+
+	after idle [code $this MoveDown]
+
+    } else {
+	# wm transient        $wroot .
+
+	wm title     $wroot "SpeechMeter"
+	wm iconname  $wroot "SpeechMeter"
+	
+	# window manager error: dont manage iconbitmap with remote toplevel.
+	catch {wm iconbitmap $wroot @$ISABEL_DIR/lib/images/xbm/clock.xbm}
+    }
+
+    set geometry +0+0
+}
+
+#--------------------------------------------------------------
+
+body SpeechMeterC::MoveDown {} {
+
+    set _display [session Environ cget -scenary_display]
+
+    toplevel .winunderauxsm -screen $_display 
+
+    label .winunderauxsm.msg -text "Moving Speech Meter window to bottom"
+    pack .winunderauxsm.msg
+
+    lower .winunderauxsm
+
+    after idle after 1 [code $this MoveDown2]
+    after idle after 1 destroy  .winunderauxsm
+}
+
+#---------------------------------------------------------------
+
+body SpeechMeterC::MoveDown2 {} {
+    global ISABEL_DIR
+
+    set _id1 [expr [winfo id .winunderauxsm]]
+    set _id2 [expr [winfo id $wroot]]
+
+    set _display [session Environ cget -scenary_display]
+    if {[catch "exec $ISABEL_DIR/bin/isabel_winunder -display $_display -winOver $_id1 -winUnder $_id2" _err]} {
+	WarningTraceMsg "Subtitles: I can not move Speech Meter window to bottom: $_err"
+    }
+}
+
+#---------------------------------------------------------------
+
+body SpeechMeterC::SetSmsState {args} {
+
+    set _chair   [GetOptionListValue $args -chair ""]
+    set _time    [GetOptionListValue $args -time "intime"]
+    set _visible [GetOptionListValue $args -visible 0]
+    set _layout  [GetOptionListValue $args -layout "+0+0"]
+
+    SetVisible $_visible
+    SetLayout $_layout
+    SetState $_time $_chair
+}
+
+#---------------------------------------------------------------
+
+body SpeechMeterC::SetState {_time _chairman_site_id} {
+
+    set time $_time
+    switch -- $time {
+	intime {
+	    $wroot.f.img configure -image semaforogreen
+	    $wroot.f.timepassed configure -activebackground    white 
+	    $wroot.f.fiveminutes configure -activebackground    white 
+	    $wroot.f.intime configure -activebackground    green 
+	}
+
+	fiveminutes {
+	    $wroot.f.img configure -image semaforoyellow
+	    $wroot.f.timepassed configure -activebackground    white
+	    $wroot.f.fiveminutes configure -activebackground    yellow
+	    $wroot.f.intime configure -activebackground    white
+	}
+
+	timepassed {
+	    $wroot.f.img configure -image semaforored
+	    $wroot.f.timepassed configure -activebackground    red
+	    $wroot.f.fiveminutes configure -background white -activebackground    white
+	    $wroot.f.intime configure -activebackground    white
+	}
+    }
+
+    set chairman_site_id $_chairman_site_id
+
+    set mysite_id [SiteManager::MySiteId]
+    set _tool [SiteManager::GetSiteInfo $mysite_id tool]
+
+
+    if {$chairman_site_id == $mysite_id ||
+	[lsearch -exact "FlashGateway" $_tool] != -1} {
+	$wroot.f.timepassed  configure -state normal -relief raised -bd 3
+	$wroot.f.fiveminutes configure -state normal -relief raised -bd 3
+	$wroot.f.intime      configure -state normal -relief raised -bd 3
+    } else {
+	$wroot.f.timepassed  configure -state disabled -relief flat -bd 0
+	$wroot.f.fiveminutes configure -state disabled -relief flat -bd 0
+	$wroot.f.intime      configure -state disabled -relief flat -bd 0
+    }
+
+}
+
+#---------------------------------------------------------------
+
+body SpeechMeterC::SetVisible {_visible} {
+
+    if {$_visible} {
+	wm deiconify $wroot
+	wm geometry  $wroot $geometry
+    } else {
+	wm withdraw $wroot
+    }
+    set visible $_visible
+}
+
+#---------------------------------------------------------------
+
+body SpeechMeterC::SetLayout {_layout} {
+
+    set layout $_layout
+    set geometry [dvirtual V2R_Layout $_layout]
+    wm geometry  $wroot $geometry
+}
+
+#---------------------------------------------------------------
+
+body SpeechMeterC::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#---------------------------------------------------------------
+
+
+
+

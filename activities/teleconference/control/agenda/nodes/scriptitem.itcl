@@ -1,0 +1,631 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class ScriptItemTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    public variable mode
+    public variable capss
+    public variable resources
+
+    #-- Building the tree
+
+    constructor {_agendaobj _mode _capss _resources} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    public proc parse {agendaobj str}
+    
+    public method prettyPrinter {{offset 0}}
+    
+    public method getTitle {}
+  
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+
+    public method getNodes {}
+
+    #-- Online  
+
+    public method online {}
+
+    #-- Selection
+
+    # Return 1 if the node can be selected
+    public method isSelectable {}
+
+    # Methods called when a node is selected or unselected.
+    public method select {} 
+    public method unselect {}
+
+    # Return 1 if the node is selected, otherwise returns 0.
+    public method isSelected {}
+
+    public proc cleanSelection {} {set cselnode ""}
+
+    # Currently selected node
+    private common cselnode ""
+
+    #-- Node creation
+
+    # Create a new scriptitem node with the current selections.
+    public proc newFromSelection {_agendaobj}
+
+    #-- Interaction Mode
+
+    # View the interaction mode represented by me, i.e. select the
+    # checkbutton of the referenced interaction mode, select the 
+    # referenced chairs, authors, people and sites, and selected 
+    # the referenced resources 
+    public method viewInteractionMode {}
+
+    #-- Carrousel
+
+    # ScriptItemTCC node selected by the carrusel object. This node represents
+    # the last interaction mode applied by the carrousel object.
+    private common carrouselSelection ""
+
+    # Returns the $carrouselSelection node.
+    public proc getCarrouselSelection {}
+    
+    # Sets the $carrouselSelection node.
+    public proc setCarrouselSelection {_scriptItemNode}
+
+    #--
+
+    # Unselect all the participants in my session (chair and speakers).
+    private method unselectPeople {}
+
+    # Select the $speakers people (chair and session speakers).
+    private method selectPeople {}
+
+    #-- Node modifications: delete and replace
+
+    # Delete this node
+    public method deleteNode {}
+
+    # Replace this node with the current selected values.
+    public method updateNode {}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+
+    #-- Order
+
+    # Moves the node in the tree up.
+    public method moveUp {} {}
+
+    # Moves the node in the tree down.
+    public method moveDown {} {}
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::constructor {_agendaobj _mode _capss _resources} {
+
+    set mode    $_mode 
+
+    foreach _obj $_capss {
+	CheckClass  $_obj ChairTCC AuthorTCC PersonTCC SiteTCC
+	
+	if {[$_obj isa  ChairTCC]} {
+	    set _cont [$_obj cget -chairreferences]
+	    $_obj configure -chairreferences [expr $_cont + 1]
+	} elseif {[$_obj isa  AuthorTCC]} {
+	    set _cont [$_obj cget -authorreferences]
+	    $_obj configure -authorreferences [expr $_cont + 1]
+	} elseif {[$_obj isa  PersonTCC]} {
+	    set _cont [$_obj cget -personreferences]
+	    $_obj configure -personreferences [expr $_cont + 1]
+	} elseif {[$_obj isa  SiteTCC]} {
+	    set _cont [$_obj cget -sitereferences]
+	    $_obj configure -sitereferences [expr $_cont + 1]
+	}
+    }
+    set capss $_capss 
+
+
+    foreach _r $_resources {
+	CheckClass  $_r ResourceTCC
+	
+	set _rr [$_r cget -resourcereferences]
+	$_r configure -resourcereferences [expr $_rr + 1]
+    }
+    set resources $_resources 
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::destructor {} {
+
+    foreach _obj $capss {
+	if {[$_obj isa  ChairTCC]} {
+	    set _cont [$_obj cget -chairreferences]
+	    $_obj configure -chairreferences [expr $_cont - 1]
+	} elseif {[$_obj isa  AuthorTCC]} {
+	    set _cont [$_obj cget -authorreferences]
+	    $_obj configure -authorreferences [expr $_cont - 1]
+	} elseif {[$_obj isa  PersonTCC]} {
+	    set _cont [$_obj cget -personreferences]
+	    $_obj configure -personreferences [expr $_cont - 1]
+	} elseif {[$_obj isa  SiteTCC]} {
+	    set _cont [$_obj cget -sitereferences]
+	    $_obj configure -sitereferences [expr $_cont - 1]
+	}
+    }
+    
+    foreach _r $resources {
+	set _rr [$_r cget -resourcereferences]
+	$_r configure -resourcereferences [expr $_rr - 1]
+    }
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::parse {agendaobj str} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class ScriptItem
+ 
+    set _mode     [getOptionListValue $str -mode]
+
+    WriteTraceMsg "ica: parsing script item \"$_mode\""
+
+    #--
+
+    set _caps_ids [getOptionListValue $str -selection]
+
+    set _caps_objs ""
+    set _cont 0
+    set _n [lindex $_caps_ids $_cont]
+    while {$_n != ""} {
+	set _obj ""
+	if {[regexp {(.+)/(.+)} $_n _all _type _id] == 1} {
+	    switch -- $_type {
+		site {
+		    set _obj [SiteTCC::getSite $_id]
+		}
+		participant {
+		    set _obj [PersonTCC::getPerson $_id]
+		}
+		author -
+		chair {
+		    set _obj [SessionListTCC::getObjTable $_n]
+		} 
+	    }
+	}
+	
+	if {$_obj == ""} { 
+	    set emsg "ERROR:: Unknown reference in script: \"$_n\"."
+	    puts stderr $emsg
+	    error $emsg 
+	}
+
+	lappend _caps_objs $_obj
+        
+	incr _cont
+        set _n [lindex $_caps_ids $_cont]
+    }
+
+    #--
+
+    set _robjs ""
+    set _resource_ids [getOptionListValue $str -resourcerefs]
+    foreach _rid $_resource_ids {
+	
+	set _robj [ResourceTCC::getResource $_rid]
+	if {$_robj == ""} {
+	    set emsg "ERROR:: There is no resource with the identifier \"$_rid\"."
+	    puts stderr $emsg
+	    error $emsg 
+	}
+	lappend _robjs $_robj
+    }
+
+    #--
+
+    set _me [ScriptItemTCC ::#auto $agendaobj $_mode $_caps_objs $_robjs]
+
+    return $_me
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::prettyPrinter {{offset 0}} {
+
+    set _spc1 [NodeTCC::spaces $offset]
+
+    set _capspp ""
+    foreach _obj $capss {
+	if {[$_obj isa  ChairTCC]} {
+	    lappend _capspp "chair/[$_obj getMyUid]"
+	} elseif {[$_obj isa  AuthorTCC]} {
+	    lappend _capspp "author/[$_obj getMyUid]"
+	} elseif {[$_obj isa  PersonTCC]} {
+	    lappend _capspp "participant/[$_obj getAcronym]"
+	} elseif {[$_obj isa  SiteTCC]} {
+	    lappend _capspp "site/[$_obj getSiteId]"
+	}
+    }
+
+
+    set _rpp ""
+    foreach _robj $resources {
+	lappend _rpp [$_robj cget -rid]	
+    }
+
+    return "${_spc1}[list [list ScriptItem \
+	   -mode $mode \
+	   -selection $_capspp \
+	   -resourcerefs $_rpp]]"
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::getTitle {} {
+
+    set _psl ""
+    foreach _obj $capss {
+	if {[$_obj isa  ChairTCC]} {
+	    lappend _psl [$_obj getAcronym]
+	} elseif {[$_obj isa AuthorTCC]} {
+	    lappend _psl [$_obj getAcronym]
+	} elseif {[$_obj isa  PersonTCC]} {
+	    lappend _psl [$_obj getAcronym]
+	} elseif {[$_obj isa SiteTCC]} {	
+	    lappend _psl [$_obj getSiteId]
+	} else {
+	    puts "WARNING:: Internal error in ScriptItem class."
+	}
+    }
+    
+
+    set _rt ""
+    foreach _robj $resources {
+	lappend _rt [$_robj cget -rid]
+    }
+
+    return "$_psl - $_rt"
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::getMyNode {} {
+
+    set tags ""
+
+    if {$carrouselSelection == $this} {
+	lappend tags scriptitemplaying
+    }
+    
+    if {[isSelected]} {
+	lappend tags "scriptitem_selected"
+    }
+
+    #--
+
+    set _icons ""
+
+    lappend _icons [[[$agendaobj cget -tcobj] cget -modesobj] GetModeImage $mode]
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+    
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    set _show_mv_icons  [$_menubarobj cget -show_mv_icons]
+    if {$_show_mv_icons} {
+	if { ! [$parent firstScriptItem $this]} {
+	    lappend _icons icafocusup
+	}
+	if { ! [$parent lastScriptItem $this]} {
+	    lappend _icons icafocusdown         
+	}
+    }
+    
+    set _show_delete_icon  [$_menubarobj cget -show_delete_icon]
+    if {$_show_delete_icon} {
+	lappend _icons icadelete         
+    }
+
+    if {! [online]} {
+     	lappend _icons icaoffline
+    }
+
+    #--
+
+    list \
+	[getMyUid] \
+	[getTitle] \
+	"scriptitem leaf $tags" \
+	$_icons
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::getNodes {} {
+
+    return ""
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::newFromSelection {_agendaobj} {
+
+    set _tcobj    [$_agendaobj cget -tcobj]
+    set _modesobj [$_tcobj    cget -modesobj]
+    set _prselobj [$_agendaobj getSelection]
+
+    #--
+
+    set _mode  [$_modesobj GetCurrentMode]
+    set _sas   [$_prselobj getSelectedCAPSs]
+    set _robjs [$_prselobj getSelectedResources]
+
+    #--
+
+    set _si [ScriptItemTCC "::#auto" $_agendaobj $_mode $_sas $_robjs]
+
+    return $_si
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::online {} {
+    
+    foreach _n $capss {
+        if { ! [$_n online] } {
+            return 0
+        }
+    }
+    
+    foreach _r $resources {
+        if { ! [$_r online] } {
+            return 0
+        }
+    }
+    
+    return 1
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::isSelectable {} {
+
+    return 1
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::select {} {
+
+    set cselnode $this
+
+    viewInteractionMode
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::unselect {} {
+
+    set cselnode ""
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::isSelected {} {
+
+    if {$cselnode == $this} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::viewInteractionMode {} {
+
+    set _tcobj    [$agendaobj cget -tcobj]
+    set _modesobj [$_tcobj cget -modesobj]
+    set _prselobj [$agendaobj getSelection]
+
+    #--
+
+    $_modesobj SetCurrentMode $mode
+
+    #--
+
+    $_prselobj unselectAll
+    foreach _obj $capss {
+	$_prselobj select $_obj
+    }
+
+    #--
+    
+    $_prselobj setSelectedWallpaperResource  ""
+    $_prselobj setSelectedVideoResource      ""
+    $_prselobj setSelectedAppSharingResource ""
+
+    foreach _robj $resources {
+	if {[$_robj isa WallpaperResourceTCC]} {
+	    
+	    $_prselobj setSelectedWallpaperResource  $_robj
+	    
+	} elseif {[$_robj isa AppSharingResourceTCC]} {
+
+	    $_prselobj setSelectedAppSharingResource $_robj
+	    
+	} elseif {[$_robj isa VideoResourceTCC]} {
+
+	    $_prselobj setSelectedVideoResource      $_robj
+	    
+	} else {
+	    puts "INTERNAL ERROR 2 in ScriptItemTCC::viewInteractionMode ($_robj)"
+	    continue
+	}
+    }
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::unselectPeople {} {
+
+    set _session [[$this cget -parent] cget -parent]
+    set _chair [$_session cget -chair]
+    set _presentations [$_session cget -presentations]
+    
+    $_chair unselect
+    
+    foreach _p [$_presentations cget -presentations] {
+	
+	set _spkrefs [[$_p cget -speakers] cget -people]
+	
+	foreach _sr $_spkrefs {
+	    $_sr unselect
+	}
+    }
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::selectPeople {} {
+
+    # Get all the person references in the session.
+    set _session [[$this cget -parent] cget -parent]
+
+    set _session_person_refs ""
+
+    set _chair [$_session cget -chair]
+    lappend _session_person_refs $_chair
+
+    set _presentations [[$_session cget -presentations] cget -presentations]
+    foreach _p $_presentations {
+	set _spkrefs [[$_p cget -speakers] cget -people]
+	foreach _sr $_spkrefs {
+	    lappend _session_person_refs $_sr
+	}
+    }
+
+    # Reverse the $speakers list to select them in proper order.
+    set _rev_speakers ""
+    foreach _p [$speakers cget -people] {
+	set _rev_speakers [linsert $_rev_speakers 0 $_p]
+    }
+
+
+    # Select them
+    foreach _p $_rev_speakers {
+	foreach _r $_session_person_refs        {
+	    if {[$_p getPerson] == [$_r getPerson]} {
+		if {[$_chair getPerson] == [$_r getPerson]} {
+		    $_chair select
+		} else {
+		    $_r select
+		}
+		break
+	    }
+	}
+    }
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::getCarrouselSelection {} {
+
+    return $carrouselSelection
+
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::setCarrouselSelection {_scriptItemNode} {
+
+    set carrouselSelection $_scriptItemNode
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::deleteNode {} {
+
+    $parent deleteScriptItem $this
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::updateNode {} {
+
+    $parent replaceScriptItem $this
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -image icareplace \
+	-command [code $this updateNode]
+
+    $menu add command -image icadelete \
+	-command [code $this deleteNode]
+    
+    if { ! [$parent firstScriptItem $this]} {
+	$menu add command -image icafocusup \
+	    -command [code $this moveUp]
+    }
+    
+    if { ! [$parent lastScriptItem $this]} {
+	$menu add command -image icafocusdown \
+	    -command [code $this moveDown]
+    }
+    
+    return $menu   
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::moveUp {} {
+
+    $parent moveScriptItem $this -1
+}
+
+#-----------------------------------------
+
+body ScriptItemTCC::moveDown {} {
+
+    $parent moveScriptItem $this 1
+}
+
+#-----------------------------------------

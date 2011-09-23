@@ -1,0 +1,215 @@
+-----------------------------
+MEDIDAS con GOLDWAVE
+-----------------------------
+
+
+Para hacer las pruebas se ha usado un demonio de audio modificado para
+que solo tenga buffering de 12 paquetes en recepcion, a partir de ese
+momento vacia el buffer y comienza de nuevo.
+
+-----------
+ESCENARIO 1
+-----------
+    Utilizando unicamente el programa isabel_audio,
+sin irouters.
+
+
+           cadiz                   lisboa
+       --------------          --------------
+      | isabel_audio |        | isabel_audio |
+       --------------          --------------
+         |         |            |        |
+         |         |    red     |        |
+         |          ------------         |
+         |                               |
+         |salida                         |salida 
+         | de                            | de
+         |cascos                         |linea
+         |                               |
+         |                               |
+         |                               |
+         |                               |
+          -------------------------------
+                         | entrada de linea
+                         V
+                    ----------           
+                   |  windows |
+                   | goldwave |
+                    ----------
+                     oporto
+
+
+Para ello arrancamos:
+
+   - En oporto:
+         El programa goldwave.
+   - En cadiz:
+         ~> isabel_audio -d18188 -G
+              Desde la interfaz de audio:
+                  New SSRC = 1
+                  Transmitit SSRC=1
+                             TO=lisboa
+                             PORT=18188 
+
+                  Select codec: Std Quality
+
+   - En lisboa:
+         ~> isabel_audio -d18188 -G
+              Desde la interfaz de audio:
+                  Select codec: Std Quality
+
+         ~> telnet 127.0.0.1 6500
+            audio_start_debug(1)
+         
+
+
+Resultado: 
+    - En oporto puede comprobarse que el retardo
+      del audio varia entre:
+          medida 1 [262ms, 535ms] 
+          medida 2 [280ms, 551ms] 
+
+
+-----------
+ESCENARIO 2
+-----------
+    Utilizando el programa isabel_audio e irouters locales.
+
+
+           cadiz                   lisboa
+       --------------          --------------
+      | isabel_audio |        | isabel_audio |
+       --------------          --------------
+        |  | irouter |        | irouter |  |
+        |   ---------          ---------   |
+        |          |            |          |
+        |          |            |          |
+        |          |    red     |          |
+        |           ------------           |
+        |                                  |
+        |salida                            |salida 
+        | de                               | de
+        |cascos                            |linea
+        |                                  |
+        |                                  |
+        |                                  |
+        |                                  |
+         ----------------------------------
+                         | entrada de linea
+                         V
+                    ----------           
+                   |  windows |
+                   | goldwave |
+                    ----------
+                     oporto
+
+
+Para ello arrancamos:
+
+   - En oporto:
+         El programa goldwave.
+   - En cadiz:
+         ~> isabel_audio -d18188 -G
+              Desde la interfaz de audio:
+                  New SSRC = 1
+                  Transmitit SSRC=1
+                             TO=127.0.0.1
+                             PORT=18189 
+
+                  Select codec: Std Quality
+         ~> isabel_irouter -linkMgr -allclients
+
+   - En lisboa:
+         ~> isabel_audio -d18188 -G
+              Desde la interfaz de audio:
+                  Select codec: Std Quality
+
+         ~> telnet 127.0.0.1 6500
+            audio_start_debug(1)
+
+         ~> isabel_irouter -flowServer cadiz -allclients
+            -upStreamBw 2000000 -downStreamBw 2000000
+         
+
+
+Resultado: 
+    - En oporto puede comprobarse que el retardo
+      del audio varia entre:
+          medida 1 [346ms, 588ms] 
+          medida 2 [282ms, 563ms] 
+
+
+-----------
+ESCENARIO 3
+-----------
+    Utilizando el programa isabel_audio, irouters locales,
+y un flowserver en medio.
+
+
+           cadiz                   lisboa
+       --------------          --------------
+      | isabel_audio |        | isabel_audio |
+       --------------          --------------
+        |  | irouter |        | irouter |  |
+        |   ---------          ---------   |
+        |         |             |          |
+        |         |   -------   |          |
+        |          --|irouter|--           |
+        |             -------              |
+        |              nevada              |
+        |salida                            |salida 
+        | de                               | de
+        |cascos                            |linea
+        |                                  |
+        |                                  |
+        |                                  |
+        |                                  |
+         ----------------------------------
+                         | entrada de linea
+                         V
+                    ----------           
+                   |  windows |
+                   | goldwave |
+                    ----------
+                     oporto
+
+
+Para ello arrancamos:
+
+   - En oporto:
+         El programa goldwave.
+   - En cadiz:
+         ~> isabel_audio -d18188 -G
+              Desde la interfaz de audio:
+                  New SSRC = 1
+                  Transmitit SSRC=1
+                             TO=127.0.0.1
+                             PORT=18189 
+
+                  Select codec: Std Quality
+         ~> isabel_irouter -flowServer nevada -allclients
+            -upStreamBw 2000000 -downStreamBw 2000000
+
+   - En lisboa:
+         ~> isabel_audio -d18188 -G
+              Desde la interfaz de audio:
+                  Select codec: Std Quality
+
+         ~> telnet 127.0.0.1 6500
+            audio_start_debug(1)
+
+         ~> isabel_irouter -flowServer nevada -allclients
+            -upStreamBw 2000000 -downStreamBw 2000000
+
+    - En nevada:
+         ~> isabel_irouter -linkMgr
+         
+
+
+Resultado: 
+    - En oporto puede comprobarse que el retardo
+      del audio varia entre:
+          medida 1 [336ms, 540ms] 
+          medida 2 [300ms, 534ms] 
+
+

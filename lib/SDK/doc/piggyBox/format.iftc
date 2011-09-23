@@ -1,0 +1,119 @@
+\section{Formatos}
+
+Todas la funcionalidades incorporadas por un  módulo cargable
+(grabbers, codecs, etc) manipulan objetos de tipo imagen. Este
+tipo de datos está descrito en una sección posterior y de momento sólo
+consideraremos un atributo de este tipo de datos:
+\begin{itemize}
+\item el formato de la imagen
+\end{itemize}
+Este atributo es de tipo identificador\footnote{Un número
+entero.}.
+
+En esta sección está descrita la manera de administrar estos identificadores.
+
+El identificador de formato marca el tipo de codificación interna
+de la imagen (tipo de compresión, representación en memoria,
+etc.) y se usa internamente en el demonio para decidir que
+elementos de proceso/presentación son aplicables a la imagen.
+También se untiliza para que los demonios remotos identifiquen el
+tipo de imagen que le estamos enviando. Por tanto todos los
+demonios deben asociar el mismo identificador al mismo tipo de
+imagen.
+
+Los identificadores de formato se agrupan en familias denominadas
+clases de formatos con su propio identificador.
+
+El emparejamiento entre tipos de imagen e identificadores se
+realiza inicialemente utilizando los formatos definidos en el
+fichero {\tt Isabel\_SDK/builtins/builtinImages.hh}. Aunque cualquiera
+puede registrar los formatos que desee, cuidando no colisionar
+con los ya definidos.
+
+
+\subsection{Base de Datos de Formatos}
+
+Toda la información de ligaduras entre tipos de imágen e
+identificadores está recogida en una estructura de control dentro
+del demonio, el cuál exporta una serie de funciones para
+consultarla. Por regla general los tipos de imagen se consultan
+por nombre. 
+
+Las funciones disponibles son:
+\begin{itemize}
+\item{\tt formatId\_t getFormatIdByName(const char *formatName)}
+\end{itemize}
+{\hskip 2cm}\begin{minipage}{10cm}
+    Cosas terribles ocurrirán si a alguien se le ocurre hacer un
+    {\tt free()} o un {\tt delete[]} del valor retornado por
+    {\tt getNameByFormatId()}.
+\end{minipage}
+
+\begin{itemize}
+\item{\tt const char *getNameByFormatId(formatId\_t formatId)}
+\end{itemize}
+{\hskip 2cm}\begin{minipage}{10cm}
+    El valor de retorno de {\tt getFormatIdByName()} es 0 en caso
+    de que no se encuentre el formato buscado.
+\end{minipage}
+
+\begin{itemize}
+\item{\tt void  registerFormat(formatId\_t formatId, const char *formatName)}
+\end{itemize}
+{\hskip 2cm}\begin{minipage}{10cm}
+    Registra un formato de imagen asociado a un nombre.
+\end{minipage}
+
+\begin{itemize}
+\item{\tt formatInfoList\_ref  getFormatInfoList(void)}
+\end{itemize}
+{\hskip 2cm}\begin{minipage}{10cm}
+    Obtiene una lista de formatos registrados.
+\end{minipage}
+
+\subsection{Formatos registrados inicialmente} 
+
+Los siguientes formatos de imagen se encuentran registrados
+al arrancar el contenedor piggyBox, asociados a la cadena de
+caracteres que está comentada a la derecha. Ejemplo:
+
+    Formato:
+\begin{verbatim}
+        const formatId\_t FMT_RAW_RGB24     = 0x00000100; // RAW::RGB24
+\end{verbatim}
+
+    Registro:
+\begin{verbatim}
+	registerFormat(FMT\_RAW\_RGB24, "RAW::RGB24");
+\end{verbatim}
+
+A continuación se muestra el fichero {\tt Isabel\_SDK/builtins/builtinImages.hh} con todos los formatos registrados inicialmente: 
+\begin{verbatim}
+
+const formatId_t FMT_NONE          = 0x00000000; // no format
+const formatId_t FMT_ANY           = 0x00000000; // no format
+
+const formatId_t FMT_RAW_BGR24     = 0x00000101; // RAW::BGR24
+const formatId_t FMT_RAW_RGB16_565 = 0x00000110; // RAW::RGB16/5:6:5
+const formatId_t FMT_RAW_RGB16_555 = 0x00000111; // RAW::RGB16/5:5:5
+const formatId_t FMT_RAW_RGB8_332  = 0x00000120; // RAW::RGB8/3:3:2
+const formatId_t FMT_RAW_RGB8_666  = 0x00000121; // RAW::RGB8/6x6x6
+const formatId_t FMT_RAW_RGB8_676  = 0x00000122; // RAW::RGB8/6x7x6
+
+#include <Isabel_SDK/builtins/rawImages.hh>
+
+const formatId_t FMT_CLUT_CLUT4  = 0x00000200; // CLUT::CLUT4
+const formatId_t FMT_CLUT_CLUT8  = 0x00000201; // CLUT::CLUT8
+const formatId_t FMT_CLUT_CLUT12 = 0x00000202; // CLUT::CLUT12
+const formatId_t FMT_CLUT_CLUT16 = 0x00000203; // CLUT::CLUT16
+
+#include <Isabel_SDK/builtins/clutImages.hh>
+
+const formatId_t FMT_YUV_422P = 0x00000500; // YUV::422P
+const formatId_t FMT_YUV_411P = 0x00000501; // YUV::411P
+
+#include <Isabel_SDK/builtins/yuvImages.hh>
+
+
+\end{verbatim}
+

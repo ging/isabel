@@ -1,0 +1,6 @@
+#
+# thread library is system dependant
+#
+include $(PROJECT_ROOT_DIR)/CONFIG/Makefile.os.package.THREADS.$(TARGET.OS)
+
+LINK.THREADS:=$(THREADS.library) $(THREADS.library.libs)

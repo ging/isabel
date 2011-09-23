@@ -1,0 +1,614 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#########################################################################
+#
+# SeCoSession.itcl
+#
+# Description
+#
+#   Object to manage the SeCo daemon.
+#
+#########################################################################
+
+
+class SeCoSession {
+
+    #
+    # Commmad Types:
+    #
+
+    # Comando para iniciar una sesion.
+    public variable HELLO_CLIENT_COMMAND 102
+    
+    # Comando para finalizar una sesion.
+    public variable BYE_COMMAND 121
+    
+    # Comando para enviarnos nuestro identificador
+    public variable CLIENT_ID_COMMAND 131
+    
+    # Comando para recibir los mensajes enviados a un grupo.
+    public variable JOIN_GROUP_COMMAND 103
+    
+    # Comando para dejar de recibir los mensajes anviados a un grupo.
+    public variable LEAVE_GROUP_COMMAND 104
+    
+    # Comando para recibir los mensajes enviados a un grupo local.
+    public variable JOIN_LOCAL_GROUP_COMMAND 105
+    
+    # Comando para dejar de recibir los mensajes anviados a un grupo local.
+    public variable LEAVE_LOCAL_GROUP_COMMAND 106
+    
+    # Comando para preguntar por el nombre de un grupo
+    public variable GET_GROUP_ID_COMMAND 141
+    
+    # Comando para preguntar por el nombre de un grupo local
+    public variable GET_LOCAL_GROUP_ID_COMMAND 142
+    
+    # Comando para indicar que un cliente se ha desconectado
+    public variable CLIENT_DISCONNECTED_COMMAND 200
+    
+    # Comando para enviar un mensaje de no sincronismo a un grupo.
+    public variable MSG_COMMAND 150
+    
+    # Comando para enviar un mensaje de sincronismo a un grupo.
+    public variable SYNC_MSG_COMMAND 151
+    
+    # Comando para enviar un mensaje dell que no se guarda historia a un grupo.
+    public variable NO_HISTORY_MSG_COMMAND 152
+    
+    # Comando para enviar un mensaje de no sincronismo a un grupo local.
+    public variable LOCAL_MSG_COMMAND 154
+    
+    # Comando para enviar un mensaje de sincronismo a un grupo local.
+    public variable LOCAL_SYNC_MSG_COMMAND 155
+    
+    # Comando para enviar un mensaje del que no se guarda historia a un grupo local.
+    public variable LOCAL_NO_HISTORY_MSG_COMMAND 156
+    
+    # Comando para enviar un mensaje a un cliente.
+    public variable CLIENT_MSG_COMMAND 153
+    
+    # Comando para iniciar la sesion de un SeCoProxy
+    public variable HELLO_SECO_COMMAND 101
+    
+    # Comando para indicar el tamano del buffer para la historia
+    public variable SET_MAX_HISTORY_LENGTH_COMMAND 129
+    
+    # Comando para indicar el tamano del buffer para la historia de un grupo local
+    public variable SET_LOCAL_MAX_HISTORY_LENGTH_COMMAND 128
+    
+    # Comando para peticion de autenticacion de cliente
+    public variable LOGIN_COMMAND 160
+    
+    # Comando para asignar permisos a clientes
+    public variable PERMISSIONS_COMMAND 161
+    
+
+    # where is listening the SeCo daemon.
+    public variable host
+    public variable port
+
+    # Description of the SeCo client
+    private variable cdescr
+
+    private variable sock
+
+    protected variable myid 
+    private variable mypermissions
+
+    # SRPacket object associated to the socket $sock.
+    private variable srpobj ""
+
+    # Mapping Group names and Group ids.
+    # $groupid(name) is the id of the group name $name 
+    private variable groupid
+
+    # Mapping LOCAL Group names and LOCAL Group ids.
+    # $localgroupid(name) is the id of the group name $name 
+    private variable localgroupid
+
+    # Send Queue
+    private variable queue
+
+    constructor {_host _port {_cdescr ""}} {}
+    
+    destructor {}
+    
+    public method who_am_i {}
+
+    public method join_group {gname}
+    public method join_local_group {gname}
+    
+    public method leave_group {gname}
+    public method leave_local_group {gname}
+    
+    # Send message $msg to the client $to
+    public method send_msg {to msg}
+
+    # Send message $msg to the group $group.
+    # Argument $sync is 1 for synchronized messages.
+    public method send_group_sync_msg {gname sync msg}
+
+    # Send message $msg to the local group $group.
+    # Argument $sync is 1 for synchronized messages.
+    public method send_local_group_sync_msg {gname sync msg}
+
+    # Send message $msg to the group $group.
+    # No inserted in the history messages of this group.
+    public method send_group_msg {gname msg}
+    
+    # Send message $msg to the local group $group.
+    # No inserted in the history messages of this group.
+    public method send_local_group_msg {gname msg}
+    
+    # Processes received messages, and invokes HandleMsg for 
+    # the data messages.
+    private method handle_msg {}
+
+    # This method is invoked when data message is received.
+    # It should be redefined in derived classes.
+    protected method HandleMsg {msg}
+    
+    # This method is invoked when a  client disconnect.
+    # $id is the seco-id of the disconnected client.
+    # If $id is empty, then I am the disconnected client.
+    private method HandleDisconnection {{cid ""}}
+    
+    public method quit {}
+
+    # Attend socket when it receives a message
+    private  method AttendSock {sock}
+
+    # Removes the link.
+    private method RemoveLink {}
+
+    # Execute all the messages in the queue
+    private method FlushQueueSession {}
+
+    # Send a message or put it in the transmission queue.
+    # It also creates an "after idle" task to send pending messages.
+    # Parameters:
+    #    $from is the client id of the sender.
+    #    $to_type must be ID, GROUPNAME or LOCALGROUPNAME. 
+    #             ID indicates that $to is the SeCo Id (number) of a client, group or local group.
+    #             GROUPNAME indicates that $to is the name of a SeCo group.
+    #             LOCALGROUPNAME indicates that $to is the name of a SeCo local group.
+    #    $to is the destination client id or the destination [local] group name.
+    #    $cmd_type if the type of SeCo primitive.
+    #    $data is the (upper level) data to send.
+    private method SendQueue {from to_type to cmd_type data}
+
+    # Return a string describing the given type message
+    private method MsgType2String {type}
+}
+
+#----------------------------------------
+
+body SeCoSession::constructor {_host _port {_cdescr ""}} {
+
+    set host $_host
+    set port $_port
+
+    if {$_cdescr == ""} {
+	set cdescr [exec hostname]
+    } else {
+	set cdescr $_cdescr
+    }
+    
+    set myid ""
+    set mypermissions ""
+
+    set queue [SeCoQueueSession "#auto"]
+
+    set tries 0
+    DebugTraceMsg "- SeCo $cdescr: connection request to $host:$port" 3
+    while {[catch {set sock [socket $host $port]} error]} {
+	DebugTraceMsg "- SeCo $cdescr: connection request to $host:$port produces: $error" 3
+	update
+	after 500
+	incr tries
+	if {$tries == 150} {
+	    ErrorTraceMsg "- SeCo network connection - $cdescr: Timeout expired. Aborting application."
+
+	    ErrorMsgC "#auto" close -grab -timeout 10000  \
+		"SeCo network connection - $cdescr:" \
+		"Timeout expired." \
+		"Aborting application."
+
+	    destroy .
+	    exit 1
+	}
+    }
+
+    DebugTraceMsg "- SeCo $cdescr: connection to $host:$port completed." 3
+
+    fconfigure $sock -buffering none -blocking 0 -eofchar "" -translation binary
+
+    fileevent $sock readable [code $this AttendSock $sock]
+
+    set srpobj [SeCoSRPacketC "#auto" $sock]
+}
+
+#----------------------------------------
+
+body SeCoSession::destructor {} {
+
+    catch {delete object $srpobj}
+
+    delete object $queue
+}
+
+#----------------------------------------
+
+body SeCoSession::who_am_i {} {
+
+    if {$myid != ""} {
+	return $myid
+    }
+    
+    #$srpobj Send "hello_client $cdescr"
+
+    SendQueue 0 ID 0 $HELLO_CLIENT_COMMAND $cdescr
+
+    tkwait variable [scope myid]
+
+    SendQueue $myid ID 0 $LOGIN_COMMAND El_login
+
+    tkwait variable [scope mypermissions]
+
+    after idle [code $this join_group Disconnections]
+
+    return $myid
+}
+
+#----------------------------------------
+
+body SeCoSession::join_group {gname} {
+
+    if {$srpobj != ""} {
+	SendQueue $myid ID 0 $JOIN_GROUP_COMMAND $gname
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::join_local_group {gname} {
+
+    if {$srpobj != ""} {
+	SendQueue $myid ID 0 $JOIN_LOCAL_GROUP_COMMAND $gname
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::leave_group {gname} {
+    
+    if {$srpobj != ""} {
+	SendQueue $myid ID 0 $LEAVE_GROUP_COMMAND $gname
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::leave_local_group {gname} {
+    
+    if {$srpobj != ""} {
+	SendQueue $myid ID 0 $LEAVE_LOCAL_GROUP_COMMAND $gname
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::send_msg {to msg} {
+
+    if {$srpobj != ""} {
+	SendQueue $myid ID $to $CLIENT_MSG_COMMAND $msg
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::send_group_sync_msg {gname sync msg} {
+
+    if {$srpobj != ""} {
+	if {$sync != 0} {
+	    SendQueue $myid GROUPNAME $gname $SYNC_MSG_COMMAND $msg
+	} else {
+	    SendQueue $myid GROUPNAME $gname $MSG_COMMAND $msg
+	}
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::send_local_group_sync_msg {gname sync msg} {
+
+    if {$srpobj != ""} {
+	if {$sync != 0} {
+	    SendQueue $myid LOCALGROUPNAME $gname $LOCAL_SYNC_MSG_COMMAND $msg
+	} else {
+	    SendQueue $myid LOCALGROUPNAME $gname $LOCAL_MSG_COMMAND $msg
+	}
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::send_group_msg {gname msg} {
+
+    if {$srpobj != ""} {
+	SendQueue $myid GROUPNAME $gname $NO_HISTORY_MSG_COMMAND $msg
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::send_local_group_msg {gname msg} {
+
+    if {$srpobj != ""} {
+	SendQueue $myid LOCALGROUPNAME $gname $LOCAL_NO_HISTORY_MSG_COMMAND $msg
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::HandleMsg {msg} {
+    
+    ErrorTraceMsg "- SeCo: Data Message Received: $msg"
+}
+
+#----------------------------------------
+
+body SeCoSession::handle_msg {} {
+
+    set type [$srpobj cget -type]
+
+    #echo ------------ Msg Type = $type [MsgType2String $type]
+
+    if {$type == $JOIN_GROUP_COMMAND ||
+	$type == $GET_GROUP_ID_COMMAND} {
+	set gname [$srpobj cget -data]
+	set gid   [$srpobj cget -to_id]
+	set groupid($gname) $gid
+
+	after idle [code $this FlushQueueSession]
+
+    } elseif {$type == $JOIN_LOCAL_GROUP_COMMAND ||
+	$type == $GET_LOCAL_GROUP_ID_COMMAND} {
+	set gname [$srpobj cget -data]
+	set gid   [$srpobj cget -to_id]
+	set localgroupid($gname) $gid
+
+	after idle [code $this FlushQueueSession]
+
+    } elseif {$type == $CLIENT_MSG_COMMAND ||
+	      $type == $NO_HISTORY_MSG_COMMAND ||
+	      $type == $SYNC_MSG_COMMAND ||
+	      $type == $MSG_COMMAND ||
+	      $type == $LOCAL_NO_HISTORY_MSG_COMMAND ||
+	      $type == $LOCAL_SYNC_MSG_COMMAND ||
+	      $type == $LOCAL_MSG_COMMAND} {
+
+
+	# Remove echoed msgs generated by SeCo
+	set cid [$srpobj cget -from_id]
+	if {$cid == $myid} {
+	    return 
+	}
+
+	set cmd [$srpobj cget -data]
+	HandleMsg $cmd
+
+    } elseif {$type == $CLIENT_ID_COMMAND} {
+	set myid [$srpobj cget -to_id]
+
+    } elseif {$type == $CLIENT_DISCONNECTED_COMMAND} {
+	set cid [$srpobj cget -from_id]
+	HandleDisconnection $cid
+
+    } elseif {$type == $PERMISSIONS_COMMAND} {
+
+	set mypermissions 3
+
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::HandleDisconnection {{cid ""}} {
+
+    ErrorTraceMsg "- SeCo: Client disconnection: $cid"
+}
+
+#----------------------------------------
+
+body SeCoSession::quit {} {
+
+    RemoveLink 
+}
+
+#----------------------------------------
+
+body SeCoSession::AttendSock {sock} {
+
+    if {[eof $sock]} {
+	catch {close $sock}
+	delete object $srpobj
+	set srpobj ""
+ 	WriteTraceMsg "- SeCo: local abrupt disconnection."
+	HandleDisconnection
+	delete object $this
+	return
+    }
+
+    set res [$srpobj Receive]
+
+    if {$res == 0} return
+
+    handle_msg 
+}
+
+#----------------------------------------
+
+body SeCoSession::RemoveLink {} {
+
+    catch {
+	SendQueue 0 ID 0 $BYE_COMMAND ""
+    }
+    
+    catch {close $sock}
+    
+    catch {delete object $srpobj}
+
+    DebugTraceMsg "- SeCo: connection closed to SeCo." 1
+
+    delete object $this
+}
+
+#----------------------------------------
+
+body SeCoSession::FlushQueueSession {} {
+    
+    while {![$queue Empty]} {
+	$queue Top from to_type to cmd_type data
+
+	switch -- $to_type {
+	    ID {
+		$srpobj Send $from $to $cmd_type $data
+		$queue RemoveTop
+	    }
+	    GROUPNAME {
+		# If I have received the group id,
+		# then I send the message,
+		# else I continue waiting for it.
+		if {[info exists groupid($to)]} {
+		    set to $groupid($to)
+		    $srpobj Send $from $to $cmd_type $data
+		    $queue RemoveTop
+		} else {
+		    break
+		}
+	    }
+	    LOCALGROUPNAME {
+		# If I have received the local group id,
+		# then I send the message,
+		# else I continue waiting for it.
+		if {[info exists localgroupid($to)]} {
+		    set to $localgroupid($to)
+		    $srpobj Send $from $to $cmd_type $data
+		    $queue RemoveTop
+		} else {
+		    break
+		}
+	    }
+	    default {
+		ErrorTraceMsg "SeCoSession: Internal error flushing message ($to_type $to $cmd_type $data)."
+		$queue RemoveTop
+	    }
+	}
+    }
+}
+
+#----------------------------------------
+
+body SeCoSession::SendQueue {from to_type to cmd_type data} {
+
+	switch -- $to_type {
+	    ID {
+	    }
+	    GROUPNAME {
+		# If I have not got the group id, then I request it.
+		if {[info exists groupid($to)]} {
+		    set to $groupid($to)
+		    set to_type ID 
+		} else {
+		    $srpobj Send $myid 0 $GET_GROUP_ID_COMMAND $to
+		}
+	    }
+	    LOCALGROUPNAME {
+		# If I have not got the local group id, then I request it.
+		if {[info exists localgroupid($to)]} {
+		    set to $localgroupid($to)
+		    set to_type ID 
+		} else {
+		    $srpobj Send $myid 0 $GET_LOCAL_GROUP_ID_COMMAND $to
+		}
+	    }
+	    default {
+		ErrorTraceMsg "SeCoSession: Internal error flushing message ($to_type)."
+		return
+	    }
+	}
+
+	if {[$queue Empty]} {
+	    if {$to_type == "ID"} {
+		# I can send the message now
+		$srpobj Send $from $to $cmd_type $data
+	    } else {
+		# I must wait for the SeCo ID of the [local] group.
+		$queue Put "$from $to_type $to $cmd_type $data"
+		after cancel [code $this FlushQueueSession]
+		after idle [code $this FlushQueueSession]
+	    }
+	} else {
+	    $queue Put "$from $to_type $to $cmd_type $data"
+	}
+	
+}
+
+#----------------------------------------
+
+body SeCoSession::MsgType2String {type} {
+
+    switch $type { 
+	102 {return HELLO_CLIENT_COMMAND}
+	121 {return BYE_COMMAND}
+	131 {return CLIENT_ID_COMMAND}
+	103 {return JOIN_GROUP_COMMAND}
+	104 {return LEAVE_GROUP_COMMAND}
+	105 {return JOIN_LOCAL_GROUP_COMMAND}
+	106 {return LEAVE_LOCAL_GROUP_COMMAND}
+	141 {return GET_GROUP_ID_COMMAND}
+	142 {return GET_LOCAL_GROUP_ID_COMMAND}
+	200 {return CLIENT_DISCONNECTED_COMMAND}
+	150 {return MSG_COMMAND}
+	151 {return SYNC_MSG_COMMAND}
+	152 {return NO_HISTORY_MSG_COMMAND}
+	154 {return LOCAL_MSG_COMMAND}
+	155 {return LOCAL_SYNC_MSG_COMMAND}
+	156 {return LOCAL_NO_HISTORY_MSG_COMMAND}
+	153 {return CLIENT_MSG_COMMAND}
+	101 {return HELLO_SECO_COMMAND}
+	129 {return SET_MAX_HISTORY_LENGTH_COMMAND}
+	128 {return SET_LOCAL_MAX_HISTORY_LENGTH_COMMAND}
+	160 {return LOGIN_COMMAND}
+	161 {return PERMISSIONS_COMMAND}
+	default {return UNKNOWN_COMMAND}
+    }
+}
+
+#----------------------------------------
+
+
+
+
+

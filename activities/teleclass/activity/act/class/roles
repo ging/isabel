@@ -1,0 +1,122 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+# --------------------------------------------------------------------
+#                    ROLES DEFINITION
+# --------------------------------------------------------------------
+
+Everybody.components: ClassCtrl \
+                      Audio Ftp Notepad Wallpaper \
+                      Questions Video Whiteboard \
+		      VNC MCU
+
+Everybody.actions:    Admon
+
+Everybody.menuitems:  AdminTool \
+                      VideoSource \
+                      CreateAudio \
+                      StreamControl \
+                      QuitIsabel
+
+# --------------------------------------------------------------------
+
+Chair.whatis:  role
+Chair.sites:   NoEmptyExternalDefinition(`ISABEL_CHAIR_SITES',*)
+
+Chair.components:
+Chair.actions:
+
+Chair.menuitems: CtrlPanel    
+
+# --------------------------------------------------------------------
+
+Teacher.whatis:  role
+Teacher.sites:   NoEmptyExternalDefinition(`ISABEL_TEACHER_SITES',*)
+
+Teacher.components:
+Teacher.actions:   ChatMode \
+                 QuestionsMode \
+                 OneMainMode \
+                 BigOneMode \
+                 OneVgaMode \
+                 VncMode \
+                 VgaMode \
+                 NotepadMode \
+                 WbMode
+
+Teacher.menuitems:    
+
+# --------------------------------------------------------------------
+
+Ctrl.sites:      NoEmptyExternalDefinition(`ISABEL_CTRL_SITES',*)
+
+Ctrl.components:  Monitor
+
+Ctrl.actions:   
+
+Ctrl.menuitems: CtrlPanel \
+                VideoInfo \
+                MonitorStartOrStop
+
+# --------------------------------------------------------------------
+
+FlashGateway.components: Ftp Notepad Wallpaper \
+                      Questions Video Whiteboard \
+		      VNC
+                       
+FlashGateway.actions:  Admon
+
+FlashGateway.menuitems: AdminTool \
+                        QuitIsabel
+
+# --------------------------------------------------------------------
+
+SipGateway.components: Ftp Notepad Wallpaper \
+                      Questions Video Whiteboard \
+		      VNC
+                       
+SipGateway.actions:  Admon
+
+SipGateway.menuitems: AdminTool \
+                      QuitIsabel
+
+# --------------------------------------------------------------------
+
+GatewayClient.components:  Audio Questions Video ClassCtrl
+                       
+GatewayClient.actions:
+
+GatewayClient.menuitems:
+
+# --------------------------------------------------------------------
+
+MCU.components:  Monitor \
+		 VNC
+                       
+MCU.actions:     Admon
+
+MCU.menuitems:   AdminTool \
+                 MonitorStartOrStop \
+                 QuitIsabel
+
+# --------------------------------------------------------------------
+

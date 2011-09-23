@@ -1,0 +1,68 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+*foreground:          #000055
+*activeForeground:    #000033
+*disabledForeground:  #9494ae
+
+*background:          #c5e0f0
+*activeBackground:    #f0f9ff
+*disabledBackground:  #e9e9e9
+
+*textBackground:      #f0f9ff
+
+*troughColor:         #9cd0f0
+
+*highlightBackground: #c5e0f0
+*highlightColor:      black
+
+
+*insertBackground:    black
+*selectBackground:    #95d0f5
+*selectForeground:    black
+
+*Label.font:          -*-fixed-*-*-*-*-20-*-*-*-*-*-*-*
+*Label.foreground:          #000055
+*Label.background:          #c5e0f0
+
+*Text.foreground:          #000055
+*Text.background:          #c5e0f0
+*Text.highlightColor:      #ffff00
+*Text.highlightThickness:  1
+	
+*Entry.foreground:          #000055
+*Entry.background:          #c3e8f0
+*Entry.highlightColor:      #ffff00
+*Entry.highlightThickness:  1
+
+*Menubutton.foreground:     #000055
+*Menubutton.background:     #c5e0f0
+
+*Menu.foreground:     #000055
+*Menu.background:     #c5e0f0
+
+*Tabnotebook*tabBackground: #aacce0
+*Tabnotebook*backdrop:      #c5e0f0
+
+*Scrolledhtml*textBackground: #c5e0f0
+*Scrolledtext*textBackground: #c5e0f0
+

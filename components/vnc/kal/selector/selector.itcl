@@ -1,0 +1,445 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# selector.itcl
+#
+# Windows to select a VNC server.
+#
+# VNCServersLauncherC:
+#  It is a static class to manage the windows used to launch a new interaction mode.
+#  It is also used to edit servers.
+#
+# VNCServersSelectorC:
+#  It is a static class to manage the windows used to select which vnc server must 
+#  be used, i.e. the selected server is stored in the SMS server.
+#  It is also used to edit servers.
+#
+# VNCServersEditorC:
+#  It is a static class to edit the list of VNC servers.
+#  This class is equal to VNCServersLauncherC and VNCServersSelectorC, except that the 
+#  OK and Select  buttons are not mapped.
+#
+# The formar classes create a instance of the VNCSelectorDisplayC class.
+#
+# The content of each VNCSelectorDisplayC object is a VNCSelectorFrame object.
+# The VNCSelectorFrame objects are also used inside anothers windows, such
+# as the teleconference control window.
+#
+#########################################################################
+
+
+class VNCServersLauncherC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Toggle Mapping window state.
+    # If there no exists a selection window, it is created.
+    # If the selection window exists, but it was created in another display, 
+    # the old one is destroyed and a new one is created.
+    # $_ok_cb is the callback to execute when the ok button is pressed. Four parameters 
+    # are added to this callback: the distribution network, the access site, the vnc
+    # server and the password.
+    public proc ToggleMap {_display _ok_cb}
+
+    # Unmap all the selection windows.
+    public proc Unmap {}
+}
+
+#------------------------------------------------------------------------
+
+body VNCServersLauncherC::ToggleMap {_display _ok_cb} {
+
+    VNCSelectorDisplayC::ToggleMap $_display $_ok_cb ""
+}
+
+#------------------------------------------------------------------------
+
+body VNCServersLauncherC::Unmap {} {
+
+    VNCSelectorDisplayC::Unmap
+}
+
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+
+class VNCServersSelectorC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Toggle Mapping window state.
+    # If there no exists a selection window, it is created.
+    # If the selection window exists, but it was created in another display, the old one 
+    # is destroyed and a new one is created.
+    # $_select_cb is the callback to execute when the select button is pressed. Four parameters 
+    # are added to this callback: the distribution network, the access site, the vnc
+    # server and the password.
+    public proc ToggleMap {_display _select_cb}
+}
+
+#------------------------------------------------------------------------
+
+body VNCServersSelectorC::ToggleMap {_display _select_cb} {
+
+    VNCSelectorDisplayC::ToggleMap $_display "" $_select_cb
+}
+
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+
+class VNCServersEditorC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Toggle Mapping window state.
+    # If there no exists a selection window, it is created.
+    # If the selection window exists, but it was created in another display, the old one is
+    # destroyed and a new one is created.
+    public proc ToggleMap {_display}
+}
+
+#------------------------------------------------------------------------
+
+body VNCServersEditorC::ToggleMap {_display} {
+
+    VNCSelectorDisplayC::ToggleMap $_display "" ""
+}
+
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+
+
+class VNCSelectorDisplayC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Toggle Mapping window state.
+    # If there is no exists a selection window, it is created.
+    # If the selection window exists, it is destroyed.
+    # $_ok_cb is the callback to execute when the ok button is pressed. Four parameters 
+    # are added to this callback: the distribution network, the access site, the vnc
+    # server and the password.
+    # $_select_cb is the callback to execute when the select button is pressed. Four parameters 
+    # are added to this callback: the distribution network, the access site, the vnc
+    # server and the password.
+    public proc ToggleMap {_display _ok_cb _select_cb}
+
+    # Destroy any other created object.
+    public proc Unmap {}
+
+    # Create a Selection window in the specified display.
+    constructor {_display _ok_cb _select_cb} {}
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # $created is the VNCSelectorDisplayC object currently in use.
+    private common created ""
+
+    #---
+
+    # Display where the window is created.
+    private variable display
+
+    #---
+
+    # toplevel widget.
+    private variable wroot
+
+    # counter used to generate uniq wroot names.
+    private common cont 1
+
+    # The created VNCSelectorFrameC object.
+    private variable vsfobj ""
+
+    # Create the GUI
+    private method CreateGUI {_ok_cb _select_cb} {}
+
+}
+
+#------------------------------------------------------------------------
+
+body VNCSelectorDisplayC::ToggleMap {_display _ok_cb _select_cb} {
+
+    if {$created != "" && [find objects $created] != ""} {
+	catch {delete object $created}
+	set created ""
+	return
+    }
+
+    if {$_display == ""} {
+	set _display [session Environ cget -ctrl_display]
+    }
+
+    set created [VNCSelectorDisplayC "::#auto" $_display $_ok_cb $_select_cb]
+}
+
+#------------------------------------------------------------------------
+
+body VNCSelectorDisplayC::Unmap {} {
+
+    if {$created != ""} {
+	catch {delete object $created}
+	set created ""
+    }
+}
+
+#------------------------------------------------------------------------
+
+body VNCSelectorDisplayC::constructor {_display _ok_cb _select_cb} {
+
+    set display $_display
+
+    set wroot .vnc_sel_w${cont}
+    incr cont
+
+    CreateGUI $_ok_cb $_select_cb
+}
+
+#------------------------------------------------------------------------
+
+body VNCSelectorDisplayC::destructor {} {
+
+    catch {bind $wroot <Destroy> ""}
+    if {[winfo exists $wroot]} {
+        bind $wroot <Destroy> ""
+        destroy $wroot
+    }
+
+    catch {delete object $vsfobj}
+}
+
+#------------------------------------------------------------------------
+
+body VNCSelectorDisplayC::CreateGUI {_ok_cb _select_cb} {
+
+    toplevel $wroot \
+	-screen $display \
+        -bd 3 \
+        -relief sunken
+    
+    set title "VNC servers"
+    wm title    $wroot $title
+    wm iconname $wroot $title
+    wm geometry $wroot 450x500+400+75
+    
+
+    #----
+
+    set vsfobj [VNCSelectorFrameC "#auto" \
+		    [expr 1-[string equal $_ok_cb ""]] \
+		    [expr 1-[string equal $_select_cb ""]] \
+		    $wroot.f]
+    $vsfobj configure -ok_cb $_ok_cb -select_cb $_select_cb
+
+    pack $wroot.f -side top -fill both -expand 1
+
+    #----
+
+    button $wroot.close -text Dismiss -command "delete object $this"
+
+    pack $wroot.close -side bottom -pady 8
+
+    #----
+
+    bind $wroot <Destroy> "delete object $this"
+}
+
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+
+
+class VNCSelectorFrameC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Callback to execute when the ok button is pressed.
+    public variable ok_cb ""
+
+    # Callback to execute when the select button is pressed.
+    public variable select_cb ""
+
+    # Create a Selection frame.
+    # mapOkButton_: 1 if the OK button must be mapped, else 0.
+    # mapSelectButton_: 1 if the Select button must be mapped, else 0.
+    # $wroot_: name of the frame to create.
+    constructor {_mapOkButton _mapSelectButton _wroot} {}
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # toplevel widget.
+    private variable wroot
+
+    # 1 if the OK button must be mapped, else 0.
+    private variable mapOkButton
+
+    # 1 if the Select button must be mapped, else 0.
+    private variable mapSelectButton
+
+    # Object with the frame of local servers
+    private variable localserversobj
+
+    # Object with the frame of remote servers
+    private variable remoteserversobj
+
+    # Object to select the distribution network
+    private variable distnetobj
+
+    # Create the GUI
+    private method CreateGUI {}
+
+}
+
+#------------------------------------------------------------------------
+
+body VNCSelectorFrameC::constructor {_mapOkButton _mapSelectButton _wroot} {
+
+    set mapOkButton     $_mapOkButton
+    set mapSelectButton $_mapSelectButton
+
+    set wroot $_wroot
+
+    CreateGUI
+}
+
+#------------------------------------------------------------------------
+
+body VNCSelectorFrameC::destructor {} {
+
+    catch {delete object $localserversobj}
+    catch {delete object $remoteserversobj}
+    catch {delete object $distnetobj}
+
+}
+
+#------------------------------------------------------------------------
+
+configbody VNCSelectorFrameC::ok_cb {
+    
+    $localserversobj  configure -ok_cb $ok_cb
+    $remoteserversobj configure -ok_cb $ok_cb
+}
+
+#------------------------------------------------------------------------
+
+configbody VNCSelectorFrameC::select_cb {
+
+    $localserversobj  configure -select_cb $select_cb
+    $remoteserversobj configure -select_cb $select_cb
+}
+
+#------------------------------------------------------------------------
+
+body VNCSelectorFrameC::CreateGUI {} {
+
+    frame $wroot
+    
+    if {$ok_cb != ""} {
+	set _title "Select a VNC Server:"
+    } elseif {$select_cb != ""} {
+	set _title "Select a VNC Server:"
+    } else {
+	set _title "Edit VNC Servers:"
+    }
+
+    label $wroot.title -text $_title
+    
+    pack $wroot.title -side top -fill x 
+
+    #----
+
+    # 
+    # tabnotebook
+    #
+
+    set wtnb $wroot.tnb
+    ::iwidgets::tabnotebook $wtnb \
+	-tabpos n \
+	-backdrop [$wroot cget -background]
+    set wlocal  [$wtnb add -label "Local Servers"]
+    set wremote [$wtnb add -label "Remote Servers"]
+    $wtnb view "Local Servers"
+    
+    pack $wtnb -side top -fill both -expand 1 -padx 2 -pady 2
+
+    #----
+
+    #
+    # Frame with the local VNC servers
+    #
+    set localserversobj [VNCLocalServersFrameC "#auto" $mapOkButton $mapSelectButton $wlocal.f]
+    pack $wlocal.f -fill both -expand 1
+
+    #----
+
+    #
+    # Frame with the remote VNC servers
+    #
+    set remoteserversobj [VNCRemoteServersFrameC "#auto" $mapOkButton $mapSelectButton $wremote.f]
+    pack $wremote.f -fill both -expand 1
+
+    #----
+
+    #
+    # Distribution network
+    #
+
+    set distnetobj [VNCDistNetC "#auto" $wroot.dn]
+    pack $wroot.dn -side bottom  -fill both -expand 0
+}
+
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#------------------------------------------------------------------------
+

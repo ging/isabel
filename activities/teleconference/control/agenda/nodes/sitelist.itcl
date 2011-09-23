@@ -1,0 +1,277 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class SiteListTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    public variable sites
+
+    #-- Building the tree
+
+    # $args is a site list
+    constructor {_agendaobj args} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+
+    public method getNodes {}
+
+    #-- Selection and Main sites
+
+    # Returns a list with the main sites.
+    # List items are references to SiteTCC objects.
+    public method getMainSites {}
+
+    # Returns a list with the selected sites.
+    # Item list are references to SiteTCC objects.
+    #  public method getSelectedSites {}
+
+    #-- Node creation
+    
+    # Create a new empty child node.
+    public method newChild {}
+
+    #-- Node deletion
+
+    # Delete the indicated child node, a SiteTCC object.
+    public method deleteChild {_site}
+
+    #-- Children operations
+
+    # Moves the given site $_offset positions in $sites
+    public method moveSite {_site _offset}
+
+    # Returns 1 if $_site is the first site, otherwise returns 0.
+    public method firstSite {_site}
+    
+    # Returns 1 if $_site is the last site, otherwise returns 0.
+    public method lastSite {_site}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+}
+
+#-----------------------------------------
+
+body SiteListTCC::constructor {_agendaobj args} {
+
+    foreach s $args {
+	CheckClass  $s SiteTCC
+	CheckUnique $s
+	$s setParent $this
+    }
+    set sites [lsort -command SiteTCC::compareSiteIds $args]
+}
+
+#-----------------------------------------
+
+body SiteListTCC::destructor {} {
+
+    set _auxsites $sites
+    set sites ""
+    foreach s $_auxsites {
+        delete object $s
+    }
+}
+
+#-----------------------------------------
+
+body SiteListTCC::parse {agendaobj str} {
+
+    set sl ""
+    set cont 0
+    set s [lindex $str $cont]
+    while {$s != ""} {
+        set site [SiteTCC::parse $agendaobj $s]
+        lappend sl $site
+        incr cont
+        set s [lindex $str $cont]
+    }
+
+    set me [eval SiteListTCC ::#auto $agendaobj $sl]
+
+    foreach s $sl {
+        $s setParent $me
+    }
+
+    return $me
+}
+
+#-----------------------------------------
+
+body SiteListTCC::prettyPrinter {{offset 0}} {
+
+    set _res ""
+    foreach s $sites {
+        if {$_res != ""} {
+	    set _res "$_res\n"
+	}
+        set _res "$_res[$s prettyPrinter $offset]"
+    }
+    return $_res
+}
+
+#-----------------------------------------
+
+body SiteListTCC::getMyNode {} {
+
+    set _icons ""
+    
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    list \
+	[getMyUid] \
+        "Sites" \
+        "sitesnode branch" \
+	"$_icons"
+}
+
+#-----------------------------------------
+
+body SiteListTCC::getNodes {} {
+
+    set res ""
+    foreach s $sites {
+	#lappend res [list [$s getMyUid] [$s getTitle] "site branch" "im-one im-1n"]
+	lappend res [$s getMyNode]
+    }
+    return $res
+}
+
+#-----------------------------------------
+
+body SiteListTCC::getMainSites {} {
+    
+    set msl ""
+    foreach s $sites {
+	if {[$s isMainSite]} {
+	    lappend msl $s
+	}
+    }    
+    return $msl
+}
+
+#-----------------------------------------
+
+body SiteListTCC::newChild {} {
+
+    set child [SiteTCC::new $agendaobj]
+
+    if {$child != ""} {
+
+	$child setParent $this
+	
+	lappend sites $child
+
+	set sites [lsort -command SiteTCC::compareSiteIds $sites]
+    }
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SiteListTCC::deleteChild {_site} {
+
+    set pos [lsearch -exact $sites $_site]
+
+    if {$pos == -1} return
+
+    set child [lindex $sites $pos]
+    set sites [lreplace $sites $pos $pos]
+    $child kill
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SiteListTCC::moveSite {_site _offset} {
+
+    set pos [lsearch -exact $sites $_site]
+
+    if {$pos == -1} return
+
+    set child [lindex $sites $pos]
+    set sites [lreplace $sites $pos $pos]
+
+    set newpos [expr $pos + $_offset]
+
+    set sites [linsert $sites $newpos $child]
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SiteListTCC::firstSite {_site} {
+    
+    if {[lindex $sites 0] == $_site} {
+	return 1
+    } else {
+	return 0
+    }
+}
+   
+#-----------------------------------------
+
+body SiteListTCC::lastSite {_site} {
+
+    if {[lindex $sites end] == $_site} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#-----------------------------------------
+
+body SiteListTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "New Site" \
+	-command [code $this newChild]
+    
+    return $menu   
+}
+
+#-----------------------------------------

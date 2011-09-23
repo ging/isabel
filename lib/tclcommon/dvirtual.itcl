@@ -1,0 +1,547 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+class DVirtualC {
+
+    # Dimensions of the virtual screen
+    private variable vwidth
+    private variable vheight
+
+    # Dimensions of the real screen
+    private variable rwidth
+    private variable rheight
+
+    # When the real screen has not the same aspect ratio than the virtual screen, then the used
+    # area of the real screen is reduced to the maintain the same aspect ratio.
+    # $rwidthnotused are the pixel (in the right side) not used in horizontal screens (ex: 16:9).
+    # $rheightnotused are the pixel (in the bottom side) not used in vertical screens (ex: 9:16).
+    private variable rwidthnotused
+    private variable rheightnotused
+
+    # Real/virtual scale factors.
+    private variable fwidth
+    private variable fheight
+
+    # 1 if the real to virtual transformations are enabled.
+    # Default is 0.
+    # Set the ISABEL_ENABLE_DVIRTUAL environment variable to 1 to enable. 
+    private variable enabled
+
+    constructor {display} {}
+    destructor {}
+
+    # Calculates the coordenates of the real point associated to the virtual
+    # point (x,y).
+    private method V2R_Point {x y}
+
+    # Returns the real size for the given virtual size ($w $h).
+    # The returned width will be a $round multiple.
+    private method V2R_Size {w h round}
+
+    # Returns the scale factors to apply (multiply) in order to translate a 
+    # virtual dimension into a the real dimension.
+    public method V2R_Factor {}
+
+    # Translate the virtual geometry "geom" into a real geometry.
+    public method V2R_Geometry {geom scalesize scalepos round {anchor NW}}
+
+    # Used by V2R_Geometry when the geometry specify both size and position.
+    private method V2R_FullGeometry {w h s1 x s2 y scalesize scalepos round anchor}
+
+    # Used by V2R_Geometry when the geometry specify only a size.
+    private method V2R_SizeGeometry {w h scalesize round}
+
+    # Used by V2R_Geometry when the geometry specify only a position.
+    private method V2R_PosGeometry {s1 x s2 y scalepos anchor}
+
+    # Translate the virtual layout $layout into a real geometry.
+    # $layout is a list with this format:
+    #       $geom $scalesize $scalepos $anchor
+    # $round is the round factor.
+    public method V2R_Layout {layout {round 1}}
+
+    # Returns the size of the virtual display.
+    public method GetVirtualDisplaySize {} {}
+
+    # Returns the size of the real display.
+    public method GetRealDisplaySize {} {}
+
+    # Return the anchor point associated to the given anchor
+    public method Anchor2xyVirtual {anchor} {}
+
+    public method Info {}
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::constructor {display} {
+    global env
+    
+    set enabled 0
+    if {[info exists env(ISABEL_ENABLE_DVIRTUAL)] && $env(ISABEL_ENABLE_DVIRTUAL) == "1"} {
+	set enabled 1
+    }
+    
+    #---
+    
+    set an [session Activity GetName]
+    set vwidth  [session Activity GetResource $an virtualw]
+    set vheight [session Activity GetResource $an virtualh]
+    
+    set _aspect_ratio [expr 1.0*$vwidth/$vheight]
+
+    toplevel .dvirtualtmp -screen $display
+    wm withdraw .dvirtualtmp
+    set rwidth  [winfo screenwidth  .dvirtualtmp]
+    set rheight [winfo screenheight .dvirtualtmp]
+    destroy .dvirtualtmp
+    
+    if {$enabled} {
+	if {[expr $rheight*$_aspect_ratio + 5] < $rwidth} {
+	    set rwidthnotused [expr $rwidth - round($rheight*$_aspect_ratio)]
+	    set rwidth [expr round($rheight*$_aspect_ratio)]
+	    set rheightnotused 0
+	} elseif {[expr $rheight*$_aspect_ratio - 5] > $rwidth} {
+	    set rheightnotused [expr $rheight - round($rwidth/$_aspect_ratio)]
+	    set rheight [expr round($rwidth/$_aspect_ratio)]
+	    set rwidthnotused  0
+	} else {
+	    set rwidthnotused  0
+	    set rheightnotused 0
+	}
+	
+	set fwidth  [expr 1.0*$rwidth/$vwidth]
+	set fheight [expr 1.0*$rheight/$vheight]
+	
+    } else {
+	set rwidthnotused  [expr $rwidth  - $vwidth]
+	set rheightnotused [expr $rheight - $vheight]
+	
+	set fwidth  1
+	set fheight 1
+    }
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::destructor {} {
+
+
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::V2R_Point {x y} {
+    
+    set xr [expr round($fwidth*$x)]
+    set yr [expr round($fheight*$y)]
+    
+    return [list $xr $yr]
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::V2R_Size {w h round} {
+    
+    if {$w != 0} {
+	if {$round != 1} {
+	    set w [expr round($fwidth*$w/$round)*$round]
+	    set h [expr round($fheight*$h/$round)*$round]
+	} else {
+	    set w [expr round($fwidth*$w)]
+	    set h [expr round($fheight*$h)]
+	}
+    }
+    return "$w $h"
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::V2R_Factor {} {
+    
+    return [list $fwidth $fheight]
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::V2R_Layout {layout {round 1}} {
+
+    set geom      [lindex $layout 0]
+    set scalesize [lindex $layout 1]
+    set scalepos  [lindex $layout 2]
+    set anchor    [lindex $layout 3]
+    
+    if {$scalesize == ""} {
+	set scalesize 0
+    }
+    if {$scalepos == ""} {
+	set scalepos 1
+    }
+    
+    eval V2R_Geometry $geom $scalesize $scalepos $round $anchor
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::V2R_Geometry {geom scalesize scalepos round {anchor NW}} {
+    
+    if {$round == 0} {
+	set round 1
+    }
+    
+    if {$fwidth == 1 && $fheight == 1 && $round == 1} {
+	return $geom
+    }
+    
+    # Parse full geometry
+    set re {([0-9]+)x([0-9]+)([+\-]+)([0-9]+)([+\-]+)([0-9]+)}
+    set res [regexp $re $geom todo w h s1 x s2 y]
+    if {$res != 0} {
+	return [V2R_FullGeometry $w $h $s1 $x $s2 $y $scalesize $scalepos $round $anchor]
+    }
+
+    # Parse geometry with only position
+    set re {([+\-]+)([0-9]+)([+\-]+)([0-9]+)}
+    set res [regexp $re $geom todo s1 x s2 y]
+    if {$res != 0} {
+	return [V2R_PosGeometry $s1 $x $s2 $y $scalepos $anchor]
+    }
+
+    # Parse geometry with only size
+    set re {([0-9]+)x([0-9]+)}
+    set res [regexp $re $geom todo w h]
+    if {$res != 0} {
+	return [V2R_SizeGeometry $w $h $scalesize $round]
+    }
+
+    return $geom
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::V2R_FullGeometry {w h s1 x s2 y scalesize scalepos round anchor} {
+
+    # Removes initial 0 to avoid Octal interpretation.
+    regsub {^0*([0-9]+)} $w {\1} w
+    regsub {^0*([0-9]+)} $h {\1} h
+    regsub {^0*([0-9]+)} $x {\1} x
+    regsub {^0*([0-9]+)} $y {\1} y
+
+    # Calculates real size.
+    if {$scalesize} {
+	set wh [V2R_Size $w $h $round]
+	set w [lindex $wh 0]
+	set h [lindex $wh 1]
+    }
+
+    # Calculate the anchor of the given geometry, and the value of the
+    # x and y position with its sign.
+    switch -- $s1 {
+	+  -
+	++ {
+	    set xanchor W
+	}
+	+- { 
+	    set x -$x
+	    set xanchor W
+	}
+	-  -
+	-+ {
+	    set xanchor E
+	}
+	-- {
+	    set x -$x
+	    set xanchor E
+	}
+    }
+    switch -- $s2 {
+	+  -
+	++ {
+	    set yanchor N
+	}
+	+- { 
+	    set y -$y
+	    set yanchor N
+	}
+	-  -
+	-+ {
+	    set yanchor S
+	}
+	-- {
+	    set y -$y
+	    set yanchor S
+	}
+    }
+    set geomanchor $yanchor$xanchor
+
+    # Calculates real position from $geomanchor
+    if {$scalepos} {
+	set rxy [V2R_Point $x $y]
+	set x [lindex $rxy 0]
+	set y [lindex $rxy 1]
+    }
+
+    # Calculates the real position from NW.
+    switch -- $geomanchor {
+	NW {
+	    set nwx $x
+	    set nwy $y
+	}
+	NE { 
+	    set nwx [expr $rwidth-$x-$w] 
+	    set nwy $y
+	}
+	SW {
+	    set nwx $x
+	    set nwy [expr $rheight-$y-$h]
+	}
+	SE {
+	    set nwx [expr $rwidth-$x-$w] 
+	    set nwy [expr $rheight-$y-$h]
+	}
+    }
+
+    # Calculates the real position from the anchor given as argument. 
+    switch -- $anchor {
+	NW {
+	    set x +$nwx
+	    set y +$nwy
+	}
+	NE { 
+	    set x -[expr $rwidth-$nwx-$w+$rwidthnotused] 
+	    set y +$nwy
+	}
+	SW {
+	    set x +$nwx
+	    set y -[expr $rheight-$nwy-$h+$rheightnotused]
+	}
+	SE {
+	    set x -[expr $rwidth-$nwx-$w+$rwidthnotused] 
+	    set y -[expr $rheight-$nwy-$h+$rheightnotused]
+	}
+	default {
+	    error "- Virtual Display Error: invalid anchor: $anchor."
+	}
+    }
+
+    # Returns the real geometry.
+    return ${w}x${h}$x$y
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::V2R_SizeGeometry {w h scalesize round} {
+
+    # Removes initial 0 to avoid Octal interpretation.
+    regsub {^0*([0-9]+)} $w {\1} w
+    regsub {^0*([0-9]+)} $h {\1} h
+
+    # Calculates real size.
+    if {$scalesize} {
+	set wh [V2R_Size $w $h $round]
+	set w [lindex $wh 0]
+	set h [lindex $wh 1]
+    }
+
+    return "${w}x${h}"
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::V2R_PosGeometry {s1 x s2 y scalepos anchor} {
+
+    # Removes initial 0 to avoid Octal interpretation.
+    regsub {^0*([0-9]+)} $x {\1} x
+    regsub {^0*([0-9]+)} $y {\1} y
+
+    # Calculate the anchor of the given geometry, and the value of the
+    # x and y position with its sign.
+    switch -- $s1 {
+	+  -
+	++ {
+	    set xanchor W
+	}
+	+- { 
+	    set x -$x
+	    set xanchor W
+	}
+	-  -
+	-+ {
+	    set xanchor E
+	}
+	-- {
+	    set x -$x
+	    set xanchor E
+	}
+    }
+    switch -- $s2 {
+	+  -
+	++ {
+	    set yanchor N
+	}
+	+- { 
+	    set y -$y
+	    set yanchor N
+	}
+	-  -
+	-+ {
+	    set yanchor S
+	}
+	-- {
+	    set y -$y
+	    set yanchor S
+	}
+    }
+    set geomanchor $yanchor$xanchor
+
+    # Calculates real position from $geomanchor
+    if {$scalepos} {
+	set rxy [V2R_Point $x $y]
+	set x [lindex $rxy 0]
+	set y [lindex $rxy 1]
+    }
+
+    # Calculates the real position from NW.
+    switch -- $geomanchor {
+	NW {
+	    set nwx $x
+	    set nwy $y
+	}
+	NE { 
+	    set nwx [expr $rwidth-$x] 
+	    set nwy $y
+	}
+	SW {
+	    set nwx $x
+	    set nwy [expr $rheight-$y]
+	}
+	SE {
+	    set nwx [expr $rwidth-$x] 
+	    set nwy [expr $rheight-$y]
+	}
+    }
+
+    # Calculates the real position from the anchor given as argument. 
+    switch -- $anchor {
+	NW {
+	    set x +$nwx
+	    set y +$nwy
+	}
+	NE { 
+	    set x -[expr $rwidth-$nwx+$rwidthnotused] 
+	    set y +$nwy
+	}
+	SW {
+	    set x +$nwx
+	    set y -[expr $rheight-$nwy+$rheightnotused]
+	}
+	SE {
+	    set x -[expr $rwidth-$nwx+$rwidthnotused] 
+	    set y -[expr $rheight-$nwy+$rheightnotused]
+	}
+	default {
+	    error "- Virtual Display Error: invalid anchor: $anchor."
+	}
+    }
+
+    # Returns the real geometry.
+    return $x$y
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::GetVirtualDisplaySize {} {
+
+    return "$vwidth $vheight"
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::GetRealDisplaySize {} {
+
+    return "$rwidth $rheight"
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::Anchor2xyVirtual {anchor} {
+
+    # Anchor specified with letters.
+    switch -- $anchor {
+	C { return "[expr $vwidth/2] [expr $vheight/2]" }
+	N { return "[expr $vwidth/2] 0" }
+	S { return "[expr $vwidth/2] $vheight" }
+	W { return "0 [expr $vheight/2]" }
+	E { return "$vwidth [expr $vheight/2]" }
+	NW { return "0 0" }
+	NE { return "[expr $vwidth] 0" }
+	SW { return "0 $vheight" }
+	SE { return "$vwidth $vheight" }
+    }
+
+    # Anchor specified as "+|- [+|-] x +|- [+|-] y"
+    set re {([+\-]+)([0-9]+)([+\-]+)([0-9]+)}
+    set res [regexp $re $anchor todo s1 x s2 y]
+    if {$res == 0} {
+	ErrorTraceMsg "- Virtual Display Error: invalid anchor: $anchor."
+	return "0 0"
+    }
+    switch -- $s1 {
+	+  -
+	++ { }
+	+- { set x -$x }
+	-  -
+	-+ { set x [expr $vwidth-$x] }
+	-- { set x [expr $vwidth+$x] }
+    }
+    switch -- $s2 {
+	+  -
+	++ { }
+	+- { set y -$y }
+	-  -
+	-+ { set y [expr $vheight-$y] }
+	-- { set y [expr $vheight+$y] }
+    }
+    return "$x $y"
+}
+
+#-----------------------------------------------------------
+
+body DVirtualC::Info {} {
+
+    set res ""
+    append res "Virtual dimensions: ${vwidth}x${vheight}\n"
+    append res "   Real dimensions: ${rwidth}x${rheight}\n"
+    if {$rwidthnotused != 0} {
+	append res "     Not used area: ${rwidthnotused}x${rheight}\n"
+    } elseif {$rheightnotused != 0} {
+	append res "     Not used area: ${rwidth}x${rheightnotused}\n"
+    } else {
+	append res "     Not used area: 0x0\n"
+    }
+    append res "     Scale factors: ${fwidth}x${fheight}\n"
+    return $res
+}
+
+#-----------------------------------------------------------
+

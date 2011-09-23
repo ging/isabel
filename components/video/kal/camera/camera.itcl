@@ -1,0 +1,507 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# camera.itcl
+#
+# Video camera subcomponent.
+#
+#########################################################################
+
+class CameraComponentC {
+
+    # Video Daemon Task Object
+    private variable vdtObj ""
+
+    # Video Daemon Object
+    private variable vdObj ""
+
+    # Video Layout Manager Object
+    private variable vgObj ""
+
+    # Video Channel Objects vcObj($site_id)
+    private variable vcObj
+
+    # Indicates if the monitor statistics are active or not
+    private variable doMonitorStats 0
+
+    constructor {_vdtObj} {}
+
+    destructor {}
+
+    public method AddMe   {}
+    public method AddSite {site_id new}
+    public method DelSite {site_id}
+
+    # Applies the state stored in the sms_state array.
+    private method ApplyLayout {}
+
+    private method BWFactor        {f}
+    private method FramerateFactor {f}
+    private method GrabSizeFactor  {f}
+    private method QltyFactor      {f}
+
+    public method SetCurrentCamera    {c}
+    public method GetCurrentCamera    {}
+    public method GetAvailableCameras {}
+
+    public method SetNorm {c}
+
+    public method SetFlickerFreq {c}
+
+    public method VideoSetFlip   {c}
+    public method VideoSetMirror {c}
+
+    public method Nop {} {}
+
+    public method Info {}
+
+    public method ExecDaemonCmd {cmd {cb ""}}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+
+    # Activate or deactivate monitor statistics
+    public method MonitorStats {activate}
+
+    # Send all the needed commands to configure the video C daemon state.
+    # Used when the video C daemon state is restarted.
+    public method ReapplyState {} 
+
+    # Processes SMS messages:
+    private method processCamerasState {args}
+    private method processCamerasFactorsState {args}
+    private method processAvatarState {args}
+    private method processCameraSourceState {args}
+
+    # The SMS state.
+    # These are the values received in a Video_Cameras SMS message.
+    # These values must be applied when the SMS message is received, and when an 
+    # AddRemoteSite message is received.
+    # This is an array with these values:
+    #    sms_state(layout)
+    #    sms_state(site_id_list)
+    #    sms_state(otherlayout)
+    #    sms_state(mapothers)
+    private variable sms_state 
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method getOptionListValue {list optname {default ""}}
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::constructor {_vdtObj} {
+
+    set sms_state(layout)       ""
+    set sms_state(site_id_list) ""
+    
+    # Set initial value for other layouts.
+    set sms_state(otherlayout)  [session Activity GetResource Video otherlayout ""]
+    
+    # Set initial value to map other channels.
+    if {[session Activity GetResource Video othermap 1]} {
+	set sms_state(mapothers) 1
+    } else {
+	set sms_state(mapothers) 0
+    }
+    
+    set vdtObj $_vdtObj
+
+    if {[catch {VideoDaemonC "#auto" [code $vdtObj]} vdObj]} {
+	ErrorTraceMsg "Video: Camera daemon creation aborted."
+	error "$vdObj"
+    }
+
+    set vgObj [VideoLayoutMgrC "#auto" [code $vdObj]]
+
+    # Restore monitor statistics state:
+    $vdObj ExecDaemonCmd video_do_stats($doMonitorStats)
+}
+
+
+#--------------------------------------------------------------
+
+body CameraComponentC::destructor {} {
+
+    CameraLayoutInfoC::Cleanup
+
+    if {$vdObj != ""} {	
+	delete object $vdObj 
+	set vdObj "" 
+    }
+
+    if {$vgObj != ""} {	
+	delete object $vgObj 
+	set vgObj "" 
+    }
+
+    foreach _i [array names vcObj] {
+	delete object $vcObj($_i)
+	set vcObj($_i) ""
+    }
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::AddMe {} {
+
+    set _me      [SiteManager::MySiteId]
+    set _my_chid [SiteManager::MyChId]
+
+    if {[catch {VideoLocalC #auto $_me [code $vdObj]} vcObj($_me)]} {
+	ErrorTraceMsg "Video: local channel creation aborted."
+	delete object $vdObj
+	error "$vcObj($_me)"
+    }
+
+    $vgObj AddChannel $_me [code $vcObj($_me)]
+
+    # Send local video flow
+    $vcObj($_me) Bind
+
+    # Global SMS messages which I want to receive:
+    sms joinKey Video_Cameras         [code $this processCamerasState]
+    sms joinKey Video_Cameras_factors [code $this processCamerasFactorsState]
+
+    ApplyLayout
+
+    # Load my avatar
+    CameraSourceC::GetAvatarType
+
+    # SMS messages (related with this site) which I want to receive:
+    sms joinKey Avatar_site_$_me  [code $this processAvatarState]
+    sms joinKey Video_Camera_Source_site_$_me  [code $this processCameraSourceState]
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::AddSite {site_id new} {
+
+    WriteTraceMsg "- Adding site $site_id" Video
+
+    # Create the new remote channel
+    if {[catch {VideoRemoteC #auto $site_id [code $vdObj]} res]} {
+	ErrorTraceMsg "Video: remote channel creation produces: $res"
+	return -1
+    }
+
+    set vcObj($site_id) $res
+
+    WriteTraceMsg "- Create remote channel to receive video from site $site_id" Video
+
+    $vgObj AddChannel $site_id [code $res]
+
+    ApplyLayout
+
+    # SMS messages (related with this site) which I want to receive:
+    sms joinKey Avatar_site_$site_id  [code $this processAvatarState]
+    sms joinKey Video_Camera_Source_site_$site_id  [code $this processCameraSourceState]
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::DelSite {site_id} {
+
+    set _me [SiteManager::MySiteId]
+    
+    if {$_me != $site_id} {
+
+	set _chid [SiteManager::GetSiteInfo $site_id chid]
+
+	if {[catch {$vdObj RDO video_delete_channel($_chid)} emsg]} {
+	    DebugTraceMsg "- Video ERROR: $emsg" 2
+	}
+	
+	if {[catch {delete object $vcObj($site_id)} emsg]} {
+	    DebugTraceMsg "- Video ERROR: $emsg" 2
+	}
+
+	if {[catch {unset  vcObj($site_id)} emsg]} {
+	    DebugTraceMsg "- Video ERROR: $emsg" 2
+	}
+
+	if {[catch {$vgObj DelChannel $_me} emsg]} {
+	    DebugTraceMsg "- Video ERROR: $emsg"
+	}
+    }
+
+    # SMS messages (related with this site)
+    sms leaveKey Avatar_site_$site_id
+    sms leaveKey Video_Camera_Source_site_$site_id
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::ApplyLayout {} {
+
+    $vgObj ApplyLayout \
+	$sms_state(layout) \
+	$sms_state(site_id_list) \
+	$sms_state(otherlayout) \
+	$sms_state(mapothers)
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::BWFactor {f} {
+
+    $vdObj SetBWFactor $f
+    CameraConfigC::SetBWFactor $f
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::FramerateFactor {f} {
+
+    $vdObj SetFramerateFactor $f
+    CameraConfigC::SetFramerateFactor $f
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::GrabSizeFactor {f} {
+
+    $vdObj SetGrabSizeFactor $f
+    CameraConfigC::SetGrabSizeFactor $f
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::QltyFactor {f} {
+
+    $vdObj SetQltyFactor $f
+    CameraConfigC::SetQltyFactor $f
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::SetCurrentCamera {c} {
+
+    $vdObj SetCurrentCamera $c
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::GetCurrentCamera {} {
+    $vdObj GetCurrentCamera
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::GetAvailableCameras {} {
+
+    $vdObj GetAvailableCameras
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::SetNorm {c} {
+
+    $vdObj SetNorm $c
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::SetFlickerFreq {c} {
+
+    $vdObj SetFlickerFreq $c
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::VideoSetFlip {c} {
+
+    $vdObj VideoSetFlip $c
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::VideoSetMirror {c} {
+
+    $vdObj VideoSetMirror $c
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::Info {} {
+
+    set res "Video component state:\n"
+    append res [$vdObj Info]
+    append res [$vgObj Info]
+    foreach _sid [array names vcObj] {
+	append res [$vcObj($_sid) Info]
+    }
+    return $res
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::ExecDaemonCmd {cmd {cb ""}} {
+    $vdObj ExecDaemonCmd $cmd $cb
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::MonitorStats {activate} {
+
+    if {$activate == 1} {
+
+	set doMonitorStats 1
+	ExecDaemonCmd video_do_stats(1)
+
+    } else {
+
+	set doMonitorStats 0
+	ExecDaemonCmd video_do_stats(0)
+    }
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::ReapplyState {} {
+
+    # Restore monitor statistics state:
+    ExecDaemonCmd video_do_stats($doMonitorStats)
+
+    set _my_chid    [SiteManager::MyChId]
+    set _my_site_id [SiteManager::MySiteId]
+    
+    # Reapply state of local channel:
+    $vcObj($_my_site_id) ReapplyState
+
+    # Reapply state of remote channels:
+    foreach _sid [array names vcObj] {
+	if {$_sid != $_my_site_id} {
+	    $vcObj($_sid) ReapplyState
+	}
+    }
+
+    # Update available cameras and their parameters:
+    after idle CameraSourceC::Refresh
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::processCamerasState {args} {
+
+    set sms_state(site_id_list) [GetOptionListValue $args -sites          ""]
+    set sms_state(layout)       [GetOptionListValue $args -main_layouts   ""]
+    set sms_state(otherlayout)  [GetOptionListValue $args -others_layouts ""]
+    set sms_state(mapothers)    [GetOptionListValue $args -map_others     0]
+    
+    ApplyLayout
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::processCamerasFactorsState {args} {
+
+    set _framerate_factor  [GetOptionListValue $args -framerate_factor   1]
+    set _bw_factor         [GetOptionListValue $args -bw_factor          1]
+    set _grabsize_factor   [GetOptionListValue $args -grabsize_factor    1]
+    set _image_qlty_factor [GetOptionListValue $args -image_qlty_factor  1]
+    
+    FramerateFactor $_framerate_factor
+    BWFactor        $_bw_factor
+    GrabSizeFactor  $_grabsize_factor 
+    QltyFactor      $_image_qlty_factor
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::processAvatarState {args} { 
+    global env
+
+    set _site_id [getOptionListValue $args -site_id ""]
+    
+    set _type [getOptionListValue $args -type other]
+    set _data [getOptionListValue $args -data ""]
+
+    if {$_type == "custom"} {
+	set _file $env(ISABEL_TMP_DIR)/avatar_$_site_id.jpg
+	if {[catch {
+	    exec base64 -d - << $_data > $_file
+	} emsg]} {
+	    ErrorTraceMsg "Saving Camera Avatar of $_site_id: $emsg"
+	    set _file ""
+	}
+    } else {
+	set _file ""
+    }
+    
+    $vcObj($_site_id) SetAvatar $_type $_file
+
+}
+
+#--------------------------------------------------------------
+
+body CameraComponentC::processCameraSourceState {args} {
+
+    set _site_id [getOptionListValue $args -site_id ""]
+    
+    set _source [getOptionListValue $args -source ""]
+
+    if {$_source == "NONE"} {
+	set _tout 1
+    } else {
+	set _tout 5
+    }
+
+    set _chid [SiteManager::GetSiteInfo $_site_id chid]
+
+    ExecDaemonCmd video_avatar_timeout($_chid,$_tout)
+}
+
+#---------------------------------------------------------------
+
+body CameraComponentC::getOptionListValue {list optname {default ""}} {
+    
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#--------------------------------------------------------------
+

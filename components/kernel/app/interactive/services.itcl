@@ -1,0 +1,124 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# services.itcl
+#
+# Services for the interactive isabel kernel.
+#
+# - P2PT: protocol to primitive translator
+#         Translate the protocol messages into tcl commands.
+#
+# - KeepAlive: check connectivity is maintained.
+#
+#########################################################################
+
+
+class ServicesC {
+
+
+    # KeepAlive object.
+    private variable kaobj
+
+    constructor {} {}
+    destructor  {}
+
+    # Translates the protocol message $msg into a tcl command.
+    public method P2PT {msg} 
+
+    # Keep Alive service
+    public method KeepAlive {args}
+}
+
+
+#-----------------------------------------------------------------
+
+body ServicesC::constructor {} {
+
+    set kaobj [KeepAliveC #auto]
+
+}
+
+#-----------------------------------------------------------------
+
+body ServicesC::destructor {} {
+
+    delete object $kaobj
+}
+
+#-----------------------------------------------------------------
+
+body ServicesC::P2PT {msg} {
+
+    set primitive [lindex $msg 0]
+    switch -regexp -- $primitive {
+	{^UM$} { # User Manager primitive
+	    set pref SiteManager::
+	}
+	{^CM$} { # Component Manager primitive
+	    set pref ComponentManager::
+	}
+	{^UI$} { # User Interface primitive
+	    set pref "interface "
+	}
+	{^EI$} { # Event Info primitive
+	    set pref "session "
+	}
+	{^SERV$} { # Service primitive
+	    set pref "session Activity "
+	}
+	{^XS$} { # Extra Services primitive
+	    set pref "services "
+	}
+	{^NET$} { # Network
+	    set pref "network "
+	}
+	{^SMSC$} { # SMS: State Messages Service
+	    set pref "sms processMessage "
+	}
+	{^CR$} { # Component Request primitive
+	    set pref Component::
+	}
+	{^COMP$} { # Component Protocol Request primitive
+	    set pref "ComponentManager::Cmd "
+	}
+	{^SNMP$} { # SNMP Monitor primitive
+	    set pref "irouter "
+	}
+	default { # Unknown primitive
+	    # ErrorTraceMsg "Warning: ISASeCoPrimC: Unknown protocol message: $msg"
+	    set pref "$primitive "
+	}
+    }
+    set cmd $pref[lrange $msg 1 end]
+    return $cmd
+}
+
+#-----------------------------------------------------------------
+
+body ServicesC::KeepAlive {args} {
+
+    eval $kaobj $args
+}
+
+#-----------------------------------------------------------------

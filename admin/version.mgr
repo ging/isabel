@@ -1,0 +1,78 @@
+#! /bin/sh
+
+#########################################################################
+#
+# version.mgr
+#
+# (C) Copyright 1993-99. Dpto Ingenieria Sistemas Telematicos UPM Spain
+# Dec 31, 1999 Transfered to Agora Systems S.A.     
+# (C) Copyright 2000-2011. Agora Systems S.A.     
+#
+# Description
+#
+#   This script implement methods to update files containing version numbers.
+#
+#########################################################################
+
+VersionMgr(){
+
+   if [ "$1" = "-h" ] ; then
+      echo "$0 help:"
+      echo "Usage: $0 <method> <version_filename>"
+      echo "Methods:"
+      echo "    newMayor:   increments mayor version number."	
+      echo "    newMinor:   increments minor version number."		
+      echo "    newRelease: increments release number."		
+      echo "    getVersion: returns a version number string."		
+      echo "    getRelease: returns a release string."		
+      exit 1
+   fi
+
+   if [ "$#" -lt 2 ] ; then
+      echo "Usage: $0 <method> <version_filename>"
+      exit 1
+   fi
+
+   local method=$1
+   local versionfile=$2	
+	
+   if [ ! -f $versionfile ] ; then
+      echo "ERROR: \"$versionfile\" not found."
+      exit 1
+   fi
+
+   local mayorvernum=$(awk '{print $1}' $versionfile)  # mayor version number.
+   local minorvernum=$(awk '{print $2}' $versionfile)  # minor version number.
+   local  releasenum=$(awk '{print $3}' $versionfile)  # release number.
+
+   case "$method" in
+     "newMayor")	
+        mayorvernum=$(($mayorvernum+1))
+        minorvernum=0
+        releasenum=0
+        echo "$mayorvernum $minorvernum $releasenum" > $versionfile
+        ;;
+     "newMinor")	
+        minorvernum=$(($minorvernum+1))
+        releasenum=0
+        echo "$mayorvernum $minorvernum $releasenum" > $versionfile
+        ;;
+     "newRelease")	
+        releasenum=$(($releasenum+1))
+        echo "$mayorvernum $minorvernum $releasenum" > $versionfile
+        ;;
+     "getVersion")	
+        echo "$mayorvernum.$minorvernum"
+        ;;
+     "getRelease")	
+        echo "$releasenum"
+        ;;
+     *)
+        echo "ERROR: $method is an invalid method."
+        exit 1
+   esac
+
+}
+
+VersionMgr $*
+

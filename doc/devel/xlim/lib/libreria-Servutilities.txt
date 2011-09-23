@@ -1,0 +1,19 @@
+-----------------------------
+
+- libreria: Servutilities
+
+- Descripción: cajon desastre. Tiene metodos de todo tipo, desde metodos para comprimir descomprimir ficheros (hacen llamadas a la clase ZipUtils), para copiar ficheros, para ejecutar servicios xlim, lanzar procesos, lanzar isabel en local, saber si una ip es local o no.... ver javadoc.
+
+- Paquete: isabel.lib.xlim
+
+- Clases:  
+	* Servutilities
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimlib
+	* Ficheros: 
+		· xlimlib/isabel/lib/xlim/Servutilities.java
+
+- Temas pendientes:
+	* Habria que clasificar/separar los metodos contenidos en esta clase para poner un poco de orden.
+-----------------------------

@@ -1,0 +1,3 @@
+g72x.o: g72x.cxx g72x.h
+g72x.cxx :
+g72x.h :

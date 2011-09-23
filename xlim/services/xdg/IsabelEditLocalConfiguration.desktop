@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Edit Local Configuration
+Comment=Edit my configuration profile
+Exec=/usr/local/isabel/bin/isrv_LocalConfiguration.sh
+Icon=/usr/local/isabel/lib/images/gif/data_face.gif
+Terminal=false
+Type=Application
+StartupNotify=true

@@ -1,0 +1,148 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{707863A5-3FB1-4FE8-AE86-12A91798336A}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DVRB</RootNamespace>
+    <AssemblyName>DVRB</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="interop_msxml, Version=9.0.0.3693, Culture=neutral">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Archivos de programa\Bin\interop_msxml.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="microsoft.windowsmediaservices, Version=9.0.0.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Archivos de programa\Bin\Microsoft.windowsmediaservices.dll</HintPath>
+    </Reference>
+    <Reference Include="NLog, Version=1.0.0.505, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+      <HintPath>Nlog\NLog.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration.Install" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DVRBService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="FlashPolicyServer.cs" />
+    <Compile Include="ProjectInstaller.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Result.cs" />
+    <Compile Include="Encoder.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Streaming.cs" />
+    <Compile Include="SystemInfo.cs" />
+    <Compile Include="WebService.cs" />
+    <Compile Include="XmlSchemas\DVRB.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DVRB.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="XmlSchemas\ServerState.cs">
+      <DependentUpon>ServerState.xsd</DependentUpon>
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="XmlSchemas\ServerState.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ServerState.xsd</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="NLog.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="XmlSchemas\DVRB.xsc">
+      <DependentUpon>DVRB.xsd</DependentUpon>
+    </None>
+    <None Include="XmlSchemas\DVRB.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <SubType>Designer</SubType>
+      <LastGenOutput>DVRB.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="XmlSchemas\DVRB.xss">
+      <DependentUpon>DVRB.xsd</DependentUpon>
+    </None>
+    <None Include="XmlSchemas\ServerState.xsc">
+      <DependentUpon>ServerState.xsd</DependentUpon>
+    </None>
+    <None Include="XmlSchemas\ServerState.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>ServerState.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="XmlSchemas\ServerState.xss">
+      <DependentUpon>ServerState.xsd</DependentUpon>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="MSXML">
+      <Guid>{D63E0CE2-A0A2-11D0-9C02-00C04FC99C8E}</Guid>
+      <VersionMajor>2</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+    </COMReference>
+    <COMReference Include="WMEncoderLib">
+      <Guid>{632B6060-BBC6-11D2-A329-006097C4E476}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+    </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="XmlSchemas\DVRB.xml" />
+    <Content Include="XmlSchemas\FlashPolicyFile.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="XmlSchemas\ServerState.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>copy $(ProjectName).* z:\
+copy *.dll z:\
+copy Nlog.*  z:\
+copy XMLSchemas\FlashPolicyFile.xml z:\</PostBuildEvent>
+  </PropertyGroup>
+</Project>

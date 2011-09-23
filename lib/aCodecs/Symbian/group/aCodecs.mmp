@@ -1,0 +1,58 @@
+/*
+* ============================================================================
+*  Name     : aCodecs.mmp
+*  Part of  : aCodecs
+*  Created  : 20.04.2005 by 
+*  Description:
+*     aCodecs.mmp - project definition file
+*  Version  :
+*  Copyright: 
+* ============================================================================
+*/
+
+
+TARGET          aCodecs.dll
+TARGETTYPE      dll
+UID             0x1000008d 0x0F69B680
+EXPORTUNFROZEN
+
+USERINCLUDE     ..\inc
+USERINCLUDE     ..\..\include
+USERINCLUDE     ..\..\lib\codecs\gsm
+
+SYSTEMINCLUDE   \epoc32\include
+SYSTEMINCLUDE   \epoc32\include\libc
+
+SOURCEPATH      ..\group
+//DOCUMENT        readme.txt
+DOCUMENT        bld.inf
+
+SOURCEPATH      ..\sis
+DOCUMENT        aCodecs.pkg
+
+SOURCEPATH      ..\src 
+SOURCE          aCodecsDllMain.cpp
+SOURCEPATH      ..\..\lib\codecs\gsm
+SOURCE          add.cxx
+SOURCE		code.cxx
+SOURCE		decode.cxx
+SOURCE		gsm.cxx
+SOURCE		gsm_create.cxx
+SOURCE		gsm_decode.cxx
+SOURCE		gsm_destroy.cxx
+SOURCE		gsm_encode.cxx
+SOURCE		gsm_option.cxx
+SOURCE		long_term.cxx
+SOURCE		lpc.cxx
+SOURCE		preprocess.cxx
+SOURCE		rpe.cxx
+SOURCE		short_term.cxx
+SOURCE		table.cxx
+
+SOURCEPATH      ..\..\lib
+SOURCE 		codecs.cxx
+
+LIBRARY         euser.lib
+LIBRARY         estlib.lib
+
+// End of file

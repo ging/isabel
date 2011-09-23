@@ -1,0 +1,183 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+################################################################
+#
+#  Objects of this class to access to the scanner.
+#
+################################################################
+
+
+class DoScanC {
+
+    private variable timeout
+
+    private common state
+
+    private variable lockfilename
+
+    constructor {} {}
+    destructor {}
+
+    #
+    # Scan an image using the given parameeters.
+    # okCB is the callback to execute if success. The image filename
+    # is appended as argument.
+    #
+    # cancelOk is the callback to execute if the process is cancelled.
+    # No arguments are added.
+    #
+    # errorCB is the callback to execute if an error happens. An error
+    # message is added as argument.
+    #
+    # alwaysCB is executed always before okCB, cancelCB or errorCB.
+    # No arguments are added.
+    #
+    public method Scan {mode res brightness contrast x y w h \
+	    rotate fileout alwaysCB okCB cancelCB errorCB} {}
+
+    # Cancel the scanning in progress.
+    public method Cancel {} {}
+
+    private method CheckDone {} {}
+
+}
+
+#--------------------------------------------------
+
+body DoScanC::constructor {} {
+    
+    set state($this) idle
+}
+#--------------------------------------------------
+
+body DoScanC::destructor {} {
+    
+    Cancel
+}
+
+#--------------------------------------------------
+
+body DoScanC::Scan {mode res brightness contrast x y w h \
+	rotate fileout alwaysCB okCB cancelCB errorCB} {
+
+    if {$state($this) == "waiting"} {
+	    #ErrorTraceMsg "DoScan Warning: scanning already in progress"  	    
+	    puts "DoScan Warning: scanning already in progress"  	    
+
+	return
+    }
+
+    set timeout 300
+
+    set lockfilename /tmp/scanerlock[clock clicks]
+
+    if {$rotate} {
+	set rotateopt -rotate
+    } else {
+	set rotateopt ""
+    }
+
+    if { ! [catch {exec sh -c "isabel_scanner \
+	    -void IsabelScanner$this \
+	    -mode $mode \
+	    -resolution $res \
+	    -brightness $brightness \
+	    -contrast   $contrast \
+	    -x $x \
+	    -y $y \
+	    -width $w \
+	    -height $h \
+	    $rotateopt \
+	    -fileout $fileout && touch $lockfilename" &} errormsg]} {
+
+	CheckDone
+	set state($this) waiting
+	vwait [scope state($this)]
+    } else {
+	set state($this) error
+    }
+
+    if {$alwaysCB != ""} {
+	uplevel $alwaysCB
+    }
+    
+    switch -- $state($this) {
+	done {
+	    if {$okCB != ""} {
+		uplevel $okCB $fileout
+	    }
+	} 
+	cancelled {
+	    if {$cancelCB != ""} {
+		uplevel $cancelCB
+	    }	   
+	} 
+	timeout {
+	    if {$errorCB != ""} {
+		uplevel $errorCB \[list Timeout expired\]
+	    }	   
+	}
+	error {
+	    if {$errorCB != ""} {
+		uplevel $errorCB \[list $errormsg]\
+	    }	   
+	}
+	default {
+	    #ErrorTraceMsg "DoScan ERROR: internal error ($state($this))"  	    
+	    puts "DoScan ERROR: internal error ($state($this))"  	    
+	}
+    }
+
+    file delete $lockfilename    
+
+    set state($this) idle
+}
+
+#--------------------------------------------------
+
+body DoScanC::Cancel {} {
+
+    after cancel [code $this CheckDone]
+    set state($this) cancelled
+    exec fp -k IsabelScanner$this
+}
+
+#--------------------------------------------------
+
+body DoScanC::CheckDone {} {
+
+    if {$timeout < 0} {
+	set state($this) timeout
+	return
+    }
+
+    if {[file exists $lockfilename]} {
+	set state($this) done
+    } else {
+	set timeout [expr $timeout - 3]
+	after 3000 [code $this CheckDone]
+    }
+
+}
+
+#--------------------------------------------------

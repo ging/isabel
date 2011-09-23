@@ -1,0 +1,188 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+###############################################################
+#
+#   Description:
+#
+#     Convert external executables in daemons
+#
+################################################################
+
+
+class ExternalC {
+
+    # Daemon name
+    private variable name
+
+    # Ping period
+    private variable pingperiod
+
+    # External command to execute
+    private variable cmd
+
+    # Lock modes: by filename or by pid
+    private variable lockfilename
+    private variable lockpids
+
+    # Quit CallBack.
+    private variable quit_cb
+
+    # Unique identifier to locate the process, and kill it with "isabel_fp -k".
+    private variable uniqid
+    
+    constructor {_name _cmd _quit_cb {_uniqid ""}} {}
+
+    destructor {}
+
+    # Starts the object.
+    # Produces error if something is wrong.
+    # $lockmode must be "file" or "pid"
+    public method Start {{lockmode file}}
+
+    # Cleanup: 
+    #  - Cancel afters.
+    #  - Destroy launched processes.
+    #  - Delete auxiliar files.
+    private method Cleanup {}
+    
+    # Checks that the daemon is alive.
+    private method PingFile {}
+    private method PingPid {}
+
+    # Method to call when the applications exits.
+    private method QuitCB {}
+
+}
+
+#------------------------------------------------------------
+
+body ExternalC::constructor {_name _cmd _quit_cb {_uniqid ""}} {
+
+    set name         $_name
+    set cmd          $_cmd
+    set quit_cb      $_quit_cb
+    set uniqid       $_uniqid
+
+    set lockfilename /tmp/isabel_external_lock_[clock clicks]
+    set lockpids     ""
+    set pingperiod   1000
+}
+
+#------------------------------------------------------------
+
+body ExternalC::destructor {} {
+    Cleanup
+}
+
+#------------------------------------------------------------
+
+body ExternalC::Cleanup {} {
+
+    after cancel [code $this PingFile]
+    after cancel [code $this PingPid]
+
+    file delete $lockfilename
+
+    if {$uniqid != ""} {
+	catch {exec isabel_fp -k $uniqid}
+	set uniqid ""
+    }
+    
+    if {$lockpids != ""} {
+	catch "exec kill -s TERM $lockpids"
+	after 6000 catch \"exec kill -9 $lockpids\"
+	set lockpids ""
+    }
+}
+
+#------------------------------------------------------------
+
+body ExternalC::Start {{lockmode file}} {
+
+    if {$lockmode == "file"} {
+	if {[catch {exec touch $lockfilename} err]} {
+	    error "- I can't set a lock file ($lockfilename) for $name program: $err."
+	}
+	
+	if {[catch {exec sh -c "$cmd ; /bin/rm -f $lockfilename" &} err]} {
+	    error "- I can't start $name program: $err."
+	}
+	
+	after $pingperiod [code $this PingFile]
+    } else {
+	if {[catch "exec $cmd &" lockpids]} {
+	    error "- I can't start $name program: $lockpids."
+	}
+
+	#if {[regexp {^[0-9]+$} $lockpid] != 1} {
+	#    set lockpid ""
+	#    error "- Program $name has finished immediately after launched."
+	#}
+
+	WriteTraceMsg "External: \"$name\" launched as $lockpids processes."
+
+	after $pingperiod [code $this PingPid]
+    }
+}
+
+#------------------------------------------------------------
+
+body ExternalC::PingFile {} {
+
+    if {[file exists $lockfilename] == 0} {
+	QuitCB
+    } else {
+	after $pingperiod [code $this PingFile]
+    }
+}
+
+#------------------------------------------------------------
+
+body ExternalC::PingPid {} {
+
+    if {[catch "exec ps -p $lockpids"] != 0} {
+	QuitCB
+    } else {
+	after $pingperiod [code $this PingPid]
+    }
+}
+
+#------------------------------------------------------------
+
+body ExternalC::QuitCB {} {
+
+    WriteTraceMsg "External: \"$name\" program has exited."
+
+    Cleanup
+
+    if {$quit_cb != ""} {
+	
+	if {[catch {uplevel #0 $quit_cb} emsg]} {
+	    ErrorTraceMsg "External: \"$name\" program quit callback \"$quit_cb\" produces: $emsg"
+	}
+    }
+
+    catch {delete object $this}
+}
+
+#------------------------------------------------------------
+

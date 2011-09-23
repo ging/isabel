@@ -1,0 +1,39 @@
+The ISABEL CSCW Application Demonstration License Agreement
+
+BEFORE INSTALLING THIS PACKAGE, READ CAREFULLY THE TERMS AND CONDITIONS OF THIS AGREEMENT. BY INSTALLING THIS PACKAGE, YOU ARE CONSENTING TO BE BOUND BY AND ARE BECOMING A PARTY TO THIS AGREEMENT. IF YOU DO NOT AGREE TO ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT, DO NOT INSTALL THE SOFTWARE.
+
+1. Agora Systems S.A. grants you a non-exclusive, non-sublicensable, license to use this version of the ISABEL distributed multimedia application ("ISABEL"), in binary executable form for evaluation and trial purposes only. 
+
+2. Agora Systems S.A. makes no representation about the suitability of this software or about any content or information made accessible by the software, for any purpose. The software is provided "as is" without express or implied warranties, including warranties of merchantability or fitness for a particular purpose of noninfringement. This software is provided gratuitously and, consequently, Agora Systems S.A. shall not be liable under any circumstances for any damage suffered by you or any user of the software. Agora Systems S.A. makes no express commitment to support this software or issue any updates of this software.
+
+3. All content processed by the Software is the property of the applicable content owner, and may be protected by the applicable copyright law. This License gives you no rights to such content.
+
+4. Although Agora Systems S.A. owns the commercial exploitation rights of this Software , Agora Systems S.A. reserves the right at any time not to release a commercial version of the Software or, if released, to alter prices, features, specifications, capabilities, functions, licensing terms, release dates, general availability or any other characteristics of the commercial release.
+
+5. Title, ownership rights, and intellectual property rights in and to the Software shall remain in Agora Systems S.A. and/or its suppliers. You agree to abide by the copyright law and all other applicable laws of the European Union ("EU") including, but not limited to, export control laws.  You acknowledge that the Software in source code form remains a confidential trade secret of Agora Systems S.A. and/or its suppliers and therefore you agree not to modify the Software or attempt to decipher, decompile, disassemble or reverse engineer the Software, except to the extent applicable laws specifically prohibit such restriction.
+
+6. Agora Systems S.A. may terminate this License at any time by delivering notice to you and you may terminate this License at any time by destroying or erasing your copy of the Software. Upon termination of this License, you agree to destroy or erase the Software.  In the event of termination, the following sections of this License will persist: 2, 3, 4, 5, 6, 7 and 8.  This License is personal to you and you agree not to transfer your rights herein. This License shall be governed by and construed in accordance with the laws of the EU and, as to matters affecting copyrights, trademarks and patents, by EU laws. This License sets forth the entire agreement between you and Agora Systems S.A.
+
+7. Use, duplication or disclosure by the Government is subject to restrictions. Contractor/manufacturer is Agora Systems S.A. Velazquez 46, sexto derecha, 28001 Madrid Spain.
+
+8. You may not download or otherwise export or reexport the Software or any underlying information or technology except in full compliance with all EU and other applicable laws and regulations. By downloading the Software, you are agreeing to the foregoing and you are representing and warranting that you are not located in, under control of, or a national or resident of any such country or on any such list. 
+
+9. Agora Systems S.A. or its suppliers shall not be liable for (a) incidental, consequential, special or indirect damages of any sort, whether arising in tort, contract or otherwise, even if Agora Systems S.A. has been informed of the possibility of such damages, or (b) for any claim by any other party. This limitation of liability shall not apply to liability for death or personal injury to the extent applicable law prohibits such limitation. Furthermore, some states do not allow the exclusion or limitation of incidental or consequential damages, so this limitation and exclusion may not apply to you.
+
+
+License.
+
+1. Any attempt otherwise to copy, modify, sublicense, distribute or transfer the Program is void, and will automatically terminate your rights to use the Program under this License.  However, parties who have received copies, or rights to use copies, from you under this General Public License will not have their licenses terminated so long as such parties remain in full compliance.
+
+2. By copying, distributing or modifying the Program (or any work based on the Program) you indicate your acceptance of this license to do so, and all its terms and conditions.
+
+3. Each time you redistribute the Program (or any work based on the Program), the recipient automatically receives a license from the original licensor to copy, distribute or modify the Program subject to these terms and conditions.  You may not impose any further restrictions on the recipients' exercise of the rights granted herein.
+
+
+No Warranty.
+
+4. Because the program is licensed free of charge, there is no warranty for the program, to the extent permitted by applicable law. Except when otherwise stated in writing, the copyright holders and/or other parties provide the program "as is" without warranty of any kind, either expressed or implied, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose. The risk as to the quality and performance of the program is entirely assumed by you. Should the program be defective, you assume the cost of all necessary servicing, repair or correction.
+
+5. In no event, unless required by applicable law or agreed to in writing, will any copyright holder, or any other party who may modify and/or redistribute the program as permitted above, be liable to you for damages, including any general, special, incidental or consequential damages arising out of the use or inability to use the program (including, but not limited to, loss of data or data being rendered inaccurate or losses sustained by you or third parties or a failure of the program to operate with any other programs), even if such holder or other party has been advised of the possibility of such damages.
+
+End of Terms and Conditions.

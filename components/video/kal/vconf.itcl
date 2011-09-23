@@ -1,0 +1,274 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vconf.itcl
+#
+# Description
+#
+#   VideoConfigTablesC objects: 
+#      This objects stores one video configuration.
+#
+#
+#   VideoConfigTablesC class: 
+#      This class has some static methods to store several VideoConfigTablesC objects.
+#      Each object stores a different video configuration.
+#      Each configuration is associated to a uniq name.
+#      There ara also static method to query stored configurations.
+#
+#########################################################################
+
+
+class VideoConfigTablesC {
+
+    #-----------------------
+    # PUBLIC CLASS INTERFACE
+    #-----------------------
+
+    # Stores all the video configurations defined in the service.
+    # The name of all defined video configurations are stored in the "Video.conftables" 
+    # service resource.
+    public proc Load {}
+
+    # Returns the codec, grabsize and framerate values associated to $geometry and $bw
+    # for the given configuration.
+    public proc GetConfig {name geometry bw}
+
+    # Prints the loaded configurations.
+    public proc DumpAll {}
+
+    #------------------------
+    # PRIVATE CLASS INTERFACE
+    #------------------------
+
+    # Array with all the created VideoConfigTablesC objects.
+    # The array index is the uniq name associated to the object.
+    private common configt
+
+    #-------------------------
+    # PUBLIC OBJECTS INTERFACE
+    #-------------------------
+
+    # Constructs an object with the video configurations of the given name.
+    # The configuration values are obtained from the "Video.conftable.$name" 
+    # service resource.
+    # A configuration is a list of items, where each item has this format (note that 
+    # values can be differents): 
+    #	 geometry=640x480 bw=300 {codec=H.263 -qlty 40} grabsize=256x192 framerate=25
+    constructor {_name} {} 
+
+    # Returns the codec, grabsize and framerate values associated to $geometry and $bw.
+    # The returned value has this format: "$codec $grabsize $framerate".
+    # For example:
+    #	 {H.263 -qlty 40} 256x192 25
+    private method Get {geometry bw}
+
+    # Prints configuration.
+    public method Dump {}
+
+    #--------------------------
+    # PRIVATE OBJECTS INTERFACE
+    #--------------------------
+
+    # Configuration name.
+    # Remember that configurations values are obtained from the "Video.conftable.$name" 
+    # service resource.
+    private variable name
+
+    # List with all the defined sizes. 
+    # Each defined size is saved as a numbre of pixels.
+    # This list is sorted in decreasing order.
+    private variable definedpixels
+
+    # $definedbws($size) is a list with all the defined bw for this size.
+    # This list is sorted in decreasing order.
+    private variable definedbws
+    
+    # values($pixels,$bw) is an array with the defined codec, grabsize and framerate 
+    # for all the geometry sizes (expresed as number of pixels) and bandwidths.
+    private variable values
+
+    # Returns the number of pixels of the given X geometry.
+    private method Geometry2Pixels {g}
+
+    # Searches in $list the item "$opt=string", and returns "string".    
+    private method GetOption {list opt} 
+
+    # Stores in "definedpixels" and "values" the configuration "$l".
+    # $l has this format (values can be different): 
+    #	 geometry=640x480 bw=300 {codec=H.263 -qlty 40} grabsize=256x192 framerate=25
+    private method SaveOne {l} 
+
+}
+
+#--------------------------------------
+
+body VideoConfigTablesC::Load {} {
+    
+    set names [session Activity GetResource Video conftables ""]
+
+    foreach n $names {
+	if {[info exists configt($n)]} {
+	    unset configt($n)
+	}
+	
+	set configt($n) [VideoConfigTablesC "#auto" $n]
+    }
+}    
+
+#--------------------------------------
+
+body VideoConfigTablesC::GetConfig {name geometry bw} {
+    
+    if {[info exists configt($name)]} {
+	return [$configt($name) Get $geometry $bw]
+    } else {
+	error "Unknown video configuration: \"$name\""
+    }    
+}    
+
+#--------------------------------------
+
+body VideoConfigTablesC::DumpAll {} {
+    
+    foreach n [array names configt] {
+	$configt($n) Dump	
+    }
+}
+
+#--------------------------------------
+
+body VideoConfigTablesC::constructor {_name} {
+    
+    set name $_name
+
+    set table [session Activity GetResource Video conftable.$name ""]
+
+    set definedpixels ""
+    
+    foreach i $table {
+	SaveOne $i
+    }
+
+    # sorting
+    set definedpixels [lsort -integer -decreasing $definedpixels]
+
+    # sorting
+    foreach dp $definedpixels {
+	set definedbws($dp) [lsort -integer -decreasing $definedbws($dp)]
+    }
+}
+    
+#--------------------------------------
+
+body VideoConfigTablesC::Get {geometry bw} {
+
+    # Removes initial 0 to avoid Octal interpretation.
+    regsub {^0*([0-9]+)} $bw {\1} bw
+
+    set pixels [Geometry2Pixels $geometry]
+    foreach i $definedpixels {
+	if {$pixels >= $i} {
+	    foreach h $definedbws($i) {
+		if {$bw >= $h} {
+		    return $values($i,$h)
+		}
+	    }
+	    break
+	}
+    }
+
+    error "Configuration for geometry=$geometry and bw=$bw not found."
+}
+
+#--------------------------------------
+
+body VideoConfigTablesC::Dump {} {
+
+    puts "Video configuration table: \"$name\""
+    foreach p $definedpixels {
+	puts "  - Pixels=$p"
+	foreach b $definedbws($p) {
+	    puts "    BW=$b  => $values($p,$b)"
+	}
+	puts ""
+    }
+}
+    
+#--------------------------------------
+
+body VideoConfigTablesC::Geometry2Pixels {g} {
+
+    if {[regexp {^([0-9]+)x([0-9]+).*$} $g todo w h] == 0} {
+	error "Invalid geometry value: $g"
+    }
+
+    # Removes initial 0 to avoid Octal interpretation.
+    regsub {^0*([0-9]+)} $w {\1} w
+    regsub {^0*([0-9]+)} $h {\1} h
+
+    return [expr $w*$h]
+}
+
+#--------------------------------------
+
+body VideoConfigTablesC::GetOption {list opt} {
+
+    set pos [lsearch -regexp $list $opt]
+    if {$pos == -1} {
+	error "Option \"$opt\" not found in list \"$list\""
+    } else {
+	set aux [lindex $list $pos]
+	regexp "$opt=(.*)" $aux todo value
+	return $value 
+    }
+}
+
+#--------------------------------------
+
+body VideoConfigTablesC::SaveOne {l} {
+    
+    set g      [GetOption $l geometry]
+    set pixels [Geometry2Pixels $g]
+
+    set bw [GetOption $l bw]
+
+    # Removes initial 0 to avoid Octal interpretation.
+    regsub {^0*([0-9]+)} $bw {\1} bw
+    
+    if {[lsearch -exact $definedpixels $pixels] == -1} {
+	lappend definedpixels $pixels    
+	set definedbws($pixels) ""
+    }
+
+    lappend definedbws($pixels) $bw 
+
+    set codec [GetOption $l codec]
+    set grab  [GetOption $l grabsize]
+    set frate [GetOption $l framerate]
+
+    set values($pixels,$bw) [list $codec $grab $frate]
+}
+
+#--------------------------------------
+

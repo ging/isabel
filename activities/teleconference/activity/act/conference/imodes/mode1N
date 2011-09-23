@@ -1,0 +1,127 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+mode1N.whatis:      imode
+mode1N.scene.name: video
+
+mode1N.Audio:       -active 1 \
+                    -setmutes 1
+
+
+mode1N.Video:       -active 1 \
+                    -layout {lmode1N_1 lmode1N_2 lmode1N_3 lmode1N_4 \
+	                     lmode1N_5 lmode1N_6 lmode1N_7 lmode1N_8 lmode1N_10}
+
+
+mode1N.Titles:       -roottitleslayout tlmode1N
+
+
+
+mode1N.SldFtp:     -active 1 \
+                   -videobwfactor _ISERV_SLDFTP_VF_BW \
+                   -maxbw _ISERV_SLDFTP_FTP_BW
+
+#------------------------------------
+
+Video.layout.lmode1N_1: \
+ {video 448x336+512+150 _ISERV_VID_MODE1N_0_BW} \
+ {video 192x144+128+243 _ISERV_VID_MODE1N_1_BW} 
+
+
+Video.layout.lmode1N_2: \
+ {video 448x336+512+150 _ISERV_VID_MODE1N_0_BW} \
+ {video 192x144+128+128 _ISERV_VID_MODE1N_2_BW} \
+ {video 192x144+128+358 _ISERV_VID_MODE1N_2_BW}
+
+Video.layout.lmode1N_3: \
+ {video 448x336+512+150 _ISERV_VID_MODE1N_0_BW} \
+ {video 192x144+128+013 _ISERV_VID_MODE1N_3_BW} \
+ {video 192x144+128+243 _ISERV_VID_MODE1N_3_BW} \
+ {video 192x144+128+473 _ISERV_VID_MODE1N_3_BW} 
+
+Video.layout.lmode1N_4: \
+ {video 448x336+512+150 _ISERV_VID_MODE1N_0_BW} \
+ {video 192x144+128+013 _ISERV_VID_MODE1N_4_BW} \
+ {video 192x144+128+203 _ISERV_VID_MODE1N_4_BW} \
+ {video 192x144+128+393 _ISERV_VID_MODE1N_4_BW} \
+ {video 192x144+128+583 _ISERV_VID_MODE1N_4_BW} 
+
+Video.layout.lmode1N_5: \
+ {video 448x336+512+150 _ISERV_VID_MODE1N_0_BW} \
+ {video 192x144+040+013 _ISERV_VID_MODE1N_5_BW} \
+ {video 192x144+270+013 _ISERV_VID_MODE1N_5_BW} \
+ {video 192x144+040+203 _ISERV_VID_MODE1N_5_BW} \
+ {video 192x144+270+203 _ISERV_VID_MODE1N_5_BW} \
+ {video 192x144+040+393 _ISERV_VID_MODE1N_5_BW} 
+
+Video.layout.lmode1N_6: \
+ {video 448x336+512+150 _ISERV_VID_MODE1N_0_BW} \
+ {video 192x144+040+013 _ISERV_VID_MODE1N_6_BW} \
+ {video 192x144+270+013 _ISERV_VID_MODE1N_6_BW} \
+ {video 192x144+040+203 _ISERV_VID_MODE1N_6_BW} \
+ {video 192x144+270+203 _ISERV_VID_MODE1N_6_BW} \
+ {video 192x144+040+393 _ISERV_VID_MODE1N_6_BW} \
+ {video 192x144+270+393 _ISERV_VID_MODE1N_6_BW} 
+
+Video.layout.lmode1N_7: \
+ {video 448x336+512+150 _ISERV_VID_MODE1N_0_BW} \
+ {video 192x144+040+013 _ISERV_VID_MODE1N_7_BW} \
+ {video 192x144+270+013 _ISERV_VID_MODE1N_7_BW} \
+ {video 192x144+040+203 _ISERV_VID_MODE1N_7_BW} \
+ {video 192x144+270+203 _ISERV_VID_MODE1N_7_BW} \
+ {video 192x144+040+393 _ISERV_VID_MODE1N_7_BW} \
+ {video 192x144+270+393 _ISERV_VID_MODE1N_7_BW} \
+ {video 192x144+040+583 _ISERV_VID_MODE1N_7_BW} 
+
+Video.layout.lmode1N_8: \
+ {video 448x336+512+150 _ISERV_VID_MODE1N_0_BW} \
+ {video 192x144+040+013 _ISERV_VID_MODE1N_8_BW} \
+ {video 192x144+270+013 _ISERV_VID_MODE1N_8_BW} \
+ {video 192x144+040+203 _ISERV_VID_MODE1N_8_BW} \
+ {video 192x144+270+203 _ISERV_VID_MODE1N_8_BW} \
+ {video 192x144+040+393 _ISERV_VID_MODE1N_8_BW} \
+ {video 192x144+270+393 _ISERV_VID_MODE1N_8_BW} \
+ {video 192x144+040+583 _ISERV_VID_MODE1N_8_BW} \
+ {video 192x144+270+583 _ISERV_VID_MODE1N_8_BW}
+
+Video.layout.lmode1N_10: \
+ {video 448x336+512+150 _ISERV_VID_MODE1N_0_BW} \
+ {video 128x096+088+025 _ISERV_VID_MODE1N_10_BW} \
+ {video 128x096+286+025 _ISERV_VID_MODE1N_10_BW} \
+ {video 128x096+088+166 _ISERV_VID_MODE1N_10_BW} \
+ {video 128x096+286+166 _ISERV_VID_MODE1N_10_BW} \
+ {video 128x096+088+307 _ISERV_VID_MODE1N_10_BW} \
+ {video 128x096+286+307 _ISERV_VID_MODE1N_10_BW} \
+ {video 128x096+088+448 _ISERV_VID_MODE1N_10_BW} \
+ {video 128x096+286+448 _ISERV_VID_MODE1N_10_BW} \
+ {video 128x096+088+588 _ISERV_VID_MODE1N_10_BW} \
+ {video 128x096+286+588 _ISERV_VID_MODE1N_10_BW}
+
+#------------------------------------
+
+Titles.roottitles.layout.tlmode1N:     {512 535 LEFT}
+
+#------------------------------------
+
+
+
+

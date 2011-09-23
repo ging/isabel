@@ -1,0 +1,182 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# details.itcl
+#
+# Details of the Interaction mode to apply.
+#
+#########################################################################
+
+class DetailsTCC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Reference to the TeleConferenceControlC object
+    public variable tcobj
+
+    #
+    # References to internal objects
+    #
+
+    public variable usersobj 
+    public variable roottitlesobj 
+    public variable wallpaperobj 
+    public variable videositeobj 
+    public variable vncobj 
+    public variable audioobj 
+    public variable speechmeterobj 
+    public variable sceneobj
+
+    # Create the Details object.
+    constructor {_wroot _tcobj} {} {}
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget where it is packed
+    private variable topw
+    
+    # Makes the GUI
+    private method MakeGUI {}
+
+}
+
+#---------------------------------------------------------------
+
+body DetailsTCC::constructor {_wroot _tcobj} {
+
+    set topw $_wroot
+
+    MakeGUI
+}
+
+#---------------------------------------------------------------
+
+body DetailsTCC::destructor {} {
+
+    catch {bind $topw.destroy <Destroy> ""}
+    if {[winfo exists $topw]} {
+	destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body DetailsTCC::MakeGUI {} {
+
+    #-------------------------------------------------
+    # Container
+    #-------------------------------------------------
+
+    frame $topw 
+
+    #---
+    # bottom: Apply, audio, speechmeter 
+    #---
+
+    frame $topw.bottom
+
+    set wbottom $topw.bottom
+
+    set audioobj       [TC_AudioC       "::#auto" $wbottom.audio]
+    set speechmeterobj [TC_SpeechMeterC "::#auto" $wbottom.speechmeter]
+
+    grid columnconfigure $wbottom 0 -weight 4 -pad 25 
+    grid columnconfigure $wbottom 1 -weight 1 -pad 3 
+    grid columnconfigure $wbottom 2 -weight 1 -pad 3 
+    grid columnconfigure $wbottom 3 -weight 1 -pad 3 
+    grid columnconfigure $wbottom 4 -weight 1 -pad 3 
+    grid columnconfigure $wbottom 5 -weight 1 -pad 3 
+    grid columnconfigure $wbottom 6 -weight 1 -pad 3 
+
+    grid $wbottom.audio       -row 0 -column 3 -rowspan 2  
+    grid $wbottom.speechmeter -row 0 -column 5 -rowspan 2  
+
+
+    #---
+    # Paned frame
+    #---
+
+    ::iwidgets::panedwindow $topw.pw -orient vertical 
+
+
+    $topw.pw add left
+    $topw.pw add center
+    $topw.pw add right
+
+    set wleft   [$topw.pw childsite left]
+    set wcenter [$topw.pw childsite center]
+    set wright  [$topw.pw childsite right]
+    
+    #---
+    # Paned frame - left side - sites and titles
+    #---
+
+    set usersobj      [TC_PartnerList  "::#auto" $wleft.sites]
+
+    #---
+    # Paned frame - center side:  VNC servers, Video site, and Wallpaper
+    #---
+
+    set vncobj        [TC_VNCC       "::#auto" $wcenter.server]
+    set videositeobj  [TC_VideoSiteC "::#auto" $wcenter.videosite]
+    set wallpaperobj  [TC_WallpaperC "::#auto" $wcenter.browser]
+
+    #---
+    # Paned frame - right side:  Scene information
+    #---
+
+    set sceneobj        [TC_SceneC       "::#auto" $wright.scene]
+    set roottitlesobj   [TC_RootTitlesC  "::#auto" $wright.titles]
+
+    #---
+    # some packs
+    #---
+
+    pack $topw.bottom -side bottom -fill x -pady 0 -padx 0
+
+    pack $topw.pw -side bottom -fill both -expand 1 -pady 0 -padx 0
+
+    pack $wcenter.server    -fill both -expand 1
+    pack $wcenter.videosite -fill x -expand 0
+    pack $wcenter.browser   -fill x -expand 0
+    
+    pack $wleft.sites  -side top -fill both -expand 1 -pady 0 -padx 0
+
+    pack $wright.titles -side top -fill both -expand 0 -pady 0 -padx 0 -ipady 2
+    pack $wright.scene  -side top -fill both -expand 1 -pady 0 -padx 0 -ipady 2
+
+    #-------------------------------------------------
+    
+    frame $topw.destroy
+    bind $topw.destroy <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+

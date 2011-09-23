@@ -1,0 +1,390 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# tc_menubar.itcl
+#
+# The Control panel menubar.
+#
+#########################################################################
+
+class TC_MenubarC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Show session script nodes.
+    public variable show_scripts 1
+
+    # Show session program nodes.
+    public variable show_programs 1
+
+    # Show menu icon
+    public variable show_menu_icon 0
+    
+    # Show delete icon
+    public variable show_delete_icon 0
+    
+    # Show movement icons
+    public variable show_mv_icons 0
+
+    # Create the widget in $w
+    # $_tcobj is a reference to the TeleConferenceControlC object
+    constructor {w _tcobj} {}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget where it is packed
+    private variable topw
+
+    # Reference to the TeleConferenceControlC object.
+    private variable tcobj
+
+    destructor {}
+
+    # Makes the GUI
+    private method MakeGUI {}
+
+    #-- File 
+
+    # Load, Save and delete agenda files.
+    private method loadAgenda {}
+    private method saveAgenda {}
+    private method cleanupAgenda {}
+
+    #-- Edit
+
+    # Create sessions, sites and speakers
+    private method newSession {}
+    private method newSite {}
+    private method newSpeaker {}
+
+
+    #-- View
+
+    # Expand/collapse agenda view
+    private method expandAgenda {}
+    private method collapseAgenda {}
+
+
+    # Show/Hide details
+    private method showAgendaDetails {}
+    private method hideAgendaDetails {}
+
+    #-- Carrousel
+
+    # Stops the carrousel
+    private method stopCarrousel {}
+
+    # Set the carrousel period
+    private method setCarrouselPeriod {}
+    
+    #-- Helpers
+
+    # Refresh agenda
+    private method refreshAgenda {}
+
+}
+
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::constructor {w _tcobj} {
+
+    set topw $w
+
+    set tcobj  $_tcobj
+
+    MakeGUI
+
+}
+
+#---------------------------------------------------------------
+
+
+body TC_MenubarC::destructor {} {
+
+    catch {bind $topw <Destroy> ""}
+    if {[winfo exists $topw]} {
+        destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::MakeGUI {} {
+
+    ::iwidgets::menubar $topw \
+	-padx 2 \
+	-pady 0 \
+	-borderwidth 2 \
+	-menubuttons {
+	    menubutton file \
+		-text File \
+		-menu { 
+		    command load \
+			-label "Load Agenda" \
+			-command "[code $this loadAgenda]"
+		    command save \
+			-label "Save Agenda" \
+			-command "[code $this saveAgenda]"
+                    separator sepf1
+		    command cleanup \
+			-label "Clean up Agenda" \
+			-command "[code $this cleanupAgenda]"
+		} 
+	    menubutton edit \
+		-text Edit \
+		-menu {
+		    command newsession \
+			-label "New Session" \
+			-command "[code $this newSession]"
+		    command newsite \
+			-label "New Site" \
+			-command "[code $this newSite]"
+		    command newspeaker \
+			-label "New Speaker" \
+			-command "[code $this newSpeaker]"
+		}
+	    menubutton view \
+		-text View \
+		-menu {
+		    command expand \
+			-label "Expand Agenda" \
+			-command "[code $this expandAgenda]"
+		    command collapse \
+			-label "Collapse Agenda" \
+			-command "[code $this collapseAgenda]"
+                    separator sepv1
+		    command show_details \
+			-label "Show details" \
+			-command "[code $this showAgendaDetails]"
+		    command hide_details \
+			-label "Hide details" \
+			-command "[code $this hideAgendaDetails]"
+                    separator sepv2
+		    checkbutton showscripts \
+			-label "Show script nodes" \
+			-variable "[scope show_scripts]" \
+			-onvalue  1 \
+			-offvalue 0 \
+			-command "[code $this refreshAgenda]"
+		    checkbutton showprograms \
+			-label "Show program nodes" \
+			-variable "[scope show_programs]" \
+			-onvalue  1 \
+			-offvalue 0 \
+			-command "[code $this refreshAgenda]"
+		    checkbutton menuicon \
+			-label "Show Menu icon" \
+			-variable "[scope show_menu_icon]" \
+			-onvalue  1 \
+			-offvalue 0 \
+			-command "[code $this refreshAgenda]"
+		    checkbutton delicon \
+			-label "Show Delete icon" \
+			-variable "[scope show_delete_icon]" \
+			-onvalue  1 \
+			-offvalue 0 \
+			-command "[code $this refreshAgenda]"
+		    checkbutton showmv \
+			-label "Show Movement icons" \
+			-variable "[scope show_mv_icons]" \
+			-onvalue  1 \
+			-offvalue 0 \
+			-command "[code $this refreshAgenda]"
+		}
+	    menubutton carrousel \
+		-text Carrousel \
+		-menu {
+		    command stopcarrousel \
+			-label "Stop Carrousel" \
+			-command "[code $this stopCarrousel]"
+                    separator sepc1
+		    command carrouselperiod \
+			-label "Set Carrousel period" \
+			-command "[code $this setCarrouselPeriod]"
+		}
+	}
+
+    [$topw component menubar] configure -relief flat    
+
+    #--
+
+    bind $topw <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::loadAgenda {} {
+
+    set _agenda [$tcobj cget -agendaobj]
+    set _carrousel [$_agenda getCarrousel]
+    
+    $_carrousel stop
+    $_agenda LoadFileBrowser
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::saveAgenda {} {
+
+    set _agenda [$tcobj cget -agendaobj]
+    
+    $_agenda SaveFileBrowser
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::cleanupAgenda {} {
+
+    set _agenda [$tcobj cget -agendaobj]
+    set _carrousel [$_agenda getCarrousel]
+    
+    $_carrousel stop    
+    $_agenda LoadEmptyConference 1
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::newSession {} {
+
+    set _agenda         [$tcobj cget -agendaobj]
+    set _confObj        [$_agenda getConference]
+    set _sessionListObj [$_confObj cget -sessions]
+
+    $_sessionListObj newChild
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::newSite {} {
+
+    set _agenda [$tcobj cget -agendaobj]
+    set _confObj        [$_agenda getConference]
+    set _siteListObj [$_confObj cget -sites]
+
+    $_siteListObj newChild
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::newSpeaker {} {
+
+    set _agenda [$tcobj cget -agendaobj]
+    set _confObj        [$_agenda getConference]
+    set _partListObj [$_confObj cget -participants]
+
+    $_partListObj newChild
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::expandAgenda {} {
+
+    set _agenda [$tcobj cget -agendaobj]
+    
+    $_agenda expand
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::collapseAgenda {} {
+
+    set _agenda [$tcobj cget -agendaobj]
+    
+    $_agenda collapse
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::showAgendaDetails {} {
+
+    $tcobj FullView
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::hideAgendaDetails {} {
+
+    $tcobj ReducedView
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::stopCarrousel {} {
+    
+    set _agenda [$tcobj cget -agendaobj]
+    set _carrousel [$_agenda getCarrousel]
+    
+    $_carrousel stop
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::setCarrouselPeriod {} {
+
+    # Current period
+    
+    set _agenda [$tcobj cget -agendaobj]
+    set _carrousel [$_agenda getCarrousel]
+    
+    set _period [$_carrousel getPeriod]
+
+    # Dialog:
+
+    ::iwidgets::promptdialog $topw.sn \
+	    -title "Carrousel" \
+	    -modality application \
+	    -labeltext "Carrousel period: (#h #m #)" 
+    
+    $topw.sn hide Apply
+    $topw.sn hide Help
+
+    $topw.sn insert end $_period
+    
+    wm geometry $topw.sn +400+300
+    
+    if {[$topw.sn activate]} {
+	set _period [$topw.sn get]
+	$_carrousel setPeriod $_period
+    }
+
+    destroy $topw.sn
+}
+
+#---------------------------------------------------------------
+
+body TC_MenubarC::refreshAgenda {} {
+
+    set _agenda [$tcobj cget -agendaobj]
+    
+    $_agenda refresh
+}
+
+#---------------------------------------------------------------
+
+

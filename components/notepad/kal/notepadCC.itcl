@@ -1,0 +1,132 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+class NotepadComponentClass {
+    inherit Component
+    
+    
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args}
+    public method Cmd {args}
+
+    # Start daemon.
+    private method CreateNotepadDaemon {}
+
+    constructor {} {   
+	Component::constructor Notepad
+    } {
+    }
+}
+
+#---------------------------------------------------------------
+
+body NotepadComponentClass::Create {first} {
+
+    if {[CreateNotepadDaemon] == -1} {
+	return -1
+    }
+
+    if {$first} {
+	StartAsCoordinator
+    }
+    return 0
+}
+
+
+#---------------------------------------------------------------
+
+body NotepadComponentClass::CreateNotepadDaemon {} {
+    
+    DebugTraceMsg "- Creating Notepad daemon." 1
+    
+    set me [SiteManager::MyChId] 
+    
+    if {[catch {ISABEL_Notepad} errmsg]} {
+        ErrorTraceMsg "Notepad can't be started:\n$errmsg"
+        return -1
+    }
+    
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body NotepadComponentClass::AddMySite {} {
+
+}
+
+#---------------------------------------------------------------
+
+body NotepadComponentClass::AddRemoteSite {site_id new} {
+
+    set _chid [SiteManager::GetSiteInfo $site_id chid]
+
+    set n [SiteManager::GetSiteInfo $site_id name]
+    DebugTraceMsg "- $n added to Notepad." 1
+    
+    NotepadAddPartner $_chid
+    NotepadSync $_chid
+}
+
+#---------------------------------------------------------------
+
+body NotepadComponentClass::DelMySite {} {
+
+    catch {NotepadQuit}
+}
+
+#---------------------------------------------------------------
+
+body NotepadComponentClass::DelRemoteSite {site_id} {
+
+    set _chid [SiteManager::GetSiteInfo $site_id chid]
+
+    NotepadRemovePartner $_chid
+}
+
+#---------------------------------------------------------------
+
+body NotepadComponentClass::SetInteractionMode {imname nsec site_id_list args} {
+    
+    set scenary [session Activity GetResource $imname Notepad ""]
+    set active  [GetOptionListValue $scenary -active 0]
+    
+    if {$active == 0} {
+        NotepadUnmap
+    } else {
+        NotepadMap
+    }
+}
+
+#---------------------------------------------------------------
+
+body NotepadComponentClass::Cmd {args} {
+
+    eval $args
+}
+
+#---------------------------------------------------------------
+

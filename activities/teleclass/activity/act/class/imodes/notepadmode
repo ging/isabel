@@ -1,0 +1,56 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#--------------------------------------------------------------------
+# INTERACTION MODE: notepadmode
+#--------------------------------------------------------------------
+
+notepadmode.whatis:       imode
+notepadmode.scene.name:   application sharing
+
+notepadmode.Audio:        -active 1 -skip 1
+
+notepadmode.Notepad:      -active 1
+notepadmode.Video:        -active 1 -skip 1
+
+notepadmode.Questions:    -active 1 \
+                          -resetlayout "lnpad_reset+lpay1hq lnpad_reset+lpay2hq lnpad_reset+lpay6hq lnpad_reset+lpay24hq lnpad_reset+lpay35hq" \
+                          -layout lnpad_ques \
+                          -othermap 0 
+
+# --------------------------------------------------------------------
+
+#
+# Layouts for the Notepad video.
+#
+
+Video.layout.lnpad_reset: \
+ {video 192x144+000+000 _ISERV_VID_NPAD_RESET_BW}
+
+# --------------------------------------------------------------------
+
+Video.layout.lnpad_ques: \
+ {video 192x144+000+187 _ISERV_VID_NPAD_QUES_BW} \
+ {video 192x144+000+000 _ISERV_VID_NPAD_QUES_BW}
+
+# --------------------------------------------------------------------
+

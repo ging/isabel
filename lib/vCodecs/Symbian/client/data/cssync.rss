@@ -1,0 +1,95 @@
+/* Copyright (c) 2004, Nokia. All rights reserved */
+
+
+NAME CSSY
+
+// INCLUDE FILES
+#include <eikon.rh>
+#include <avkon.rh>
+#include <avkon.rsg>
+
+#include "CSSync.hrh"
+#include "CSSync.loc"
+
+
+// -----------------------------------------------------------------------------
+//
+//    Define the resource file signature
+//    This resource should be empty.
+//
+// -----------------------------------------------------------------------------
+//
+RESOURCE RSS_SIGNATURE
+        {
+        // No implementation required
+        }
+
+// -----------------------------------------------------------------------------
+//
+//    Default Document Name
+//
+// -----------------------------------------------------------------------------
+//
+RESOURCE TBUF
+        {
+        buf="";
+        }
+
+// -----------------------------------------------------------------------------
+//
+//    Define default menu and CBA key.
+//
+// -----------------------------------------------------------------------------
+//
+RESOURCE EIK_APP_INFO
+    {
+    menubar = r_cssync_menubar;
+    cba = R_AVKON_SOFTKEYS_OPTIONS_EXIT;
+    }
+
+
+// -----------------------------------------------------------------------------
+//
+//   r_cssync_menubar
+//   Menubar for CSSync example
+//
+// -----------------------------------------------------------------------------
+//
+RESOURCE MENU_BAR r_cssync_menubar
+    {
+    titles =
+        {
+        MENU_TITLE
+            {
+            menu_pane=r_cssync_menu;
+            }
+        };
+    }
+
+
+// -----------------------------------------------------------------------------
+//
+//   r_cssync_menu
+//   Menu for "Options"
+//
+// -----------------------------------------------------------------------------
+//
+RESOURCE MENU_PANE r_cssync_menu
+    {
+    items =
+        {
+        MENU_ITEM
+            {
+            command = EDisplayTime;
+            txt = qtn_cssy_submenu_display;
+            },
+        MENU_ITEM
+            {
+            command = EAknCmdExit;
+            txt = qtn_cssy_submenu_exit;
+            }
+        };
+    }
+
+
+// End of File

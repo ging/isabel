@@ -1,0 +1,78 @@
+#! /bin/sh
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+Usage() {
+
+  echo "Usage:"
+  echo "  isabel_loop [-kill <seconds>] <command> <args>"
+  echo " "
+  echo "  Execute the given command, and if it died, then it is restarted." 
+  echo " " 
+  echo "  Options:"
+  echo "     -kill: kill and restart the command every <seconds> seconds."
+  echo " " 
+  echo " " 
+  exit 1
+}
+
+
+KILLPERIOD=""
+
+ARGS=1
+
+while [ "$ARGS" = "1" ] ; do
+   case $1 
+   in
+      -kill) 
+          KILLPERIOD=$2
+          shift
+          shift
+          ;;
+      -h)
+          Usage
+          ;;
+      *)  
+          ARGS=0
+   esac
+done
+
+while true ; do
+
+     # Start program in background and get its pid
+     $* &
+     pid=$!
+
+     # Periodic kill
+     if [ "$KILLPERIOD" != "" ] ; then
+        sh -c "sleep $KILLPERIOD ; kill $pid ; kill -9 $pid" &
+     fi
+
+     # Waits for program termination.
+     wait $pid
+
+     # Avoid inmediate program relaunching.
+     sleep 2
+
+done
+

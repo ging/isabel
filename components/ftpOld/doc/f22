@@ -1,0 +1,3 @@
+cftp_create_channel(1)
+cftp_bind(2,1,sofia,9876)
+cftp_recv(1,/tmp,test.kk)

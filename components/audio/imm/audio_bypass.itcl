@@ -1,0 +1,178 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+after idle AudioBypassTranslator::initialice
+
+
+class AudioBypassTranslator {
+
+    # Table with the slaves of each audio master.
+    # $masterSlaves($masterSiteId) is a list with the siteid of the
+    # slaves of the given master.
+    private common masterSlaves
+
+    # Static Constructor
+    public proc initialice {}
+
+    # Stores in the SMS server the capture/mute state of all the sites. Sites in $site_id_list are
+    # configured as capturing sites, and any other site is configured as muted.
+    # 
+    # These values are stored in the Audio_site_<$SITEID> state, using the "-capture" option.
+    #
+    # However, the bypasses configuration is applied to the given list before storing the states,
+    # i.e. the slave site_ids are replaced by its master bypass site_ids.
+    # 
+    public proc setCaptures {site_id_list}
+
+    # Returns the master siteid of the given slave siteid.
+    # If the give site has no master, then it returns "".
+    private proc getMaster {_slave}
+
+    # Print into stdout the current stored values.
+    private proc dump {}
+
+    # Replaces in the given site_id list, the slave sites by its master sites.
+    private proc masterize {site_id_list}
+
+    # Process the SMS message with the audio bypasses state.
+    # Updates the masterSlaves property.
+    private proc processBypassState {args}
+}
+
+#---------------------------------------------------------
+
+body AudioBypassTranslator::initialice {} {
+
+    sms joinKey Audio_bypass [code processBypassState]
+}
+
+#---------------------------------------------------------
+
+body AudioBypassTranslator::getMaster {_slave} {
+    
+    foreach _m [array names masterSlaves] {
+	if {[lsearch -exact $masterSlaves($_m) $_slave] != -1} {
+	    return $_m
+	}
+    }
+    return "" 
+}
+
+#---------------------------------------------------------
+
+body AudioBypassTranslator::dump {} {
+    
+    puts "== Audio Master-Slaves dependencies:"
+    
+    foreach _m [array names masterSlaves] {
+	puts "   $_m  => $masterSlaves($_m)"
+    }
+}
+
+#---------------------------------------------------------
+
+body AudioBypassTranslator::masterize {site_id_list} {
+    
+    set _bypass [session Activity GetResource Audio bypass 0]
+    
+    if {$_bypass == "0"} {
+	return $site_id_list
+    }
+    
+    set _res ""
+    
+    set _all_sites [SiteManager::GetSites]
+    
+    foreach _sid $site_id_list {
+	
+	# If site $_sid is not running Audio, then I skip it:
+	if {[lsearch -exact $_all_sites $_sid] == -1} continue
+	
+	# get the master associated to this site:
+	set _master_sid [getMaster $_sid]
+	
+	if {$_master_sid == ""} {
+	    if {[lsearch -exact $_res $_sid] == -1} {
+		lappend _res $_sid
+	    }
+	} else {
+	    if {[lsearch -exact $_res $_master_sid] == -1} {
+		lappend _res $_master_sid
+	    }
+	}
+    }
+    return $_res
+}
+
+#---------------------------------------------------------
+
+body AudioBypassTranslator::setCaptures {site_id_list} {
+    
+    # Replace each slave site_id with its master site_id:    
+    set _bypassed_site_id_list [masterize $site_id_list]
+    
+    # Bypassed sites are capturing:
+    foreach _sid $_bypassed_site_id_list {
+	sms setState Audio_site_$_sid add -site_id $_sid -capture 1
+    }
+    
+    # Other sites are muted:
+    set _all_sites [SiteManager::GetSites]
+    foreach _sid $_all_sites {
+	if {[lsearch -exact $_bypassed_site_id_list $_sid] == -1} {
+	    sms setState Audio_site_$_sid add -site_id $_sid -capture 0
+	}
+    }
+}
+
+#---------------------------------------------------------
+
+body AudioBypassTranslator::processBypassState {args} {
+
+    # Cleanup old values:
+    array unset masterSlaves
+
+    # Parse new values:
+
+    set _len [llength $args]
+    set _pos 0
+
+    while {$_pos < $_len} {
+
+	set _opt [lindex $args $_pos]
+	incr _pos
+	
+	if {[regexp -- {-bypass_of_(.*)} $_opt _all _slave] == 1} {  
+	    
+	    set _master [lindex $args $_pos]
+
+	    if {$_master != ""} {
+		lappend masterSlaves($_master) $_slave
+	    }
+	}
+    }
+
+    dump
+}
+
+#---------------------------------------------------------

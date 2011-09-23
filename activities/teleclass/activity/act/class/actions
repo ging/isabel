@@ -1,0 +1,107 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+# --------------------------------------------------------------------
+#                    USER VIEWS DEFINITION
+# --------------------------------------------------------------------
+
+# --------- Set Chat mode ------------
+
+ChatMode.whatis:    action
+ChatMode.pos:       -row 0 -column 1
+ChatMode.title:     @pall.gif
+ChatMode.balloon:   Chat mode
+ChatMode.cmd:       ClassCtrl Cmd Execute Chat %U
+
+# --------- Set Question mode ------------
+
+QuestionsMode.whatis:    action
+QuestionsMode.pos:       -row 0 -column 2
+QuestionsMode.title:     @pques5.gif
+QuestionsMode.balloon:   Question mode
+QuestionsMode.cmd:       ClassCtrl Cmd Execute Questions %U
+
+# --------- Set One and Main Sites mode ------------
+
+OneMainMode.whatis:    action
+OneMainMode.pos:       -row 0 -column 3
+OneMainMode.title:     @gcq1.gif
+OneMainMode.balloon:   One and Main Sites mode
+OneMainMode.cmd:       ClassCtrl Cmd Execute OneMain %U
+    
+# --------- Set Big One mode ------------
+
+BigOneMode.whatis:   action
+BigOneMode.pos:      -row 0 -column 4
+BigOneMode.title:    @gc1big.gif
+BigOneMode.balloon:  Big One mode
+BigOneMode.cmd:      ClassCtrl Cmd Execute BigOne %U
+
+# --------- Set One + Vga mode ------------
+
+OneVgaMode.whatis:    action
+OneVgaMode.pos:       -row 0 -column 5
+OneVgaMode.title:     @p1vga.gif
+OneVgaMode.balloon:   One + VGA mode
+OneVgaMode.cmd:       ClassCtrl Cmd Execute OneVga %U
+    
+# --------- Set Vnc mode ------------
+
+VncMode.whatis:    action
+VncMode.pos:       -row 0 -column 6
+VncMode.title:     @pqvnc.gif
+VncMode.balloon:   Application sharing mode
+VncMode.cmd:       ClassCtrl Cmd Execute AppSharing %U [session Environ cget -scenary_display]
+
+# --------- Set Vga mode ------------
+
+VgaMode.whatis:    action
+VgaMode.pos:       -row 0 -column 7
+VgaMode.title:     @pqvga.gif
+VgaMode.balloon:   VGA mode
+VgaMode.cmd:       ClassCtrl Cmd Execute Vga %U
+    
+# --------- Set Notepad mode ------------
+
+NotepadMode.whatis:    action
+NotepadMode.pos:       -row 0 -column 8
+NotepadMode.title:     @pqnpad.gif
+NotepadMode.balloon:   Notepad mode
+NotepadMode.cmd:       ClassCtrl Cmd Execute Notepad %U
+    
+# --------- Set Whiteboard mode ------------
+
+WbMode.whatis:    action
+WbMode.pos:       -row 0 -column 9
+WbMode.title:     @pqwb2.gif
+WbMode.balloon:   Whiteboard mode
+WbMode.cmd:       ClassCtrl Cmd Execute Whiteboard %U
+
+# --------- Open menuitems ------------
+
+Admon.whatis:    action
+Admon.pos:       -row 0 -column 10
+Admon.title:     @tools.gif
+Admon.balloon:   Open administration menu
+Admon.cmd:       interface OpenMenuitemsMenu
+

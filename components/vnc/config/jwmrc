@@ -1,0 +1,325 @@
+ <?xml version="1.0"?>
+ 
+ <JWM>
+ 
+    <!-- The root menu, if this is undefined you will not get a menu. -->
+    <!-- Additional RootMenu attributes: onroot, labeled, label -->
+    <RootMenu height="15" onroot="123">
+       <Program icon="rxvt.png" label="Terminal">x-terminal-emulator</Program>
+       <Program icon="firefox.png" label="Www Browser">x-www-browser</Program>
+       <Program label="File Browser">java -jar $ISABEL_DIR/libexec/isabel_argonauta.jar</Program>
+ 
+      <Menu label="Applications">
+        <Menu label="Accessibility">
+          <Program label="Xmag" confirm="false">xmag</Program>
+        </Menu>
+        <Menu label="Data Management">
+          <Program label="Tomboy" confirm="false">/usr/bin/tomboy</Program>
+        </Menu>
+        <Menu label="Editors">
+          <Program label="Emacs 22 (GTK)" confirm="false">/usr/bin/emacs22-gtk</Program>
+          <Program label="Emacs 22 (text)" confirm="false">x-terminal-emulator  -T "Emacs 22 (text)" -e sh -c "/usr/bin/emacs22 -nw"</Program>
+          <Program label="Gedit" confirm="false">/usr/bin/gedit</Program>
+          <Program label="Nano" confirm="false">x-terminal-emulator  -T "Nano" -e sh -c "/bin/nano"</Program>
+          <Program label="Xedit" confirm="false">xedit</Program>
+        </Menu>
+        <Menu label="File Management">
+          <Program label="Baobab" confirm="false">/usr/bin/baobab</Program>
+          <Program label="Brasero" confirm="false">/usr/bin/brasero</Program>
+          <Program label="File-Roller" confirm="false">/usr/bin/file-roller</Program>
+          <Program label="GNOME Search Tool" confirm="false">/usr/bin/gnome-search-tool</Program>
+          <Program label="Nautilus" confirm="false">/usr/bin/nautilus</Program>
+        </Menu>
+        <Menu label="Graphics">
+          <Program label="GNOME Screenshot Tool" confirm="false">/usr/bin/gnome-panel-screenshot</Program>
+          <Program label="OpenOffice.org Draw" confirm="false">/usr/bin/oodraw</Program>
+          <Program label="The GIMP" confirm="false">/usr/bin/gimp</Program>
+          <Program label="XSane" confirm="false">/usr/bin/xsane</Program>
+          <Program label="X Window Snapshot" confirm="false">xwd | xwud</Program>
+        </Menu>
+        <Menu label="Network">
+          <Menu label="Communication">
+            <Program label="Evolution" confirm="false">/usr/bin/evolution</Program>
+            <Program label="Telnet" confirm="false">x-terminal-emulator  -T "Telnet" -e sh -c "/usr/bin/telnet"</Program>
+            <Program label="Terminal Server Client" confirm="false">/usr/bin/tsclient -f</Program>
+            <Program label="Xbiff" confirm="false">xbiff</Program>
+          </Menu>
+          <Menu label="File Transfer">
+            <Program label="FileZilla" confirm="false">/usr/bin/filezilla</Program>
+            <Program label="Transmission BitTorrent Client (GTK)" confirm="false">/usr/bin/transmission</Program>
+          </Menu>
+          <Menu label="Web Browsing">
+            <Program label="Firefox 3.5 Browser" confirm="false">/usr/bin/firefox-3.5</Program>
+            <Program label="w3m" confirm="false">x-terminal-emulator  -T "w3m" -e sh -c "/usr/bin/w3m /usr/share/doc/w3m/MANUAL.html"</Program>
+          </Menu>
+          <Program label="xtightvncviewer" confirm="false">/usr/bin/xtightvncviewer</Program>
+        </Menu>
+        <Menu label="Office">
+          <Program label="HPLIP Fax address book" confirm="false">/usr/bin/hp-fab</Program>
+          <Program label="HPLIP Fax utility" confirm="false">/usr/bin/hp-sendfax</Program>
+          <Program label="OpenOffice.org Calc" confirm="false">/usr/bin/oocalc</Program>
+          <Program label="OpenOffice.org Impress" confirm="false">/usr/bin/ooimpress</Program>
+          <Program label="OpenOffice.org Writer" confirm="false">/usr/bin/oowriter</Program>
+        </Menu>
+        <Menu label="Programming">
+          <Program label="Erlang Shell" confirm="false">x-terminal-emulator  -T "Erlang Shell" -e sh -c "/usr/bin/erl"</Program>
+          <Program label="GDB" confirm="false">x-terminal-emulator  -T "GDB" -e sh -c "/usr/bin/gdb"</Program>
+          <Program label="Python (v2.6)" confirm="false">x-terminal-emulator  -T "Python (v2.6)" -e sh -c "/usr/bin/python2.6"</Program>
+          <Program label="Ruby (irb1.8)" confirm="false">x-terminal-emulator  -T "Ruby (irb1.8)" -e sh -c "/usr/bin/irb1.8"</Program>
+          <Program label="Sun Java 6 Web Start" confirm="false">/usr/lib/jvm/java-6-sun-1.6.0.20/bin/javaws -viewer</Program>
+          <Program label="Tclsh8.4" confirm="false">x-terminal-emulator  -T "Tclsh8.4" -e sh -c "/usr/bin/tclsh8.4"</Program>
+          <Program label="TkWish8.4" confirm="false">x-terminal-emulator -e /usr/bin/wish8.4</Program>
+        </Menu>
+        <Menu label="Science">
+          <Menu label="Mathematics">
+            <Program label="Bc" confirm="false">x-terminal-emulator  -T "Bc" -e sh -c "/usr/bin/bc"</Program>
+            <Program label="Dc" confirm="false">x-terminal-emulator  -T "Dc" -e sh -c "/usr/bin/dc"</Program>
+            <Program label="GCalcTool" confirm="false">/usr/bin/gcalctool</Program>
+            <Program label="OpenOffice.org Math" confirm="false">/usr/bin/oomath</Program>
+            <Program label="Xcalc" confirm="false">xcalc</Program>
+          </Menu>
+        </Menu>
+        <Menu label="Shells">
+          <Program label="Bash" confirm="false">x-terminal-emulator  -T "Bash" -e sh -c "/bin/bash --login"</Program>
+          <Program label="Dash" confirm="false">x-terminal-emulator  -T "Dash" -e sh -c "/bin/dash -i"</Program>
+          <Program label="Sh" confirm="false">x-terminal-emulator  -T "Sh" -e sh -c "/bin/sh --login"</Program>
+        </Menu>
+        <Menu label="Sound">
+          <Program label="gmix (Gnome 2.0 Mixer)" confirm="false">/usr/bin/gnome-volume-control</Program>
+          <Program label="grecord (GNOME 2.0 Recorder)" confirm="false">/usr/bin/gnome-sound-recorder</Program>
+          <Program label="Rhythmbox" confirm="false">/usr/bin/rhythmbox</Program>
+        </Menu>
+        <Menu label="System">
+          <Menu label="Administration">
+            <Program label="Aptitude" confirm="false">x-terminal-emulator  -T "Aptitude" -e sh -c "/usr/bin/aptitude"</Program>
+            <Program label="Debian Task selector" confirm="false">x-terminal-emulator  -T "Debian Task selector" -e sh -c "su-to-root -c tasksel"</Program>
+            <Program label="DSL/PPPoE configuration tool" confirm="false">x-terminal-emulator  -T "DSL/PPPoE configuration tool" -e sh -c "/usr/sbin/pppoeconf"</Program>
+            <Program label="Editres" confirm="false">editres</Program>
+            <Program label="Gnome Control Center" confirm="false">/usr/bin/gnome-control-center</Program>
+            <Program label="GNOME Network Tool" confirm="false">/usr/bin/gnome-nettool</Program>
+            <Program label="HPLIP File printing" confirm="false">/usr/bin/hp-print</Program>
+            <Program label="pppconfig" confirm="false">x-terminal-emulator  -T "pppconfig" -e sh -c "su-to-root -p root -c /usr/sbin/pppconfig"</Program>
+            <Program label="Shares Admin" confirm="false">/usr/bin/shares-admin</Program>
+            <Program label="Sun Java 6 Plugin Control Panel" confirm="false">/usr/lib/jvm/java-6-sun-1.6.0.20/bin/ControlPanel</Program>
+            <Program label="Time Admin" confirm="false">/usr/bin/time-admin</Program>
+            <Program label="User accounts Admin" confirm="false">/usr/bin/users-admin</Program>
+            <Program label="WMakerConf" confirm="false">/usr/bin/wmakerconf</Program>
+            <Program label="Xclipboard" confirm="false">xclipboard</Program>
+            <Program label="Xfontsel" confirm="false">xfontsel</Program>
+            <Program label="Xkill" confirm="false">xkill</Program>
+            <Program label="Xrefresh" confirm="false">xrefresh</Program>
+          </Menu>
+          <Program label="GNOME system monitor" confirm="false">/usr/bin/gnome-system-monitor</Program>
+          <Menu label="Hardware">
+            <Program label="GNOME Floppy Formatter" confirm="false">/usr/bin/gfloppy</Program>
+            <Program label="HPLIP Toolbox" confirm="false">/usr/bin/hp-toolbox</Program>
+            <Program label="Xvidtune" confirm="false">xvidtune</Program>
+          </Menu>
+          <Menu label="Monitoring">
+            <Program label="GNOME Log Viewer" confirm="false">/usr/bin/gnome-system-log</Program>
+            <Program label="Pstree" confirm="false">x-terminal-emulator  -T "Pstree" -e sh -c "/usr/bin/pstree.x11"</Program>
+            <Program label="Sun Java 6 Console" confirm="false">/usr/lib/jvm/java-6-sun-1.6.0.20/bin/jconsole</Program>
+            <Program label="Top" confirm="false">x-terminal-emulator  -T "Top" -e sh -c "/usr/bin/top"</Program>
+            <Program label="Xconsole" confirm="false">xconsole -file /dev/xconsole</Program>
+            <Program label="Xev" confirm="false">x-terminal-emulator -e xev</Program>
+            <Program label="Xload" confirm="false">xload</Program>
+          </Menu>
+          <Menu label="Package Management">
+            <Program label="Synaptic Package Manager" confirm="false">/usr/bin/gksu /usr/sbin/synaptic</Program>
+          </Menu>
+          <Menu label="Security">
+            <Program label="Seahorse" confirm="false">/usr/bin/seahorse</Program>
+            <Program label="Sun Java 6 Policy Tool" confirm="false">/usr/lib/jvm/java-6-sun-1.6.0.20/bin/policytool</Program>
+          </Menu>
+        </Menu>
+        <Menu label="Terminal Emulators">
+          <Program label="Gnome Terminal" confirm="false">/usr/bin/gnome-terminal</Program>
+          <Program label="XTerm" confirm="false">xterm</Program>
+          <Program label="X-Terminal as root (GKsu)" confirm="false">/usr/bin/gksu -u root /usr/bin/x-terminal-emulator</Program>
+          <Program label="XTerm (Unicode)" confirm="false">uxterm</Program>
+        </Menu>
+        <Menu label="Text">
+          <Program label="Character map" confirm="false">/usr/bin/gucharmap</Program>
+          <Program label="GNOME Dictionary" confirm="false">/usr/bin/gnome-dictionary</Program>
+        </Menu>
+        <Menu label="Video">
+          <Program label="totem" confirm="false">/usr/bin/totem</Program>
+        </Menu>
+        <Menu label="Viewers">
+          <Program label="Evince" confirm="false">/usr/bin/evince</Program>
+          <Program label="Eye of GNOME" confirm="false">/usr/bin/eog</Program>
+          <Program label="F-Spot" confirm="false">/usr/bin/f-spot</Program>
+          <Program label="Xditview" confirm="false">xditview</Program>
+        </Menu>
+      </Menu>
+      <Menu label="Games">
+        <Menu label="Action">
+          <Program label="Gnibbles" confirm="false">/usr/games/gnibbles</Program>
+        </Menu>
+        <Menu label="Board">
+          <Program label="Four-in-a-row" confirm="false">/usr/games/gnect</Program>
+          <Program label="GL Chess" confirm="false">/usr/games/glchess</Program>
+          <Program label="Gnome GYahtzee" confirm="false">/usr/games/gtali</Program>
+          <Program label="Gnome Iagno" confirm="false">/usr/games/iagno</Program>
+          <Program label="Gnome Lines" confirm="false">/usr/games/glines</Program>
+          <Program label="Gnome Mahjongg" confirm="false">/usr/games/mahjongg</Program>
+        </Menu>
+        <Menu label="Card">
+          <Program label="Gnome Blackjack" confirm="false">/usr/games/blackjack</Program>
+          <Program label="Gnome FreeCell" confirm="false">/usr/games/sol --variation freecell</Program>
+          <Program label="Gnome Solitaire Games" confirm="false">/usr/games/sol</Program>
+        </Menu>
+        <Menu label="Puzzles">
+          <Program label="Gnome Robots" confirm="false">/usr/games/gnobots2</Program>
+          <Program label="Gnome Sudoku" confirm="false">/usr/games/gnome-sudoku</Program>
+          <Program label="Gnome Tetravex" confirm="false">/usr/games/gnotravex</Program>
+          <Program label="Gnomine" confirm="false">/usr/games/gnomine</Program>
+          <Program label="Same Gnome" confirm="false">/usr/games/same-gnome</Program>
+        </Menu>
+        <Menu label="Toys">
+          <Program label="Oclock" confirm="false">oclock</Program>
+          <Program label="Xclock (analog)" confirm="false">xclock -analog</Program>
+          <Program label="Xclock (digital)" confirm="false">xclock -digital -update 1</Program>
+          <Program label="Xeyes" confirm="false">xeyes</Program>
+          <Program label="Xlogo" confirm="false">xlogo</Program>
+        </Menu>
+      </Menu>
+      <Menu label="Help">
+        <Program label="Info" confirm="false">x-terminal-emulator  -T "Info" -e sh -c "info"</Program>
+        <Program label="Xman" confirm="false">xman</Program>
+        <Program label="yelp" confirm="false">/usr/bin/yelp</Program>
+      </Menu>
+
+    </RootMenu>
+ 
+    <!-- Additional tray attributes: autohide, width, border, layer, layout -->
+    <Tray  x="0" y="-1" height="32">
+ 
+       <!-- Additional TrayButton attribute: label -->
+       <TrayButton label="Menu">root:1</TrayButton>
+ 
+       <!-- Additional TaskList attribute: maxwidth -->
+       <TaskList/>
+ 
+       <!-- Additional Pager attributes; width, height -->
+       <Pager/>
+ 
+    </Tray>
+ 
+    <!-- Visual Styles -->
+ 
+    <WindowStyle>
+ 
+       <Font>-*-fixed-*-r-*-*-9-*-*-*-*-*-*-*</Font>
+       <Width>4</Width>
+       <Height>20</Height>
+ 
+       <Active>
+          <Text>white</Text>
+          <Title>#002b74:#669eff</Title>
+          <Corner>white</Corner>
+          <Outline>black</Outline>
+       </Active>
+ 
+       <Inactive>
+          <Text>#888888</Text>
+          <Title>#699eff:#e6efff</Title>
+          <Corner>#aaaaaa</Corner>
+          <Outline>black</Outline>
+       </Inactive>
+ 
+    </WindowStyle>
+ 
+    <TaskListStyle>
+       <Font>-*-fixed-*-r-*-*-10-*-*-*-*-*-*-*</Font>
+       <ActiveForeground>black</ActiveForeground>
+       <ActiveBackground>#e6efff:#002b74</ActiveBackground>
+       <Foreground>black</Foreground>
+       <Background>#e6efff:#669eff</Background>
+    </TaskListStyle>
+ 
+    <!-- Additional TrayStyle attribute: insert -->
+    <TrayStyle>
+       <Font>-*-fixed-*-r-*-*-10-*-*-*-*-*-*-*</Font>
+       <Background>#669eff</Background>
+       <Foreground>black</Foreground>
+    </TrayStyle>
+ 
+    <PagerStyle>
+       <Outline>black</Outline>
+       <Foreground>#669eff</Foreground>
+       <Background>#e6efff</Background>
+       <ActiveForeground>#002b74</ActiveForeground>
+       <ActiveBackground>#0047c2</ActiveBackground>
+    </PagerStyle>
+ 
+    <MenuStyle>
+       <Font>-*-fixed-*-r-*-*-9-*-*-*-*-*-*-*</Font>
+       <Foreground>black</Foreground>
+       <Background>#e6efff</Background>
+       <ActiveForeground>white</ActiveForeground>
+       <ActiveBackground>#0042c2:#669eff</ActiveBackground>
+    </MenuStyle>
+ 
+    <PopupStyle>
+       <Font>-*-fixed-*-r-*-*-10-*-*-*-*-*-*-*</Font>
+       <Outline>black</Outline>
+       <Foreground>black</Foreground>
+       <Background>yellow</Background>
+    </PopupStyle>
+ 
+    <IconPath>
+       $HOME/.icons
+    </IconPath>
+ 
+    <!-- Virtual Desktops -->
+    <!-- Desktop tags can be contained within Desktops for desktop names. -->
+    <Desktops count="4">
+ 
+       <!-- Default background. Note that a Background tag can be
+            contained within a Desktop tag to give a specific background
+            for that desktop.
+        -->
+       <Background type="solid">#0047c2</Background>
+ 
+    </Desktops>
+ 
+    <!-- Double click speed (in milliseconds) -->
+    <DoubleClickSpeed>400</DoubleClickSpeed>
+ 
+    <!-- Double click delta (in pixels) -->
+    <DoubleClickDelta>2</DoubleClickDelta>
+ 
+    <!-- The focus model (sloppy or click) -->
+    <FocusModel>sloppy</FocusModel>
+ 
+    <!-- The snap mode (none, screen, or border) -->
+    <SnapMode distance="10">border</SnapMode>
+ 
+    <!-- The move mode (outline or opaque) -->
+    <MoveMode>opaque</MoveMode>
+ 
+    <!-- The resize mode (outline or opaque) -->
+    <ResizeMode>opaque</ResizeMode>
+ 
+    <!-- Key bindings -->
+    <Key key="Up">up</Key>
+    <Key key="Down">down</Key>
+    <Key key="Right">right</Key>
+    <Key key="Left">left</Key>
+    <Key key="h">left</Key>
+    <Key key="j">down</Key>
+    <Key key="k">up</Key>
+    <Key key="l">right</Key>
+    <Key key="Return">select</Key>
+    <Key key="Escape">escape</Key>
+ 
+    <Key mask="A" key="Tab">nextstacked</Key>
+    <Key mask="A" key="F4">close</Key>
+    <Key mask="A" key="#">desktop#</Key>
+    <Key mask="A" key="F1">root:1</Key>
+    <Key mask="A" key="F2">window</Key>
+ 
+ </JWM>
+ 
+ 

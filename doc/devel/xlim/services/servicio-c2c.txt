@@ -1,0 +1,122 @@
+-----------------------------
+
+- Servicio: C2C (Quick Call en el menu de ISABEL)
+
+- Descripción: permite establecer una videoconferencia entre dos o mas sitios sin tener que preocuparse de quien es el master. El que inicia el proceso de invitación (llamante) manda una invitacion al llamado indicandole que el llamante quiere iniciar una conversación con el. El llamado puede aceptar o rechazar la peticion. En caso de que el llamado ya se encuentre en una sesion, se le ofrece la posibilidad de inviar al llamante a la sesion que esta corriendo en el llamado. El llamante recibe la opcion elegida por el llamado y en funcion de la opcion lanza un master o se conecta al llamado. Para ello utiliza los servicios Connect To, IRiS y AcceptConnections. 
+
+- Fichero de parametros utilizado en el protocolo (PARAM): es el fichero que recibe el servidor del servicio y contiene los siguientes parametros:
+
+	* action: c_request (connection request).
+	* id: id del llamante
+	* session: nombre de la sesion
+	* ip: ip del llamante
+	* participants: participantes de la sesion.
+
+
+El fichero de ACK a la invitacion contiene los siguientes parametros:
+	
+	* answer: OK|cancel
+	* session: sesion que hay corriendo en el llamado.
+	* id: id del llamado
+	* location: location del llamado (para formar el public name: ID.Location)
+
+
+- Protocolo: 
+
+
+CASO 1: Llamante y llamado no tienen isabel lanzado
+
+	Llamante                  Llamado
+
+                    invitación
+              --------------------->
+                                   acepto invitacion
+
+                  ack invitacion
+              <---------------------
+        lanzo master
+
+        lanzo IRiS "llamado"
+
+Al lanzar el IRiS, se pide al llamado que haga un connect to al llamante.
+        
+
+
+CASO 2: Llamante no tiene isabel lanzado y llamado tiene isabel lanzado
+
+	Llamante                  Llamado
+
+                    invitación
+              --------------------->
+                                   invito al llamante a mi sesion
+
+                  ack invitacion
+              <---------------------
+
+       lanzo connect 
+        to "llamado"
+
+Si en lugar de invitar al llamante a mi sesion, seleccionamos conectarnos a la sesion del llamante, se sale de la sesion de ISABEL y estamos en el caso 1.
+
+
+CASO 3: Llamante tiene isabel lanzado y llamado no tiene isabel lanzado
+
+	Llamante                  Llamado
+
+                    invitación
+              --------------------->
+                                   acepto invitacion
+
+                  ack invitacion
+              <---------------------
+
+     lanzo IRiS "llamado"
+
+
+
+CASO 4: Llamante y llamado tienen isabel lanzado
+
+En este caso, al recibir la invitacion, el llamado solo puede aceptarla (saliendo de la sesion que el tiene corriendo) o cancelar la invitacion. Si elige aceptar:
+
+	Llamante                  Llamado
+
+                    invitación
+              --------------------->
+                                   acepto invitacion
+
+                  ack invitacion
+              <---------------------
+
+     lanzo IRiS "llamado"
+
+- Ficheros generados: 
+	* En el cliente:
+		· ficheros de log, .xlim/logs/c2c.log y c2c_xlim_call.log
+	* En el servidor:
+		· ficheros de log, .xlim/logs/c2c.log y c2c_xlim_call.log
+
+- Paquete: isabel.xlim.services.c2c
+
+- Clases:  
+	* C2c
+	* ConflictPanel: muestra el panel indicandole al llamado las opciones que tiene.
+
+- Librerias/Servicios utilizadas por el servicio:
+	* Servicio Connect_to
+	* Servicio IRiS
+	* Servicio AC (AcceptConnections)
+	* Servutilities
+	* XlimNotifications
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimservices
+	* Ficheros: 
+		· xlimservices/isabel/xlim/services/C2c.java
+		· xlimservices/isabel/xlim/services/ConflictPanel.java
+
+- Casos especiales:
+	* explicados en el protocolo.
+
+- Temas Pendientes:
+	* Para lanzar el master utiliza la clase AcceptConnections (FERNANDO), que era lo que se usaba al principio en lugar del EditSession (Alvarito) y el StartSessionServer(Lailoken). El nuevo EditSession (ALVARITO) no permite crear una sesion sin modo grafico, por lo que no se puede utilizar en el C2c. Habria qu emodificar el EditSession y luego cambiar la llamada al AcceptConnections del C2c por una llamada a EditSession y otra a StartSesionServer.
+-----------------------------

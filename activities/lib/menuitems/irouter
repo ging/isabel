@@ -1,0 +1,46 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#--------------------------------------------------------------------
+
+IrouterConfig.whatis:  menuitem
+IrouterConfig.title:   Configure
+IrouterConfig.path:    
+IrouterConfig.cmd:     IrouterConfigC::ToggleShowHide
+
+#--------------------------------------------------------------------
+
+IrouterTrafficLogs.whatis:  menuitem
+IrouterTrafficLogs.title:   Traffic Logs
+IrouterTrafficLogs.icon:    graph2.gif
+IrouterTrafficLogs.path:    
+IrouterTrafficLogs.cmd:     IrouterTrafficLogsC::ToggleShowHide
+
+#--------------------------------------------------------------------
+
+IrouterReset.whatis:  menuitem
+IrouterReset.title:   Reset IRouter
+IrouterReset.icon:    irouter_net.gif
+IrouterReset.path:    
+IrouterReset.cmd:     network SiteBroadcast ::irouter RDO ir7_quit()
+
+#--------------------------------------------------------------------

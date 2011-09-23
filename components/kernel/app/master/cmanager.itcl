@@ -1,0 +1,206 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# cmanager.itcl
+#
+# The Coodinators Manager service
+#
+#########################################################################
+
+class CoordManagerC {
+
+    # Arrays with the data.
+    # coord($compName,$pagid) - coordinador of page $pagid.
+    # candidates($compName,$pagid) - candidates to coordinator.
+    # notifyCB($compName,$pagid) - Notify callback.
+    # nobodySynchCB($compName,$pagid) - Nobody is synchronized callback.
+    private variable coord
+    private variable candidates
+    private variable notifyCB
+    private variable nobodySynchCB
+
+
+    # Set the user $coord_userid as the coordinator of the page $pageid
+    # of the application $compName.
+    # This method always invokes the command "notifyCB" when the coordinates change,
+    # replacing %U with $userid and %P with $pageid. If there are not synchronized
+    # users when coordinates change, the nobodySynchCB method is invoked 
+    # replacing %U with $userid of the coordiator leaving, and %P with $pageid. 
+    public method SetCoord    {compName coord_userid pagid notifycb {nobodysynchcb ""}}
+
+
+    # Changes the coordinator of the page $pageid of the application $compName.
+    # to the user $coord_userid. 
+    # This method invokes the command "notifyCB", replacing %U with $userid 
+    # and %P with $pageid.
+    public method ChangeCoord {compName coord_userid pagid}
+
+
+    # When a coordinator dead, a new coordinator is choosen.
+    # This function is used to maintain a list with the canditates
+    # for the coordinator role. This candidates are users with the 
+    # page synchronized.
+    public method AddSyncUser {compName sync_userid pagid}
+
+
+    # Removes sync_userid from the coordinator candidates list.
+    public method DelSyncUser {compName sync_userid pagid}
+
+
+    # Removes all the information about the user $userid, and
+    # choose new coordinators for the pages coordinated by him.
+    public method DelUser {compName userid}
+
+
+    # Removes all the information related with the page $pagid.
+    public method UnsetPag    {compName pagid}
+
+}
+
+
+#----------------------------------------------------------------
+
+body CoordManagerC::SetCoord {compName coord_userid pagid notifycb {nobodysynchcb ""}} {
+
+    set coord($compName,$pagid)      $coord_userid
+    if {![info exists candidates($compName,$pagid)]} {
+	set candidates($compName,$pagid) ""
+    }
+    set notifyCB($compName,$pagid)      $notifycb
+    set nobodySynchCB($compName,$pagid) $nobodysynchcb
+
+    regsub -all %U $notifycb $coord_userid aux
+    regsub -all %P $aux      $pagid        cmd
+
+    eval $cmd
+}
+
+#----------------------------------------------------------------
+
+body CoordManagerC::ChangeCoord {compName coord_userid pagid} {
+
+    set coord($compName,$pagid)      $coord_userid
+
+    regsub -all %U $notifyCB($compName,$pagid) $coord_userid aux
+    regsub -all %P $aux                      $pagid        cmd
+
+    eval $cmd
+}
+
+#----------------------------------------------------------------
+
+body CoordManagerC::AddSyncUser {compName sync_userid pagid} {
+
+    if 0 {
+	if {![info exists candidates($compName,$pagid)]} {
+	    ErrorTraceMsg "- CoordManagerC: $pagid page undefined."
+	    return
+	}
+    }
+
+    if {![info exists candidates($compName,$pagid)]} {
+	set candidates($compName,$pagid) $sync_userid
+    } elseif {[lsearch -exact $candidates($compName,$pagid) $sync_userid] == -1} {
+	lappend candidates($compName,$pagid) $sync_userid
+    }
+}
+
+#----------------------------------------------------------------
+
+body CoordManagerC::DelSyncUser {compName sync_userid pagid} {
+
+    if {![info exists candidates($compName,$pagid)]} {
+	ErrorTraceMsg "- CoordManagerC: $pagid page undefined."
+	return
+    }
+    set candidates($compName,$pagid) \
+	    [ldelete $candidates($compName,$pagid) $sync_userid]
+}
+
+#----------------------------------------------------------------
+
+body CoordManagerC::DelUser {compName userid} {
+    global component
+
+
+    foreach i [array names coord] {
+        regexp {([^,]*),(.*)} $i all aid pagid
+        if {$compName != $aid} continue
+        if {$coord($i) == $userid} {
+            foreach c $candidates($compName,$pagid) {
+                if {$c == $userid} {
+                    continue
+                }
+                if {[GlobalState::ComponentExists $compName]} {
+
+		    foreach _site_id [SiteManager::GetSites] {
+			if {$c == [SiteManager::GetSiteInfo $_site_id chid]} { 
+			    
+			    if {[lsearch -exact [GlobalState::GetSitesByState $compName Running] $_site_id] != -1} {
+				set coord($compName,$pagid) $c
+				
+				regsub -all %U $notifyCB($i) $c     aux
+				regsub -all %P $aux          $pagid cmd
+				
+				eval $cmd
+				
+				break
+			    }
+			    return 
+			}
+		    }
+		}
+            }
+            if {$coord($i) == $userid} {
+                if {$nobodySynchCB($i)!=""} {
+                    regsub -all %U $nobodySynchCB($i) $userid aux
+                    regsub -all %P $aux             $pagid cmd
+
+                    eval $cmd
+                }
+
+                unset coord($i) candidates($i) notifyCB($i)
+		continue
+            }
+        }
+        while {[lsearch -exact $candidates($compName,$pagid) $userid] != -1} {
+	    set candidates($compName,$pagid) \
+		    [ldelete $candidates($compName,$pagid) $userid]
+        }
+    }
+}
+
+#----------------------------------------------------------------
+
+body CoordManagerC::UnsetPag    {compName pagid} {
+
+    unset coord($compName,$pagid) 
+    unset candidates($compName,$pagid) 
+    unset notifyCB($compName,$pagid) 
+}
+
+#----------------------------------------------------------------
+
+
+

@@ -1,0 +1,485 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#-----------------------------------------
+
+class WallpaperResourceTCC {
+    inherit ResourceTCC
+
+    #-- Node attributes
+
+    public variable path
+
+    #-- Building the tree
+  
+    constructor {_agendaobj _rId _path} {
+	ResourceTCC::constructor $_agendaobj $_rId} {}
+
+    destructor {}
+    
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+
+    public method getTitle {}
+
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+    
+    public method getNodes {}
+
+    #-- Online  
+
+    public method online {}
+
+    #-- Selection
+
+    # Returns the icon associated to the selected resource
+    public method getResourceIcon {} 
+    
+    # Methods called when a resource is selected or unselected.
+    public method select {}
+    public method unselect {}
+
+    # Return 1 if the node is selected, otherwise returns 0.
+    public method isSelected {}
+
+    #-- Node edition
+
+    public method edit {}
+
+    # Method used to validate the values modified when this node is edited.
+    # $tl is the object created to edit the values.
+    private method validateEdit {tl}
+
+    # Method used to update the nod3e values with the edited values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the values.
+    private method updateEdit {tl}
+
+    #-- Node creation
+
+    # Create a new empty node, and opens an edition window to edit its values.
+    # If the node is created successfully, then this method returns a reference
+    # to the new created node; else it returns "".
+    # $agendaobj is a reference to the AgendaTCC object which will contain the created node.
+    public proc new {agendaobj}
+
+    # Callback used by the internal browser objects. 
+    private proc selectWallpaper {tl dir fn {f ""}}
+
+    # Method used to validate the values of the new node.
+    # $tl is the object created to edit the new values.
+    private proc validateNew {tl}
+
+    # Method used to create the new node with the validated values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the new values.
+    private proc updateNew {tl agendaobj}
+
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::constructor {_agendaobj _rId _path} {
+
+    set path $_path
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::destructor {} {
+
+    if {[isSelected]} {
+        unselect
+    }
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::parse {agendaobj str} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class WallpaperResource
+ 
+    set _rid [getOptionListValue $str -id]
+
+    WriteTraceMsg "ica: parsing wallpaper resource \"$_rid\""
+
+    set path  [getOptionListValue $str -path]
+
+    set me [WallpaperResourceTCC ::#auto $agendaobj $_rid $path]
+
+    return $me
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::prettyPrinter {{offset 0}} {
+
+    set _spc1 [NodeTCC::spaces $offset]
+
+    return "${_spc1}[list [list WallpaperResource \
+	   -id $rid \
+	   -path $path]]"
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::getTitle {} {
+
+    if {$resourcereferences != 0} {
+	return "$path ($rid) \[$resourcereferences\]"
+    } else {
+	return "$path ($rid)"
+    }
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::getMyNode {} {
+
+    if {[isSelected]} {
+	set tags "selected"
+      } else {
+	set tags ""
+      }
+
+    #--
+
+    lappend _icons icaiconwallpaper     
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    set _show_mv_icons  [$_menubarobj cget -show_mv_icons]
+    if {$_show_mv_icons} {
+	if { ! [$parent firstResource $this]} {
+	    lappend _icons icafocusup
+	}
+	if { ! [$parent lastResource $this]} {
+	    lappend _icons icafocusdown         
+	}
+    }
+    
+    if {$resourcereferences == 0} {
+	set _show_delete_icon  [$_menubarobj cget -show_delete_icon]
+	if {$_show_delete_icon} {
+	    lappend _icons icadelete         
+	}
+    }
+    
+    #--
+    
+    list \
+	[getMyUid] \
+	[getTitle] \
+	"resource leaf $tags" \
+	"$_icons"
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::getNodes {} {
+
+    return ""
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::online {} {
+
+    return 1
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::getResourceIcon {} {
+
+    return "icaim-wallpaper"
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::select {} {
+
+    [$agendaobj getSelection] setSelectedWallpaperResource $this
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::unselect {} {
+
+    [$agendaobj getSelection] setSelectedWallpaperResource ""
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::isSelected {} {
+
+    if {[[$agendaobj getSelection] getSelectedWallpaperResource] == $this} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::edit {} {
+    global ISABEL_WORKDIR
+
+    set tl [BaseFrameTCC #auto -title [getTitle]]
+    
+    $tl setValidationCmd [code $this validateEdit $tl]
+    
+    $tl setUpdateCmd     [code $this updateEdit $tl]
+    
+    set c [$tl getContent]
+    
+    #--
+
+    iwidgets::entryfield $c.rid \
+	-labeltext "Resource Id:" \
+	-labelpos nw
+    pack $c.rid -padx 14 -pady 4 -fill x -anchor w
+    $c.rid component entry insert 0 $rid
+
+    #--
+    
+    frame $c.sep0
+    pack  $c.sep0 -expand 1
+
+    #--
+
+    iwidgets::entryfield $c.path \
+	-labeltext "Path:" \
+	-labelpos nw
+    pack $c.path -padx 14 -pady 4 -fill x
+
+    #--- browser
+
+    label $c.bro -text "Local explorer:"
+    pack  $c.bro -side top -anchor w
+
+    set sldbwrobj [SldBrowserClass #auto $c \
+	    -root $ISABEL_WORKDIR/pres \
+	    -cb [code selectWallpaper $tl] \
+	    -title ""]
+
+    #-- Fill entries and browser with current value
+
+    $c.path component entry insert 0 $path
+
+    set _dir [file dirname $path]
+    set _sld [file tail    $path]
+
+    $sldbwrobj setSld $_dir $_sld
+
+    #--
+
+    set res [$tl waitFor]
+    
+#    delete object $sldbwrobj 
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::validateEdit {tl} {
+    
+    set c [$tl getContent]
+    
+    # No empty rid
+    set newrid [string trim [$c.rid get]]
+    if {$newrid == ""} {
+	return "Resource Id can not be empty"
+    }
+    
+    # No duplicated rid
+    if {[info exists everyresource($newrid)]} {
+	if {$everyresource($newrid) != $this} {
+	    return "Resource Id \"$newrid\" has been already defined."
+	}
+    }
+
+    # No empty path
+    set _newpath [string trim [$c.path get]]
+    if {$_newpath == ""} {
+	return "Wallpaper path can not be empty"
+    }
+    
+    return ""
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::updateEdit {tl} {
+
+    set c [$tl getContent]
+    
+    #--
+
+    unset everyresource($rid)    
+    set rid [string trim [$c.rid get]]
+    set everyresource($rid) $this
+
+    #--
+
+    set path  [string trim [$c.path  get]]
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::new {agendaobj} {
+    global ISABEL_WORKDIR
+
+    set tl [BaseFrameTCC #auto -title "New Wallpaper Resource"]
+    
+    $tl setValidationCmd [code validateNew $tl]
+    
+    $tl setUpdateCmd     [code updateNew $tl $agendaobj]
+    
+    set c [$tl getContent]
+    
+    #--
+
+    iwidgets::entryfield $c.rid \
+	-labeltext "Resource Id:" \
+	-labelpos nw
+    pack $c.rid -padx 14 -pady 4 -fill x -anchor w
+
+    #--
+    
+    frame $c.sep0
+    pack  $c.sep0 -expand 1
+
+    #--
+
+    iwidgets::entryfield $c.path \
+	-labeltext "Wallpaper:" \
+	-labelpos nw
+    pack $c.path -padx 14 -pady 4 -fill x
+
+    #--- browser
+
+    label $c.bro -text "Local explorer:"
+    pack  $c.bro -side top -anchor w
+
+    set sldbwrobj [SldBrowserClass #auto $c \
+	    -root $ISABEL_WORKDIR/pres \
+	    -cb [code selectWallpaper $tl] \
+	    -title ""]
+
+    #-- Fill entries and browser with details
+
+    set _conf  [$agendaobj cget -tcobj]
+    set _wallpaperobj [[$_conf cget -detailsobj] cget -wallpaperobj]
+    
+    set _wp [$_wallpaperobj GetWallpaper]
+
+    $c.path component entry insert 0 $_wp 
+
+    set _dir [file dirname $_wp] 
+    set _sld [file tail    $_wp]
+
+    $sldbwrobj setSld $_dir $_sld
+
+    #--
+
+    set res [$tl waitFor]
+    
+#    delete object $sldbwrobj 
+
+    return $res
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::selectWallpaper {tl dir fn {f ""}} {
+
+    set c [$tl getContent]
+
+    $c.path component entry delete 0 end
+    $c.path component entry insert 0 $f
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::validateNew {tl} {
+
+    set c [$tl getContent]
+    
+    # No empty rid
+    set newrid [string trim [$c.rid get]]
+    if {$newrid == ""} {
+	return "Resource Id can not be empty"
+    }
+    
+    # No duplicated rid
+    if {[info exists everyresource($newrid)]} {
+	return "Resource Id \"$newrid\" has been already defined."
+    }
+
+    # No empty path
+    set _newpath [string trim [$c.path get]]
+    if {$_newpath == ""} {
+	return "Wallpaper path can not be empty"
+    }
+    
+    return ""
+}
+
+#-----------------------------------------
+
+body WallpaperResourceTCC::updateNew {tl agendaobj} {
+
+    set c [$tl getContent]
+   
+    #--
+
+    set _rid [string trim [$c.rid get]]
+
+    set _path  [string trim [$c.path get]]
+
+    #--
+
+    set _wpres [list WallpaperResource \
+		     -id $_rid \
+		     -path $_path \
+		    ]
+    
+    set child [WallpaperResourceTCC::parse $agendaobj $_wpres]
+
+    return $child
+}
+
+#-----------------------------------------
+

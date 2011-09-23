@@ -1,0 +1,38 @@
+/* XPM */
+static char *abrir[] = {
+/* width height num_colors chars_per_pixel */
+"    27    25        5            1",
+/* colors */
+". c #000000",
+"# c #ffffff",
+"a c #cbcbcb",
+"b c #ffff00",
+"c c #808000",
+/* pixels */
+"aaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaa....aaaaaaaa",
+"aaaaaaaaaaaaaaa....aaaaaaaa",
+"aaaaaaaaaaaaaa.aaaa.a..aaaa",
+"aaaaaaaaaaaaaaaaaaaa...aaaa",
+"aaaaa....aaaaaaaaaa....aaaa",
+"aaaaa....aaaaaaaaaa....aaaa",
+"aaaa.##b#.........aaaaaaaaa",
+"aaaa.bb#b#bb#b#b..aaaaaaaaa",
+"aaaa.bb#b#bb#b#b..aaaaaaaaa",
+"aaaa.##b#b##b#b#..aaaaaaaaa",
+"aaaa.bb#b#.............aaaa",
+"aaaa.##b#.ccccccccccc..aaaa",
+"aaaa.##b#.ccccccccccc..aaaa",
+"aaaa.bb#.ccccccccccc.aaaaaa",
+"aaaa.##.ccccccccccc.aaaaaaa",
+"aaaa.##.ccccccccccc.aaaaaaa",
+"aaaa...ccccccccccc.aaaaaaaa",
+"aaaa..............aaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaa",
+"aaaaaaaaaaaaaaaaaaaaaaaaaaa"
+};
+

@@ -1,0 +1,80 @@
+
+These are some examples about using ICF (Integrated Component Framework).
+
+Before compiling, set the enviroment variable ISABEL_HEADERS to the directory 
+Isabel_Headers.
+
+We recommend reading the examples in the following order :
+
+------------------------
+Directory smartReference:
+------------------------
+    - testSmartReference1.cc: using smart pointers
+    - testSmartReference2.cc: assigning smart pointers
+    - testSmartReference3.cc: copy constructor of smart pointers
+
+------------
+Directory ql:
+------------
+    - test1Ql.cc	: Queue of integers: ql_t<int>
+    - test2Ql.cc	: Queue of pointers to integer: ql_t <int *>
+    - test3Ql.cc	: test2Ql.cc + assignment operator 
+    - test4Ql.cc	: Queue of smart pointers to int: 
+                          ql_t<smartReference_t<int> >
+    - test5Ql.cc	: Pointer to queue of smart pointer to int:
+                          ql_t<smartReference_t<int> > *
+    - test6Ql.cc	: Smart pointer to queue of smart pointer to int: 
+                          smartReference_t<ql_t<smartReference_t<int> > >
+    - test7Ql.cc	: 
+
+--------------------
+Directory dictionary:
+--------------------
+    - testDictionary.cc : Using dictionary_t class.
+
+-------------------
+Directory parseArgs:
+-------------------
+    - parseArgs: parsing line command arguments.
+
+---------------
+Directory tasks:
+---------------
+    - tst.cc                        : 
+    - tst1.cc                       : Tarea con periodo
+    - tst2.cc                       : Tarea con periodo + alarma
+    - tst3.cc                       : Servidor de echo UDP
+    - tst4.cc                       : Servidor de echo TCP
+    
+    - tstApp.cc
+    - mcastTalk.cc
+    - 2task.cc
+
+---------------
+Directory echo:
+---------------
+    - echo.cc
+    - echoClient.cc
+    - echoApp.cc
+    - jkl.cc
+
+-----------------
+Directory threads:
+-----------------
+    - testThreadedLoops.cc
+    - testThreadedTask.cc
+
+-----------------
+Directory condVar:
+-----------------
+    - cond1.cc
+    - cond2.cc
+
+---------------
+Directory sched:
+---------------
+    - 2scheds.cc threadedApp.hh
+
+
+----------------------------------------------------------------------------
+Last modification 11/06/2001		mailto: eva@dit.upm.es

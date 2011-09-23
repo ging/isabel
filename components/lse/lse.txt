@@ -1,0 +1,2 @@
+lse = Lenguaje de Signos Español.
+

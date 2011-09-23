@@ -1,0 +1,141 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+#   Class to create a TCP server to attent to the terminals sending
+#   text to display.
+#
+#########################################################################
+
+class SubTitlesServerC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+    destructor {}
+
+    public proc ServerPort {} {return $port}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    private common port  53008
+
+    private variable server ""
+
+    # Accepted conections.
+    private variable links
+
+    # Accept a new connection.
+    private  method AcceptConnection {sock ip p}
+
+    # Attend socket when it receives a message
+    private  method AttendSock {sock}
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesServerC::constructor {} {
+    global env
+
+    if {[info exists env(ISABEL_LSE_SUBTITLES_PORT)] && $env(ISABEL_LSE_SUBTITLES_PORT) != ""} {
+	set port $env(ISABEL_LSE_SUBTITLES_PORT)
+    }
+
+    set server [socket -server [code $this AcceptConnection] $port]
+    
+    fconfigure $server -buffering none -blocking 0
+}
+
+#------------------------------------------------------------------
+
+body SubTitlesServerC::destructor {} {
+    
+    close $server
+    foreach l $links {
+	close $l
+    }
+}
+
+#------------------------------------------------------------------
+
+body SubTitlesServerC::AcceptConnection {sock ip p} {
+
+    fconfigure $sock -buffering none -blocking 0
+    fileevent $sock readable [code $this AttendSock $sock]
+    lappend links $sock
+}
+
+#------------------------------------------------------------------
+
+body SubTitlesServerC::AttendSock {sock} {
+
+    if {[eof $sock]} {
+	close $sock
+	set links [ldelete $links $sock]
+	return
+    }
+
+    set msg [read $sock 1024]
+
+    set codes ""
+    set len [string length $msg]
+    for {set i 0} {$i < $len} {incr i} {
+	set c [string index $msg $i]
+	scan $c %c a
+
+	if {$a >= 32 && $a <= 126} { 
+	    # caracteres ascii normales
+	    lappend codes $a
+	} elseif {$a == 8 || $a == 9 || $a == 10} {
+	    # backspace tabulador y newline
+	    lappend codes $a
+	} elseif {$a == 241 || $a == 209} {
+	    # ñ Ñ
+	    lappend codes $a
+	} elseif {$a == 225 || $a == 233 || $a == 237 || $a == 243 || $a == 250} {
+	    # á .. ú
+	    lappend codes $a
+	} elseif {$a == 193 || $a == 201 || $a == 205 || $a == 211 || $a == 218} {
+	    # Á .. Ú
+	    lappend codes $a
+	} elseif {$a == 186 || $a == 170} {
+	    # º ª
+	    lappend codes $a
+	} elseif {$a == 161 || $a == 180 || $a == 191 || $a == 199 || $a == 231} {
+	    # ¡ acento ¿ Ç ç 
+	    lappend codes $a
+	}
+    }
+    
+    network RDOGroup subtitles "Cmd AddText \"$codes\"" 1
+
+}
+
+#------------------------------------------------------------------
+
+
+

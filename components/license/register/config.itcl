@@ -1,0 +1,164 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# config.itcl
+#
+# Description
+#
+#   Reads and stores the values defined in the configuration file.
+#
+#########################################################################
+
+
+
+class RegLicConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Loads the configuration file and stores the values in the "data" array.
+    public proc Load {}
+
+    # Returns the value associated to the given key.
+    # If $key doesn't exists, then it returns $default.
+    public proc Get {key {default ""}}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Filename of the configuration file.
+    private common filename reglicfg.txt
+
+    # array to store the configuration values.
+    # Indexes are the keys used in the configuration file.
+    private common data
+
+    # Reads a line from "fd". If the line ends with backslash,
+    # then a new line is read and joined with the previous one.
+    private proc MultiGets {fd line}
+}
+
+#-------------------------
+
+body RegLicConfigC::Load {} {
+    global env
+
+    set file $env(ISABEL_DIR)/lib/defaults/$filename
+
+    if {![file exists $file]} {
+	WarningTraceMsg "License updater configuration file \"$file\" not found."    
+	return
+    }
+    
+    if {![file isfile $file]} {
+	WarningTraceMsg "License updater configuration file \"$file\" is not a regular file."
+	return
+    }
+    
+    if {![file readable $file]} {
+	WarningTraceMsg "License updater configuration file \"$file\" is not readable."
+	return
+    }
+    
+    if {[catch {set fdbd [open $file r]} emsg]} {
+	WarningTraceMsg "License updater configuration file error: $emsg"
+	return
+    }
+
+    while {[MultiGets $fdbd line] >= 0} {
+	# removes coments and empty lines.
+	if {[set c0 [string index $line 0]] == "!" || $c0 == "#" ||
+	[string trim $line] == ""} {
+	    continue
+	}
+	if {[regexp {^([^=]*)=(.*)$} $line todo key val] == 0} {
+	    ErrorTraceMsg "License updater configuration file: syntax error in line: $line"
+	    continue
+	} else {
+	    set key [string trim $key]
+	    # return if key is empty.
+	    if {$key == ""} {
+		continue
+	    }
+	    set val [string trim $val]
+	    set data($key) $val
+	}
+    }
+    close $fdbd
+}
+
+#-------------------------
+
+body RegLicConfigC::MultiGets {fd line} {
+    upvar $line l
+
+    set l ""
+    while 1 {
+	set res [gets $fd aux]
+	if {$res < 0} {
+	    return $res
+	}
+	set len [string length $aux]
+	if {$len > 0} {
+	    set c [string index $aux [expr $len-1]]
+	    if {$c == "\\"} {
+		set l "$l[string range $aux 0 [expr $len-2]] "
+	    } else {
+		set l "$l$aux"
+		return $res
+	    }
+	} else {
+	    return $res
+	}
+    }
+
+}
+
+#-------------------------
+
+body RegLicConfigC::Get {key {default ""}} {
+
+    if {[info exists data($key)]} {
+	return $data($key)
+    } elseif {$default != ""} {
+	return $default
+    } else {
+	return $key	
+    }
+}
+
+#-------------------------
+
+
+
+
+
+
+
+
+
+
+

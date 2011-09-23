@@ -1,0 +1,23 @@
+En este paquete se pueden encontrar diversas pruebas modificables para calcular y comparar el rendimiento 
+entre varios SeCos distintos. Aunque en su momento se realizaron varias pruebas específicas se aconseja
+utilizar estas dos pruebas y con sencillas modificaciones de un valor se puede cambiar la velocidad de envío,
+el tamaño de los paquetes enviados, el número de clientes, el número de receptores...
+Las pruebas antiguas se pueden encontrar en el paquete backup dentro de test5
+Se aconseja el uso de PerfAnal para analizar los datos.
+Para ejecutar las pruebas existen una serie de ejecutables "*.sh"
+
+----------
+Prueba.sh
+----------
+Ejectutar:
+
+Prueba.sh [númeroClientes númeroReceptores]
+(si no se pone un número específico de clientes y receptores se tomará 1 de cada)
+
+----------
+PruebaSincronismo.sh
+----------
+Ejectutar:
+
+PruebaSincronismo.sh [númeroClientes númeroReceptores]
+(si no se pone un número específico de clientes y receptores se tomará 1 de cada)

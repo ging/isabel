@@ -1,0 +1,167 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# xvnc.itcl
+#
+# Descripcion
+#
+#     Object to manage the local Xvnc application.
+#
+#########################################################################
+
+
+class LocalXvncC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+    destructor  {} 
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Xvnc display
+    private variable serverdisplay
+
+    # Remaining number of tries to execute Clients
+    private variable clients_tries 0
+ 
+    # Configures the Xvnc process which pid is $pid.
+    private method Clients {pid}
+    
+}
+
+#---------------------------------------------------------------
+
+body LocalXvncC::constructor {} {
+    global env
+
+    set passwdfile $env(ISABEL_DIR)/lib/vnc.passwd
+    
+    set serverdisplay [session Activity GetResource VNC server.display :89]
+    
+    # Start local vnc server
+    set serversize [session Activity GetResource VNC server.size 800x600]
+    
+    if {![catch {exec mcookie} cookie]} {
+	set host [exec uname -n]
+	exec xauth -f $env(HOME)/.Xauthority add $host/unix$serverdisplay . $cookie
+	exec xauth -f $env(HOME)/.Xauthority add $host$serverdisplay . $cookie
+    }
+    
+    if {$env(USER) == "ubuntu"} {
+	set logfile /dev/null
+    } else {
+	set logfile [CreateLogFilename vncserver log]
+    }
+    
+    # color path:
+    set colorpath /usr/lib/X11/rgb
+    foreach _cp {/etc/X11 /usr/share/X11 /usr/X11R6/lib/X11 /usr/lib/X11} {
+	if {[file exists $_cp/rgb.txt]} {
+	    set colorpath $_cp/rgb
+	    break
+	}
+    }
+    
+    # font path:
+    set fontpath ""
+    foreach _df {/usr/X11R6/lib/X11/fonts /usr/share/fonts/X11 /usr/share/X11/fonts} {
+	foreach _sdf {Type1 Speedo misc 75dpi 100dpi} {
+	    if {[file exists $_df/$_sdf]} {
+		if {$fontpath == ""} {
+		    set fontpath $_df/$_sdf/
+		} else {
+		    append fontpath ,$_df/$_sdf/
+		}
+	    }
+	}
+    }
+    
+    if { ! [catch {exec which Xtightvnc} xvnccmd]} {
+	WriteTraceMsg "Using \"$xvnccmd\" as local Vnc server."
+	catch "exec $xvnccmd $serverdisplay -desktop Isabel -lf 1024 \
+                -auth $env(HOME)/.Xauthority -geometry $serversize -depth 24 \
+                -co $colorpath \
+                -fp $fontpath \
+                -deferupdate 100 -rfbwait 120000 -ac -localhost \
+                >& $logfile &" pid
+    } elseif { ! [catch {exec which Xvnc} xvnccmd]} {
+	WriteTraceMsg "Using \"$xvnccmd\" as local Vnc server."
+	catch "exec $xvnccmd $serverdisplay -desktop Isabel \
+                -auth $env(HOME)/.Xauthority -geometry $serversize -depth 24 \
+                -deferupdate 100 -rfbwait 120000 -ac -localhost \
+                >& $logfile &" pid
+	
+    } else {
+	ErrorTraceMsg "I can not find neither Xvnc nor Xtightvnc"
+	return 
+    }
+    
+    set clients_tries 15
+    Clients $pid
+}
+
+#---------------------------------------------------------------
+
+body LocalXvncC::destructor {} {
+
+}
+
+#---------------------------------------------------------------
+
+body LocalXvncC::Clients {pid} {
+    global env
+
+    if {$clients_tries < 1}  return 
+
+    incr clients_tries -1
+    
+    WriteTraceMsg "Launching local Vnc clients."
+
+    set res [catch {exec /bin/ps $pid}]
+
+    if {$res == 1} {
+	WriteTraceMsg "Local Vnc is not running. Delaying clients launch."
+	after 1000 [code $this Clients $pid]
+	return
+    }
+
+    if {[file exists $env(ISABEL_DIR)/lib/localvnc.rc]} {
+	if {[catch "exec sh -c \"DISPLAY=$serverdisplay $env(ISABEL_DIR)/lib/localvnc.rc\" &" res]} {
+	    ErrorTraceMsg "$env(ISABEL_DIR)/lib/localvnc.rc produces: $res"
+	    return
+	}
+    } else {
+	ErrorTraceMsg "File localvnc.rc not found"
+	return
+    }
+
+    WriteTraceMsg "Local Vnc clients launched."
+} 
+
+#--------------------------------------------------------------

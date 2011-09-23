@@ -1,0 +1,165 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+##############################################################
+#
+#   Description:
+#     Wallpaper
+#
+################################################################
+
+
+class WallpaperC {
+
+    #-----------------------------------
+    # Auxiliar variables
+    #-----------------------------------
+
+    constructor {} {}
+
+    destructor {}
+
+    public method Nop {} {}
+
+    #------------------------------------------------
+    # Public API to display the given wallpaper.
+    #------------------------------------------------
+
+    # Set the wallpaper.
+    public method SetRoot {_background}
+
+    #------------------------------------------------
+    # Attend SMS messages
+    #------------------------------------------------
+
+    private method SetSmsState {args}
+
+    #-----------------------------------
+    # Private methods used by the public API methods.
+    #-----------------------------------
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+}
+
+#---------------------------------------------------------------
+
+body WallpaperC::constructor {} {
+    
+    SetRoot ""
+
+    # SMS messages which I want to receive:
+    sms joinKey Wallpaper [code $this SetSmsState]
+    
+    # I send an empty state
+    # sms setState Wallpaper add
+}
+
+#---------------------------------------------------------------
+
+body WallpaperC::destructor {} {
+
+    catch {exec xsetroot -solid steelblue4 -display [session Environ cget -scenary_display]}
+}
+
+#--------------------------------------------------------------
+
+body WallpaperC::SetSmsState {args} {
+
+    set _image [GetOptionListValue $args -image ""]
+
+    SetRoot $_image
+}
+
+#---------------------------------------------------------------
+
+body WallpaperC::SetRoot {_background} {
+    global ISABEL_DIR ISABEL_WORKDIR env
+
+    if {$_background == ""} {
+	set _background [session Activity GetResource Wallpaper background gif/empty.gif]
+    }
+
+    if {[file readable $_background]} {
+	set _path $_background
+
+    } elseif {[file readable $ISABEL_WORKDIR/pres/$_background]} {
+	set _path $ISABEL_WORKDIR/pres/$_background
+
+    } elseif {[file readable $ISABEL_WORKDIR/$_background]} {
+	set _path $ISABEL_WORKDIR/$_background
+
+    } elseif {[file readable $ISABEL_DIR/$_background]} {
+	set _path $ISABEL_DIR/$_background
+
+    } elseif {[file readable $ISABEL_DIR/lib/$_background]} {
+	set _path $ISABEL_DIR/lib/$_background
+
+    } elseif {[file readable $ISABEL_DIR/lib/images/$_background]} {
+	set _path $ISABEL_DIR/lib/images/$_background
+
+    } else {
+	set _background [session Activity GetResource Wallpaper background gif/empty.gif]
+	set _path $ISABEL_DIR/lib/images/$_background
+    }
+    
+    if {$env(USER) == "ubuntu"} {
+	set notifyopt "/dev/null"
+    } else {
+	set _logfn $env(ISABEL_SESSION_LOGS_DIR)/notify.Wallpaper
+	if { ! [file exists $_logfn]} {
+	    exec touch $_logfn
+	}
+	set notifyopt "$_logfn"
+    }
+
+    set display [session Environ cget -scenary_display]
+
+    exec isabel_wallpaper -notify $notifyopt -display $display $_path &
+    
+    if 0 {
+	if {[file pathtype $_path] == "relative"} {
+	    set path $env(HOME)/$_path
+	}
+	#catch "exec gconftool-2 --type string --set /desktop/gnome/background/picture_options stretched" res
+	#catch "exec gconftool-2 --type string --set /desktop/gnome/background/picture_filename \"$_path\"" res
+	#catch "exec dcop kdesktop KBackgroundIface setWallpaper \"$_path\" 6" res  
+    }
+}
+
+#---------------------------------------------------------------
+
+body WallpaperC::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#---------------------------------------------------------------
+
+    

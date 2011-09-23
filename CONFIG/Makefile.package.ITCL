@@ -1,0 +1,5 @@
+#
+# tclcommon Library
+#
+TCL_COMMON=$(PROJECT_ROOT_DIR)/lib/tclcommon
+

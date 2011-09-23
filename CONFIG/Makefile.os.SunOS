@@ -1,0 +1,10 @@
+#
+# Temporary directory, usually /usr/tmp or /var/tmp
+#
+CONFIG.TMPDIR   := /usr/tmp
+CONFIG.SHELL    := bash
+CONFIG.COMPILER := g++
+
+ifeq ($(USER.ENABLE_INSURE),y)
+$(error ERROR: 'insure' is available under Linux only)
+endif

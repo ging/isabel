@@ -1,0 +1,134 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# cfaudio.itcl
+#
+# The audio frame.
+#
+#########################################################################
+
+class TC_AudioC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the widget in $w
+    constructor {w} {}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget where it is packed
+    private variable topw
+
+    destructor {}
+
+    # Makes the GUI
+    private method MakeGUI {}
+
+    # Open/Close all mics.
+    private method OpenAllMic {}
+    private method CloseAllMic {}
+
+    # Auxiliar method
+    private method  AudioSwitchEverybody {open}
+}
+
+
+#---------------------------------------------------------------
+
+body TC_AudioC::constructor {w} {
+
+    set topw $w
+
+    MakeGUI
+
+}
+
+#---------------------------------------------------------------
+
+body TC_AudioC::destructor {} {
+
+    catch {bind $topw <Destroy> ""}
+    if {[winfo exists $topw]} {
+        destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_AudioC::MakeGUI {} {
+
+    frame $topw \
+	    -relief flat \
+	    -borderwidth 0
+    
+    button $topw.openall   -text "Open Audio"  \
+	    -padx 2 -pady 1 \
+	    -command [code $this OpenAllMic]
+    balloon add $topw.openall   "Open all audio channels"
+
+    button $topw.closeall  -text "Close Audio" \
+	    -padx 2 -pady 1 \
+	    -command [code $this CloseAllMic]
+    balloon add $topw.closeall  "Close all audio channels"
+
+    grid columnconfigure $topw 0 -weight 1
+
+    grid $topw.openall  -row 0 -column 0 -sticky we
+    grid $topw.closeall -row 0 -column 1 -sticky we
+
+    bind $topw <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+
+body TC_AudioC::OpenAllMic {} {
+    
+    if {[catch {AudioSwitchEverybody 1} emsg]} {
+        ErrorTraceMsg "TeleConference: Opening all Mics I gets: $emsg"
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_AudioC::CloseAllMic {} {
+    
+    if {[catch {AudioSwitchEverybody 0} emsg]} {
+        ErrorTraceMsg "TeleConference: Closing all Mics I gets: $emsg"
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_AudioC::AudioSwitchEverybody {open} {
+    
+    network SiteBroadcast COMP Audio Cmd SetMute * $open
+}
+
+#---------------------------------------------------------------
+
+

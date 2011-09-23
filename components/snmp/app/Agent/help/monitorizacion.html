@@ -1,0 +1,128 @@
+<!--
+ - ISABEL: A group collaboration tool for the Internet
+ - Copyright (C) 2009 Agora System S.A.
+ -
+ - This file is part of Isabel.
+ -
+ - Isabel is free software: you can redistribute it and/or modify
+ - it under the terms of the Affero GNU General Public License as published by
+ - the Free Software Foundation, either version 3 of the License, or
+ - (at your option) any later version.
+ -
+ - Isabel is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - Affero GNU General Public License for more details.
+ -
+ - You should have received a copy of the Affero GNU General Public License
+ - along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+ -
+-->
+<html>
+<head>
+   <title>3.- Monitorizaci&oacute;n con un Gestor</title>
+</head>
+
+<body>
+
+<center>
+<table border=0 width=585>
+<tr>
+    <th align=center>
+        <h2>
+        <img SRC="../images/monitorIcon.gif" height=32 width=32><b> <u>3.- Monitorizaci&oacute;n con
+        un Gestor</u></b></h2>
+        <img SRC="../images/linecl.gif" >
+    </th>
+</tr>
+<tr>
+    <td align=left>
+
+En este caso no se requerir&aacute; que el agente
+lance la interfaz gr&aacute;fica, por lo que la l&iacute;nea de ejecuci&oacute;n
+ser&aacute;:
+</p>
+
+<p>
+<tt>
+> java -jar Isabel-Agent.jar -SNMPPort 4000 -shell
+</tt>
+</p>
+
+<p>
+Con esto arrancar&aacute; el agente, y en el momento en que veamos los
+mensajes de que se han lanzado los distintos <i>threads</i> de
+atenci&oacute;n, podremos empezar a recibir datos en el gestor.<p><br>
+
+
+En el gestor deberemos haber cargado la MIB de ISABEL. Esta
+operaci&oacute;n depende del gestor que estemos usando. Pero en
+cualquier caso deberemos de disponer de una copia del archivo
+MIB-isabel.mib que deberemos copiar en alg&uacute;n directorio de la
+m&aacute;quina donde se est&aacute; ejecutando el gestor.<p><br>
+
+El modo de configuraci&oacute;n y uso de los distintos gestores del
+mercado queda fuera del &aacute;mbito de este texto, de todas formas
+como parte del proyecto se han creado pequeñas aplicaciones en
+el gestor HP-OpenView disponible en el departamento que permiten
+monitorizar una estaci&oacute;n con ISABEL de forma sencilla y r&aacute;pida.
+La forma de ejecutar estas aplicaciones es lo que se describe a
+continuaci&oacute;n.<p><br>
+
+<h3><img SRC="../images/blueball.gif" > <u>3.1.- Gesti&oacute;n con HP-OpenView</u></h3>
+
+En este momento se va a suponer que el lector est&aacute; m&iacute;nimamente
+familiarizado con la interfaz gr&aacute;fica de este gestor y que ya se
+ha cargado la MIB de ISABEL en él. De todas formas en la
+bibliograf&iacute;a existen dos textos que incluyen toda la
+informaci&oacute;n necesaria para aprender a trabajar con este gestor.</p>
+<br>
+
+Lo primero que deberemos hacer es localizar la m&aacute;quina que
+queremos gestionar. Para ello si no sabemos como llegar a ella
+navegando por los mapas, lo mejor es usar la herramienta de
+b&uacute;squeda por atributos de HP-OpenView. Para ello debemos ir al
+men&uacute; <i>Map-Find-Locate by Attribute</i> y aqu&iacute; buscar nuestra m&aacute;quina bien por la direcci&oacute;n IP o por
+el nombre.</p><br>
+
+Haciendo doble-click sobre el nombre de la maquina ya localizado,
+se nos abrir&aacute; un nuevo mapa con la red en que se encuentra esta.
+Deberemos seleccionar la m&aacute;quina haciendo clic sobre ella.</p>
+<br>
+
+El otro paso previo que hay que dar antes de poder ejecutar las
+mini-aplicaciones que nos dan datos sobre ISABEL es configurar al
+gestor para que sepa en que puerto est&aacute; atendiendo el agente
+SNMP de ISABEL en esa m&aacute;quina. <p>
+<br>
+
+Con todo esto ya podemos ejecutar cualquiera de las aplicaciones
+de gesti&oacute;n de ISABEL que se encuentran en bajo el men&uacute;:
+<i>Tools-Isabel</i>.
+    </td>
+</tr>
+<tr>
+    <td>
+        <img src="../images/linecl.gif" width=100%>
+    </td>
+</tr>
+<tr>
+    <td align=center>
+        <a href="helpIndex.html"><h1>INDICE</h1></a>
+    </td>
+</tr>
+<tr>
+    <td>
+        <img src="../images/linecl.gif" width=100%>
+    </td>
+</tr>
+<tr>
+    <td align=center>
+        <p><a href="http://isabel.dit.upm.es">http://isabel.dit.upm.es</a></center>
+    </td>
+</tr>
+</table>
+</center>
+</body>
+</html>
+

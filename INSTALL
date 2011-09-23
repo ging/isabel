@@ -1,0 +1,31 @@
+
+ISABEL Compilation and Installation Instructions
+===============================================
+
+These instructions works under latest Linux.
+They may work under Darwin.
+There are parts that can be compiled under Windows XP/Vista.
+
+Note: if you want to compile just a piece of code, it is mandatory
+      to set the PROJECT_ROOT_DIR environment variable to point
+      to the directory in which the ISABEL sources are located.
+
+0) Before trying to compile, be sure that latest 'isabel-devel'
+   is installed
+
+1) Type 'make' to create the object files.
+   First time, a 'Makefile.user' is created, edit as your convenience.
+   The compilation process is usually place at
+   '/usr/tmp/WHATEVER/objects-Linux' in Linux systems,
+   '/usr/tmp/WHATEVER/objects-Darwin' in MacOS systems, etc.
+
+2) Type 'make distrib' to copy object and configuration files.
+
+3) Then type 'sudo make install' to all binaries, and libraries you built,
+   configuration and activities files and GNOME menus.
+
+4) 'make clean' and 'make cleanall' removes as much as they can.
+
+
+The command 'sudo make uninstall' removes installed ISABEL from the computer.
+

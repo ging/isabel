@@ -1,0 +1,289 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vg.itcl
+#
+# Vga geometry manager.
+#
+#########################################################################
+
+#---------------------------------------------------------------
+#
+# 32 module width video sizes:
+#      32x24   64x48   96x72  128x96 160x120 192x144 224x168
+#    256x192 288x216 320x240 352x264 384x288 416x312 448x336
+#    480x360 512x384 544x408 576x432 608x456 640x480 672x504
+#    704x528 736x552 768x576
+#
+# CIF sizes:
+#    SQCIF =  128 x   96
+#     QCIF =  176 x  144
+#      CIF =  352 x  288
+#     4CIF =  704 x  576
+#    16CIF = 1408 x 1152
+#
+#---------------------------------------------------------------
+
+class VgaLayoutMgrC {
+
+    # Current MAIN layout name.
+    private variable cmainlayoutname  ""
+
+    # Current MAIN channel.
+    private variable currentMainSiteid ""
+
+    # Current layout.
+    private variable cmainlayout    ""
+
+    # Channels added.
+    # chObj($siteid) if a reference to the channel object of this site.
+    private variable chObj
+
+    # Reference to Vga Daemon Object
+    private variable vdObj ""
+
+    constructor {vd} {}
+
+    destructor {}
+
+    public  method ApplyLayout {_layoutname _siteid}
+    private method ReapplyLayout  {}
+    private method ReapplyLayoutSite  {siteid}
+    private method ApplyLayoutSite {siteid chlayout}
+
+    # Translate a layout name to the real values of bandwidth, codec, etc.
+    # which is the resource Vga.name specified in the activity.
+    private method LayoutName2Value {layoutname}
+
+    public method AddChannel {siteid chobj}
+    public method DelChannel {siteid}
+
+    public method Nop {} {}
+
+    public method Info {}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+}
+
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::constructor {vd} {
+
+    set vdObj $vd
+
+    VgaLayoutInfoC::Cleanup
+}
+
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::destructor {} {
+
+}
+
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::ApplyLayout {_layoutname _siteid} {
+
+    set cmainlayoutname  $_layoutname
+    set currentMainSiteid  $_siteid
+
+    ReapplyLayout
+}
+
+
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::LayoutName2Value {layoutname} {
+
+    session Activity GetResource Video vga.layout.$layoutname ""
+}
+
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::ReapplyLayout {} {
+
+    set cmainlayout [LayoutName2Value $cmainlayoutname]
+
+    foreach siteid [array names chObj] {
+	if {[catch {ReapplyLayoutSite $siteid} errormsg]} {
+	    ErrorTraceMsg "- Vga Error: Applying layout for channel $siteid I get:\n$errormsg"
+	}
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::ReapplyLayoutSite {siteid} {
+    
+    if {$siteid == $currentMainSiteid} {
+	ApplyLayoutSite $siteid $cmainlayout
+    } else {
+	$chObj($siteid) Unmap
+	VgaLayoutInfoC::Unmap $siteid
+    }
+}
+    
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::ApplyLayoutSite {siteid chlayout} {
+
+    if {$chlayout == ""} {
+	$chObj($siteid) Unmap
+	VgaLayoutInfoC::Unmap $siteid
+	return
+    }
+
+    if {[llength $chlayout] != 3} {
+	set emsg1 "Vga Error: Invalid layout value \"$chlayout\""
+	set emsg2 "   Current  main layout name = \"$cmainlayoutname\""
+	set emsg4 "   Current selected channel = \"$currentMainSiteid\""
+	set emsg5 "   Channel = $siteid"
+	WarningTraceMsg "- $emsg1 \n $emsg2 \n $emsg4 \n $emsg5"
+	$chObj($siteid) Unmap
+	VgaLayoutInfoC::Unmap $siteid
+	return 
+    }    
+
+    set ctname    [lindex $chlayout 0]
+    set geom      [lindex $chlayout 1]
+    set bw        [lindex $chlayout 2]
+
+    if {[catch {expr $bw*1} res]} {
+	set emsg1 "Vga Error: Invalid bw in this layout \"$chlayout\""
+	set emsg2 "   Current  main layout name = \"$cmainlayoutname\""
+	set emsg4 "   Current selected channel = \"$currentMainSiteid\""
+	set emsg5 "   Channel = $siteid"
+	WarningTraceMsg "- $emsg1 \n $emsg2 \n $emsg4 \n $emsg5"
+	$chObj($siteid) Unmap
+	VgaLayoutInfoC::Unmap $siteid
+	return 
+    }
+
+    if {[catch {VideoConfigTablesC::GetConfig $ctname $geom $bw} cg]} {
+	WarningTraceMsg "- Error querying vga configuration for table \"$ctname\" for geom=$geom and bw=$bw:\n$cg"
+	$chObj($siteid) Unmap
+	VgaLayoutInfoC::Unmap $siteid
+	return 
+
+    }
+
+    set codec     [lindex $cg 0]
+    set codecname [lindex $codec 0]
+    set qlty [GetOptionListValue $codec -qlty 50]
+
+    set grabsize  [lindex $cg 1]
+    switch -- $grabsize {
+	SQCIF { set grabsize  128x96 }
+	QCIF  { set grabsize 176x144 }
+	CIF   { set grabsize 352x288 }
+	4CIF  { set grabsize 704x576 }
+	16CIF { set grabsize 1408x1152 }
+    }
+    if {$grabsize == 0} {
+	#set re {([0-9]+)x([0-9]+)([+\-]+[0-9]+[+\-]+[0-9]+)?}
+	set re {([0-9]+x[0-9]+)}
+	regexp $re $geom todo grabsize
+    }
+
+    set framerate [lindex $cg 2]
+
+    $chObj($siteid) SetGeometry $geom
+
+    if {[$chObj($siteid) IsLocal]} {
+
+	$vdObj SetLocalConfiguration $framerate $grabsize $codec $bw 
+
+    } else {
+
+	set _fec_k [session Activity GetResource Video FEC.K 0]
+	
+	if {$_fec_k != "" && $_fec_k != "0"} {
+	    if { ! [catch "expr 1.0 * $bw * $_fec_k / ($_fec_k + 1)" _res]} {
+		set bw $_res
+	    }
+	}
+	
+	VgaLayoutInfoC::GrabSize  $siteid $grabsize
+	VgaLayoutInfoC::BW        $siteid $bw
+	VgaLayoutInfoC::Framerate $siteid $framerate
+	VgaLayoutInfoC::Codec     $siteid $codecname
+	VgaLayoutInfoC::Qlty      $siteid $qlty
+    }
+    
+    VgaLayoutInfoC::Map $siteid
+    $chObj($siteid) Map
+}
+
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::AddChannel {siteid chobj} {
+
+    set chObj($siteid) $chobj
+
+    VgaLayoutInfoC::AddChannel $siteid
+
+    ReapplyLayout
+}
+
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::DelChannel {siteid} {
+
+    unset chObj($siteid)
+    VgaLayoutInfoC::DelChannel $siteid
+}
+
+#--------------------------------------------------------------------------
+
+body VgaLayoutMgrC::Info {} {
+
+    set res " o Vga layout manager:\n"
+
+    append res "\n"
+
+    append res "    Layout.mainname  = $cmainlayoutname\n"
+    append res "    Layout.main  = $cmainlayout\n"
+    append res "    Layout.chid  = $currentMainSiteid\n\n"
+    append res "    Channel $chid layout = $cmainlayout\n"
+
+    return $res
+}
+
+#--------------------------------------------------------------------------

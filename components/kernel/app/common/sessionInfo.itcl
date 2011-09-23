@@ -1,0 +1,240 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# sessionInfo.itcl
+#
+# Defines the SessionInfo class, which stores information about the session.
+#
+#########################################################################
+
+class SessionInfo {
+
+    # Array to store information about the master
+    # Valid indexes:
+    #   - secoid: master secoid.
+    #   - isabel_version: master isabel version.
+    #   - isaqlty: master's ISABEL_QUALITY
+    private variable master
+
+    # the activity object
+    private variable actobj
+
+    # the environment object
+    private variable envobj
+
+    constructor {{siteConfigFile ""}} {}
+    destructor  {} 
+
+    # Retrieval and setting of the master array values.
+    public method SetMasterInfo {what value}
+    public method GetMasterInfo {what}
+
+    # Activity access method
+    public method Activity {args}
+
+    # Environment access method
+    public method Environ {args}
+
+    #------------------------------------------
+    # Master-Interactive protocol.
+    # Publish isabel version.
+    #------------------------------------------
+
+    # The master site sends a message with isabel version to the SeCo isabel_master_event group.
+    # Interactive sites must receive this message to know if they are executoing the same isabel version.
+    public method WaitForVersion {}
+    public method SetVersion {isabelversion}
+
+    # Master site publishes the software version in the "isabel_master_event" group of SeCo when this method is invoked.
+    public method PublishVersion {}
+  
+    #------------------------------------------
+    # Master-Interactive protocol.
+    # Publish session information:
+    #   - master SeCo Id.
+    #   - Session quality.
+    #------------------------------------------
+
+    # The master site sends a message with session information to the SeCo isabel_master_event group.
+    # Interactive sites must receive this message to know these values.
+    public method WaitForEventData {}
+    public method SetEventData {secoid isaqlty}
+
+    # Master site publishes Event datas in the "isabel_master_event" group of SeCo when this method is invoked.
+    public method PublishEventData {}
+
+    #------------------------------------------
+    # Master-Interactive protocol.
+    # Publish environment variables defined in the master site.
+    #------------------------------------------
+
+    # The master site sends a message with the master environment definition to the SeCo isabel_master_event group.
+    # Interactive sites must receive this message to know these values.
+    public method WaitForMasterEnviron {}
+    public method SetMasterEnviron {args}
+
+    # Master site publishes its environment in the "isabel_master_event" group of SeCo when this method is invoked.
+    public method PublishMasterEnviron {}
+
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::constructor {{siteConfigFile ""}} {
+    global env
+
+    set envobj [EnvironmentC "#auto" $siteConfigFile]
+
+    set master(isabel_version) ""
+    set master(secoid)         ""
+
+    if {[info exists env(ISABEL_QUALITY)]} {
+	set master(isaqlty) $env(ISABEL_QUALITY)
+    } else {
+	set master(isaqlty)        ""
+    }
+ 
+    set actobj [ActivityC "#auto"]
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::SetMasterInfo {what value} {
+    set master($what) $value
+}
+
+
+#------------------------------------------------------------
+
+body SessionInfo::GetMasterInfo {what} {
+    return [set master($what)]
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::Activity {args} {
+
+    eval $actobj $args
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::Environ {args} {
+
+    eval $envobj $args
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::SetVersion {isabelversion} {
+    global ISABEL_Version
+
+    set master(isabel_version) $isabelversion
+    if {$ISABEL_Version != $isabelversion} {
+	set emsg1 "Incompatible versions."
+	set emsg2 "Your ISABEL version is $ISABEL_Version."
+	set emsg3 "Master version is $isabelversion."
+        ErrorTraceMsg "$emsg1 $emsg2 $emsg3" 
+        ErrorMsgC #auto quit "ERROR:" $emsg1 $emsg2 $emsg3 
+	exit 1
+    }
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::PublishVersion {} {
+
+    set miv $master(isabel_version)
+    
+    network RDOSync isabel_master_event 0 \
+	"EI SetVersion $miv"
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::WaitForVersion {} {
+
+
+    while {$master(isabel_version) == ""} {
+	update
+	after 100
+    }
+    
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::SetEventData {secoid isaqlty} {
+
+    set master(secoid)  $secoid
+    set master(isaqlty) $isaqlty
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::PublishEventData {} {
+
+    set mli $master(secoid)
+    set miq $master(isaqlty)
+    
+    network RDOSync isabel_master_event 0 \
+	"EI SetEventData $mli $miq"
+}
+
+
+#------------------------------------------------------------
+
+body SessionInfo::WaitForEventData {} {
+
+
+    while {$master(secoid) == ""} {
+	update
+	after 100
+    }
+    
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::WaitForMasterEnviron {} {
+
+    $envobj WaitForMasterEnviron
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::SetMasterEnviron {args} {
+
+    eval $envobj SetEdlGlobalVars $args
+}
+
+#------------------------------------------------------------
+
+body SessionInfo::PublishMasterEnviron {} {
+
+    $envobj PublishMasterEnviron
+}
+
+#------------------------------------------------------------
+

@@ -1,0 +1,218 @@
+/////////////////////////////////////////////////////////////////////////
+//
+// ISABEL: A group collaboration tool for the Internet
+// Copyright (C) 2009 Agora System S.A.
+// 
+// This file is part of Isabel.
+// 
+// Isabel is free software: you can redistribute it and/or modify
+// it under the terms of the Affero GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Isabel is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// Affero GNU General Public License for more details.
+// 
+// You should have received a copy of the Affero GNU General Public License
+// along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+//
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+//
+// $Id: irouter.txt 20206 2010-04-08 10:55:00Z gabriel $
+//
+/////////////////////////////////////////////////////////////////////////
+
+
+En este documento se describen:
+ 1. las opciones de arranque del irouter
+ 2. los puertos que utiliza.
+
+
+-----------
+1. ARRANQUE
+-----------
+
+Para arrancar irouter:
+
+	~> isabel_irouter [-cport <controlPort>]
+                          [-flowServer <hostname>]
+                          [-mcast]
+                          [-mcastGroup (audio     =<mcastGr> || 
+                                        vumeter   =<mcastGr> ||
+                                        video     =<mcastGr> ||
+                                        slidesFtp =<mcastGr> || 
+                                        pointer   =<mcastGr> || 
+                                        controlWp =<mcastGr> ||
+                                        shDisplay =<mcastGr> ||
+                                        halloween =<mcastGr> ||
+                                        rtpVideo  =<mcastGr> ||
+                                        rtcpVideo =<mcastGr>)]
+                          [-ttl <mcastTTLValue>]
+                          [-mcastBw <bandwidth(bps)>]
+                          [-upStreamBw <bandwidth(bps)>]
+                          [-downStreamBw <bandwidth(bps)>]
+                          [-audioMixer <codecName>]
+                          [-allClients || -allclients]
+                          [-client (audio     || 
+                                    vumeter   || 
+                                    video     || 
+                                    slidesFtp || 
+                                    pointer   ||
+                                    controlWp || 
+                                    shDisplay || 
+                                    halloween ||
+                                    rtcpVideo )]
+
+                          [-bdport <basePort>]
+                          [-doStats]
+                          [-levaPort <levaPortNumber>]
+                          [-levaHost <levaHostname>]
+                          [-shell]
+                          [-echo]
+                          [-noCheckLoops]
+                          [-configFile <fileName>]
+
+* OPCIONES
+
+   -cport: puerto de control, servidor TCP por el que se pueden
+           recibir cadenas de texto para la configuracion del demonio.
+
+   -flowServer: conexion a otro FS padre.
+   -mcast: enviar a multicast.
+   -mcastGroup: especificacion de los grupos multicast que se van a 
+           utilizar. Por defecto, son:
+
+               audio         = 239.255.6.1
+               vumeter       = 239.255.6.2
+               video         = 239.255.6.3
+               slidesFtp     = 239.255.6.4
+               pointer       = 239.255.6.5
+               controlWp     = 239.255.6.6
+               shDisplay     = 239.255.6.7
+               halloween     = 239.255.6.8
+               rtcpVideo     = 239.255.6.9
+               rtcpShDisplay = 239.255.6.10
+
+    -ttl: valor TTL que llevaran los paquetes de multicast. Por
+           defecto TTL=32.
+
+    -mcastBw: ancho de banda utilizado para enviar a multicast.
+    -upStreamBw: ancho de banda utilizado para enviar al FS padre,
+           por defecto 1.5Mbps.
+    -downStreamBw: ancho de banda utilzado para recibir del
+           FS padre, por defecto 1.5Mbps.
+
+    -audioMixer <codecName>: starts irouter in audio mixer mode, audio
+           output coded with <codecName>
+
+    -allClients: entrega trafico a todos los componentes locales, 
+           por defecto: audio, vumeter, video, slidesFtp, pointer, 
+           controlWp, shDisplay, halloween, rtpVideo y rtcpVideo.
+
+    -client: definicion explicita de los componentes locales a los cuales
+           entregar el trafico.
+ 
+    -bdport: puerto base a partir del cual el irouter utilizara para 
+           sus conexiones con otros irouters.
+
+    -doStats: emite estadisticas a la red de Levas
+    -levaHost: maquina donde existe una Leva.
+    -levaPort: puerto donde escucha la Leva.
+    -shell: interfaz de control a traves de entrada estandar.
+
+    -noCheckLoops: no se comprueba el identificador que llevan todos los 
+           paquetes.
+    -echo: se usa en combinacion con la opcion -flowServer. Al conectarse a 
+           otro flowServer ademas de recibir todo el trafico de otros parti
+           cipantes, recibe el suyo propio. (Para pruebas). Es necesario
+           usarlo con la opcion -noCheckLoops para que no el emisor
+           reciba sus propios paquetes.
+
+    -configFile: cargar la configuracion del irouter desde un fichero. Hay
+           un fichero ejemplo de configuracion en isabel/components/irouter/config.
+           Ojo con tocar los valores de esee fichero alegremente!
+
+
+-----------------------
+2. PUERTOS DEL IROUTER:
+-----------------------
+
+   Puertos de comunicacion entre FS (informacion EXTERNA, para posible
+   configuracion de firewalls):
+        empiezan a utilizarse a partir de un puerto base, definido
+        por el valor de la opcion -bdport, utilizandose segun el
+        siguiente orden:
+                    irouterControl1 = baseDataPort
+                    audio           = baseDataPort+1
+                    audio           = baseDataPort+2
+                    video           = baseDataPort+3
+                    slidesFtp       = baseDataPort+4
+                    pointerId       = baseDataPort+5
+                    controlWp       = baseDataPort+6
+                    shDisplay       = baseDataPort+7
+                    halloween       = baseDataPort+8
+                    rtcpVideo       = baseDataPort+9
+                    rtcpShDisplay   = baseDataPort+10
+
+        el setup de Isabel ofrece esta opcion a traves del identificador
+        de sesion, dando un valor por defecto SessionId=32000. Esto
+        significa que el irouter utilizaria para comunicarse con otros
+        irouters entre el puerto 32000 y el 320010.
+
+    Puertos de comunicacion LOCAL con los componentes (informacion
+    INTERNA, solo para monitorizacion):
+
+         * audio: 
+           -----
+             puerto de datos de audio     = 18188
+             puerto de irouter para audio = 18189 
+
+         * vumeter: 
+           -------
+             puerto de datos de vumeter     = 18190
+             puerto de irouter para vumeter = 18191 
+
+         * video: 
+           -----
+             puerto de datos de video     = 25550
+             puerto de irouter para video = 25552 
+
+         * slidesFtp: 
+           ---------
+             puerto de datos de slidesFtp     = 32111
+             puerto de irouter para slidesFtp = 32112 
+
+         * pointer: 
+           -------
+             puerto de datos de pointer     = 33111
+             puerto de irouter para pointer = 33112 
+
+         * controlWp: 
+           ---------
+             puerto de datos de controlWp     = 13332
+             puerto de irouter para controlWp = 13333 
+
+         * shDisplay: 
+           ---------
+             puerto de datos de shDisplay     = 15550
+             puerto de irouter para shDisplay = 15552 
+
+         * halloween: 
+           ---------
+             puerto de datos de halloween     = 48301
+             puerto de irouter para halloween = 48302 
+
+         * rtcpVideo: 
+           ---------
+             puerto de datos de rtcpVideo     = 25551
+             puerto de irouter para rtcpVideo = 25553 
+
+         * rtcpShDisplay: 
+           ---------
+             puerto de datos de rtcpVideo     = 15551
+             puerto de irouter para rtcpVideo = 15553 
+
+

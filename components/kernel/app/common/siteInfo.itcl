@@ -1,0 +1,240 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# siteInfoC.itcl
+#
+# Defines the siteInfoC class to store information about a connected site.
+#
+#########################################################################
+
+
+class SiteInfoC {
+
+    # Public variables.
+    # These variables hold information about the site.
+
+    # type of isabel client: Interactive, MCU, ...
+    public variable tool
+
+    # site_id or nickname.
+    public variable site_id
+
+    # Source identifiers: Base value for the rtp flows.
+    public variable chid
+
+    # public name or location.
+    public variable name
+ 
+    # 1 if the site is the Master site, else 0.
+    public variable master
+
+    # hostname.
+    public variable host
+
+    # SeCo identifier.
+    public variable secoid
+
+    # isabone access point
+    public variable connectTo
+
+    # isabone access point, IP
+    public variable connectToIP
+
+    # Use multicast
+    public variable useMulticast
+
+    # mcast bw
+    public variable mcastbw
+
+    # Use flowserver
+    public variable useFlowserver
+
+    # flowserver upstream bw
+    public variable fsupbw
+
+    # flowserver downstream bw
+    public variable fsdownbw
+
+    # exec uname -a
+    public variable uname
+
+    # Conection time
+    # Value: [clocks seconds]
+    public variable connectionTime
+
+    #---------------
+
+    # Roles that match the site. 
+    public variable roles
+
+    # list with the enabled components of the site
+    public variable components
+
+    # list with the site actions.
+    public variable actions
+
+    # list with the site menuitems.
+    public variable menuitems
+
+    # Version of the isabel running in the site
+    public variable isabelversion
+
+    # Release of the isabel running in the site
+    public variable isabelrelease
+
+
+    # SetRoles
+    # Calculate the roles of the site.
+    private method SetRoles {}
+
+    # SetComponents
+    # Calculates the enabled components of the site.
+    private method SetComponents {} 
+
+    # SetActions
+    # Calculates the enabled actions of the site.
+    private method SetActions {} 
+
+    # SetMenuitems
+    # Calculates the enabled menuitems of the site.
+    private method SetMenuitems {} 
+
+
+    constructor {tool_ chid_ site_id_ isabelversion_ isabelrelease_ master_ host_ secoid_ \
+	name_ connectTo_ connectToIP_ useMulticast_ mcastbw_ useFlowserver_ fsupbw_ fsdownbw_ \
+        uname_ connectionTime_} {}
+}
+
+#-------------------------------------------------
+
+body SiteInfoC::constructor {tool_ chid_ site_id_ isabelversion_ isabelrelease_ master_ host_ secoid_ \
+	name_ connectTo_ connectToIP_ useMulticast_ mcastbw_ useFlowserver_ fsupbw_ fsdownbw_ uname_
+        connectionTime_} {
+
+    set tool           $tool_
+    set chid           $chid_
+    set site_id        $site_id_
+    set isabelversion  $isabelversion_
+    set isabelrelease  $isabelrelease_
+    set master         $master_
+    set host           $host_
+    set secoid         $secoid_
+    set name           $name_
+    set connectTo      $connectTo_
+    set connectToIP    $connectToIP_
+    set useMulticast   $useMulticast_
+    set mcastbw        $mcastbw_
+    set useFlowserver  $useFlowserver_
+    set mcastbw        $mcastbw_
+    set fsupbw         $fsupbw_
+    set fsdownbw       $fsdownbw_
+    set uname          $uname_
+    set connectionTime $connectionTime_
+
+    SetRoles
+    SetComponents
+    SetActions
+    SetMenuitems
+}
+
+#-------------------------------------------------
+
+body SiteInfoC::SetRoles {} {
+
+    set roles ""
+    foreach r [session Activity GetToolRoles $tool] {
+	
+	set insert 0
+
+	foreach u [session Activity GetResource $r sites] {
+	    if {[string match $u $host] || [string match $u $site_id]} {
+		set insert 1
+		break
+	    }
+	}	
+
+	if {$insert} {
+	    foreach e [session Activity GetResource  $r except] {
+		if {[string match $e $host] || [string match $e $site_id]} {
+		    set insert 0
+		    break
+		}
+	    }
+	}
+	
+	if {$insert} {
+	    lappend roles $r
+	}
+    }
+}
+
+#-------------------------------------------------
+
+body SiteInfoC::SetComponents {} {
+
+   set components ""
+
+   foreach role $roles {
+      set cl [session Activity GetResource $role components]
+      foreach c $cl {
+         if {[lsearch -exact $components $c] == -1} {
+            lappend components $c
+         }
+      }
+   }
+}
+
+#-------------------------------------------------
+
+body SiteInfoC::SetActions {} {
+
+   set actions ""
+
+   foreach role $roles {
+      set al [session Activity GetResource $role actions]
+      foreach a $al {
+         if {[lsearch -exact $actions $a] == -1} {
+            lappend actions $a
+         }
+      }
+   }
+}
+
+#-------------------------------------------------
+
+body SiteInfoC::SetMenuitems {} {
+
+   set menuitems ""
+
+   foreach role $roles {
+      set mil [session Activity GetResource $role menuitems]
+      foreach mi $mil {
+         if {[lsearch -exact $menuitems $mi] == -1} {
+            lappend menuitems $mi
+         }
+      }
+   }
+}
+
+#---------------------------------------------------------------

@@ -1,0 +1,64 @@
+-----------------------------
+
+- Servicio: IsabelLauncher
+
+- Descripción: Sustituto del antiguo launcher de ISABEL. Permite lanzar sitios remotos. La peticion se realiza directamente entre el sitio desde el que lanzamos al sitio remoto y el propio sitio remoto. 
+
+- Fichero de parametros utilizado en el protocolo (PARAM): es el fichero que recibe el servidor del servicio y contiene los siguientes parametros:
+
+	* xedl: nombre del fichero XEDL desde el que se lanzan los siios
+	* session: sesión donde queremos lanzar/parar los sitios remotos
+	* id: id del sitio que queremos lanzar/parar
+	* passwd: passwd del sitio que queremos lanzar/parar
+	* start: true|false
+
+- Protocolo: 
+
+                  CLIENTE                                   SERVIDOR
+
+           compruebo si existe XEDL
+           comprobamos passwd
+           buscamos en XEDL la IP del sitio remoto
+        
+                                  PARAMS+XEDL
+                     ------------------------------------------>
+
+                                                          comprobamos passwd
+                                                          lanzamos/paramos sitio
+
+
+                                   ACK (XERL|nada)
+                     <--------------------------------------------
+             
+
+Este servicio se llama desde el servicio LoadXedl. LoadXedl permite seleccionar un fichero xedl y, una vez seleccionado, llama a la clase SessionManager que presenta el interfaz grafico donde el usuario selecciona los sitios que quiere parar/arrancar. Si algun sitio tiene passwd, se le pide al usuario y se comprueba con el que hay en el xedl. Para cada uno de los sitios seleccionados se lanza una hebra (ILauncherThread) que, a su vez, llama a IsabelLauncher.
+
+- Ficheros generados: 
+	* ilauncher.log
+
+ 
+- Paquete: isabel.xlim.services.isabellauncher
+
+- Clases:  
+	* ILauncherThread
+	* IsabelLauncher
+	* SessionManager
+	* SessionManagerPanel
+
+- Librerias/clases utilizadas por el servicio:
+	* Servutilities: funciones varias
+	* XlimNotifications: para escribir en el fichero de logs del XLIM (.xlim/logs/notif.xlim)
+	* FileGarbageCollector: clase que se encarga de "llevar la cuenta" de los ficheros temporales que se crean durante el servicio y borrarlos cuando finaliza el servicio. Me entere demasiado tarde de la existencia de createTmpDir() y deleteOnExit() de la clase File O:).
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimservices
+	* Ficheros: 
+		· xlimservices/isabel/xlim/services/isabellauncher/ILauncherThread.java
+		· xlimservices/isabel/xlim/services/isabellauncher/IsabelLauncher.java
+		· xlimservices/isabel/xlim/services/isabellauncher/SessionManager.java
+		· xlimservices/isabel/xlim/services/isabellauncher/SessionManagerPanel.java
+
+- Casos especiales: ninguno.
+
+- Temas Pendientes: ninguno.
+-----------------------------

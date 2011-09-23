@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	<xs:element name="EDL" type="edl"/>
+	<xs:complexType name="edl">
+		<xs:sequence>
+			<xs:element name="VERSION" type="xs:decimal" default="1.8"/>
+			<xs:element ref="SESSION" minOccurs="0"/>
+			<xs:element ref="site-description" minOccurs="0"/>
+			<xs:element ref="TEMPLATE" minOccurs="0"/>
+			<xs:element name="URL" type="xs:anyURI" minOccurs="1" default=""/>
+			<xs:any minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!--</xs:element>-->
+	<xs:element name="TEMPLATE">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ID" type="xs:string"/>
+				<xs:element name="ACCESS_CONTROL" type="xs:string" minOccurs="0"/>
+				<xs:element name="ROLE" type="template_role_type"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="SERVICE">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="SERVICE-NAME" type="service_name_type"/>
+				<xs:element name="SERVICE-QUALITY" type="service_quality_type"/>
+				<!--<xs:element name="SERVICE-NAME" type="xs:string"/>-->
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="SESSION">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ID" type="xs:string"/>
+				<xs:element name="ACCESS_CONTROL" type="xs:string" minOccurs="0"/>
+				<xs:element name="DELIVERY_PLATFORM" type="xs:string" default="Isabel"/>
+				<xs:element ref="SESSION_ADDITIONAL_PARAMS" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element ref="SERVICE" minOccurs="0"/>
+				<xs:element name="SCHEDULE" minOccurs="0"/>
+				<xs:element ref="session-info"/>
+				<xs:any minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="SESSION_ADDITIONAL_PARAMS">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ISABEL_ENABLE_VNC_MODE" type="xs:boolean" minOccurs="0"/>
+				<xs:element name="ISABEL_ENABLE_VMware_MODE" type="xs:boolean" minOccurs="0"/>
+				<xs:element name="ISABEL_DEFAULT_VNC_SERVER_DISPLAY" type="xs:string" minOccurs="0"/>
+				<xs:element name="ISABEL_ISABEL_AUDIO_BYPASS_1" type="xs:boolean" minOccurs="0"/>
+				<xs:element name="ISABEL_ISABEL_AUDIO_BYPASS_2" type="xs:boolean" minOccurs="0"/>
+				<xs:element name="ISABEL_ISABEL_AUDIO_BYPASS_3" type="xs:boolean" minOccurs="0"/>
+				<xs:element name="IPSEC_ENABLE" type="xs:boolean" minOccurs="1" default="false"/>
+				<xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="session-info">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="SESSION_PORT" minOccurs="0"/>
+				<xs:element name="MASTER" minOccurs="0"/>
+				<xs:element name="OPEN_SESSION" type="xs:boolean" minOccurs="0"/>
+				<xs:element name="ALLOW_WATCHPOINTS" type="xs:boolean" minOccurs="0"/>
+				<xs:element name="MAIL_ADDRESS" type="xs:string" minOccurs="0"/>
+				<xs:element name="DESCRIPTION" type="xs:string" minOccurs="0"/>
+				<xs:element name="COMMENT" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element name="SITES" type="xs:string" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="site-description">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="SITE" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="SITE">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="site-identification"/>
+				<xs:element name="SITE-ROLE" type="site_role_type" minOccurs="0"/>
+				<xs:element ref="CONNECTION-MODE" minOccurs="0"/>
+				<xs:element ref="connection-parameters" minOccurs="0"/>
+				<xs:element ref="NETWORK-ACCESS"/>
+				<xs:element name="ENABLE_MCU" type="xs:boolean" minOccurs="0"/>
+				<xs:element name="CONTROL-CAPABILITIES" minOccurs="0"/>
+				<xs:element ref="media-control" minOccurs="0"/>
+				<xs:element ref="IPSEC_CONF" minOccurs="0"/>
+				<xs:element ref="SITE_ADDITIONAL_PARAMS" minOccurs="1"/>
+				<xs:any minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="SITE_ADDITIONAL_PARAMS">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ISABEL_VNC_SERVER_DISPLAY" type="xs:string" minOccurs="0"/>
+				<xs:element name="ISABEL_GATEWAY" minOccurs="0"/>
+				<xs:element name="ISABEL_AUDIOMIXER" type="xs:boolean" minOccurs="1" default="true"/>
+				<xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+				<!--<xs:element name="ISABEL_ANTENNA_ENABLED" type="xs:boolean" minOccurs="0"/>-->
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="CONNECTION-MODE">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="unicast" minOccurs="0"/>
+				<xs:element ref="mcu" minOccurs="0"/>
+				<xs:element ref="multicast" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="unicast">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="PEER_ADDRESS" type="site-address" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="multicast">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="multicast-parameters" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="mcu">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="MCU_ADDRESS" type="site-address" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="site-identification">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ID" type="xs:string" minOccurs="0"/>
+				<xs:element name="ACCESS_CONTROL" type="xs:string" minOccurs="0"/>
+				<xs:element name="ACCESS_CONTROL_TYPE" minOccurs="0"/>
+				<xs:element name="CERT_IDENTITY" minOccurs="0">
+					<xs:complexType>
+						<xs:choice>
+							<xs:element name="DN" type="xs:string"/>
+							<xs:element name="FQDN" type="xs:string"/>
+						</xs:choice>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="USER_ID" type="xs:string" minOccurs="0"/>
+				<xs:element name="PUBLIC_NAME" type="xs:string" minOccurs="0"/>
+				<xs:element name="SITE_ADDRESS" type="ipaddress" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element name="ADMINISTRATIVE_INFORMATION" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="DESCRIPTION" minOccurs="0"/>
+							<xs:element name="INSTITUTION" minOccurs="0"/>
+							<xs:element name="ADMINISTRATIVE_CONTACT" type="personal_information" minOccurs="0" maxOccurs="unbounded"/>
+							<xs:element name="TECHNICAL_CONTACT" type="personal_information" minOccurs="0" maxOccurs="unbounded"/>
+							<xs:element name="URL" type="xs:anyURI" minOccurs="0"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="personal_information">
+		<xs:sequence>
+			<xs:element name="NAME" type="xs:string" minOccurs="0"/>
+			<xs:element name="EMAIL" type="xs:string" minOccurs="0"/>
+			<xs:element name="PHONE_NUMBER" type="xs:string" minOccurs="0"/>
+			<xs:element name="MOBILE_NUMBER" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="multicast-parameters">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="MCAST_ROOT" minOccurs="0"/>
+				<xs:element name="MCAST_TTL" type="xs:byte" minOccurs="0"/>
+				<xs:element name="MCAST_MODE" type="mcast-mode-type" minOccurs="0"/>
+				<xs:element name="MCAST_AUDIO_GROUP" minOccurs="0"/>
+				<xs:element name="MCAST_VIDEO_GROUP" minOccurs="0"/>
+				<xs:element name="MCAST_FTP_GROUP" minOccurs="0"/>
+				<xs:element name="MCAST_POINTER_GROUP" minOccurs="0"/>
+				<xs:element name="MCAST_VUMETER_GROUP" minOccurs="0"/>
+				<xs:element name="MCAST_APPSH_GROUP" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:simpleType name="mcast-mode-type">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ASM"/>
+			<xs:enumeration value="SSM"/>
+			<xs:enumeration value="SFM"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:element name="connection-parameters">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:choice>
+					<xs:element name="BANDWIDTH" type="xs:int"/>
+					<xs:element ref="upanddownbandwidth"/>
+				</xs:choice>
+				<xs:element name="PROTECTION" type="protection_type" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="upanddownbandwidth">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="UPBANDWIDTH" type="xs:int"/>
+				<xs:element name="DOWNBANDWIDTH" type="xs:int"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="NETWORK-ACCESS">
+		<xs:complexType>
+			<xs:choice>
+				<xs:element name="Ethernet" type="xs:boolean"/>
+				<xs:element ref="ISDN"/>
+				<xs:element ref="modem"/>
+			</xs:choice>
+		</xs:complexType>
+	</xs:element>	
+	<xs:element name="ISDN">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="ISDN-parameters"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ISDN-parameters">
+		<xs:complexType>
+			<xs:choice>
+				<xs:element ref="ISDN-caller"/>
+				<xs:element ref="ISDN-called"/>
+			</xs:choice>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ISDN-caller">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ISDN_CHANNELS" type="xs:int"/>
+				<xs:element name="ISDN_PHONE_MSN" type="xs:string" maxOccurs="unbounded"/>
+				<xs:element name="ISDN_PHONE_NUMBER" type="xs:string" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ISDN-called">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ISDN_CHANNELS" type="xs:int"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="modem">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Modem"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Modem">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Modem-parameters" type="xs:string"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:simpleType name="isdn_role_type">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Called"/>
+			<xs:enumeration value="Caller"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:element name="media-control">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="DEFAULT_CTRL" type="xs:string" minOccurs="0"/>
+				<xs:element name="APP_SHARING_CTRL" type="xs:string" minOccurs="0"/>
+				<xs:element name="AUDIO_CTRL" type="xs:string" minOccurs="0"/>
+				<xs:element name="DATA_CTRL" type="xs:string" minOccurs="0"/>
+				<xs:element name="VIDEO_CTRL" type="xs:string" minOccurs="0"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="protection_type">
+		<xs:choice>
+			<xs:element name="parity">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="n" type="xs:integer"/>
+						<xs:element name="k" type="xs:integer"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="hamming">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="n" type="xs:integer"/>
+						<xs:element name="k" type="xs:integer"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:simpleType name="service_name_type">
+		<xs:restriction base="xs:string">
+			<xs:pattern value=".*[.]act"/>
+			<xs:pattern value="telemeeting"/>
+			<xs:pattern value="teleclass"/>
+			<xs:pattern value="teleconference"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="service_quality_type">
+		<xs:restriction base="xs:string">
+		    <xs:enumeration value="128/256K"/>
+			<xs:enumeration value="300K/1M"/>
+			<xs:enumeration value="128K"/>
+			<xs:enumeration value="256K"/>
+			<xs:enumeration value="384K"/>
+			<xs:enumeration value="512K"/>
+			<xs:enumeration value="1M"/>
+			<xs:enumeration value="2M"/>
+			<xs:enumeration value="10M"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="site_role_type">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="interactive"/>
+			<xs:enumeration value="Interactive"/>
+			<xs:enumeration value="watchpoint"/>
+			<xs:enumeration value="recorder"/>
+			<xs:enumeration value="Recorder"/>
+			<xs:enumeration value="player"/>
+			<xs:enumeration value="noninteractive"/>
+			<xs:enumeration value="MCU"/>
+			<xs:enumeration value="mcu"/>
+			<xs:enumeration value="antenna"/>
+			<xs:enumeration value="Antenna"/>
+			<xs:enumeration value="SipGateway"/>
+			<xs:enumeration value="sipgateway"/>
+			<xs:enumeration value="MediaServer"/>
+                        <xs:enumeration value="flashgateway"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="template_role_type">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="interactive"/>
+			<xs:enumeration value="watchpoint"/>
+			<xs:enumeration value="noninteractive"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="ipaddress">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="site-address">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="host-identifier">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="phone-number">
+		<xs:restriction base="xs:long"/>
+	</xs:simpleType>
+	<xs:simpleType name="iCal-desc">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="vCal-desc">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="URI">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:element name="IPSEC_CONF">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="DIRECTION" type="ipsec_direction"/>
+				<xs:element name="ACTION" type="ipsec_action"/>
+				<xs:element name="IKEAssociation">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="MinLifetimeSeconds" type="xs:decimal"/>
+							<xs:element name="MinLifetimeKilobytes" type="xs:decimal" minOccurs="0"/>
+							<xs:element name="ExchangeMode" type="ipsec_exchangemode"/>
+							<xs:element name="DhGroup" type="xs:decimal"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="IPsecAssociation">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="MinLifetimeSeconds" type="xs:decimal"/>
+							<xs:element name="MinLifetimeKilobytes" type="xs:decimal" minOccurs="0"/>
+							<xs:element name="UsePfs" type="xs:decimal" minOccurs="0"/>
+							<xs:element name="UseIPComp" type="xs:boolean" minOccurs="0"/>
+							<xs:element name="Protocol" type="ipsec_protocol"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:simpleType name="ipsec_direction">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="none"/>
+			<xs:enumeration value="in"/>
+			<xs:enumeration value="out"/>
+			<xs:enumeration value="both"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="ipsec_action">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="tunnel"/>
+			<xs:enumeration value="transport"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="ipsec_exchangemode">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="main"/>
+			<xs:enumeration value="aggressive"/>
+			<xs:enumeration value="base"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="ipsec_protocol">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ah"/>
+			<xs:enumeration value="esp"/>
+			<xs:enumeration value="ah_esp"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

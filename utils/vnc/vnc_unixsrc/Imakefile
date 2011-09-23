@@ -1,0 +1,17 @@
+#define IHaveSubdirs
+#define PassCDebugFlags
+
+SUBDIRS = libvncauth vncviewer vncpasswd vncconnect
+
+World:
+	make Makefiles
+	make depend
+	make all
+	@echo ""
+	@echo Built $(SUBDIRS).
+
+libs:
+	@echo 'No libraries included.'
+
+MakeSubdirs($(SUBDIRS))
+DependSubdirs($(SUBDIRS))

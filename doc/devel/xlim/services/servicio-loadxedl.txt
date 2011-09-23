@@ -1,0 +1,39 @@
+-----------------------------
+
+- Servicio: LoadXedl
+
+- Descripción: Presenta un panel grafico en donde el usuario puede seleccionar un fichero XEDl, bien seleccionando una sesion de la agenda, bien descargando un fichero de un servidor de sesiones, bien seleccionando directamente un fichero XEDL. Una vez seleccionado el fichero se llama a otra clase que se encargara de tratar el fichero. LoadXedl lo utilizan tres servicios:
+	* isabellauncher.
+	* vpnlauncher.
+	* gxedl (visor de diego).
+
+- Fichero de parametros utilizado en el protocolo (PARAM): es el fichero que recibe el servidor del servicio y contiene los siguientes parametros: no hay.
+
+- Protocolo: 
+	* Si el fichero escogido es un fichero elegido por el usuario, se pasa el path del fichero a a uno de los servicios (isabellauncher,vpnlauncher,gxedl).
+	* Si el fichero escogido es de la agenda de sesiones o se ha introducido una URL, se conecta con el servidor de la sesion (haciendo uso de la url) y se descarga el XEDL que haya en el servidor mediante el servicio xownrequest.
+
+- Ficheros generados: 
+	* loadxedl.log: fichero de log
+	* loadxedl_call.tmp: fichero con la salida de la llamada a xdownrequest.
+
+- Paquete: isabel.xlim.services.loadxedl
+
+- Clases:  
+	* Loadxedl
+
+- Librerias/clases utilizadas por el servicio:
+	* Servutilities: funciones varias
+	* XlimNotifications: para escribir en el fichero de logs del XLIM (.xlim/logs/notif.xlim)
+	* FileGarbageCollector: clase que se encarga de "llevar la cuenta" de los ficheros temporales que se crean durante el servicio y borrarlos cuando finaliza el servicio. Me entere demasiado tarde de la existencia de createTmpDir() y deleteOnExit() de la clase File O:).
+	* XlimServicePanel: para generar la interfaz grafica.
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimservices
+	* Ficheros: 
+		· xlimservices/isabel/xlim/services/loadxedl/Loadxedl.java
+
+- Casos especiales: ninguno.
+
+- Temas Pendientes: ninuno.
+-----------------------------

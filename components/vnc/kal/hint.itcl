@@ -1,0 +1,116 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# selector.itcl
+#
+# Class to start the VNC component using:
+#  - the given distribution network.
+#  - the given access site.
+#  - the server wich is obtained using a hint, o directly, the given server and password.
+#
+#########################################################################
+
+
+
+class VNCHintResolverC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Resolve the given hint.
+    # Return a two elements list, containing the vnc server, and the password.
+    public proc ResolveHint {distnet accessSite_SiteId hint}
+
+    #------------------
+    # PRIVATE INTERFACE
+    #------------------
+
+}
+
+#------------------------------------------------------------------------
+
+body VNCHintResolverC::ResolveHint {distnet accessSite_SiteId hint} {
+    global env
+
+    WriteTraceMsg "VNC - Resolve hint:: Hint Selection (DistributionNetwork=$distnet AccessSite=$accessSite_SiteId Hint=$hint)"
+
+    #
+    # Get the servers where to look for the best match hint:
+    #
+    if {$distnet == "ShDisplay"} {
+	# Use local servers
+	set serverlist [VNCLocalServersFrameC::GetPublicServers]
+    } else { # NeReDa
+	set mysite_id [SiteManager::MySiteId]
+	if {$mysite_id == $accessSite_SiteId} {
+	    # Search hint in LOCAL servers
+	    set serverlist [VNCLocalServersFrameC::GetPublicServers]
+	} else {
+	    # Search hint in REMOTE servers
+	    set serverlist [VNCRemoteServersFrameC::GetServers $accessSite_SiteId]
+	}
+    }
+
+
+    set bests100 0
+    set bestserver ""
+    set bestpasswd ""
+    
+    # Look for the best hint
+    foreach line  $serverlist {
+	
+	set title      [lindex $line 0]
+	set server     [lindex $line 1]
+	set passwd     [lindex $line 2]
+	set descr      [lindex $line 3]
+
+	set sim [Parecidos::similar100 $hint $title]
+	if {$sim >= $bests100} {
+	    set bestserver $server
+	    set bestpasswd $passwd
+	    set bests100 $sim 
+	}
+	set sim [Parecidos::similar100 $hint $server]
+	if {$sim >= $bests100} {
+	    set bestserver $server
+	    set bestpasswd $passwd
+	    set bests100 $sim 
+	}
+    }
+    
+    
+    if {$bestserver != ""} {
+
+	WriteTraceMsg "VNC servers \"$bestserver\" matches \"$hint\" hint: $bests100%."
+	return [list $bestserver $bestpasswd]
+	
+    } else {
+	
+	WriteTraceMsg "No public VNC servers matching \"$hint\" hint."
+        return {"" ""}
+    }
+}
+
+#------------------------------------------------------------------------

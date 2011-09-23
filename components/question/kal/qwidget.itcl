@@ -1,0 +1,641 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+##############################################################
+#
+#   Description:
+#     Questions widget.
+#
+################################################################
+
+#===============================================================
+#
+#  Questions Widget.
+#
+#===============================================================
+
+class QuestionsWidget {
+    
+
+    constructor {} {}
+    destructor {}
+
+    #----------------------
+
+    # Create the toplevel gui.
+    private method MakeGUI {}
+    private method MoveDown {}
+    private method MoveDown2 {}
+
+    #----------------------
+
+    public method AddSite {site_id cmd}
+    public method DelSite {site_id}
+
+    # Returns 1 if site_id is a connected site.
+    private method SiteAdded {site_id}
+
+    #----------------------
+
+    public method EnableSites    {}
+    public method DisableSites   {}
+    
+    #----------------------
+    
+    public method AddRequestingSite  {site_id}
+    public method DelRequestingSite  {site_id}
+    public method NoRequestingSites  {}
+
+    #----------------------
+
+    public method SetSpeakerSites {site_ids}
+
+    #----------------------
+
+    public method SetQuestionerSite {site_id}
+ 
+    #----------------------
+    
+    public method SetResetCmd    {cmd}
+    public method EnableReset    {}
+    public method DisableReset   {}
+
+    #----------------------
+
+    public method SetRequestCmd  {cmd}
+    public method EnableRequest  {}
+    public method DisableRequest {}
+
+    #----------------------
+
+    # Control window
+    private variable wc
+    
+    # Geometry of the control window
+    private variable geometry
+
+    # Configuration values for requesting sites, speaker sites, questioner site, and other sites:
+    #    requesting_conf(bg)
+    #    requesting_conf(activebackground)
+    #    speaker_conf(bg)
+    #    speaker_conf(activebackground)
+    #    questioner_conf(bg)
+    #    questioner_conf(activebackground)
+    #    other_conf(bg)
+    #    other_conf(activebackground)
+    private variable requesting_conf
+    private variable speaker_conf
+    private variable questioner_conf
+    private variable other_conf
+
+
+    # Configuration values for enabled and disabled sites:
+    #    enabled_conf(foreground)
+    #    enabled_conf(activeforeground)
+    #    enabled_conf(bd)
+    #    enabled_conf(relief)
+    #    disabled_conf(disabledforeground)
+    #    disabled_conf(bd)
+    #    disabled_conf(relief)
+    private variable enabled_conf
+    private variable disabled_conf
+
+
+    # font
+    private variable font
+
+    #--
+    
+    # List containing the site_id of all the added sites
+    private variable added_sites ""
+
+    # List containing the site_id of the sites requesting a question.
+    private variable requesting_sites ""
+
+    # List containing the site_id of the sites acting as speakers.
+    private variable speaker_sites ""
+
+    # Site_id of the site acting as questioner.
+    private variable questioner_site ""
+
+    #----------------------
+
+    public method SetLayout {_layout}
+
+    public method Iconify   {}
+    public method Deiconify {}
+    public method Iconified {}
+
+    #----------------------
+
+    # Reapply the grid command to the sites frame
+    private method Regrid {}
+
+
+    # Update the configuration of the button of the given site.
+    private method UpdateConfiguration {site_id}
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::constructor {} {
+
+    MakeGUI
+
+    set requesting_conf(bg)               yellow
+    set requesting_conf(activebackground) yellow
+    
+    set speaker_conf(bg)               #aacce0
+    set speaker_conf(activebackground) #aacce0
+    
+    set questioner_conf(bg)               white
+    set questioner_conf(activebackground) white
+    
+    set other_conf(bg)               [. cget -bg]
+    set other_conf(activebackground) [. cget -bg]
+    
+    set enabled_conf(foreground)         [$wc.f.reset cget -foreground]
+    set enabled_conf(activeforeground)   [$wc.f.reset cget -foreground]
+    set enabled_conf(bd)                 1
+    set enabled_conf(relief)             raised
+    
+    set disabled_conf(disabledforeground) #30509e
+    set disabled_conf(bd)                 1
+    set disabled_conf(relief)             sunken
+    
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::destructor {} {
+    
+    destroy $wc
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::MakeGUI {} {
+    global ISABEL_DIR env
+    
+    set wc .t2Questions
+
+    set font [session Activity GetResource Questions font "*-courier-*-r-*-*-*-180-*-*-*-*-*-*"]
+
+    set display [session Environ cget -scenary_display]
+
+    toplevel $wc -screen $display
+
+    
+    frame $wc.f -relief raised -bd 2
+    pack  $wc.f -expand 1 -fill both
+
+     set orr [session Activity GetResource Questions overrideredirect 1]
+
+    if $orr {
+	wm overrideredirect $wc 1
+
+	after idle [code $this MoveDown]
+
+    } else {
+	wm title     $wc "Questions"
+	wm iconname  $wc "Questions"
+	
+	# window manager error: dont manage iconbitmap with remote toplevel.
+	catch {wm iconbitmap $wc @$ISABEL_DIR/lib/images/xbm/question.xbm}
+    }
+
+    set layout [session Activity GetResource Questions layout]
+    set geometry [dvirtual V2R_Layout $layout]
+    wm geometry  $wc $geometry
+
+    wm withdraw $wc
+    
+    #-------------
+
+    iwidgets::scrolledframe $wc.f.ulist \
+	-width 10 \
+	-height 10 \
+	-hscrollmode none \
+	-vscrollmode static
+
+    #-------------
+
+    CreateImage cq_reset gif/questions_reset.gif
+    
+    button $wc.f.reset \
+	-image cq_reset \
+	-borderwidth 2 \
+	-command ""
+    catch {$wc.f.reset conf -font $font}
+    balloon add $wc.f.reset "return to initial state"
+
+    #-------------
+
+    CreateImage cq_request gif/questions_request.gif
+
+    button $wc.f.rq \
+	    -image cq_request \
+	    -relief raised \
+	    -borderwidth 2 \
+	    -justify center \
+	    -command ""
+    if {[catch {$wc.f.rq conf -font $font} errmsg]} {
+	ErrorTraceMsg "Questions: I can't set font: \"$font\".\n$errmsg"
+    }
+    balloon add $wc.f.rq "Question request"
+
+    #-------------
+
+    grid $wc.f.ulist -row 0 -column 0 -columnspan 2 -sticky nswe
+
+    set _tool $env(ISABEL_ROLE)
+    if {[lsearch -exact "Interactive" $_tool] != -1} {
+	grid $wc.f.reset -row 1 -column 0  -sticky nswe
+	grid $wc.f.rq    -row 1 -column 1  -sticky nswe
+    }
+
+    grid columnconfigure $wc.f 0 -weight 1
+    grid columnconfigure $wc.f 1 -weight 1
+    grid rowconfigure $wc.f 0 -weight 1
+    grid rowconfigure $wc.f 1 -weight 0
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::MoveDown {} {
+
+    set _display [session Environ cget -scenary_display]
+
+    toplevel .winunderauxq -screen $_display 
+
+    label .winunderauxq.msg -text "Moving Questions window to bottom"
+    pack .winunderauxq.msg
+
+    lower .winunderauxq
+
+    after idle after 1 [code $this MoveDown2]
+    after idle after 1 destroy  .winunderauxq
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::MoveDown2 {} {
+    global ISABEL_DIR
+
+    set _id1 [expr [winfo id .winunderauxq]]
+    set _id2 [expr [winfo id $wc]]
+
+    set _display [session Environ cget -scenary_display]
+    if {[catch "exec $ISABEL_DIR/bin/isabel_winunder -display $_display -winOver $_id1 -winUnder $_id2" _err]} {
+	WarningTraceMsg "Questions: I can not move Questions window to bottom: $_err"
+    }
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::AddSite {site_id cmd} {
+    
+    lappend added_sites $site_id
+
+    set _name [SiteManager::GetSiteInfo $site_id name]
+
+    set child_sm [$wc.f.ulist childsite]
+    set wcu_sm $child_sm.b$site_id 
+    
+    if {![winfo exists $wcu_sm]} {
+	button $wcu_sm \
+	    -width 300 \
+	    -padx 5 \
+	    -pady 0
+	
+	catch {$wcu_sm conf -font $font}
+    }
+    $wcu_sm configure \
+	-state disabled \
+	-text $_name \
+	-anchor nw \
+	-command $cmd
+
+    UpdateConfiguration $site_id
+
+    #--- reapply grid
+
+    Regrid
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::DelSite {site_id} {
+
+    if { ! [SiteAdded $site_id] } return 
+
+    set added_sites [ldelete $added_sites $site_id]
+
+    if 0 {
+	set requesting_sites [ldelete $requesting_sites $site_id]
+	
+	set speaker_sites [ldelete $speaker_sites $site_id]
+	
+	if {$questioner_site == $site_id} {
+	    set questioner_site ""
+	}
+    }
+
+
+    set child_sm [$wc.f.ulist childsite]
+    set wcu $child_sm.b$site_id
+
+    if {![winfo exists $wcu]} return
+
+    grid forget $wcu
+    destroy $wcu
+
+    # --- Regrid
+    
+    Regrid
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::SiteAdded {site_id} {
+    
+    if {[lsearch -exact $added_sites $site_id] == -1} {
+	# ErrorTraceMsg "Questions: Site $site_id is not running this component."
+	return 0
+    }
+    return 1
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::EnableSites {} {
+    
+    foreach site_id $added_sites {
+	[$wc.f.ulist childsite].b$site_id configure \
+	    -state normal \
+	    -foreground $enabled_conf(foreground) \
+	    -activeforeground $enabled_conf(activeforeground) \
+	    -bd $enabled_conf(bd) \
+	    -relief $enabled_conf(relief)
+    }
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::DisableSites {} {
+    
+    foreach site_id $added_sites {
+	[$wc.f.ulist childsite].b$site_id configure \
+	    -state disabled \
+	    -disabledforeground $disabled_conf(disabledforeground) \
+	    -bd $disabled_conf(bd) \
+	    -relief $disabled_conf(relief)
+    }
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::AddRequestingSite {site_id} {
+    
+    if {[lsearch -exact $requesting_sites $site_id] == -1} {
+	lappend requesting_sites $site_id
+    }
+
+    if {![SiteAdded $site_id]} return
+
+    # move button to the visible zone.
+    set bw [$wc.f.ulist childsite].b$site_id
+    set y [winfo y $bw]
+    set h [winfo height [$wc.f.ulist childsite]]
+    set bpos [expr 1.0*$y/$h]
+    set sv [$wc.f.ulist component vertsb]
+    set visiblezone [$sv get]
+    set vtop    [lindex $visiblezone 0]
+    set vbottom [lindex $visiblezone 1]
+
+    if {$vtop > $bpos || $bpos > $vbottom} {
+	[$sv cget -command] moveto $bpos
+    }
+
+    # Set the scrollbar color
+    $sv configure \
+	-bg $requesting_conf(bg) \
+	-activebackground $requesting_conf(activebackground)
+
+    UpdateConfiguration $site_id
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::DelRequestingSite {site_id} {
+    
+    set requesting_sites [ldelete $requesting_sites $site_id]
+    
+    # Set the scrollbar color
+    if {$requesting_sites == ""} {
+	set sv [$wc.f.ulist component vertsb]
+	$sv configure \
+	    -bg $other_conf(bg) \
+	    -activebackground $other_conf(activebackground)
+    }
+    
+    if {![SiteAdded $site_id]} return
+
+    UpdateConfiguration $site_id
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::NoRequestingSites {} {
+
+    set requesting_sites ""
+
+    # Set the scrollbar color
+    set sv [$wc.f.ulist component vertsb]
+    $sv configure \
+	-bg $other_conf(bg) \
+	-activebackground $other_conf(activebackground)
+
+    foreach site_id $added_sites {
+	UpdateConfiguration $site_id
+    }
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::SetSpeakerSites {site_ids} {
+    
+    set speaker_sites $site_ids
+    
+    foreach site_id $added_sites {
+	UpdateConfiguration $site_id
+    }
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::SetQuestionerSite {site_id} {
+
+    set _old_questioner_site $questioner_site
+    set questioner_site $site_id
+    
+    if {[SiteAdded $_old_questioner_site]} {
+	UpdateConfiguration $_old_questioner_site
+    }
+    
+    if {[SiteAdded $questioner_site]} {
+	UpdateConfiguration $questioner_site
+    }
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::SetResetCmd {cmd} {
+
+    $wc.f.reset configure -command $cmd
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::EnableReset {} {
+
+    $wc.f.reset configure -state normal -relief raised
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::DisableReset {} {
+
+    $wc.f.reset configure -state disabled -relief sunken
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::SetRequestCmd {cmd} {
+
+    $wc.f.rq configure -command $cmd
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::EnableRequest {} {
+
+    $wc.f.rq configure -state normal
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::DisableRequest {} {
+
+    $wc.f.rq configure -state disabled
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::SetLayout {_layout} {
+
+    if {$_layout != ""} {
+	set geometry [dvirtual V2R_Layout $_layout]
+    }
+
+    wm geometry $wc $geometry
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::Iconify {} {
+
+    wm withdraw $wc
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::Deiconify {} {
+
+    wm deiconify $wc
+    wm geometry  $wc $geometry
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::Iconified {} {
+
+    if {[wm state $wc] == "normal"} {
+	return 0
+    } else {
+	return 1
+    }
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::Regrid {} {
+
+    set sortedsiteids [lsort -dictionary $added_sites]
+    set kont 0
+    set child_sm [$wc.f.ulist childsite]
+    foreach sk $sortedsiteids {
+	
+	set wcu_sm $child_sm.b$sk
+	grid $wcu_sm -row $kont -column 0 
+	grid rowconfigure $child_sm $kont -weight 0
+	
+	incr kont
+    }
+}
+
+#---------------------------------------------------------------
+
+body QuestionsWidget::UpdateConfiguration {site_id} {
+
+    if {![SiteAdded $site_id]} return
+
+    set child_sm [$wc.f.ulist childsite]
+    set wcu_sm $child_sm.b$site_id
+
+    if {[lsearch -exact $requesting_sites $site_id] != -1} {
+
+	$wcu_sm configure \
+	    -bg $requesting_conf(bg) \
+	    -activebackground $requesting_conf(activebackground)
+
+    } elseif {$questioner_site == $site_id} {
+
+	$wcu_sm configure \
+	    -bg $questioner_conf(bg) \
+	    -activebackground $questioner_conf(activebackground)
+
+    } elseif {[lsearch -exact $speaker_sites $site_id] != -1} {
+
+	$wcu_sm configure \
+	    -bg $speaker_conf(bg) \
+	    -activebackground $speaker_conf(activebackground)
+
+    } else {
+
+	$wcu_sm configure \
+	    -bg $other_conf(bg) \
+	    -activebackground $other_conf(activebackground)
+
+    }
+}
+    
+#---------------------------------------------------------------

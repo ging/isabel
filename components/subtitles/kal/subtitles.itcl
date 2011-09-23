@@ -1,0 +1,394 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+class SubTitlesC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+    destructor {}
+
+    public method AddSite {site_id}
+    public method DelSite {site_id}
+
+    # Add the given new text to the subtitles window.
+    # Text is given as a list of ascii codes.
+    public method AddText {lcodes}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Counter used to create unique tag names
+    private variable ctag 0
+
+    # Root window
+    private variable wroot
+
+    # server object
+    private variable serverobj
+
+    # Makes the gui
+    private method MakeGUI {}
+
+    private method MoveDown {}
+    private method MoveDown2 {}
+
+    # Clean the subtitles window.
+    private method ClearText {}
+
+    # Deiconify or Iconify the control window.
+    private method SetVisible {_visible}
+
+    # Set window layout
+    private method SetLayout {_layout}
+
+    # Processes SMS messages:
+    private method processSubTitlesState {args}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method getOptionListValue {list optname {default ""}}
+
+    #--- Automaton to support fg anf bg colors ---------
+    #
+    # Formats:
+    #
+    #     #rrggbb -> set fg
+    #     #rrggbb#rrggbb -> set fg and bg
+    #
+    #
+
+    # Automaton states:
+    #   * text  -> writing text
+    #   * fg    -> receiving fg color
+    #   * fg2bg -> received fg and maybe the next input is a bg color.
+    #   * bg    -> receiving bg color
+    private variable aut_state text
+
+    # Counter used to know haw many caractec of the "rrggbb" string I has received
+    private variable aut_cont 0
+
+    # String where I am storing the chars of the "rrggbb" string which I am currently receiving.
+    private variable aut_color ""
+
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::constructor {} {
+
+
+    MakeGUI
+
+    set serverobj [SubTitlesServerC "#auto"]
+
+    network join_group subtitles
+
+    # Global SMS messages which I want to receive:
+    sms joinKey SubTitles [code $this processSubTitlesState]
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::destructor {} {
+
+    destroy $wroot
+    catch {delete object $serverobj}
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::MakeGUI {} {
+    global ISABEL_DIR
+    
+    set display [session Environ cget -scenary_display]
+    
+    set wroot .tSubTitles
+
+    set fg   [session Activity GetResource SubTitles fg white]
+    set bg   [session Activity GetResource SubTitles bg black]
+
+    toplevel $wroot -screen $display -bg $bg 
+
+    # --
+    
+    set orr [session Activity GetResource SubTitles overrideredirect 0]
+    if $orr {
+	wm overrideredirect $wroot 1
+
+	after idle [code $this MoveDown]
+
+    } else {
+	wm title     $wroot "SubTitles"
+	wm iconname  $wroot "SubTitles"
+	
+	# window manager error: dont manage iconbitmap with remote toplevel.
+	catch {wm iconbitmap $wroot @$ISABEL_DIR/lib/images/xbm/clock.xbm}
+    }
+
+    wm withdraw $wroot
+    
+    # --
+
+    set font [session Activity GetResource SubTitles font "12x24"]
+
+    text $wroot.t \
+	-relief flat \
+	-bd 5 \
+	-bg $bg \
+	-fg $fg \
+        -wrap word \
+	-state disabled \
+	-font $font
+
+    pack  $wroot.t -expand 1 -fill both
+
+    # Unbind events:
+    bind $wroot.t <<paste>> "break"
+    bind $wroot.t <Key> "break"
+    bind $wroot.t <KeyRelease> "break"
+    bind $wroot.t <ButtonRelease-2> "break"
+    bind $wroot.t <1> "break"
+    bind $wroot.t <2> "break"
+    bind $wroot.t <Button> "break"
+    bind $wroot.t <Motion> "break"
+    bind $wroot.t <Leave> "break"
+
+    # -- tag --
+    
+    $wroot.t tag configure mytag$ctag \
+	-foreground $fg \
+	-background $bg
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::MoveDown {} {
+
+    set _display [session Environ cget -scenary_display]
+
+    toplevel .winunderauxst -screen $_display 
+
+    label .winunderauxst.msg -text "Moving Subtitles window to bottom"
+    pack .winunderauxst.msg
+
+    lower .winunderauxst
+
+    after idle after 1 [code $this MoveDown2]
+    after idle after 1 destroy  .winunderauxst
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::MoveDown2 {} {
+    global ISABEL_DIR
+
+    set _id1 [expr [winfo id .winunderauxst]]
+    set _id2 [expr [winfo id $wroot]]
+
+    set _display [session Environ cget -scenary_display]
+    if {[catch "exec $ISABEL_DIR/bin/isabel_winunder -display $_display -winOver $_id1 -winUnder $_id2" _err]} {
+	WarningTraceMsg "Subtitles: I can not move Subtitles window to bottom: $_err"
+    }
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::AddSite {site_id} {
+
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::DelSite {site_id} {
+
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::AddText {lcodes} {
+
+    $wroot.t conf -state normal
+    
+    foreach c $lcodes {
+	set _char [format %c $c]
+	
+	switch -- $aut_state {
+	    text {
+		if {$c == "8"} {
+		    $wroot.t delete "end - 2 char"
+		} elseif {$_char == "#"} {
+		    set aut_cont 0
+		    set aut_color ""
+		    set aut_state fg
+		} else {
+		    $wroot.t insert end $_char mytag$ctag
+		}
+	    }
+	    fg {
+		if {$c == "8"} {
+		    if {$aut_cont > 0} {
+			incr aut_cont -1
+			set aut_color [string range $aut_color 0 end-1]
+			
+		    }
+		} elseif {[string first $_char "0123456789aAbBcCdDeEfF"] != -1} {
+		    incr aut_cont
+		    set aut_color $aut_color$_char
+		    if {$aut_cont == 6} {
+			set aut_state fg2bg
+			set ctag [expr ($ctag + 1) % 10]
+			catch {$wroot.t tag configure mytag$ctag -foreground #$aut_color} 
+		    }
+		} else {
+		    $wroot.t insert end "#$aut_color$_char"  mytag$ctag
+		    set aut_cont 0
+		    set aut_color ""
+		    set aut_state text
+		}		
+	    }
+	    fg2bg {
+		if {$_char == "#"} {
+		    set aut_cont 0
+		    set aut_color ""
+		    set aut_state bg
+		} else {
+		    $wroot.t insert end $_char  mytag$ctag
+		    set aut_state text
+		}
+	    }
+	    bg {
+		if {$c == "8"} {
+		    if {$aut_cont > 0} {
+			incr aut_cont -1
+			set aut_color [string range $aut_color 0 end-1]
+			
+		    }
+		} elseif {[string first $_char "0123456789aAbBcCdDeEfF"] != -1} {
+		    incr aut_cont
+		    set aut_color $aut_color$_char
+		    if {$aut_cont == 6} {
+			set aut_state text
+			catch {$wroot.t tag configure mytag$ctag -background #$aut_color} 
+		    }
+		} else {
+		    $wroot.t insert end "#$aut_color$_char"  mytag$ctag
+		    set aut_cont 0
+		    set aut_color ""
+		    set aut_state text
+		}		
+	    }
+	}
+    }
+
+    $wroot.t delete 1.0 "end - 5 lines"
+    
+    $wroot.t see end
+    $wroot.t conf -state disabled
+    
+}
+
+#---------------------------------------------------------------
+if 0 {
+body SubTitlesC::AddText {lcodes} {
+
+    $wroot.t conf -state normal
+    
+    foreach c $lcodes {
+	if {$c == "8"} {
+	    $wroot.t delete "end - 2 char"
+	} else {
+	    $wroot.t insert end [format %c $c]
+	}
+    }
+    
+    $wroot.t delete 1.0 "end - 5 lines"
+    
+    $wroot.t see end
+    $wroot.t conf -state disabled
+}
+}
+#---------------------------------------------------------------
+
+body SubTitlesC::ClearText {} {
+
+    $wroot.t conf -state normal
+    $wroot.t delete 1.0 end
+    $wroot.t conf -state disabled
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::SetVisible {_visible} {
+
+    if {$_visible} {
+	wm deiconify $wroot
+    } else {
+	wm withdraw $wroot
+    }
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::SetLayout {_layout} {
+
+    set _geometry [dvirtual V2R_Layout $_layout]
+    wm geometry  $wroot $_geometry
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::processSubTitlesState {args} {
+
+    set _active [getOptionListValue $args -active "0"]
+    set _layout [getOptionListValue $args -layout ""]
+
+    if {$_active != "1"} {
+	SetVisible 0
+	return
+    }
+
+    ClearText
+    SetLayout  $_layout
+    SetVisible 1
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesC::getOptionListValue {list optname {default ""}} {
+    
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#---------------------------------------------------------------
+

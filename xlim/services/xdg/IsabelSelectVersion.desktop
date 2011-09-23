@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Select Isabel Version
+Comment=Select current Isabel version
+Exec=/usr/local/isabel/bin/isrv_SelectVersion.sh
+Icon=/usr/local/isabel/lib/images/gif/replace2.gif
+Terminal=false
+Type=Application
+StartupNotify=true

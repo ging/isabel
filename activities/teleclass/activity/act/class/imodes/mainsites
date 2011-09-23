@@ -1,0 +1,193 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#------------------------------------------------------------------------------------
+
+#
+# Layouts for the video of the MAIN sites.
+#
+
+Video.layout.lpay1lq: \
+ {video 192x144+000+187 _ISERV_VID_PAY1LQ_BW} 
+
+Video.layout.lpay1hq: \
+ {video 192x144+000+187 _ISERV_VID_PAY1HQ_BW} 
+
+
+
+Video.layout.lpay2lq: \
+ {video 160x120+000+187 _ISERV_VID_PAY2LQ_BW} \
+ {video 160x120+000+350 _ISERV_VID_PAY2LQ_BW} 
+
+Video.layout.lpay2hq: \
+ {video 160x120+000+187 _ISERV_VID_PAY2HQ_BW} \
+ {video 160x120+000+350 _ISERV_VID_PAY2HQ_BW} 
+
+
+
+Video.layout.lpay6lq: \
+ {video 096x072+000+187 _ISERV_VID_PAY6LQ_BW} \
+ {video 096x072+000+295 _ISERV_VID_PAY6LQ_BW} \
+ {video 096x072+000+403 _ISERV_VID_PAY6LQ_BW} \
+ {video 096x072+100+187 _ISERV_VID_PAY6LQ_BW} \
+ {video 096x072+100+295 _ISERV_VID_PAY6LQ_BW} \
+ {video 096x072+100+403 _ISERV_VID_PAY6LQ_BW} 
+
+Video.layout.lpay6hq: \
+ {video 096x072+000+187 _ISERV_VID_PAY6HQ_BW} \
+ {video 096x072+000+295 _ISERV_VID_PAY6HQ_BW} \
+ {video 096x072+000+403 _ISERV_VID_PAY6HQ_BW} \
+ {video 096x072+100+187 _ISERV_VID_PAY6HQ_BW} \
+ {video 096x072+100+295 _ISERV_VID_PAY6HQ_BW} \
+ {video 096x072+100+403 _ISERV_VID_PAY6HQ_BW} 
+
+
+
+Video.layout.lpay24lq: \
+ {video 064x048+000+187 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+000+268 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+000+349 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+000+430 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+066+187 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+066+268 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+066+349 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+066+430 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+132+187 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+132+268 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+132+349 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+132+430 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+198+187 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+198+268 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+198+349 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+198+430 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+198+521 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+198+602 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+198+683 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+958+187 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+958+268 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+958+349 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+958+430 _ISERV_VID_PAY24LQ_BW} \
+ {video 064x048+958+521 _ISERV_VID_PAY24LQ_BW} 
+
+Video.layout.lpay24hq: \
+ {video 064x048+000+187 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+000+268 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+000+349 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+000+430 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+066+187 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+066+268 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+066+349 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+066+430 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+132+187 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+132+268 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+132+349 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+132+430 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+198+187 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+198+268 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+198+349 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+198+430 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+198+521 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+198+602 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+198+683 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+958+187 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+958+268 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+958+349 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+958+430 _ISERV_VID_PAY24HQ_BW} \
+ {video 064x048+958+521 _ISERV_VID_PAY24HQ_BW} 
+
+
+
+Video.layout.lpay35lq: \
+ {video 064x048+000+187 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+000+268 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+000+349 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+000+430 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+066+187 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+066+268 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+066+349 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+066+430 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+132+187 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+132+268 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+132+349 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+132+430 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+198+187 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+198+268 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+198+349 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+198+430 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+198+521 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+198+602 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+198+683 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+958+187 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+958+268 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+958+349 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+958+430 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+958+521 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+958+602 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+958+683 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+958+106 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+958+025 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+274+602 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+350+602 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+426+602 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+502+602 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+578+602 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+654+602 _ISERV_VID_PAY35LQ_BW} \
+ {video 064x048+730+602 _ISERV_VID_PAY35LQ_BW} 
+
+Video.layout.lpay35hq: \
+ {video 064x048+000+187 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+000+268 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+000+349 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+000+430 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+066+187 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+066+268 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+066+349 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+066+430 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+132+187 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+132+268 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+132+349 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+132+430 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+198+187 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+198+268 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+198+349 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+198+430 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+198+521 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+198+602 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+198+683 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+958+187 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+958+268 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+958+349 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+958+430 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+958+521 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+958+602 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+958+683 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+958+106 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+958+025 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+274+602 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+350+602 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+426+602 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+502+602 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+578+602 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+654+602 _ISERV_VID_PAY35HQ_BW} \
+ {video 064x048+730+602 _ISERV_VID_PAY35HQ_BW} 
+
+#------------------------------------------------------------------------------------

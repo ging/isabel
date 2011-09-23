@@ -1,0 +1,117 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#
+#
+# Objects of this class store the counters (nsec and origin) associated to one SMS key.
+#
+# The state's data is not stored in this class.
+#
+class SmsStateCounter {
+    
+    # Contador de cambios realizados en el estado.
+    # Se usa para saber cual es el ultimo estado.
+    private variable nsec 0
+    
+    # Origin: usado para decidir si debo actualizar el estado cuando llega un mensaje 
+    # con el mismo nsec: solo actualizo si el mensaje viene del mismo sitio, es decir, 
+    # el valor de origin es el mismo.
+    # Este valor es unico para cada cliente del servicio. Usare el chid de los sitios
+    # como valor de origen.
+    private variable origin 0
+    
+    #
+    # Construye un nuevo objeto con los contadores del estado.
+    #
+    # $_nsec y $_origin son los valores para los atributos nsec y origin.
+    #
+    public constructor {_nsec _origin} {} {
+	
+	set nsec $_nsec
+	set origin $_origin
+    }
+    
+    #
+    # Returns the $nsec value
+    #
+    public method getNSec {} {
+	
+	return $nsec
+    }
+    
+    #
+    # Sets a new $nsec value
+    #
+    public method setNSec {_nsec} {
+
+	set nsec $_nsec
+    }
+    
+    #
+    # Increment nsec by 1.
+    #
+    public method incrNSec {} {
+	
+	incr nsec 
+    }
+    
+    #
+    # Returns the $origin value
+    #
+    public method getOrigin {} {
+	
+	return $origin
+    }
+    
+    #
+    # Sets a new $origin value
+    #
+    public method setOrigin {_origin} {
+	
+	set origin $_origin
+    }
+    
+    #
+    # Compares the given $_nsec and $_origin with my $nsec and $origin, in order
+    # to know if they are associated to a state which must be applied.
+    #
+    # Returns 1 if the given values are associated to a state which must be applied, i.e. 
+    # $_nsec is greater than my $nsec, or it they are equals, then $_origin is equal $origin.
+    # Otherwise, 0 is returned.
+    #
+    # There is a special case, when _nsec is 0. In this case the method always returns 1.
+    # It is used mainly when sending an initial message and I do not know about the previous history.
+    public method applicable {_nsec _origin} {
+	
+	if {$_nsec == 0} { return 1 }
+	if {$_nsec > $nsec} { return 1 }
+	
+	if {$_nsec == $nsec} {
+	    if {$_origin == $origin} {
+		return 1
+	    }
+	}
+	
+	return 0
+    }
+}
+

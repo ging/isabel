@@ -1,0 +1,338 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# config.itcl
+#
+# ShDisplay configurator.
+#
+#########################################################################
+
+class ShDisplayConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Change user interface visibility.
+    public proc Show {}
+    public proc Hide {}
+    public proc ToggleShowHide {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # toplevel widget.
+    private common wroot .shdisplay_config_tl
+
+    # Create the user interface.
+    private proc GUI {}
+
+    # Current values
+    private common currentBW      1
+    private common currentPktDup  1
+    private common currentQuality 1
+
+    # 
+    public proc SelectCodec         {c} {}
+    public proc ApplyCodec          {{c ""}} {}
+
+
+    public proc SetBW     {bw}
+    public proc ApplyBWCB {bw}
+
+    public proc SetPktDuplication     {pd}
+    public proc ApplyPktDuplicationCB {pd}
+
+    public proc SetQuality     {q}
+    public proc ApplyQualityCB {q}
+}
+
+#---------------------------------------------------------------------------
+
+body ShDisplayConfigC::GUI {} {
+
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    toplevel $wroot -screen [session Environ cget -ctrl_display]
+
+    wm title $wroot "Shared Display Codec Config"
+
+    label $wroot.l -text "Shared Display  Configuration"
+    pack  $wroot.l -side top
+
+    frame $wroot.g -bd 3 -relief groove 
+    pack  $wroot.g -side top -expand 1 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+    
+    #--------------------------------
+
+    button $wroot.close -text Dismiss -command ShDisplayConfigC::Hide
+
+    pack $wroot.close -side bottom -pady 8
+
+    #--------------------------------
+
+    label $wroot.g.warning0 \
+	    -text "Warning: Below options must only be used for testing." \
+	    -relief flat \
+	    -bd 0 \
+	    -font $font
+
+    label $wroot.g.warning1 \
+	    -text "Warning: They are applied until a new interaction mode is selected." \
+	    -relief flat \
+	    -bd 0 \
+	    -font $font
+
+    #--------------------------------
+    
+    label $wroot.g.lcodec -text "Test Codec:" -font $font
+
+    ::iwidgets::optionmenu $wroot.g.omcodec \
+	    -font $font \
+	    -command ShDisplayConfigC::ApplyCodec
+
+    $wroot.g.omcodec insert end MPEG-4
+    $wroot.g.omcodec insert end MPEG-1
+    $wroot.g.omcodec insert end XVID
+    $wroot.g.omcodec insert end MJPEG
+    $wroot.g.omcodec insert end PNG
+    $wroot.g.omcodec insert end H.263
+
+    #--------------------------------
+    
+    label $wroot.g.lquality -text "Quality (1-100):" -font $font
+
+    scale $wroot.g.squality \
+	    -orient horizontal \
+	    -font $font \
+	    -from 1 -to 100 \
+	    -command [code ShDisplayConfigC::ApplyQualityCB]
+    $wroot.g.squality set $currentQuality
+
+    #--------------------------------
+    
+    label $wroot.g.lbw -text "BW (kbps):" -font $font
+
+    scale $wroot.g.sbw \
+	    -orient horizontal \
+	    -font $font \
+	    -from 20 -to 10000 \
+	    -command [code ShDisplayConfigC::ApplyBWCB]
+    $wroot.g.sbw set $currentBW
+
+    #--------------------------------
+    
+    label $wroot.g.lpd -text "Packet duplication:" -font $font
+
+    scale $wroot.g.spd \
+	    -orient horizontal \
+	    -font $font \
+	    -from 1 -to 4 \
+	    -command [code ShDisplayConfigC::ApplyPktDuplicationCB]
+    $wroot.g.spd set $currentPktDup
+
+    #--------------------------------
+
+    grid $wroot.g.warning0 -row 0 -column 0  -columnspan 2 -sticky sw -pady 5
+    grid $wroot.g.warning1 -row 1 -column 0  -columnspan 2 -sticky sw -pady 5
+
+    grid $wroot.g.lcodec   -row 2 -column 0 -sticky es
+    grid $wroot.g.omcodec  -row 2 -column 1 -sticky we
+
+    grid $wroot.g.lquality -row 3 -column 0 -sticky es
+    grid $wroot.g.squality -row 3 -column 1 -sticky we
+
+    grid $wroot.g.lbw  -row 4 -column 0 -sticky es
+    grid $wroot.g.sbw  -row 4 -column 1 -sticky we
+
+    grid $wroot.g.lpd  -row 5 -column 0 -sticky es
+    grid $wroot.g.spd  -row 5 -column 1 -sticky w
+
+    grid columnconfigure $wroot.g 1 -weight 1
+    
+    #--------------------------------
+    
+}
+
+#---------------------------------------------------------------------------
+
+body ShDisplayConfigC::Show {} {
+    
+    if {![winfo exist $wroot]} { 
+	GUI
+    } else {
+	wm deiconify $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body ShDisplayConfigC::Hide {} {
+
+    if {[winfo exist $wroot]} { 
+	wm withdraw $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body ShDisplayConfigC::ToggleShowHide {} {
+    
+    if {![winfo exist $wroot]} { 
+	Show
+    } else {
+	if {[wm state $wroot] != "normal"} {
+	    Show
+	} else {
+	    Hide
+	}
+    }
+}
+
+#------------------------------------------------------------
+#
+# Methods related with ShDisplay Codecs.
+#
+#------------------------------------------------------------
+
+
+body ShDisplayConfigC::ApplyCodec {{c ""}} {
+
+    if {$c == ""} {
+	set c  [$wroot.g.omcodec get]
+	if {$c == ""} {
+	    return
+	    set c void
+	}
+	network SiteBroadcast COMP VNC ShDisplayConfigC::ApplyCodec $c
+    } else {
+	VNCShDisplayCmd SetCodec $c
+    }
+}
+
+
+body ShDisplayConfigC::SelectCodec {c} {
+    catch "$wroot.g.omcodec select $c"
+}
+
+#------------------------------------------------------------
+#
+# Methods related with setting quality.
+#
+#------------------------------------------------------------
+
+body ShDisplayConfigC::ApplyQualityCB {q} {
+
+    if {$currentQuality == $q} return
+
+    set currentQuality $q
+
+    if {[winfo exists $wroot.g.squality]} {
+	network SiteBroadcast COMP VNC ShDisplayCmd SetQuality $q
+    }
+}
+
+body ShDisplayConfigC::SetQuality {q} {
+
+    set currentQuality $q
+
+    if {![winfo exists $wroot.g.squality]} {
+	return
+    }
+
+    $wroot.g.squality set $q
+}
+
+#------------------------------------------------------------
+#
+# Methods related with ShDisplay BW.
+#
+#------------------------------------------------------------
+
+body ShDisplayConfigC::ApplyBWCB {bw} {
+
+    if {$currentBW == $bw} return
+
+    set currentBW $bw
+
+    if {[winfo exists $wroot.g.sbw]} {
+	network SiteBroadcast COMP VNC ShDisplayCmd SetBW $bw
+    }
+}
+
+body ShDisplayConfigC::SetBW {bw} {
+
+    set currentBW $bw
+    
+    if {![winfo exists $wroot.g.sbw]} {
+	return
+    }
+
+    $wroot.g.sbw set $bw
+}
+
+#------------------------------------------------------------
+#
+# Methods related with Packet duplication.
+#
+#------------------------------------------------------------
+
+body ShDisplayConfigC::ApplyPktDuplicationCB {pd} {
+
+    if {$currentPktDup == $pd} return
+
+    set currentPktDup $pd
+
+    if {[winfo exists $wroot.g.spd]} {
+	network SiteBroadcast COMP VNC ShDisplayCmd SetPktDuplication $pd
+    }
+}
+
+body ShDisplayConfigC::SetPktDuplication {pd} {
+
+    set currentPktDup $pd
+
+    if {![winfo exists $wroot.g.spd]} {
+	return
+    }
+
+    $wroot.g.spd set $pd
+}
+
+#---------------------------------------------------------------------------
+
+
+
+
+
+
+
+

@@ -1,0 +1,183 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#
+# SmsManagerClient.itcl
+#
+#  Ver la descripcion en SmsManagerMaster.itcl para ver como funciona este servicio.
+#
+#  Esta es la clase que corre en los clientes: envia mensajes de cambio de estado al master, y 
+#  recibe de el las actualizaciones de los estados. 
+#  
+#  De esta clase debe crearse una unica instancia, y la aplicacion debe registrar en que 
+#  estados esta interesada (key), y el metodo a invocar cada vez que se reciba un nuevo 
+#  estado del master. El registro de la clave y del metodo que atiende a los cambios se
+#  hace llamando joinKey.
+#
+#  Cuando se cambie el valor de un estado, se actualizara este, se actualizara el numero de secuencia,
+#  y se enviara un mensaje al master con el nuevo estado.
+#
+#  Cuando se recibe un mensaje del master, se llamara al metodo de atencion registrado con joinKey 
+#  para procesar el nuevo estado.
+#
+#  Los mensajes de estado recibidos del master se descartaran si el numero de secuencia y 
+#  origen indican que es un estado antiguo.
+#
+
+
+class SmsManagerClient {
+    
+    #
+    #  Prefijo que se antepone a la clave para formar el nombre del grupo.
+    #
+    public variable GROUP_PREFIX_STATE "isabel_sms_state_"
+    public variable GROUP_PREFIX_NSEC  "isabel_sms_nsec_"
+
+    # Tabla que mantiene los estados.
+    # Las claves de esta tabla son los strings que se usan para identificar a
+    # cada grupo de estados independientes.
+    # El valor asociado a cada clave es el nombre de un objeto SmsStateCounter, que es un HashMap en el 
+    # el contador nsec y el valor origin, que se usan para saber cual es el ultimo estado valido.
+    # Importante: no se guandan los valores del estado, solo los contadores
+    private variable table
+    
+    # Store the callback methods.
+    # $cb(key) is the method to execute when a update state mesage is received for $key.
+    private variable cb
+
+    #
+    # Crea un nuevo objeto SmsClientManager.
+    #
+    constructor {} {} {
+
+	WriteTraceMsg "Creating a SmsManagerClient object."
+    }
+
+    #
+    # joinKey se usa para:
+    #   - Crear un nuevo estado asociado a la clave $key.
+    #   - Configurar SeCo para que escuche en el grupo por donde se reciben las actualizaciones 
+    #     de ese estado desde el master.
+    #   - Indicar que metodo se debe invocar cuando se reciba un mensaje de actualizacion de estado.
+    #     A este metodo se le pasara como argumento la lista completa de opciones y valores del 
+    #     nuevo estado. 
+    public method joinKey {key {_cb ""}} {
+
+        if { ! [info exists table($key)]} {
+	    set _origin [network WhoAmI]
+	    set table($key) [eval SmsStateCounter "#auto" 0 $_origin]
+	}
+
+	set cb($key) $_cb
+
+	network join_group ${GROUP_PREFIX_NSEC}${key}
+	network join_group ${GROUP_PREFIX_STATE}${key}
+    }
+
+    #
+    # leaveKey se usa para:
+    #   - Indicar a SeCo que no escuche el grupo por donde se reciben las actualizaciones 
+    #     de ese estado.
+    public method leaveKey {_key} {
+
+	network leave_group ${GROUP_PREFIX_STATE}${_key}
+	network leave_group ${GROUP_PREFIX_NSEC}${_key}
+    }
+
+    #
+    # Set a new state value.
+    #
+    # The nsec is updated and the new state is sent to master.
+    #
+    # $ope must be "set", "add" or "del".
+    #
+    public method setState {key ope args} {
+
+        if { ! [info exists table($key)]} {
+	    set _origin [network WhoAmI]
+	    set table($key) [eval SmsStateCounter "#auto" 0 $_origin]
+	}
+
+        # Send the state to the SmsManagerMaster.
+	set _nsec [$table($key) getNSec]
+	if {$_nsec != 0} {
+	    set _nsec [expr $_nsec + 1]
+	}
+	set _orig [$table($key) getOrigin]
+	eval network MasterRequest SMSM $key $_nsec $_orig $ope $args
+    }
+
+    #
+    # Force a new state value.
+    #
+    # This method is like setState but the sent message uses 0 as nsec to force the applicability of the state.
+    #
+    public method forceState {key ope args} {
+
+        if { ! [info exists table($key)]} {
+	    set _origin [network WhoAmI]
+	    set table($key) [eval SmsStateCounter "#auto" 0 $_origin]
+	}
+
+        # Send the current state to the SmsManagetMaster.
+	set _nsec 0
+	set _orig [$table($key) getOrigin]
+	eval network MasterRequest SMSM $key $_nsec $_orig $ope $args
+    }
+
+    #
+    # Este metodo se invoca para procesar un mensaje SMS recibido del master, y
+    # que contiene el valor de un estado.
+    #
+    # $key es la clave del estado.
+    #
+    # $type indica el tipo de mensaje. Si es "state" indica que a continuacion viene el
+    # numero de secuencia actual del estado y los pares opcion/valor. Si es "nsec", 
+    # indica que lo unico que viene a continuacion es el numero de secuencia.
+    #
+    # $nsec es el numero de secuencia actual del estado.
+    #
+    # $args lista con los pares {$opcion $valor} que formaran el nuevo estado.
+    #
+    # Si nos han enviado los valores del estado, se llama a la callback registrada 
+    # pasando como argumento la lista de opciones y valores del nuevo estado.
+    #
+    public method processMessage {key type nsec args} {
+	
+	if { ! [info exists table($key)]} return 
+	
+	if {$nsec > [$table($key) getNSec]} {
+	    # Update the state counters
+	    $table($key) setNSec $nsec
+	}
+	
+	if {$type == "state"} {
+	    # Execute the callback:
+	    if {[info exists cb($key)]} {
+		if {$cb($key) != ""} {
+		    eval $cb($key) $args
+		}
+	    }
+	}
+    }
+}
+

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Local Test
+Comment=Starts a local testing session
+Exec=/usr/local/isabel/bin/isrv_LocalTest.sh
+Icon=/usr/local/isabel/lib/images/gif/localtesticon.gif
+Terminal=false
+Type=Application
+StartupNotify=true

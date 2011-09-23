@@ -1,0 +1,22 @@
+/*
+-----------------------------------------------------------------------------
+
+    Bld.inf - build info file for aCodecs
+    
+-----------------------------------------------------------------------------
+*/
+
+PRJ_PLATFORMS
+WINS WINSCW THUMB
+
+PRJ_EXPORTS
+//..\inc\aCodecs.h
+
+PRJ_MMPFILES
+..\group\aCodecs.mmp
+
+
+PRJ_TESTMMPFILES
+..\tsrc\aCodecsTest.mmp
+
+// End of file

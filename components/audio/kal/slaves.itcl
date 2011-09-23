@@ -1,0 +1,149 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+class AudioSlaves {
+
+    # Table with the slaves of each audio master.
+    # $masterSlaves($masterSiteId) is a list with the siteid of the
+    # slaves of the given master.
+    private common masterSlaves
+
+    if 0 {
+    # Stores the activity Audio.slaves value into the masterSlaves attribute.
+    public proc loadActivity {} {
+	
+	# Get the activity value:
+	set _slavesLists [session Activity GetResource Audio slaves ""]
+	
+	# Unset current values:
+	catch {unset masterSlaves}
+	
+	# Set new values:
+	foreach _s $_slavesLists {
+	    set _master [lindex $_s 0]
+	    if {$_master != ""} {
+		set masterSlaves($_master) [lrange $_s 1 end]
+	    }
+	}
+    }
+}
+
+    if 0 {
+    # Saves the masterSlaves attribute into the activity Audio.slaves resource.
+    public proc saveActivity {} {
+
+	set _res ""
+	
+	foreach _m [array names masterSlaves] {
+	    lappend _res [concat $_m $masterSlaves($_m)]
+	} 
+	 
+	session Activity SetResource Audio slaves $_res
+    }
+}
+
+    # Returns the master siteid of the given slave siteid.
+    # If the give site has no master, then it returns "".
+    public proc getMaster {_slave} {
+
+	foreach _m [array names masterSlaves] {
+	    if {[lsearch -exact $masterSlaves($_m) $_slave] != -1} {
+		return $_m
+	    }
+	}
+	return "" 
+    }
+
+
+    # Add a new slave to the given master.
+    public proc addSlave {_master _slave} {
+
+	# Delete old master-slave dependencies:
+	delSlave $_slave
+
+	lappend masterSlaves($_master) $_slave
+
+#	saveActivity
+    }
+
+
+    # Delete the given slave of all the master-slave dependencies.
+    public proc delSlave {_slave} {
+
+	foreach _m [array names masterSlaves] {
+	    set masterSlaves($_m) [ldelete $masterSlaves($_m) $_slave]
+
+	    if {[llength $masterSlaves($_m)] == 0} {
+		unset masterSlaves($_m)
+	    }
+	}
+
+#	saveActivity
+    }
+
+    # Print into stdout the current stored values.
+    public proc dump {} {
+
+	puts "== Audio Master-Slaves dependencies:"
+
+	foreach _m [array names masterSlaves] {
+	    puts "   $_m  => $masterSlaves($_m)"
+	}
+    }
+
+    # Replaces in the given site_id list, the slave sites by its master sites.
+    public proc masterize {site_id_list} {
+
+	set _bypass [session Activity GetResource Audio bypass 0]
+	
+	if {$_bypass == "0"} {
+	    return $site_id_list
+	}
+
+	set _res ""
+	
+	set _all_sites [SiteManager::GetSites]
+	
+	foreach _sid $site_id_list {
+	    
+	    # If site $_sid is not running Audio, then I skip it:
+	    if {[lsearch -exact $_all_sites $_sid] == -1} continue
+	    
+	    # get the master associated to this site:
+	    set _master_sid [getMaster $_sid]
+	    
+	    if {$_master_sid == ""} {
+		if {[lsearch -exact $_res $_sid] == -1} {
+		    lappend _res $_sid
+		}
+	    } else {
+		if {[lsearch -exact $_res $_master_sid] == -1} {
+		    lappend _res $_master_sid
+		}
+	    }
+	}
+	return $_res
+    }
+}
+
+
+

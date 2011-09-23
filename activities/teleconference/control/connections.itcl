@@ -1,0 +1,107 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+# connections.itcl
+#
+# Maintains a list of currently connected isabel sites.
+#
+#-----------------------------------------
+
+
+#-----------------------------------------
+
+class ConnectionsTCC {
+ 
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Constructor.
+    constructor {} {}
+
+    # Destructor.
+    destructor {}
+
+    # Method called when a new site connects to the isabel session.
+    public method siteConnection {_site_id}
+
+    # Method called when a site disconnects from the isabel session.
+    public method siteDisconnection {_site_id}
+    
+    # Checks if the given site_id belongs to a connected site, returning 1.
+    # Otherwise return 0.
+    public method online {_site_id}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # List with the site_id of the connected sites.
+    private variable connected_sites
+}
+
+#---------------------------------------------------------------
+
+body ConnectionsTCC::constructor {} {
+
+    set connected_sites ""
+
+    set _all [SiteManager::GetSites] 
+
+    foreach _site_id $_all {
+        lappend connected_sites $_site_id
+    }
+}
+
+#---------------------------------------------------------------
+
+
+body ConnectionsTCC::destructor {} {
+}
+
+#---------------------------------------------------------------
+
+body ConnectionsTCC::siteConnection {_site_id} {
+
+    lappend connected_sites $_site_id
+}
+
+#---------------------------------------------------------------
+
+body ConnectionsTCC::siteDisconnection {_site_id} {
+
+    set connected_sites [ldelete $connected_sites $_site_id]
+}
+
+#---------------------------------------------------------------
+
+body ConnectionsTCC::online {_site_id} {
+
+    if {[lsearch -exact $connected_sites $_site_id] == -1} {
+        return 0
+    } else {
+        return 1
+    }
+}
+
+#---------------------------------------------------------------

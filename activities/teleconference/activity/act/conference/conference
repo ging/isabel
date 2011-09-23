@@ -1,0 +1,104 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+# SERVICE PARAMETERS AND CTES
+sinclude(act/lib/vars/defmacros)
+sinclude(act/lib/vars/qos.var)
+sinclude(act/lib/vars/audio.var)
+sinclude(act/lib/vars/video.var)
+sinclude(act/conference/vars/qos)
+sinclude(act/conference/vars/ctrl.var)
+sinclude(act/conference/vars/ctes)
+
+# ACTIVITY DEFINITION
+sinclude(act/conference/main)
+
+# ROLES DEFINITION
+sinclude(act/lib/roles/default)
+sinclude(act/conference/roles)
+
+
+# USER ACTIONS DEFINITION
+sinclude(act/conference/actions)
+
+# MENUITEMS DEFINITION
+sinclude(act/lib/menuitems/admin)
+sinclude(act/lib/menuitems/monitor)
+sinclude(act/lib/menuitems/video)
+sinclude(act/lib/menuitems/audio)
+sinclude(act/lib/menuitems/mcu)
+sinclude(act/lib/menuitems/irouter)
+sinclude(act/conference/menuitems/menuitems)
+
+# COMPONENTS
+sinclude(act/conference/comps/conferencectrl)
+
+sinclude(act/lib/comps/ftp)
+sinclude(act/lib/comps/mcu)
+
+sinclude(act/lib/comps/audio)
+Audio.geometry:     +200-40
+Audio.myinitmute:    1
+Audio.tonesites:     Ctrl
+Audio.bypass:        1
+
+sinclude(act/lib/comps/sldftp)
+
+sinclude(act/lib/comps/wallpaper)
+sinclude(act/lib/comps/titles)
+
+sinclude(act/lib/comps/questions)
+sinclude(act/lib/comps/vnc)
+sinclude(act/lib/comps/whiteboard)
+
+sinclude(act/lib/comps/video)
+Video.vga.enabled: 1
+
+sinclude(act/lib/comps/speechmeter)
+SpeechMeter.overrideredirect: 1
+
+sinclude(act/lib/comps/monitor)
+
+
+# INTERACTION MODES DEFINITION
+sinclude(act/conference/imodes/mode1)
+sinclude(act/conference/imodes/mode2)
+sinclude(act/conference/imodes/mode3)
+sinclude(act/conference/imodes/mode4)
+sinclude(act/conference/imodes/mode9)
+sinclude(act/conference/imodes/modeall)
+sinclude(act/conference/imodes/mode1N)
+sinclude(act/conference/imodes/cameradocmode)
+sinclude(act/conference/imodes/vgamode)
+sinclude(act/conference/imodes/wbmode)
+sinclude(act/conference/imodes/quesmode)
+sinclude(act/conference/imodes/pannelmode)
+sinclude(act/conference/imodes/idlemode)
+sinclude(act/conference/imodes/appsharingmode)
+
+
+
+
+
+
+

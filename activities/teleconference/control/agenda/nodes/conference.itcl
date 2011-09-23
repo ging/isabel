@@ -1,0 +1,383 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class ConferenceTCC {
+    inherit NodeTCC
+    
+    #-- Node attributes
+
+    public variable version
+    public variable name
+    public variable participants
+    public variable sites
+    public variable resources
+    public variable sessions
+
+    #-- Current version
+
+    private common current_version 1.0
+
+    #-- Building the tree
+
+    constructor {_agendaobj _version _name _sites _participants _resources _sessions} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+
+    # Returns a list describing my node. 
+    public method getMyNode {} {}
+
+    public method getNodes {}
+    public method getTitle {}
+
+    #-- Node edition
+
+    public method edit {}
+
+    # Method used to validate the values modified when this node is edited.
+    # $tl is the object created to edit the values.
+    private method validateEdit {tl}
+
+    # Method used to update the nod3e values with the edited values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the values.
+    private method updateEdit {tl}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+
+    #-- Helpers
+
+    # Create the unkown site.
+    # Its siteId is the given value or UNKNOWN
+    public method createUnknownSite {{siteId UNKNOWN}}
+
+    # Create a unknown participant.
+    # Its acronym is the given value or UNKNOWN.
+    # Its isabel site is the UNKNOWN site.
+    public method createUnknownPerson {{acronym UNKNOWN}}
+
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::constructor {_agendaobj _version _name _sites _participants _resources _sessions} {
+
+    set version $_version
+    set name    $_name
+
+    CheckClass $_sites SiteListTCC
+    CheckUnique $_sites 
+    set sites   $_sites
+    $sites setParent $this
+    
+    CheckClass  $_participants PersonListTCC
+    CheckUnique $_participants 
+    set participants   $_participants
+    $participants setParent $this
+
+    CheckClass  $_resources ResourceListTCC
+    CheckUnique $_resources 
+    set resources   $_resources
+    $resources setParent $this
+
+    CheckClass  $_sessions SessionListTCC
+    CheckUnique $_sessions 
+    set sessions $_sessions
+    $sessions setParent $this
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::destructor {} {
+
+    if {$sessions != ""} {
+	delete object $sessions
+    }
+
+    if {$resources != ""} {
+	delete object $resources
+	foreach _rid [array names ResourceTCC::everyresource] {
+	    unset ResourceTCC::everyresource($_rid)
+	}
+    }
+
+    if {$participants != ""} {
+	delete object $participants 
+	foreach _acro [array names PersonTCC::everybody] {
+	    unset PersonTCC::everybody($_acro)
+	}
+    }
+
+    if {$sites != ""} {
+	delete object $sites 
+	foreach _sid [array names SiteTCC::everysite] {
+	    unset SiteTCC::everysite($_sid)
+	}
+    }
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::parse {agendaobj str} {
+
+    WriteTraceMsg "ica: parsing conference"
+
+    set class     [lindex $str 0]
+    CheckStrings $class Conference
+
+    set version [getOptionListValue $str -version $current_version]
+    if {$version != $current_version} {
+	set emsg "ERROR:: The agenda file version is $version, but the currently supported version is $current_version"
+	puts stderr $emsg
+	error $emsg 
+    }
+
+    set name    [getOptionListValue $str -name    Name]
+
+    WriteTraceMsg "ica: parsing conference \"$name\""
+
+    set sites        ""
+    set participants ""
+    set resources    ""
+    set sessions     ""
+
+    if {[catch {
+        set sites        [SiteListTCC::parse     $agendaobj [getOptionListValue $str -sites]]
+        set participants [PersonListTCC::parse   $agendaobj [getOptionListValue $str -people]]
+        set resources    [ResourceListTCC::parse $agendaobj [getOptionListValue $str -resources]]
+        set sessions     [SessionListTCC::parse  $agendaobj [getOptionListValue $str -sessions]]
+        } emsg]} {
+
+            catch {delete object $sites}
+            catch {delete object $participants}
+            catch {delete object $resources}
+            catch {delete object $sessions}
+
+            NodeTCC::cleanup
+            ResourceTCC::cleanup
+            PersonTCC::cleanup
+            SiteTCC::cleanup
+
+            error $emsg
+        }
+
+        set me [ConferenceTCC ::#auto $agendaobj $version $name \
+        $sites $participants $resources $sessions]
+
+       # $sites        setParent $me
+       # $participants setParent $me
+       # $resources    setParent $me
+       # $sessions     setParent $me
+
+        return $me
+    }
+
+#-----------------------------------------
+
+body ConferenceTCC::prettyPrinter {{offset 0}} {
+
+    set _spc1 [NodeTCC::spaces $offset]
+    set _spc2 "$_spc1   "
+
+    set _res "${_spc1}Conference\n"
+
+    set _res "$_res$_spc2-version [list $version]\n"
+
+    set _res "$_res$_spc2-name [list $name]\n"
+
+    set _res "$_res$_spc2-sites \{\n"
+    set _res "$_res[$sites prettyPrinter [expr $offset + 6]]\n"
+    set _res "$_res$_spc2\}\n"
+
+    set _res "$_res$_spc2-people \{\n"
+    set _res "$_res[$participants prettyPrinter [expr $offset + 6]]\n"
+    set _res "$_res$_spc2\}\n"
+
+    set _res "$_res$_spc2-resources \{\n"
+    set _res "$_res[$resources prettyPrinter [expr $offset + 6]]\n"
+    set _res "$_res$_spc2\}\n"
+
+    set _res "$_res$_spc2-sessions \{\n"
+    set _res "$_res[$sessions prettyPrinter [expr $offset + 6]]\n"
+    set _res "$_res$_spc2\}\n"
+
+    return $_res
+
+    set _si [list -sites [$sites prettyPrinter]]
+    set _pe [list -people [$participants prettyPrinter]]
+    set _re [list -resources [$resources prettyPrinter]]
+    set _se [list -sessions [$sessions prettyPrinter]]
+
+    return "Conference\n   $_ve\n   $_na\n   $_si\n   $_pe\n   $_re\n   $_se\n"
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::getTitle {} {
+
+    return $name
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::getMyNode {} {
+
+    set _icons ""
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    list \
+	[getMyUid] \
+	[getTitle] \
+	"$_icons conferencenode branch"
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::getNodes {} {
+
+    list \
+	[$sessions getMyNode] \
+	[$resources getMyNode] \
+	[$sites getMyNode] \
+	[$participants getMyNode]
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::edit {} {
+
+    set tl [BaseFrameTCC #auto -title [getTitle]]
+
+    $tl setValidationCmd [code $this validateEdit $tl]
+
+    $tl setUpdateCmd     [code $this updateEdit $tl]
+
+    set c [$tl getContent]
+
+    iwidgets::entryfield $c.name \
+	-labeltext "Conference Name:" \
+	-labelpos w
+    pack $c.name -padx 14 -pady 4 -fill x -expand 1
+
+    $c.name component entry insert 0 $name
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::validateEdit {tl} {
+    
+    set c [$tl getContent]
+    
+    if {[string trim [$c.name get]] == ""} {
+	return "Conference name can not be empty"
+    }
+    
+    return ""
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::updateEdit {tl} {
+
+    set c [$tl getContent]
+    
+    set name [string trim [$c.name get]]
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "Edit conference" \
+	-command [code $this edit]
+    
+    return $menu   
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::createUnknownSite  {{siteId UNKNOWN}} {
+
+    set _unknownsite [SiteTCC::getSite $siteId]
+    
+    if {$_unknownsite != ""} return
+    
+    set _unknownsite [SiteTCC ::#auto $agendaobj \
+			  $siteId "Unknown site" 0]
+    
+    set _slvalue [$sites cget -sites]
+    lappend _slvalue $_unknownsite
+    $sites configure -sites $_slvalue
+    
+    $_unknownsite setParent $sites
+    
+#    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ConferenceTCC::createUnknownPerson {{acronym UNKNOWN}} {
+
+    createUnknownSite
+
+    set _unknownsiteobj [SiteTCC::getSite UNKNOWN]
+
+    set _unknownperson [PersonTCC ::#auto $agendaobj \
+			    $acronym \
+			    "No Name" \
+			    "" \
+			    "" \
+			    $_unknownsiteobj]
+    
+
+    set _plvalue [$participants cget -people]
+    lappend _plvalue $_unknownperson
+    $participants configure -people $_plvalue
+    
+    $_unknownperson setParent $participants
+    
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+

@@ -1,0 +1,31 @@
+#
+# GWR top directories are common for all OS
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.baselib       -- root of subsystem libraries
+#	*.library       -- root of subsystem libraries (-L)
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+GWR.topdir       :=$(PROJECT_ROOT_DIR)/lib/GWR
+GWR.include      :=$(GWR.topdir)/include
+GWR.include.files:=\
+	$(wildcard $(GWR.include)/gwr/*.hh)    \
+	$(wildcard $(GWR.include)/gwr/*.h)
+
+GWR.baselib.ugly:=$(OBJS_ROOT_DIR)/lib/GWR/src
+GWR.baselib:=$(shell echo $(GWR.baselib.ugly)|sed 's@^\(./\)*@@;s@/./@/@')
+
+GWR.library      :=-L$(GWR.baselib)
+GWR.library.libs :=-lgwr
+
+MKDEPVERSION+= -include $(GWR.topdir)/version
+
+CONFIG.generic.define+=
+CONFIG.generic.include+=\
+	-I$(GWR.include)
+
+LINK.GWR:=$(GWR.library) $(GWR.library.libs)

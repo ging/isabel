@@ -1,0 +1,405 @@
+/* include/config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if you want to build on alpha architecture. */
+#undef ARCH_ALPHA
+
+/* Define if you want to build on arm architecture. */
+#undef ARCH_ARM
+
+/* Define if you want to build on ia86 architecture. */
+#undef ARCH_IA64
+
+/* Define if you want to build on mips architecture. */
+#undef ARCH_MIPS
+
+/* Define if you want to build on ppc architecture. */
+#undef ARCH_POWERPC
+
+/* Define if you want to build on sparc architecture. */
+#undef ARCH_SPARC
+
+/* Define if you want to build on x86 architecture. */
+#undef ARCH_X86
+
+/* Define if you want to build on x86_64 architecture. */
+#undef ARCH_X86_64
+
+/* Define if you want to build ffmpeg with A52 dlopened decoder. */
+#undef CONFIG_A52BIN
+
+/* Define if you want to build ffmpeg with AC3 decoder. */
+#undef CONFIG_AC3
+
+/* Define if you want to have ffmpeg OSS audio support compiled. */
+#undef CONFIG_AUDIO_OSS
+
+/* Define if you want to build ffmpeg decoders. */
+#undef CONFIG_DECODERS
+
+/* Define if you want to build ffmpeg encoders. */
+#undef CONFIG_ENCODERS
+
+/* Define if you want to have AAC support compiled. (ffmpeg) */
+#undef CONFIG_FAAD
+
+/* Define if you want to build support for runtime linked libfaad. */
+#undef CONFIG_FAADBIN
+
+/* Define if you want to have highquality ffmpeg mpeg audio support compiled.
+   */
+#undef CONFIG_MPEGAUDIO_HP
+
+/* Define if you want to build ffmpeg with network support. */
+#undef CONFIG_NETWORK
+
+/* Define if you want to compile patent encumbered codecs. (ffmpeg) */
+#undef CONFIG_RISKY
+
+/* Define if you have video4linux device. (ffmpeg) */
+#undef CONFIG_VIDEO4LINUX
+
+/* Define if you have z library (-lz) (ffmpeg) */
+#undef CONFIG_ZLIB
+
+/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
+   systems. This function is required for `alloca.c' support on those systems.
+   */
+#undef CRAY_STACKSEG_END
+
+/* Define to 1 if using `alloca.c'. */
+#undef C_ALLOCA
+
+/* Define if you want to see detailed out of Win32 loader. */
+#undef DETAILED_OUT
+
+/* Define to 1 if you have `alloca', as a function or macro. */
+#undef HAVE_ALLOCA
+
+/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
+   */
+#undef HAVE_ALLOCA_H
+
+/* Define to 1 if you have the `asctime_r' function. */
+#undef HAVE_ASCTIME_R
+
+/* Define if you have long 3 params asctime_t in <time.h> header file. */
+#undef HAVE_ASCTIME_R_LONG
+
+/* Define to 1 if you have the <assert.h> header file. */
+#undef HAVE_ASSERT_H
+
+/* Define if your compiler supports vector builtins (MMX). */
+#undef HAVE_BUILTIN_VECTOR
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
+#undef HAVE_DOPRNT
+
+/* Define if you have DPMS support. */
+#undef HAVE_DPMS
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define if you want to use ffmpeg A52 audio decoder. */
+#undef HAVE_FFMPEG_A52
+
+/* Define to 1 if you have the `ftime' function. */
+#undef HAVE_FTIME
+
+/* Define to 1 if you have the `getpagesize' function. */
+#undef HAVE_GETPAGESIZE
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define if you want to build ffmpeg with gprof support. */
+#undef HAVE_GPROF
+
+/* Define if you have 'iconv_open' function. */
+#undef HAVE_ICONV
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `a52' library (-la52). */
+#undef HAVE_LIBA52
+
+/* Define if you have 'divxdecore' library (-ldivxdecore). */
+#undef HAVE_LIBDIVXDECORE
+
+/* Define if you have 'divxencore' library (-ldivxencore). */
+#undef HAVE_LIBDIVXENCORE
+
+/* Define to 1 if you have the `dl' library (-ldl). */
+#undef HAVE_LIBDL
+
+/* Define if you have libfreetype library (-lfreetype) */
+#undef HAVE_LIBFREETYPE
+
+/* Define to 1 if you have the `jpeg' library (-ljpeg). */
+#undef HAVE_LIBJPEG
+
+/* Define to 1 if you have the `kstat' library (-lkstat). */
+#undef HAVE_LIBKSTAT
+
+/* Define if you have 'mp3lame' library (-lmp3lame). */
+#undef HAVE_LIBMP3LAME
+
+/* Define to 1 if you have the `nsl' library (-lnsl). */
+#undef HAVE_LIBNSL
+
+/* Define to 1 if you have the `ossaudio' library (-lossaudio). */
+#undef HAVE_LIBOSSAUDIO
+
+/* Define to 1 if you have the `posix4' library (-lposix4). */
+#undef HAVE_LIBPOSIX4
+
+/* Define if using 'Qt' libraries. */
+#undef HAVE_LIBQT
+
+/* Define if using 'SDL' library (-lsdl). */
+#undef HAVE_LIBSDL
+
+/* Define to 1 if you have the `socket' library (-lsocket). */
+#undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the `Xdpms' library (-lXdpms). */
+#undef HAVE_LIBXDPMS
+
+/* Define if you have libXft. */
+#undef HAVE_LIBXFT
+
+/* Define to 1 if you have the `Xi' library (-lXi). */
+#undef HAVE_LIBXI
+
+/* Define to 1 if you have the `Xinerama' library (-lXinerama). */
+#undef HAVE_LIBXINERAMA
+
+/* Define to 1 if you have the `Xv' library (-lXv). */
+#undef HAVE_LIBXV
+
+/* Define if you have old 'xvidcore' library (-lxvidcore). */
+#undef HAVE_LIBXVIDCORE
+
+/* Define if you have 'xvidcore' ver 1.0 library (-lxvidcore). */
+#undef HAVE_LIBXVIDCORE4
+
+/* Define to 1 if you have the `Xxf86dga' library (-lXxf86dga). */
+#undef HAVE_LIBXXF86DGA
+
+/* Define to 1 if you have the `Xxf86vm' library (-lXxf86vm). */
+#undef HAVE_LIBXXF86VM
+
+/* Define if you have z library (-lz) */
+#undef HAVE_LIBZ
+
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
+/* Define to 1 if you have the `localtime_r' function. */
+#undef HAVE_LOCALTIME_R
+
+/* Define if you have lrintf on your system. */
+#undef HAVE_LRINTF
+
+/* Define if you have 'lseek64' function. */
+#undef HAVE_LSEEK64
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
+/* Define to 1 if you have the `memalign' function. */
+#undef HAVE_MEMALIGN
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have a working `mmap' system call. */
+#undef HAVE_MMAP
+
+/* Define if you want to build with mmx code. */
+#undef HAVE_MMX
+
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
+/* Define if you have correct 'X11/extensions/dpms.h' header file. */
+#undef HAVE_OK_DPMS_H
+
+/* Define to 1 if you have the `opendir' function. */
+#undef HAVE_OPENDIR
+
+/* Define if you want to have OSS audio support compiled. */
+#undef HAVE_OSS
+
+/* Define if you want to have ffmpeg pthread support compiled. */
+#undef HAVE_PTHREADS
+
+/* Define to 1 if you have the `scandir' function. */
+#undef HAVE_SCANDIR
+
+/* Define to 1 if you have the `setenv' function. */
+#undef HAVE_SETENV
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strptime' function. */
+#undef HAVE_STRPTIME
+
+/* Define to 1 if you have the `strstr' function. */
+#undef HAVE_STRSTR
+
+/* Define if you want to have Sun audio support. */
+#undef HAVE_SUNAUDIO
+
+/* Define if you have struct sysinfo in <sys/sysinfo.h> header file. */
+#undef HAVE_SYSINFO
+
+/* Define to 1 if you have the <sys/ioccom.h> header file. */
+#undef HAVE_SYS_IOCCOM_H
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/mman.h> header file. */
+#undef HAVE_SYS_MMAN_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the `unsetenv' function. */
+#undef HAVE_UNSETENV
+
+/* Define if you want to have vidix support. */
+#undef HAVE_VIDIX
+
+/* Define to 1 if you have the `vprintf' function. */
+#undef HAVE_VPRINTF
+
+/* Define to 1 if you have the `vsscanf' function. */
+#undef HAVE_VSSCANF
+
+/* Use casting for iconv's inputbuffer - don't ask me. */
+#undef ICONV_CONST_CAST
+
+/* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
+   */
+#undef MAJOR_IN_MKDEV
+
+/* Define to 1 if `major', `minor', and `makedev' are declared in
+   <sysmacros.h>. */
+#undef MAJOR_IN_SYSMACROS
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if the C compiler supports function prototypes. */
+#undef PROTOTYPES
+
+/* Define if you want to have quiet library. */
+#undef QUIET
+
+/* Define as the return type of signal handlers (`int' or `void'). */
+#undef RETSIGTYPE
+
+/* Define to 1 if the `setvbuf' function takes the buffering type as its
+   second argument and the buffer pointer as the third, as on System V before
+   release 3. */
+#undef SETVBUF_REVERSED
+
+/* Define if you want to build ffmpeg with simples idct. */
+#undef SIMPLE_IDCT
+
+/* If using the C implementation of alloca, define if you know the
+   direction of stack growth for your system; otherwise it will be
+   automatically deduced at run-time.
+	STACK_DIRECTION > 0 => grows toward higher addresses
+	STACK_DIRECTION < 0 => grows toward lower addresses
+	STACK_DIRECTION = 0 => direction of growth unknown */
+#undef STACK_DIRECTION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
+/* Define if you want to have timing code in library. */
+#undef TIMING
+
+/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+#undef TM_IN_SYS_TIME
+
+/* Version number of package */
+#undef VERSION
+
+/* Define if using the dmallocth debugging malloc package */
+#undef WITH_DMALLOCTH
+
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN
+
+/* Define to 1 if the X Window System is missing or not being used. */
+#undef X_DISPLAY_MISSING
+
+/* Define like PROTOTYPES; this can be used by system headers. */
+#undef __PROTOTYPES
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+/* Define to `long' if <sys/types.h> does not define. */
+#undef off_t
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef pid_t
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+#undef size_t

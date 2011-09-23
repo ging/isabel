@@ -1,0 +1,455 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vg.itcl
+#
+# Video geometry manager.
+#
+#########################################################################
+
+#---------------------------------------------------------------
+#
+# 32 module width video sizes:
+#      32x24   64x48   96x72  128x96 160x120 192x144 224x168
+#    256x192 288x216 320x240 352x264 384x288 416x312 448x336
+#    480x360 512x384 544x408 576x432 608x456 640x480 672x504
+#    704x528 736x552 768x576
+#
+# CIF sizes:
+#    SQCIF =  128 x   96
+#     QCIF =  176 x  144
+#      CIF =  352 x  288
+#     4CIF =  704 x  576
+#    16CIF = 1408 x 1152
+#
+#---------------------------------------------------------------
+
+class VideoLayoutMgrC {
+
+    # slot_num($siteid) is the slot assigned to the site $siteid.
+    private variable slot_num
+
+    # Current MAIN and OTHER layout name list.
+    private variable cmainlayoutnamelist  ""
+    private variable cotherlayoutnamelist ""
+
+    # List of current MAIN sites.
+    private variable currentMainSiteidList ""
+
+    # Current layouts.
+    private variable cmainlayout    ""
+    private variable cotherlayout   ""
+
+    # Other sites must be mapped or unmmaped.
+    private variable otherMapped 
+
+    # Channels added.
+    # chObj($siteid) if a reference to the channel object of the site $siteid.
+    private variable chObj
+
+    # Reference to Video Daemon Object
+    private variable vdObj ""
+
+    constructor {vd} {}
+
+    destructor {}
+
+    public method GetOtherMapped {}
+
+    public  method GetOtherLayoutNameList {}
+
+    public  method ApplyLayout {layoutnamelist siteIdList otherlayoutnamelist mapother}
+    private method ReapplyLayout  {}
+    private method ReapplyLayoutSite  {siteid}
+    private method ApplyLayoutSite {siteid chlayout}
+
+    # Translate a layout name to the real values of bandwidth, codec, etc.
+    # The layout name format is: name1+name2+name3+... and this method returns
+    # the following string:
+    #         "Video.name1  Video.name2  Video.name3 ...."
+    # where Video.nameX is the value specified in the activity.
+    private method LayoutNames2Values {layoutname}
+
+    public method AddChannel {siteid chobj}
+    public method DelChannel {siteid}
+
+    private method CalculateSlots {} 
+
+    public method Nop {} {}
+
+    public method Info {}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+
+    # Check if the given site is a hidden site.
+    private method IsHiddenSite {siteid}
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::constructor {vd} {
+
+    set vdObj $vd
+
+    set cmainlayoutnamelist ""
+    set currentMainSiteidList ""
+    set cotherlayoutnamelist ""
+    set otherMapped 0
+
+    CameraLayoutInfoC::Cleanup
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::destructor {} {
+
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::GetOtherMapped {} {
+    return $otherMapped
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::GetOtherLayoutNameList {} {
+    return $cotherlayoutnamelist
+}    
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::ApplyLayout {layoutnamelist siteIdList otherlayoutnamelist mapother} {
+
+    set cmainlayoutnamelist  $layoutnamelist
+    set cotherlayoutnamelist $otherlayoutnamelist
+    set currentMainSiteidList $siteIdList
+    set otherMapped $mapother
+
+    if {$otherMapped == 1 && $cotherlayoutnamelist == "" } {
+       set cotherlayoutnamelist [session Activity GetResource Video otherlayout ""]
+    }
+
+    CalculateSlots
+
+    ReapplyLayout
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::LayoutNames2Values {layoutname} {
+
+    regsub -all "\\+" $layoutname " " layoutname
+    
+    set layout ""
+    
+    foreach l $layoutname {
+	set layout "$layout [session Activity GetResource Video layout.$l ""]"
+    }
+    return $layout
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::ReapplyLayout {} {
+
+    if {$currentMainSiteidList == "*"} {
+	set lenmain [llength [array names slot_num]]
+    } else {
+	set lenmain [llength $currentMainSiteidList]
+    }
+
+    set lenother [llength [array names slot_num]]
+
+    set cmainlayout ""
+    foreach n $cmainlayoutnamelist {
+	set layout [LayoutNames2Values $n]
+	if {$layout != ""} {
+	    set cmainlayout $layout
+	    if {$lenmain <= [llength $layout]} {
+		break
+	    }
+	}	
+    }
+
+    set cotherlayout ""
+    foreach n $cotherlayoutnamelist {
+	set layout [LayoutNames2Values $n]
+	if {$layout != ""} {
+	    if {$lenother <= [llength $layout]} {
+		set cotherlayout $layout
+		break
+	    }
+	}	
+    }
+
+    foreach siteid [array names chObj] {
+	if {[catch {ReapplyLayoutSite $siteid} errormsg]} {
+	    ErrorTraceMsg "- Video Error: Applying layout for channel of site $siteid I get:\n$errormsg"
+	}
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::ReapplyLayoutSite {siteid} {
+
+    set pos [lsearch -exact $currentMainSiteidList $siteid]
+    
+    if {$currentMainSiteidList == "*"} {
+
+	if {[info exists slot_num($siteid)]} {
+	    ApplyLayoutSite $siteid [lindex $cmainlayout $slot_num($siteid)]
+	} else {
+	    $chObj($siteid) Unmap
+	    CameraLayoutInfoC::Unmap $siteid
+	}
+
+    } elseif {$pos != -1} {
+
+	ApplyLayoutSite $siteid [lindex $cmainlayout $pos]
+
+    } else {
+	if {$otherMapped && [info exists slot_num($siteid)]} {
+	    ApplyLayoutSite $siteid [lindex $cotherlayout $slot_num($siteid)]
+	} else {	
+	    $chObj($siteid) Unmap
+	    CameraLayoutInfoC::Unmap $siteid
+	}
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::ApplyLayoutSite {siteid chlayout} {
+
+    if {$chlayout == ""} {
+	$chObj($siteid) Unmap
+	CameraLayoutInfoC::Unmap $siteid
+	return
+    }
+
+    if {[llength $chlayout] != 3} {
+	set emsg1 "Video Error: Invalid layout value \"$chlayout\""
+	set emsg2 "   Current  main layout name list = \"$cmainlayoutnamelist\""
+	set emsg3 "   Current other layout name list = \"$cotherlayoutnamelist\""
+	set emsg4 "   Current selected channels = \"$currentMainSiteidList\""
+	set emsg5 "   Channel = $siteid"
+	WarningTraceMsg "- $emsg1 \n $emsg2 \n $emsg3 \n $emsg4 \n $emsg5"
+	$chObj($siteid) Unmap
+	CameraLayoutInfoC::Unmap $siteid
+	return 
+    }    
+
+    set ctname    [lindex $chlayout 0]
+    set geom      [lindex $chlayout 1]
+    set bw        [lindex $chlayout 2]
+
+    if {[catch {expr $bw*1} res]} {
+	set emsg1 "Video CameraError: Invalid bw in this layout \"$chlayout\""
+	set emsg2 "   Current  main layout name list = \"$cmainlayoutnamelist\""
+	set emsg3 "   Current other layout name list = \"$cotherlayoutnamelist\""
+	set emsg4 "   Current selected channels = \"$currentMainSiteidList\""
+	set emsg5 "   Channel = $siteid"
+	WarningTraceMsg "- $emsg1 \n $emsg2 \n $emsg3 \n $emsg4 \n $emsg5"
+	$chObj($siteid) Unmap
+	CameraLayoutInfoC::Unmap $siteid
+	return 
+    }
+
+
+    if {[catch {VideoConfigTablesC::GetConfig $ctname $geom $bw} cg]} {
+	WarningTraceMsg "- Error querying video configuration for table \"$ctname\" for geom=$geom and bw=$bw:\n$cg"
+	$chObj($siteid) Unmap
+	CameraLayoutInfoC::Unmap $siteid
+	return 
+
+    }
+
+    set codec     [lindex $cg 0]
+    set codecname [lindex $codec 0]
+    set qlty [GetOptionListValue $codec -qlty 50]
+
+    set grabsize  [lindex $cg 1]
+    switch -- $grabsize {
+	SQCIF { set grabsize  128x96 }
+	QCIF  { set grabsize 176x144 }
+	CIF   { set grabsize 352x288 }
+	4CIF  { set grabsize 704x576 }
+	16CIF { set grabsize 1408x1152 }
+    }
+    if {$grabsize == 0} {
+	#set re {([0-9]+)x([0-9]+)([+\-]+[0-9]+[+\-]+[0-9]+)?}
+	set re {([0-9]+x[0-9]+)}
+	regexp $re $geom todo grabsize
+    }
+
+    set framerate [lindex $cg 2]
+
+    $chObj($siteid) SetGeometry $geom
+
+    if {[$chObj($siteid) IsLocal]} {
+
+	$vdObj SetLocalConfiguration $framerate $grabsize $codec $bw
+
+    } else {
+
+	CameraLayoutInfoC::GrabSize  $siteid $grabsize
+	CameraLayoutInfoC::BW        $siteid $bw
+	CameraLayoutInfoC::Framerate $siteid $framerate
+	CameraLayoutInfoC::Codec     $siteid $codecname
+	CameraLayoutInfoC::Qlty      $siteid $qlty
+    }
+    
+    CameraLayoutInfoC::Map $siteid
+    $chObj($siteid) Map
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::AddChannel {siteid chobj} {
+
+    set chObj($siteid) $chobj
+
+    CameraLayoutInfoC::AddChannel $siteid
+
+    if {![info exists slot_num($siteid)]} {
+	CalculateSlots
+    }
+    ReapplyLayout
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::DelChannel {siteid} {
+
+    unset chObj($siteid)
+    CameraLayoutInfoC::DelChannel $siteid
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::CalculateSlots {} {
+
+    catch {unset slot_num}
+
+    # NOTES: 
+    # - Slots are only assigned to sites with a Video authorized role.
+    # - Slots are not assigned to gateway sites.
+    # - Slots are not assigned to hidden sites.
+    set cr [session Activity GetResource Video roles ""]
+    set i 0
+    foreach _siteid [lsort -dictionary [SiteManager::GetSites]] {
+
+	# Check tool:
+	set _tool [SiteManager::GetSiteInfo $_siteid tool]
+	if {[lsearch -exact "Interactive GatewayClient" $_tool] == -1} {
+	    continue
+	}
+
+	# Check if it is a hidden site: 
+	if {[IsHiddenSite $_siteid]} {
+	    continue
+	}
+
+	# Check roles:
+	set found 1
+	if {$cr != ""} {
+	    set found 0
+	    foreach r $cr {
+		if {[lsearch -exact [SiteManager::GetSiteInfo $_siteid roles] $r] != -1} {
+		    set found 1
+		    break
+		}
+	    }
+	}
+	
+	if {$found} {
+	    set slot_num($_siteid) $i
+	    incr i
+	}
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::Info {} {
+
+    set res " o Video layout manager:\n"
+
+    foreach siteid [array names slot_num] {
+	append res "    Channel $siteid slot = $slot_num($siteid)\n"
+    }
+
+    append res "\n"
+
+    append res "    Map other channels = $otherMapped\n\n"
+
+    append res "    Layout.mainnames  = $cmainlayoutnamelist\n"
+    append res "    Layout.othernames = $cotherlayoutnamelist\n"
+    append res "    Layout.main  = $cmainlayout\n"
+    append res "    Layout.other = $cotherlayout\n"
+    append res "    Layout.chs   = $currentMainSiteidList\n\n"
+
+    set pos 0
+    foreach siteid $currentMainSiteidList {
+	if {$siteid == ""} continue
+	append res "    Channel $siteid layout = [lindex $cmainlayout $pos]\n"
+	incr pos
+    }
+
+    return $res
+}
+
+#--------------------------------------------------------------------------
+
+body VideoLayoutMgrC::IsHiddenSite {siteid} {
+
+    set _patterns [session Environ GetEdlGlobalVar ISABEL_HIDDEN_SITES]
+    foreach _re $_patterns {
+	if {[string match $_re $siteid]} {
+	    return 1
+	}
+    }	
+    return 0
+}
+
+#--------------------------------------------------------------------------
+

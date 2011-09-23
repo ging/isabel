@@ -1,0 +1,143 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# wallpaper.itcl
+#
+# To create an object to set the root background image.
+#
+#########################################################################
+
+class TC_WallpaperC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the widget in $w
+    constructor {w} {}
+
+    # Returns the selected directory.
+    public method GetDir {}
+
+    # Returns the selected background image.
+    # It is a filename without any path.
+    public method GetImage {}
+
+    # Get the selected wallpaper
+    public method GetWallpaper {}
+
+    # Set the selected background image.
+    # $dir is a relative path from "$ISABEL_WORKDIR/pres".
+    # $filename is the image filename without any path.
+    public method SetImage {dir filename}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget where it is packed
+    private variable topw
+
+    # The currently selected wallpaper.
+    private variable selected_wallpaper
+    
+    destructor {}
+
+    # Makes the GUI
+    private method MakeGUI {}
+}
+
+#---------------------------------------------------------------
+
+body TC_WallpaperC::constructor {w} {
+
+    set topw $w
+
+    MakeGUI
+
+}
+
+#---------------------------------------------------------------
+
+body TC_WallpaperC::destructor {} {
+
+    catch {bind $topw.destroy <Destroy> ""}
+    if {[winfo exists $topw]} {
+        destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_WallpaperC::MakeGUI {} {
+
+    frame $topw \
+	-relief groove \
+	-borderwidth 1
+
+    iwidgets::entryfield $topw.path \
+	-textvariable [scope selected_wallpaper] \
+	-labeltext "Wallpaper:" \
+	-labelfont  [IsabelFontsC::GetFont medium medium] \
+	-labelpos w
+    pack $topw.path -padx 2 -pady 2 -fill x -anchor w
+
+    #--
+
+    frame $topw.destroy
+    bind $topw.destroy <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+
+body TC_WallpaperC::GetDir {} {
+    
+    return [file dirname $selected_wallpaper]
+}
+
+#---------------------------------------------------------------
+
+body TC_WallpaperC::GetImage {} {
+
+    return [file tail $selected_wallpaper]
+}
+
+#---------------------------------------------------------------
+
+body TC_WallpaperC::SetImage {dir filename} {
+
+    regsub -all "//" $dir/$filename "/" selected_wallpaper 
+}
+
+#---------------------------------------------------------------
+
+body TC_WallpaperC::GetWallpaper {} {
+
+    return $selected_wallpaper
+}
+
+#---------------------------------------------------------------
+
+
+

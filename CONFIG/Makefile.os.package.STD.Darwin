@@ -1,0 +1,20 @@
+#
+# std configuration for Linux
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.library       -- root of subsystem libraries
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+STD.topdir       :=# value not useful
+STD.include      :=# value not useful
+STD.include.files:=# value not useful
+STD.library      :=# value not useful
+STD.library.libs :=-ldl -lm
+
+
+CONFIG.generic.define+=
+CONFIG.generic.include+=$(STD.include)

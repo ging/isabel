@@ -1,0 +1,82 @@
+                                ___
+                            ,-''   `'-.
+                          ,' __    __   .
+                         .' (_  _ /   _ '.....Aplicacion3
+                         |  __)(/_\__(_) |
+                         \               /
+                          \     /|      /
+                           /-.   |   ,-'
+                          /   ``  -''  \
+                         /              \
+                        /                \
+                       /                  \
+             _,...._ .'                    \_,...__
+          , __    __                     , __    __
+         / (_  _ /   _ \                / (_  _ /   _ .
+        |  __)(/_\__(_) |              /  __)(/_\__(_) |
+        |      __       |             |       __       |
+        |       _)      |              |      __)      |
+         \     /__     /               `.     __)     /
+         _`.         ,'                  `.         ,''.
+        /   `--...--' \                    '-....--'   `.
+      ,'       |      \                                 `.
+ Aplicacion1   |  Aplicacion2                         Aplicacion4
+               |
+          Aplicacion5
+
+
+En esta prueba se simula el escenario anterior.
+Las aplicaciones 2,3 y 4 se subscriben al grupo "test" y la aplicación 5 al grupo local "test".
+La aplicación 1 es la encargada de enviar los mensajes.
+Envía un total de 40 mensajes a cada grupo todos ellos numerados.
+El programa sigue la siguiente secuencia:
+-Arranca la aplicación 2.
+-Arranca la aplicacion 1.
+-Mensajes con historia pero sin sincronismo del 0 al 9.
+-Arranca la aplicación 3.
+-Mensajes con historia pero sin sincronismo del 10 al 19.
+-Mensaje de sincronización al grupo general sin sincronizacion al grupo local. (n=20).
+-Arranca la aplicación 4.
+-Mensajes con historia pero sin sincronismo del 21 al 29.
+-Mensajito de sincronizacion al grupo local y sin sincronizacion al grupo general (n=30).
+-Arranca la aplicación 5.
+-Mensajes con historia pero sin sincronismo del 31 al 39.
+
+
+Para arrancar la aplicación hay que ejecutar: ./startTest3.sh [archivo de logs]
+
+Si la aplicación ha funcionado con éxito la última linea del log debería ser la siguiente:
+
+ =/\=> Prueba superada con éxito <=/\=
+ 
+ Aún así se recomiendo leer el log para asegurarse de que no haya habido mensajes de error.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

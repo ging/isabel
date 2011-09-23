@@ -1,0 +1,334 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class SessionListTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    public variable sessions
+ 
+    #-- Building the tree
+
+    # $args is a list of sessions
+    constructor {_agendaobj args} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    public proc parse {agendaobj str}
+
+    # Auxiliar table used to parse files.
+    # $objtable($id) is the node object associated to the given -Id value.
+    # When a agenda file is loaded, some nodes have an -id attribute, so this table stores
+    # the objects created for these nodes.
+    private common objtable
+    public proc addObjTable {_id _obj}
+    public proc getObjTable {_id}
+
+    public method prettyPrinter {{offset 0}}
+
+    # Returns a list describing my node. 
+    public method getMyNode {} {}
+
+    public method getNodes {}
+
+    #-- Node creation
+
+    # Create a new empty (SessionTCC) child node.
+    public method newChild {}
+
+    #-- Node edition
+
+    public method edit {}
+
+    #-- Children operations
+
+    # Delete the indicated child node, a SessionTCC object, but without leaving orfan references.
+    # So, this method will:
+    #  - Fisrt: delete the script of the given session.
+    #  - Second: Delete all the session presentations whose authors have reference counter equal to 0.
+    #  - Third: if all the session presesentations have been deleted, and the chair reference counter
+    #           is 0, then the session is deleted. 
+    public method deleteSession {_session}
+
+    # Moves the given session $_offset positions in $sessions
+    public method moveSession {_session _offset}
+
+    # Returns 1 if $_session is the first session, otherwise returns 0.
+    public method firstSession {_session}
+    
+    # Returns 1 if $_session is the last session, otherwise returns 0.
+    public method lastSession {_session}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+}
+
+#-----------------------------------------
+
+body SessionListTCC::constructor {_agendaobj args} {
+
+    foreach s $args {
+	CheckClass $s SessionTCC
+	$s setParent $this
+    }
+    set sessions $args
+}
+
+#-----------------------------------------
+
+body SessionListTCC::destructor {} {
+
+    set _auxsessions $sessions
+    set sessions ""
+
+    # Delete scripts:
+    foreach s $_auxsessions {
+	set _script [$s cget -script]
+	$_script deleteAllScriptItem
+    }
+
+    # Delete program:
+    foreach s $_auxsessions {
+	    delete object $s
+    }
+}
+
+#-----------------------------------------
+
+body SessionListTCC::parse {agendaobj str} {
+
+    array unset objtable
+    
+    set sl ""
+    set cont 0
+    set s [lindex $str $cont]
+    while {$s != ""} {
+        set session [SessionTCC::parse $agendaobj $s]
+        lappend sl $session
+        incr cont
+        set s [lindex $str $cont]
+    }
+
+    # Parse scripts
+    set cont 0
+    set s [lindex $str $cont]
+    set sessionobj [lindex $sl $cont]
+    while {$s != ""} {
+	SessionTCC::parseScript $agendaobj $s $sessionobj
+        incr cont
+	set s [lindex $str $cont]
+	set sessionobj [lindex $sl $cont]
+    }
+
+    set me [eval SessionListTCC ::#auto $agendaobj $sl]
+
+    foreach s $sl {
+        $s setParent $me
+    }
+
+    array unset objtable
+
+    return $me
+}
+
+#-----------------------------------------
+
+body SessionListTCC::addObjTable {_id _obj} {
+
+    set objtable($_id) $_obj
+}
+
+#-----------------------------------------
+
+body SessionListTCC::getObjTable {_id} {
+
+    if {[info exists objtable($_id)]} {
+	return $objtable($_id)
+    } else {
+	return ""
+    } 
+}
+
+#-----------------------------------------
+
+body SessionListTCC::prettyPrinter {{offset 0}} {
+
+    set _res ""
+    foreach s $sessions {
+        if {$_res != ""} {
+	    set _res "$_res\n"
+	}
+        set _res "$_res[$s prettyPrinter $offset]"
+    }
+    return $_res
+}
+
+#-----------------------------------------
+
+body SessionListTCC::getMyNode {} {
+
+    set tags ""
+    
+    set _icons ""
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    list \
+	[getMyUid] \
+	[$parent cget -name] \
+	"branch sessionsnode editablenode $tags" \
+	$_icons
+}
+
+#-----------------------------------------
+
+body SessionListTCC::getNodes {} {
+
+    set res ""
+    foreach s $sessions {
+	lappend res [$s getMyNode]
+    }
+    return $res
+}
+
+#-----------------------------------------
+
+body SessionListTCC::newChild {} {
+
+    set child [SessionTCC::new $agendaobj]
+
+    if {$child != ""} {
+
+	$child setParent $this
+	
+	lappend sessions $child
+
+    }
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SessionListTCC::edit {} {
+
+    $parent edit
+}
+
+#-----------------------------------------
+
+body SessionListTCC::deleteSession {_session} {
+
+    set pos [lsearch -exact $sessions $_session]
+
+    if {$pos == -1} return
+
+    # Delete session script:
+    [$_session cget -script] deleteAllScriptItem
+
+    # Delete all the presentations whose authors have reference counter equal to 0.
+    [$_session cget -presentations] deleteUnreferencedPresentations 
+
+    # chair references count:
+    set _chair_refs [[$_session cget -chair] cget -chairreferences]
+    
+    # Undeleted presentations count:
+    set _pres_cont [[$_session cget -presentations] cget -presentations]
+    
+    if {$_chair_refs == 0 && $_pres_cont == ""} {
+	$_session kill   
+	set sessions [lreplace $sessions $pos $pos]
+    }
+    
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SessionListTCC::moveSession {_session _offset} {
+
+    set pos [lsearch -exact $sessions $_session]
+
+    if {$pos == -1} return
+
+    set child [lindex $sessions $pos]
+    set sessions [lreplace $sessions $pos $pos]
+
+    set newpos [expr $pos + $_offset]
+
+    set sessions [linsert $sessions $newpos $child]
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SessionListTCC::firstSession {_session} {
+    
+    if {[lindex $sessions 0] == $_session} {
+	return 1
+    } else {
+	return 0
+    }
+}
+   
+#-----------------------------------------
+
+body SessionListTCC::lastSession {_session} {
+
+    if {[lindex $sessions end] == $_session} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#-----------------------------------------
+
+body SessionListTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "Edit Conference" \
+	-command [code $this edit]
+    
+    $menu add separator
+
+    $menu add command -label "New Session" \
+	-command [code $this newChild]
+    
+    return $menu   
+}
+
+#-----------------------------------------

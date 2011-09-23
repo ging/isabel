@@ -1,0 +1,291 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# cfroottitles.itcl
+#
+# The root titles.
+#
+# Public interface:
+#
+#   - SetRootTitles
+#   - GetRootTitles
+#   - EnableRootTitles
+#
+#########################################################################
+
+class TC_RootTitlesC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the widget in $w
+    constructor {w} {}
+    
+    #-- Root Titles ----------
+
+    # Sets the titles 
+    public method SetRootTitles {titles} 
+
+    # Sets the long titles 
+    public method SetLongRootTitles {titles} 
+
+    # Sets the short titles 
+    public method SetShortRootTitles {titles} 
+
+    # Gets the titles if any entry is enabled
+    public method GetRootTitles {} 
+
+    # Gets the long titles.
+    public method GetLongRootTitles {} 
+
+    # Gets the short titles.
+    public method GetShortRootTitles {} 
+
+    # Clean up the titles
+    public method CleanRootTitles {} 
+
+    # Sets the enabled text entries for the titles.
+    # $ln is the number of enabled long titles.
+    # $sn is the number of enabled short titles.
+    public method EnableRootTitles {ln sn} 
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget where it is packed
+    private variable topw
+
+    destructor {}
+
+    # Makes the GUI
+    private method MakeGUI {}
+}
+
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::constructor {w} {
+
+    set topw $w
+
+    MakeGUI
+}
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::destructor {} {
+
+    catch {bind $topw <Destroy> ""}
+    if {[winfo exists $topw]} {
+        destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::MakeGUI {} {
+    global ISABEL_DIR
+
+    frame $topw \
+	    -relief groove \
+	    -borderwidth 1
+
+    set tbg [IsabelColorsC::GetResource textBackground Background white]
+
+    # Long and Short titles
+    foreach wn {t3 t2 t1} {
+	text $topw.l$wn \
+	    -height 2 \
+	    -width 30 \
+	    -wrap none \
+	    -highlightthickness 0 \
+	    -background $tbg
+	
+	pack $topw.l$wn -side bottom -pady 0 -padx 5 -fill x
+
+	text $topw.s$wn \
+	    -height 1 \
+	    -width 30 \
+	    -wrap none \
+	    -highlightthickness 0 \
+	    -background $tbg
+	
+	pack $topw.s$wn -side bottom -pady 0 -padx 5 -fill x
+    }
+    
+    label $topw.l \
+	-text "Root Titles:" \
+	-font [IsabelFontsC::GetFont medium medium]
+    pack  $topw.l -side left 
+    
+    button $topw.clean -bitmap @$ISABEL_DIR/lib/images/xbm/clean.xbm \
+	-command [code $this CleanRootTitles] \
+	-padx 0 -pady 0 \
+	-relief flat
+    pack   $topw.clean -side left -padx 5
+
+    bind $topw <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::SetRootTitles {titles} {
+    
+    SetLongRootTitles  $titles
+    SetShortRootTitles $titles
+}
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::SetLongRootTitles {titles} {
+
+    set i 1
+    foreach t $titles {
+	regsub -all ":" $t "\n" t
+	$topw.lt$i delete 1.0 end
+	$topw.lt$i insert end $t
+	incr i
+	if {$i > 3} return
+    }
+   for {set f $i} {$f<=3} {incr f} {
+	$topw.lt$f delete 1.0 end
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::SetShortRootTitles {titles} {
+
+    set i 1
+    foreach t $titles {
+	regsub -all ":" $t "\n" t
+	$topw.st$i delete 1.0 end
+	$topw.st$i insert end $t
+	incr i
+	if {$i > 3} return
+    }
+   for {set f $i} {$f<=3} {incr f} {
+	$topw.st$f delete 1.0 end
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::GetRootTitles {} {
+
+    GetLongRootTitles
+}
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::GetLongRootTitles {} {
+
+    set titles ""
+    for {set i 1} {$i<=3} {incr i} {
+	regsub -all ":" [$topw.lt$i get 1.0 end] ";" temp
+	regsub -all "\n" $temp ":" temp
+	lappend titles $temp
+    }
+    return $titles
+}
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::GetShortRootTitles {} {
+
+    set titles ""
+    for {set i 1} {$i<=3} {incr i} {
+	regsub -all ":" [$topw.st$i get 1.0 end] ";" temp
+	regsub -all "\n" $temp ":" temp
+	lappend titles $temp
+    }
+    return $titles
+}
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::CleanRootTitles {} {
+
+    for {set i 1} {$i<=3} {incr i} {
+	$topw.lt$i delete 1.0 end
+	$topw.st$i delete 1.0 end
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_RootTitlesC::EnableRootTitles {ln sn} {
+
+    if {$ln > 3} {
+	set ln 3
+    }    
+
+    if {$sn > 3} {
+	set sn 3
+    }    
+
+    set tbge [IsabelColorsC::GetResource textBackground Background white]
+    set tbgd [IsabelColorsC::GetResource background Background white]
+    set tfge [IsabelColorsC::GetResource foreground Foreground black]
+    set tfgd [IsabelColorsC::GetResource disabledForeground Foreground "#bbb"]
+
+    for {set i 1} {$i<=$ln} {incr i} {
+	$topw.lt$i configure \
+	    -foreground $tfge \
+	    -background $tbge \
+	    -relief sunken
+    }
+
+    for {set i [expr $ln+1]} {$i<=3} {incr i} {
+	$topw.lt$i configure \
+	    -foreground $tfgd \
+	    -background $tbgd \
+	    -relief groove
+    }
+
+
+    for {set i 1} {$i<=$sn} {incr i} {
+	$topw.st$i configure \
+	    -foreground $tfge \
+	    -background $tbge \
+	    -relief sunken
+    }
+
+    for {set i [expr $sn+1]} {$i<=3} {incr i} {
+	$topw.st$i configure \
+	    -foreground $tfgd \
+	    -background $tbgd \
+	    -relief groove
+    }
+}
+
+#---------------------------------------------------------------
+
+
+
+
+
+

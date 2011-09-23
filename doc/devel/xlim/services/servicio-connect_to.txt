@@ -1,0 +1,104 @@
+ESTRUCTURA DE LA AGENDA DE SESSIONES (.isabel/sessions):
+------------------------------------
+
+Las sessiones se dividen en locales (sessions/master) y remotas (sessions/remote). Para cada sesion existen los siguientes ficheros (SESSION=nombre de la sesion):
+
+- local.xml: (xedl parcial) fichero xedl que contiene la información local del participante y que se envia al servidor de la sesion para que genere el SESSION_TMP.xml a partir de todos los ficheros parciales recibidos.
+- SESSION-ID.xml: (xedls parciales) (solo en sesiones locales). Son los ficheros parciales recibidos de los diferentes participantes de la sesion (los local.xml). A partir del fichero SESSION.xml y los ficheros SESSION-ID.xml se genera el fichero SESSION_TMP.xml.  
+- SESSION.xml: (solo en sesiones locales). Fichero que contiene la información de la sesión definida mediante el servicio EDIT SESSION (ancho de banda de sesion, parametros forzados por el master para algún participante...)
+- SESSION_TMP.xml: fichero XEDL completo generado en el servidor de la sesion (master). Es el fichero que se recibe despues de hacer un connect to, y el que se utiliza para arrancar.
+- url: (Solo en sesiones remotas) Fichero que guarda la url que identifica esta sesion.
+- lastprofile: fichero que guarda información sobre el perfil de options utilizado para esta sesion.
+
+
+TERMINOLOGIA
+------------
+- Suscripcion: El connect to realiza dos procesos:
+	* Envia informacion al master para que genere el XEDL total y nos lo envie.
+	* Se lanza isabel a partir del XEDL recibido.
+Al primer proceso se le llama suscripcion.
+
+
+
+SERVICIOS
+---------
+
+- Servicio: Connect TO
+
+- Descripción: el cliente genera un fichero local.xml a partir de la url proporcionada por el usuario y de la informacion contenida en las OPTIONS y se lo envia al flowserver indicado en la url. El flowserver recibe la peticion y la procesa: 
+	* si no es el servidor, reenvia la peticion hacia su flowserver (indicado en el fichero url). 
+	* si es el servidor de la sesion almacena el local.xml recibido como SESSION-ID.xml, genera el SESSION_TMP.xml y lo envia al cliente. 
+
+
+- Fichero de parametros utilizado en el protocolo (PARAM): es el fichero que recibe el servidor del servicio y contiene los siguientes parametros:
+
+	* file: fichero de peticion de suscripcion (local.xml)
+	* action: connect|reconnect|refresh
+		· connect: indica que hay suscripcion y se lanza ISABEL. Es la accion mas utilizada.
+		· reconnect: se utiliza cuando el servidor de la sesion ha cambiado el flowserver al que se tiene que conectar el sitio que pide la suscripcion. Basicamente se utiliza para que no modifique el valor del fichero URL.
+		· refresh: se utiliza cuando se quiere suscripcion pero no lanzar ISABEL (EJ: yo Soy flowserver y alguien se suscribe a la sesion a traves de mi; cuando recibo su suscripción veo que se esta conectando a traves de una ip mia que no esta en mi local.xml -> necesito actualizar los datos de mi suscripcion, es decir, enviarle al master mi nuevo local.xml, pero ya tengo ISABEL lanzado -> refresh).
+	* session: sesion a la qu se quiere conectar.
+	* sourceip: ip del solicitante.
+	* oldid: ultimo id utilizado para conectarse a esta sesion.
+
+
+- Protocolo: 
+
+        CLIENTE                      FLOWSERVER                         SERVER
+                      local.xml
+               ---------------------->
+                                                   reenvio local.xml
+                                              --------------------------->
+                                                                      guardo xedl parcial del cliente
+                                                                      genero xedl total 
+                                   
+                                                      envio xedl total
+                                              <---------------------------
+
+                    reenvio xedl total
+              <---------------------------
+       lanzo isabel
+
+- Ficheros generados: 
+	* En el cliente: 
+		· local.xml con la información sitio (role, ancho de banda...) que se utilizara para esta sesion.
+		· url con la url de la sesion.
+		· en .xlim/logs/isacto.*.log, ficheros de log sobre como ha ido la conexion 
+	* En el servidor:
+		· en .xlim/logs/listen_connect_to_traces.log, fichero de log sobre como ha ido el proceso.
+		· en .xlim/logs/listen_connect_to_output.log, fichero recibido del padre (XEDL completo o xerl).
+		· (si es servidor de sesion), SESSION-ID.xml, fichero local.xml recibido.
+		· (si es servidor de sesion), SESSION_TMP.xml, fichero XEDl total generado a partir de los parciales y enviado al cliente para que arranque.
+
+- Paquete: isabel.xlim.services.connect_to
+
+- Clases:  
+	* Isabel_connect_to: cliente del servicio
+	* Isabel_listen_connect_to: servidor del servicio
+	* ConnectToException: excepcion lanzada por el servicio.
+	* ExternalServiceException: excepcionn lanzada por el sevicio cuando se produce un errror al ejecutar un servicio externo.
+
+- Librerias utilizadas por el servicio:
+	* isabel.lib.xlim.Servutilities, funciones varias
+	* isabel.lib.xlim.XlimNotifications: para escribir mensajes de log en el fichero $HOME/.xlim/logs/notif.xlim.log
+	* isabel.xlim.services.guis.XlimServicePanel: para la interfaz gráfica.
+
+- Ficheros en el repositorio:
+	* Directorio: xlimservices
+	* Ficheros: 
+		· xlimservices/isabel/xlim/services/connect_to/Isabel_connect_to.java
+		· xlimservices/isabel/xlim/services/connect_to/Isabel_listen_connect_to.java
+		· xlimservices/isabel/xlim/services/connect_to/ConnectPanel.java
+		· xlimservices/isabel/xlim/services/connect_to/ConnectToException.java
+		· xlimservices/isabel/xlim/services/connect_to/ExternalServiceException.java
+
+- Casos especiales:
+	* Un cliente puede lanzar a los flowservers que hay entre el y el master cuando hace un connect to. Para poder hacerlo, el flowserver debe de haberse suscrito previamente a la sesion y debe conocer al cliente; esto significa que en el XEDL total del flowserver debe aparecer el sitio que identifica al Cliente (es decir, no debe ser la primera vez que el CLiente se suscribe a la sesion). Si se cumplen esos requisitos, se lanza en el flowserver que se quiere lanzar un proceso connect to.
+ 
+
+
+TEMAS PENDIENTES
+----------------
+
+- habria que aniadir la opcion de poder elegir un profile de las options cuando haces el connect to (en el panel de terminal information). Se podria poner un fichero dentro de la agenda de sesiones (.isabel/sessions/remote/) llamado profile en el que se escriba el nombre del profile.
+- Documentación XLIM/ setup version 4.8: hay muy poca documentacion.

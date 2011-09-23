@@ -1,0 +1,1493 @@
+actions.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+actions.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+actions.c: * presentation solutions in a totally Web-based environment.  For more
+actions.c:  if (status == -1 || status == 0x7F00) {
+actions.c:        if (i >= bufsize - 1) {
+active.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+active.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+active.c: * presentation solutions in a totally Web-based environment.  For more
+async_io.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+async_io.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+async_io.c: * presentation solutions in a totally Web-based environment.  For more
+async_io.c:  for (aux = res; aux; aux = aux->ai_next) {
+async_io.c:    listen_fd = socket(aux->ai_family, aux->ai_socktype, aux->ai_protocol);
+async_io.c:    if (bind(listen_fd, aux->ai_addr, aux->ai_addrlen) < 0) {
+async_io.c:  slot->listening_f = 1;
+async_io.c:  slot->bytes_to_read = slot_size;
+async_io.c:  slot->readfunc = acceptfunc;
+async_io.c:  slot->listening_f = 1;
+async_io.c:  slot->bytes_to_read = slot_size;
+async_io.c:  slot->readfunc = acceptfunc;
+async_io.c:    next_slot = slot->next;
+async_io.c:    if (slot->type == type && !slot->close_f) {
+async_io.c:  slot->close_f = 1;
+async_io.c:  } else if (slot->listening_f) {
+async_io.c:    close(slot->fd);
+async_io.c:    slot->fd_closed_f = 1;
+async_io.c:    FD_CLR(slot->fd, &s_fdset_read);
+async_io.c:    if (slot->fd == s_max_fd) {
+async_io.c:      s_max_fd--;
+async_io.c:        next_slot = slot->next;
+async_io.c:        if (s_fd_array[slot->idx].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+async_io.c:          slot->errio_f = 1;
+async_io.c:          slot->close_f = 1;
+async_io.c:          if (s_fd_array[slot->idx].revents & POLLOUT)
+async_io.c:          if ((s_fd_array[slot->idx].revents & POLLIN) && !slot->close_f) {
+async_io.c:            if (slot->listening_f)
+async_io.c:    next_slot = slot->next;
+async_io.c:        next_slot = slot->next;
+async_io.c:        if (FD_ISSET(slot->fd, &fdset_w))
+async_io.c:        if (FD_ISSET(slot->fd, &fdset_r) && !slot->close_f) {
+async_io.c:          if (slot->listening_f)
+async_io.c:    next_slot = slot->next;
+async_io.c:  if (cur_slot->alloc_f) {
+async_io.c:    free(cur_slot->readbuf);
+async_io.c:    cur_slot->alloc_f = 0;
+async_io.c:  cur_slot->readfunc = fn;
+async_io.c:    cur_slot->readbuf = inbuf;
+async_io.c:    if (bytes_to_read <= sizeof(cur_slot->buf256)) {
+async_io.c:      cur_slot->readbuf = cur_slot->buf256;
+async_io.c:      cur_slot->readbuf = malloc(bytes_to_read);
+async_io.c:      if (cur_slot->readbuf != NULL) {
+async_io.c:        cur_slot->alloc_f = 1;
+async_io.c:        cur_slot->close_f = 1;
+async_io.c:  cur_slot->bytes_to_read = bytes_to_read;
+async_io.c:  cur_slot->bytes_ready = 0;
+async_io.c:    block->data_size = bytes_to_write;
+async_io.c:    memcpy(block->data, outbuf, bytes_to_write);
+async_io.c:    block->func = fn;
+async_io.c:    if (cur_slot->outqueue == NULL) {
+async_io.c:      cur_slot->outqueue = block;
+async_io.c:      cur_slot->bytes_written = 0;
+async_io.c:      s_fd_array[cur_slot->idx].events |= POLLOUT;
+async_io.c:      FD_SET(cur_slot->fd, &s_fdset_write);
+async_io.c:      cur_slot->outqueue_last->next = block;
+async_io.c:    cur_slot->outqueue_last = block;
+async_io.c:    block->next = NULL;
+async_io.c:  cur_slot->closefunc = closefunc;
+async_io.c:    slot->fd = fd;
+async_io.c:      slot->name = strdup(name);
+async_io.c:      slot->name = strdup("[unknown]");
+async_io.c:      slot->prev = NULL;
+async_io.c:      s_last_slot->next = slot;
+async_io.c:      slot->prev = s_last_slot;
+async_io.c:    /* Put fd into non-blocking mode */
+async_io.c:      slot->idx = s_fd_array_size++;
+async_io.c:      s_fd_array[slot->idx].fd = fd;
+async_io.c:      s_fd_array[slot->idx].events = POLLIN;
+async_io.c:      s_fd_array[slot->idx].revents = 0;
+async_io.c:     Or better destroy the slot? -- I think yes. */
+async_io.c:  if (!slot->close_f) {
+async_io.c:    if (slot->bytes_to_read - slot->bytes_ready > 0) {
+async_io.c:      bytes = read(slot->fd, slot->readbuf + slot->bytes_ready,
+async_io.c:                   slot->bytes_to_read - slot->bytes_ready);
+async_io.c:    if (bytes > 0 || slot->bytes_to_read == 0) {
+async_io.c:      slot->bytes_ready += bytes;
+async_io.c:      if (slot->bytes_ready == slot->bytes_to_read) {
+async_io.c:        (*slot->readfunc)();
+async_io.c:      slot->close_f = 1;
+async_io.c:      slot->errio_f = 1;
+async_io.c:      slot->errread_f = 1;
+async_io.c:      slot->io_errno = errno;
+async_io.c:  if (!slot->close_f) {
+async_io.c:    if (slot->outqueue->data_size - slot->bytes_written > 0) {
+async_io.c:      bytes = write(slot->fd, slot->outqueue->data + slot->bytes_written,
+async_io.c:                    slot->outqueue->data_size - slot->bytes_written);
+async_io.c:    if (bytes > 0 || slot->outqueue->data_size == 0) {
+async_io.c:      slot->bytes_written += bytes;
+async_io.c:      if (slot->bytes_written == slot->outqueue->data_size) {
+async_io.c:        if (slot->outqueue->func != NULL) {
+async_io.c:          (*slot->outqueue->func)();
+async_io.c:        next = slot->outqueue->next;
+async_io.c:          free(slot->outqueue);
+async_io.c:          slot->outqueue = next;
+async_io.c:          slot->bytes_written = 0;
+async_io.c:          free(slot->outqueue);
+async_io.c:          slot->outqueue = NULL;
+async_io.c:          s_fd_array[slot->idx].events &= (short)~POLLOUT;
+async_io.c:          FD_CLR(slot->fd, &s_fdset_write);
+async_io.c:      slot->close_f = 1;
+async_io.c:      slot->errio_f = 1;
+async_io.c:      slot->errwrite_f = 1;
+async_io.c:      slot->io_errno = errno;
+async_io.c:  fprintf(stderr,"------ new conection --\n");
+async_io.c:  if (!slot->close_f) {
+async_io.c:    fd = accept(slot->fd, (struct sockaddr *) &client_addr, &len);
+async_io.c:                            slot->bytes_to_read);
+async_io.c:    (*slot->readfunc)();
+async_io.c:    next_slot = slot->next;
+async_io.c:    if (slot->close_f)
+async_io.c:  /* Call on-close hook */
+async_io.c:  if (slot->closefunc != NULL) {
+async_io.c:    (*slot->closefunc)();
+async_io.c:    if (slot->prev == NULL)
+async_io.c:      s_first_slot = slot->next;
+async_io.c:      slot->prev->next = slot->next;
+async_io.c:    if (slot->next == NULL)
+async_io.c:      s_last_slot = slot->prev;
+async_io.c:      slot->next->prev = slot->prev;
+async_io.c:    if (s_fd_array_size - 1 > slot->idx) {
+async_io.c:      memmove(&s_fd_array[slot->idx],
+async_io.c:              &s_fd_array[slot->idx + 1],
+async_io.c:              (s_fd_array_size - slot->idx - 1) * sizeof(struct pollfd));
+async_io.c:      for (h_slot = slot->next; h_slot != NULL; h_slot = h_slot->next)
+async_io.c:        h_slot->idx--;
+async_io.c:    s_fd_array_size--;
+async_io.c:    if (!slot->fd_closed_f) {
+async_io.c:      FD_CLR(slot->fd, &s_fdset_read);
+async_io.c:      FD_CLR(slot->fd, &s_fdset_write);
+async_io.c:      if (slot->fd == s_max_fd) {
+async_io.c:        s_max_fd--;
+async_io.c:  block = slot->outqueue;
+async_io.c:    next_block = block->next;
+async_io.c:  free(slot->name);
+async_io.c:  if (slot->alloc_f)
+async_io.c:    free(slot->readbuf);
+async_io.c:  if (!slot->fd_closed_f)
+async_io.c:    close(slot->fd);
+client_io.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+client_io.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+client_io.c: * presentation solutions in a totally Web-based environment.  For more
+client_io.c:  cur_slot->type = TYPE_CL_SLOT;
+client_io.c:  cl->connected = 0;
+client_io.c:  cl->trans_table = NULL;
+client_io.c:    cl->zs_active[i] = 0;
+client_io.c:  log_write(LL_MSG, "Af_client_accept(): ccepted connection from %s", cur_slot->name);
+client_io.c:  if (cur_slot->errread_f) {
+client_io.c:    if (cur_slot->io_errno) {
+client_io.c:                cur_slot->name, strerror(cur_slot->io_errno));
+client_io.c:      log_write(LL_WARN, "Error reading from %s", cur_slot->name);
+client_io.c:  } else if (cur_slot->errwrite_f) {
+client_io.c:    if (cur_slot->io_errno) {
+client_io.c:                cur_slot->name, strerror(cur_slot->io_errno));
+client_io.c:      log_write(LL_WARN, "Error sending to %s", cur_slot->name);
+client_io.c:  } else if (cur_slot->errio_f) {
+client_io.c:    log_write(LL_WARN, "I/O error, client %s", cur_slot->name);
+client_io.c:  log_write(LL_MSG, "Closing client connection %s", cur_slot->name);
+client_io.c:  REGION_UNINIT(&cl->pending_region);
+client_io.c:  REGION_UNINIT(&cl->copy_region);
+client_io.c:    if (cl->zs_active[i])
+client_io.c:      deflateEnd(&cl->zs_struct[i]);
+client_io.c:  if (cl->trans_table != NULL)
+client_io.c:    free(cl->trans_table);
+client_io.c:  log_write(LL_DETAIL, "Client supports %.11s", cur_slot->readbuf);
+client_io.c:    rfb_gen_challenge(cl->auth_challenge);
+client_io.c:    memcpy(&msg[4], cl->auth_challenge, 16);
+client_io.c:              cur_slot->name);
+client_io.c:  rfb_crypt(resp_rw, cl->auth_challenge, s_password);
+client_io.c:  rfb_crypt(resp_ro, cl->auth_challenge, s_password_ro);
+client_io.c:  if (memcmp(cur_slot->readbuf, resp_rw, 16) == 0) {
+client_io.c:    cl->readonly = 0;
+client_io.c:    log_write(LL_MSG, "Full-control authentication passed by %s",
+client_io.c:              cur_slot->name);
+client_io.c:  } else if (memcmp(cur_slot->readbuf, resp_ro, 16) == 0) {
+client_io.c:    cl->readonly = 1;
+client_io.c:    log_write(LL_MSG, "Read-only authentication passed by %s",
+client_io.c:              cur_slot->name);
+client_io.c:    log_write(LL_WARN, "Authentication failed for %s", cur_slot->name);
+client_io.c:  if (cur_slot->readbuf[0] == 0) {
+client_io.c:    log_write(LL_WARN, "Non-shared session requested by %s", cur_slot->name);
+client_io.c:  cl->fb_width = g_screen_info.width;
+client_io.c:  cl->fb_height = g_screen_info.height;
+client_io.c:  cl->enable_newfbsize = 0;
+client_io.c:  buf_put_CARD16(msg_server_init, cl->fb_width);
+client_io.c:  buf_put_CARD16(msg_server_init + 2, cl->fb_height);
+client_io.c:  memcpy(&cl->format, &g_screen_info.pixformat, sizeof(RFB_PIXEL_FORMAT));
+client_io.c:  cl->trans_func = transfunc_null;
+client_io.c:  cl->bgr233_f = 0;
+client_io.c:  cl->compress_level = 6;       /* default compression level */
+client_io.c:  cl->jpeg_quality = -1;        /* disable JPEG by default */
+client_io.c:  cl->update_requested = 0;
+client_io.c:  cl->update_in_progress = 0;
+client_io.c:  REGION_INIT(&cl->pending_region, NullBox, 16);
+client_io.c:  REGION_INIT(&cl->copy_region, NullBox, 8);
+client_io.c:  cl->newfbsize_pending = 0;
+client_io.c:  cl->connected = 1;
+client_io.c:  msg_id = (int)cur_slot->readbuf[0] & 0xFF;
+client_io.c:              msg_id, cur_slot->name);
+client_io.c:  buf_get_pixfmt(&cur_slot->readbuf[3], &cl->format);
+client_io.c:            cl->format.bits_pixel, cur_slot->name);
+client_io.c:            cur_slot->name);
+client_io.c:  cl->temp_count = buf_get_CARD16(&cur_slot->readbuf[3]);
+client_io.c:  aio_setread(rf_client_colormap_data, NULL, cl->temp_count * 6);
+client_io.c:  cl->temp_count = buf_get_CARD16(&cur_slot->readbuf[1]);
+client_io.c:  aio_setread(rf_client_encodings_data, NULL, cl->temp_count * sizeof(CARD32));
+client_io.c:  cl->enc_enable[RFB_ENCODING_RAW] = 1;
+client_io.c:  cl->enc_prefer = RFB_ENCODING_RAW;
+client_io.c:  cl->compress_level = -1;
+client_io.c:  cl->jpeg_quality = -1;
+client_io.c:  cl->enable_lastrect = 0;
+client_io.c:  cl->enable_newfbsize = 0;
+client_io.c:    cl->enc_enable[i] = 0;
+client_io.c:  for (i = 0; i < (int)cl->temp_count; i++) {
+client_io.c:    enc = buf_get_CARD32(&cur_slot->readbuf[i * sizeof(CARD32)]);
+client_io.c:        cl->enc_prefer = enc;
+client_io.c:      cl->enc_enable[enc] = 1;
+client_io.c:               cl->compress_level == -1) {
+client_io.c:      cl->compress_level = (int)(enc - RFB_ENCODING_COMPESSLEVEL0);
+client_io.c:                cl->compress_level, cur_slot->name);
+client_io.c:               cl->jpeg_quality == -1) {
+client_io.c:      cl->jpeg_quality = (int)(enc - RFB_ENCODING_QUALITYLEVEL0);
+client_io.c:                cl->jpeg_quality, cur_slot->name);
+client_io.c:                cur_slot->name);
+client_io.c:      cl->enable_lastrect = 1;
+client_io.c:      cl->enable_newfbsize = 1;
+client_io.c:                cur_slot->name);
+client_io.c:  if (cl->compress_level < 0)
+client_io.c:    cl->compress_level = 6;     /* default compression level */
+client_io.c:  if (!cl->enc_enable[RFB_ENCODING_COPYRECT] &&
+client_io.c:      REGION_NOTEMPTY(&cl->copy_region)) {
+client_io.c:    REGION_UNION(&cl->pending_region, &cl->pending_region, &cl->copy_region);
+client_io.c:    REGION_EMPTY(&cl->copy_region);
+client_io.c:  log_write(LL_DEBUG, "Encoding list set by %s", cur_slot->name);
+client_io.c:  if (cl->enc_prefer == RFB_ENCODING_RAW) {
+client_io.c:              cur_slot->name);
+client_io.c:  } else if (cl->enc_prefer == RFB_ENCODING_TIGHT) {
+client_io.c:              cur_slot->name);
+client_io.c:  } else if (cl->enc_prefer == RFB_ENCODING_HEXTILE) {
+client_io.c:              cur_slot->name);
+client_io.c:  rect.x1 = buf_get_CARD16(&cur_slot->readbuf[1]);
+client_io.c:  rect.y1 = buf_get_CARD16(&cur_slot->readbuf[3]);
+client_io.c:  rect.x2 = rect.x1 + buf_get_CARD16(&cur_slot->readbuf[5]);
+client_io.c:  rect.y2 = rect.y1 + buf_get_CARD16(&cur_slot->readbuf[7]);
+client_io.c:  if (rect.x1 > cl->fb_width)
+client_io.c:    rect.x1 = cl->fb_width;
+client_io.c:  if (rect.y1 > cl->fb_height)
+client_io.c:    rect.y1 = cl->fb_height;
+client_io.c:  if (rect.x2 > cl->fb_width)
+client_io.c:    rect.x2 = cl->fb_width;
+client_io.c:  if (rect.y2 > cl->fb_height)
+client_io.c:    rect.y2 = cl->fb_height;
+client_io.c:  cl->update_rect = rect;
+client_io.c:  cl->update_requested = 1;
+client_io.c:  if (!cur_slot->readbuf[0]) {
+client_io.c:              cur_slot->name);
+client_io.c:    if (!cl->newfbsize_pending) {
+client_io.c:      REGION_UNION(&cl->pending_region, &cl->pending_region, &tmp_region);
+client_io.c:      REGION_UNION(&cl->pending_region, &cl->pending_region, &cl->copy_region);
+client_io.c:      REGION_EMPTY(&cl->copy_region);
+client_io.c:              cur_slot->name);
+client_io.c:  if (!cl->update_in_progress &&
+client_io.c:      (cl->newfbsize_pending ||
+client_io.c:       REGION_NOTEMPTY(&cl->pending_region) ||
+client_io.c:       REGION_NOTEMPTY(&cl->copy_region))) {
+client_io.c:            cur_slot->name);
+client_io.c:  cl->update_in_progress = 0;
+client_io.c:  if (cl->update_requested &&
+client_io.c:      (cl->newfbsize_pending ||
+client_io.c:       REGION_NOTEMPTY(&cl->pending_region) ||
+client_io.c:       REGION_NOTEMPTY(&cl->copy_region))) {
+client_io.c:  if (!cl->readonly) {
+client_io.c:    memcpy(&msg[1], cur_slot->readbuf, 7);
+client_io.c:  if (!cl->readonly) {
+client_io.c:    msg[1] = cur_slot->readbuf[0];
+client_io.c:    x = buf_get_CARD16(&cur_slot->readbuf[1]);
+client_io.c:    y = buf_get_CARD16(&cur_slot->readbuf[3]);
+client_io.c:      x = g_screen_info.width - 1;
+client_io.c:      y = g_screen_info.height - 1;
+client_io.c:            cur_slot->name);
+client_io.c:  cl->cut_len = (int)buf_get_CARD32(&cur_slot->readbuf[3]);
+client_io.c:  aio_setread(rf_client_cuttext_data, NULL, cl->cut_len);
+client_io.c:  if (!cl->readonly)
+client_io.c:    pass_cuttext_to_host(cur_slot->readbuf, cl->cut_len);
+client_io.c:  if (!cl->connected || cl->newfbsize_pending)
+client_io.c:  if (g_screen_info.width != cl->fb_width ||
+client_io.c:      g_screen_info.height != cl->fb_height) {
+client_io.c:    cl->newfbsize_pending = 1;
+client_io.c:    REGION_EMPTY(&cl->pending_region);
+client_io.c:    REGION_EMPTY(&cl->copy_region);
+client_io.c:  add_rect.x1 = rect->x;
+client_io.c:  add_rect.y1 = rect->y;
+client_io.c:  add_rect.x2 = add_rect.x1 + rect->w;
+client_io.c:  add_rect.y2 = add_rect.y1 + rect->h;
+client_io.c:     were no other non-CopyRect updates pending for this client.
+client_io.c:     before non-CopyRect ones, but of course more elegant and
+client_io.c:  if (rect->enc == RFB_ENCODING_COPYRECT &&
+client_io.c:      cl->enc_enable[RFB_ENCODING_COPYRECT] &&
+client_io.c:      !REGION_NOTEMPTY(&cl->pending_region)) {
+client_io.c:    dx = rect->x - rect->src_x;
+client_io.c:    dy = rect->y - rect->src_y;
+client_io.c:    if (!REGION_NOTEMPTY(&cl->copy_region) ||
+client_io.c:        (dx == cl->copy_dx && dy == cl->copy_dy)) {
+client_io.c:      REGION_UNION(&cl->copy_region, &cl->copy_region, &add_region);
+client_io.c:      cl->copy_dx = dx;
+client_io.c:      cl->copy_dy = dy;
+client_io.c:    REGION_UNION(&cl->pending_region, &cl->pending_region, &add_region);
+client_io.c:  if (!cl->update_in_progress && cl->update_requested &&
+client_io.c:      (cl->newfbsize_pending ||
+client_io.c:       REGION_NOTEMPTY(&cl->pending_region) ||
+client_io.c:       REGION_NOTEMPTY(&cl->copy_region))) {
+client_io.c:  if (cl->connected) {
+client_io.c:    log_write(LL_DEBUG, "Sending ServerCutText message to %s", cur_slot->name);
+client_io.c: * Non-callback functions
+client_io.c:  if (cl->trans_table != NULL) {
+client_io.c:    free(cl->trans_table);
+client_io.c:    cl->trans_table = NULL;
+client_io.c:    cl->trans_func = transfunc_null;
+client_io.c:  cl->bgr233_f = 0;
+client_io.c:  if ( cl->format.bits_pixel != g_screen_info.pixformat.bits_pixel ||
+client_io.c:       cl->format.color_depth != g_screen_info.pixformat.color_depth ||
+client_io.c:       cl->format.big_endian != g_screen_info.pixformat.big_endian ||
+client_io.c:       ((cl->format.true_color != 0) !=
+client_io.c:       cl->format.r_max != g_screen_info.pixformat.r_max ||
+client_io.c:       cl->format.g_max != g_screen_info.pixformat.g_max ||
+client_io.c:       cl->format.b_max != g_screen_info.pixformat.b_max ||
+client_io.c:       cl->format.r_shift != g_screen_info.pixformat.r_shift ||
+client_io.c:       cl->format.g_shift != g_screen_info.pixformat.g_shift ||
+client_io.c:       cl->format.b_shift != g_screen_info.pixformat.b_shift ) {
+client_io.c:    cl->trans_table = gen_trans_table(&cl->format);
+client_io.c:    switch(cl->format.bits_pixel) {
+client_io.c:      cl->trans_func = transfunc8;
+client_io.c:      if ( cl->format.r_max == 7 && cl->format.g_max == 7 &&
+client_io.c:           cl->format.b_max == 3 && cl->format.r_shift == 0 &&
+client_io.c:           cl->format.g_shift == 3 && cl->format.b_shift == 6 &&
+client_io.c:           cl->format.true_color != 0 ) {
+client_io.c:        cl->bgr233_f = 1;
+client_io.c:      cl->trans_func = transfunc16;
+client_io.c:      cl->trans_func = transfunc32;
+client_io.c:            (int)cl->fb_width, (int)cl->fb_height, cur_slot->name);
+client_io.c:  rect.w = cl->fb_width;
+client_io.c:  rect.h = cl->fb_height;
+client_io.c:  cl->update_in_progress = 1;
+client_io.c:  cl->update_requested = 0;
+client_io.c:  if (cl->newfbsize_pending) {
+client_io.c:    cl->fb_width = g_screen_info.width;
+client_io.c:    cl->fb_height = g_screen_info.height;
+client_io.c:    cl->newfbsize_pending = 0;
+client_io.c:              (int)cl->fb_width, (int)cl->fb_height, cur_slot->name);
+client_io.c:    fb_rect.x2 = cl->fb_width;
+client_io.c:    fb_rect.y2 = cl->fb_height;
+client_io.c:    REGION_COPY(&cl->pending_region, &fb_region);
+client_io.c:    REGION_EMPTY(&cl->copy_region);
+client_io.c:       pseudo-rectangle, pixel data will be sent in the next update. */
+client_io.c:    if (cl->enable_newfbsize) {
+client_io.c:    REGION_SUBTRACT(&cl->copy_region, &cl->copy_region, &cl->pending_region);
+client_io.c:  REGION_INIT(&clip_region, &cl->update_rect, 1);
+client_io.c:  REGION_INTERSECT(&cl->pending_region, &cl->pending_region, &clip_region);
+client_io.c:  if (REGION_NOTEMPTY(&cl->copy_region)) {
+client_io.c:    REGION_INTERSECT(&cl->copy_region, &cl->copy_region, &clip_region);
+client_io.c:    REGION_COPY(&outer_region, &cl->copy_region);
+client_io.c:    REGION_TRANSLATE(&clip_region, cl->copy_dx, cl->copy_dy);
+client_io.c:    REGION_INTERSECT(&cl->copy_region, &cl->copy_region, &clip_region);
+client_io.c:    REGION_SUBTRACT(&outer_region, &outer_region, &cl->copy_region);
+client_io.c:    REGION_UNION(&cl->pending_region, &cl->pending_region, &outer_region);
+client_io.c:  if (cl->enc_prefer == RFB_ENCODING_TIGHT && cl->enable_lastrect) {
+client_io.c:    region_pack(&cl->pending_region, 32);
+client_io.c:    region_pack(&cl->pending_region, 12);
+client_io.c:  num_penging_rects = REGION_NUM_RECTS(&cl->pending_region);
+client_io.c:  num_copy_rects = REGION_NUM_RECTS(&cl->copy_region);
+client_io.c:            num_all_rects, cur_slot->name);
+client_io.c:  if (cl->enc_prefer == RFB_ENCODING_TIGHT && cl->enable_lastrect) {
+client_io.c:  rev_order = (cl->copy_dy > 0 || (cl->copy_dy == 0 && cl->copy_dx > 0));
+client_io.c:    idx = (rev_order) ? num_copy_rects - i - 1 : i;
+client_io.c:    rect.x = REGION_RECTS(&cl->copy_region)[idx].x1;
+client_io.c:    rect.y = REGION_RECTS(&cl->copy_region)[idx].y1;
+client_io.c:    rect.w = REGION_RECTS(&cl->copy_region)[idx].x2 - rect.x;
+client_io.c:    rect.h = REGION_RECTS(&cl->copy_region)[idx].y2 - rect.y;
+client_io.c:    rect.src_x = rect.x - cl->copy_dx;
+client_io.c:    rect.src_y = rect.y - cl->copy_dy;
+client_io.c:              cur_slot->name);
+client_io.c:    if (i == num_all_rects - 1) {
+client_io.c:      if (cl->enc_prefer != RFB_ENCODING_TIGHT || !cl->enable_lastrect)
+client_io.c:    rect.x = REGION_RECTS(&cl->pending_region)[i].x1;
+client_io.c:    rect.y = REGION_RECTS(&cl->pending_region)[i].y1;
+client_io.c:    rect.w = REGION_RECTS(&cl->pending_region)[i].x2 - rect.x;
+client_io.c:    rect.h = REGION_RECTS(&cl->pending_region)[i].y2 - rect.y;
+client_io.c:              cur_slot->name);
+client_io.c:    if (cl->enc_prefer == RFB_ENCODING_TIGHT && cl->enable_lastrect) {
+client_io.c:    } else if ( cl->enc_prefer != RFB_ENCODING_RAW &&
+client_io.c:                cl->enc_enable[RFB_ENCODING_HEXTILE] ) {
+client_io.c:        hextile_bytes += block->data_size;
+client_io.c:        raw_bytes += rect.w * rect.h * (cl->format.bits_pixel / 8);
+client_io.c:    if (i == num_penging_rects - 1)
+client_io.c:  REGION_EMPTY(&cl->pending_region);
+client_io.c:  REGION_EMPTY(&cl->copy_region);
+client_io.c:  if (cl->enc_prefer == RFB_ENCODING_TIGHT && cl->enable_lastrect) {
+client_io.c:  cl->update_in_progress = 1;
+client_io.c:  cl->update_requested = 0;
+control.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+control.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+control.c: * presentation solutions in a totally Web-based environment.  For more
+control.c: * port would fail. Also, all non-authenticated host connections
+d3des.c:/* D3DES (V5.09) -
+d3des.c:/* Use the key schedule specified in the Standard (ANSI X3.92-1981). */
+d3des.c:		if( edf == DE1 ) m = (15 - i) << 1;
+d3des.c:			else pcr[j] = pc1m[l - 28];
+d3des.c:		    else pcr[j] = pc1m[l - 28];
+d3des.c: * Single-length key, single-length plaintext -
+decode_hextile.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+decode_hextile.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+decode_hextile.c: * presentation solutions in a totally Web-based environment.  For more
+decode_hextile.c: * Decoding Hextile-encoded rectangles.
+decode_hextile.c:  fbs_spool_byte(cur_slot->readbuf[0]);
+decode_hextile.c:  s_subenc = cur_slot->readbuf[0];
+decode_hextile.c:    fbs_spool_data(hextile_buf, (from_ptr - hextile_buf) * sizeof(CARD32) + 1);
+decode_hextile.c:    fbs_spool_data(hextile_buf, (from_ptr - hextile_buf) * sizeof(CARD32));
+decode_hextile.c:  ptr = cur_slot->readbuf;
+decode_hextile.c:  skip = g_fb_width - (dim_w + 1);
+decode_hextile.c:      s_tile.w = s_rect.x + s_rect.w - s_tile.x;
+decode_hextile.c:      s_tile.h = s_rect.y + s_rect.h - s_tile.y;
+decode_tight.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+decode_tight.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+decode_tight.c: * presentation solutions in a totally Web-based environment.  For more
+decode_tight.c: * Decoding Tight-encoded rectangles.
+decode_tight.c: * File-local data.
+decode_tight.c:  fbs_spool_byte(cur_slot->readbuf[0] | s_reset_streams);
+decode_tight.c:  comp_ctl = cur_slot->readbuf[0];
+decode_tight.c:    log_write(LL_ERROR, "Invalid sub-encoding in Tight-encoded data");
+decode_tight.c:  fbs_spool_data(cur_slot->readbuf, 3);
+decode_tight.c:  /* Note: cur_slot->readbuf is unsigned char[]. */
+decode_tight.c:  color = (cur_slot->readbuf[0] << 16 |
+decode_tight.c:           cur_slot->readbuf[1] << 8 |
+decode_tight.c:           cur_slot->readbuf[2]);
+decode_tight.c:  fbs_spool_byte(cur_slot->readbuf[0]);
+decode_tight.c:  s_filter_id = cur_slot->readbuf[0];
+decode_tight.c:  fbs_spool_data(cur_slot->readbuf, 1);
+decode_tight.c:  s_num_colors = cur_slot->readbuf[0] + 1;
+decode_tight.c:  fbs_spool_data(cur_slot->readbuf, s_num_colors * 3);
+decode_tight.c:    s_palette[i] = (cur_slot->readbuf[i*3] << 16 |
+decode_tight.c:                    cur_slot->readbuf[i*3+1] << 8 |
+decode_tight.c:                    cur_slot->readbuf[i*3+2]);
+decode_tight.c:  fbs_spool_data(cur_slot->readbuf, s_uncompressed_size);
+decode_tight.c:  tight_draw_truecolor_data(cur_slot->readbuf);
+decode_tight.c:  fbs_spool_data(cur_slot->readbuf, s_uncompressed_size);
+decode_tight.c:  tight_draw_indexed_data(cur_slot->readbuf);
+decode_tight.c:  fbs_spool_byte(cur_slot->readbuf[0]);
+decode_tight.c:  s_compressed_size = cur_slot->readbuf[0] & 0x7F;
+decode_tight.c:  if (cur_slot->readbuf[0] & 0x80) {
+decode_tight.c:  fbs_spool_byte(cur_slot->readbuf[0]);
+decode_tight.c:  s_compressed_size |= (cur_slot->readbuf[0] & 0x7F) << 7;
+decode_tight.c:  if (cur_slot->readbuf[0] & 0x80) {
+decode_tight.c:  fbs_spool_byte(cur_slot->readbuf[0]);
+decode_tight.c:  s_compressed_size |= (cur_slot->readbuf[0] & 0x7F) << 14;
+decode_tight.c:  fbs_spool_data(cur_slot->readbuf, s_compressed_size);
+decode_tight.c:    zs->zalloc = Z_NULL;
+decode_tight.c:    zs->zfree = Z_NULL;
+decode_tight.c:    zs->opaque = Z_NULL;
+decode_tight.c:      if (zs->msg != NULL) {
+decode_tight.c:        log_write(LL_ERROR, "inflateInit() failed: %s", zs->msg);
+decode_tight.c:  zs->next_in = cur_slot->readbuf;
+decode_tight.c:  zs->avail_in = s_compressed_size;
+decode_tight.c:  zs->next_out = buf;
+decode_tight.c:  zs->avail_out = s_uncompressed_size;
+decode_tight.c:    if (zs->msg != NULL) {
+decode_tight.c:      log_write(LL_ERROR, "inflate() failed: %s", zs->msg);
+decode_tight.c:  if (zs->avail_out > 0)
+decode_tight.c: * Draw 24-bit truecolor pixel array on the framebuffer.
+decode_tight.c:    fb_ptr += g_fb_width - s_rect.w;
+decode_tight.c:        for (b = 7; b >= 0; b--) {
+decode_tight.c:      for (b = 7; b >= 8 - s_rect.w % 8; b--) {
+decode_tight.c:      fb_ptr += g_fb_width - s_rect.w;
+decode_tight.c:      fb_ptr += g_fb_width - s_rect.w;
+decode_tight.c:	est = (int)prev_row[x*3+c] + (int)pix[c] - (int)prev_row[(x-1)*3+c];
+decode_tight.c:    fb_ptr += g_fb_width - s_rect.w;
+encode.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+encode.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+encode.c: * presentation solutions in a totally Web-based environment.  For more
+encode.c:/* This structure describes cached data for a properly-aligned 16x16 tile. */
+encode.c:/* NOTE: If hextile_datasize is not 0 then valid_f should be non-zero too, */
+encode.c:/* but if valid_f is not 0, do not expect hextile_datasize to be non-zero. */
+encode.c:  CARD8 valid_f;                /* At least meta-data available if not 0   */
+encode.c:  CARD8 num_colors;             /* Meta-data: number of colors (1, 2 or 0) */
+encode.c:  CARD8 bg;                     /* Meta-data: background color             */
+encode.c:  CARD8 fg;                     /* Meta-data: foreground color             */
+encode.c:  CARD16 hextile_datasize;      /* Hextile-encoded data available if not 0 */
+encode.c:/* Two-color palette */
+encode.c:  tile_x0 = r->x / 16;
+encode.c:  tile_y0 = r->y / 16;
+encode.c:  tile_x1 = (r->x + r->w - 1) / 16;
+encode.c:    tile_x1 = tiles_in_row - 1;
+encode.c:  tile_y1 = (r->y + r->h - 1) / 16;
+encode.c:    tile_y1 = (int)g_fb_height / 16 - 1;
+encode.c:                 r->w * r->h * (cl->format.bits_pixel / 8));
+encode.c:    put_rect_header(block->data, r);
+encode.c:    (*cl->trans_func)(&block->data[12], r, cl->trans_table);
+encode.c:    block->data_size = 12 + r->w * r->h * (cl->format.bits_pixel / 8);
+encode.c: * CopyRect "encoder" :-)
+encode.c:    put_rect_header(block->data, r);
+encode.c:    buf_put_CARD16(&block->data[12], r->src_x);
+encode.c:    buf_put_CARD16(&block->data[14], r->src_y);
+encode.c:    block->data_size = 12 + 4;
+encode.c:  buf_put_CARD16(buf, r->x);
+encode.c:  buf_put_CARD16(&buf[2], r->y);
+encode.c:  buf_put_CARD16(&buf[4], r->w);
+encode.c:  buf_put_CARD16(&buf[6], r->h);
+encode.c:  buf_put_CARD32(&buf[8], r->enc);
+encode.c:/* Medium-level functions */
+encode.c:/* Low-level functions */
+encode.c:/*                Hextile encoder: High-level stuff                 */
+encode.c: * Highest-level function implementing Hextile encoder. It iterates
+encode.c: * lower-level functions for them.
+encode.c:  num_tiles = ((r->w + 15) / 16) * ((r->h + 15) / 16);
+encode.c:  /* Check if tiles are aligned on 16-pixel boundary */
+encode.c:  aligned_f = (r->x & 0x0F) == 0 && (r->y & 0x0F) == 0;
+encode.c:                 r->w * r->h * (cl->format.bits_pixel / 8) +
+encode.c:  put_rect_header(block->data, r);
+encode.c:  data_ptr = (CARD8 *)&block->data[12];
+encode.c:  rx1 = r->x + r->w;
+encode.c:  ry1 = r->y + r->h;
+encode.c:  for (tile_r.y = r->y; tile_r.y < ry1; tile_r.y += 16) {
+encode.c:    if (ry1 - tile_r.y < 16)
+encode.c:      tile_r.h = ry1 - tile_r.y;
+encode.c:    for (tile_r.x = r->x; tile_r.x < rx1; tile_r.x += 16) {
+encode.c:      if (rx1 - tile_r.x < 16)
+encode.c:        tile_r.w = rx1 - tile_r.x;
+encode.c:      switch (cl->format.bits_pixel) {
+encode.c:        /* 8-bit color: to cache or not to cache? */
+encode.c:        if (aligned_f && cl->bgr233_f && tile_r.w == 16 && tile_r.h == 16)
+encode.c:  block->data_size = data_ptr - (CARD8 *)block->data;
+encode.c:  return realloc(block, sizeof(AIO_BLOCK) + block->data_size);
+encode.c:/*                        Medium-level stuff                        */
+encode.c: * Encode properly-aligned 16x16 tile in BGR233 pixel format, using
+encode.c:  tile_ord = (r->y / 16) * tiles_in_row + (r->x / 16);
+encode.c:  if (hints->valid_f && hints->hextile_datasize != 0) {
+encode.c:      /* Raw sub-encoding: copy cached data, forget previous background. */
+encode.c:      memcpy(dst, cache, hints->hextile_datasize);
+encode.c:      dst += hints->hextile_datasize;
+encode.c:      if (prev_bg != hints->bg || !prev_bg_set) {
+encode.c:        memcpy(dst, cache, hints->hextile_datasize);
+encode.c:        dst += hints->hextile_datasize;
+encode.c:        memcpy(dst, &cache[2], hints->hextile_datasize);
+encode.c:        dst += (hints->hextile_datasize - 2);
+encode.c:      prev_bg = hints->bg;
+encode.c:    dst_bytes = dst - dst_buf;
+encode.c:    (*cl->trans_func)(tile_buf, r, cl->trans_table);
+encode.c:    if (hints->valid_f) {
+encode.c:      pal.num_colors = (int)hints->num_colors;
+encode.c:      pal.bg = (CARD32)hints->bg;
+encode.c:      pal.fg = (CARD32)hints->fg;
+encode.c:    /* Step 2: Save meta-data in the cache. */
+encode.c:    hints->num_colors = (CARD8)pal.num_colors;
+encode.c:    hints->bg = (CARD8)pal.bg;
+encode.c:    hints->fg = (CARD8)pal.fg;
+encode.c:    hints->valid_f = 1;
+encode.c:      hints->hextile_datasize = dst_bytes;
+encode.c:        hints->hextile_datasize = dst_bytes;
+encode.c:        memcpy(&cache[2], &dst_buf[1], dst_bytes - 1);
+encode.c:        hints->hextile_datasize = dst_bytes + 1;
+encode.c:  (*cl->trans_func)(tile_buf, r, cl->trans_table);                      \
+encode.c:  /* If such encoding was inefficient, use raw sub-encoding. */         \
+encode.c:/*                         Low-level stuff                          */
+encode.c: * array of size at least (256 * (cl->format.bits_pixel/8) + 1) bytes.
+encode.c: * Return value: the number of bytes put into the dst_buf or -1 if
+encode.c: * this tile should be raw-encoded.
+encode.c:  bg_color = (CARD##bpp)pal->bg;                                             \
+encode.c:  /* Set appropriate sub-encoding flags */                                   \
+encode.c:  if (prev_bg != pal->bg || !prev_bg_set) {                                  \
+encode.c:  if (pal->num_colors != 1) {                                                \
+encode.c:    if (pal->num_colors == 0)                                                \
+encode.c:  prev_bg = pal->bg;                                                         \
+encode.c:  /* Write subencoding-dependent heading data */                             \
+encode.c:    color = (CARD##bpp)pal->fg;                                              \
+encode.c:  /* Sort out the simplest case, solid-color tile */                         \
+encode.c:  if (pal->num_colors == 1)                                                  \
+encode.c:    return (dst - dst_buf);                                                  \
+encode.c:  dst_limit = dst_buf + r->w * r->h * sizeof(CARD##bpp) + 1;                 \
+encode.c:  /* Find and encode sub-rectangles */                                       \
+encode.c:  for (y = 0; y < r->h; y++) {                                               \
+encode.c:    for (x = 0; x < r->w; x++) {                                             \
+encode.c:      /* Skip background-colored pixels */                                   \
+encode.c:      if (tile_buf[y * r->w + x] == bg_color) {                              \
+encode.c:      color = tile_buf[y * r->w + x];                                        \
+encode.c:      max_x = r->w;                                                          \
+encode.c:      for (sy = y; sy < r->h; sy++) {                                        \
+encode.c:          if (tile_buf[sy * r->w + sx] != color)                             \
+encode.c:        if ((sx - x) * (sy - y + 1) > best_w * best_h) {                     \
+encode.c:          best_w = (sx - x);                                                 \
+encode.c:          best_h = (sy - y + 1);                                             \
+encode.c:          return -1;                                                         \
+encode.c:          return -1;                                                         \
+encode.c:      *dst++ = (CARD8)(((best_w - 1) << 4) | ((best_h - 1) & 0x0F));         \
+encode.c:          tile_buf[sy * r->w + sx] = bg_color;                               \
+encode.c:      x += (best_w - 1);                                                     \
+encode.c:  return (dst - dst_buf);                                                    \
+encode.c: * Encoding a tile using raw sub-encoding in hextile.
+encode.c:  (*cl->trans_func)(raw_data, r, cl->trans_table);                       \
+encode.c:  memcpy(dst_buf, raw_data, r->w * r->h * sizeof(CARD##bpp));            \
+encode.c:  return (1 + r->w * r->h * sizeof(CARD##bpp));                          \
+encode.c:  int num_pixels = r->w * r->h;                                          \
+encode.c:    pal->bg = (CARD32)c0;                                                \
+encode.c:    pal->num_colors = 1;        /* Solid-color rectangle */              \
+encode.c:      pal->bg = (CARD32)c0; pal->fg = (CARD32)c1;                        \
+encode.c:      pal->bg = (CARD32)c1; pal->fg = (CARD32)c0;                        \
+encode.c:    pal->num_colors = 2;        /* Two colors */                         \
+encode.c:    pal->num_colors = 0;        /* More than two colors */               \
+encode_tight.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+encode_tight.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+encode_tight.c: * presentation solutions in a totally Web-based environment.  For more
+encode_tight.c:   jpegThreshold, is also not used because we operate on the 24-bpp
+encode_tight.c:/* Pointers to dynamically-allocated buffers. */
+encode_tight.c:  if (cl->enable_lastrect && r->w * r->h >= MIN_SPLIT_RECT_SIZE)
+encode_tight.c:  maxRectSize = tightConf[cl->compress_level].maxRectSize;
+encode_tight.c:  maxRectWidth = tightConf[cl->compress_level].maxRectWidth;
+encode_tight.c:  if (r->w > maxRectWidth || r->w * r->h > maxRectSize) {
+encode_tight.c:    subrectMaxWidth = (r->w > maxRectWidth) ? maxRectWidth : r->w;
+encode_tight.c:    return (((r->w - 1) / maxRectWidth + 1) *
+encode_tight.c:            ((r->h - 1) / subrectMaxHeight + 1));
+encode_tight.c:  compressLevel = cl->compress_level;
+encode_tight.c:  qualityLevel = cl->jpeg_quality;
+encode_tight.c:  if (cl->format.color_depth == 24 && cl->format.r_max == 0xFF &&
+encode_tight.c:      cl->format.g_max == 0xFF && cl->format.b_max == 0xFF) {
+encode_tight.c:  if (!cl->enable_lastrect || r->w * r->h < MIN_SPLIT_RECT_SIZE)
+encode_tight.c:  /* Calculate maximum number of rows in one non-solid rectangle. */
+encode_tight.c:    nMaxWidth = (r->w > maxRectWidth) ? maxRectWidth : r->w;
+encode_tight.c:  /* Try to find large solid-color areas and send them separately. */
+encode_tight.c:  for (rtile.y = r->y; rtile.y < r->y + r->h;
+encode_tight.c:    if (rtile.y - r->y >= nMaxRows) {
+encode_tight.c:      t = r->h - nMaxRows;
+encode_tight.c:      r->h = nMaxRows;
+encode_tight.c:      r->y += nMaxRows;
+encode_tight.c:      r->h = t;
+encode_tight.c:    rtile.h = (rtile.y + MAX_SPLIT_TILE_SIZE <= r->y + r->h) ?
+encode_tight.c:      MAX_SPLIT_TILE_SIZE : (r->y + r->h - rtile.y);
+encode_tight.c:    for (rtile.x = r->x; rtile.x < r->x + r->w;
+encode_tight.c:      rtile.w = (rtile.x + MAX_SPLIT_TILE_SIZE <= r->x + r->w) ?
+encode_tight.c:        MAX_SPLIT_TILE_SIZE : (r->x + r->w - rtile.x);
+encode_tight.c:        /* Get dimensions of solid-color area. */
+encode_tight.c:                 r->w - (rtile.x - r->x),
+encode_tight.c:                 r->h - (rtile.y - r->y));
+encode_tight.c:        if (rbest.w * rbest.h != r->w * r->h &&
+encode_tight.c:        /* Send rectangles at top and left to solid-color area. */
+encode_tight.c:        SET_RECT(&rtemp, r->x, r->y, r->w, rbest.y - r->y);
+encode_tight.c:        if (rbest.y != r->y && !SendRectSimple(cl, &rtemp))
+encode_tight.c:        SET_RECT(&rtemp, r->x, rbest.y, rbest.x - r->x, rbest.h);
+encode_tight.c:        if (rbest.x != r->x && !rfb_encode_tight(cl, &rtemp))
+encode_tight.c:        /* Send solid-color rectangle. */
+encode_tight.c:          (*cl->trans_func)(tightBeforeBuf, &rtemp, cl->trans_table);
+encode_tight.c:                 r->w - (rbest.x - r->x) - rbest.w, rbest.h);
+encode_tight.c:        if (rbest.x + rbest.w != r->x + r->w &&
+encode_tight.c:        SET_RECT(&rtemp, r->x, rbest.y + rbest.h,
+encode_tight.c:                 r->w, r->h - (rbest.y - r->y) - rbest.h);
+encode_tight.c:        if (rbest.y + rbest.h != r->y + r->h &&
+encode_tight.c:  /* No suitable solid-color rectangles found. */
+encode_tight.c:  w_prev = r->w;
+encode_tight.c:  for (rc.y = r->y; rc.y < r->y + r->h; rc.y += MAX_SPLIT_TILE_SIZE) {
+encode_tight.c:    rc.h = (rc.y + MAX_SPLIT_TILE_SIZE <= r->y + r->h) ?
+encode_tight.c:      MAX_SPLIT_TILE_SIZE : (r->y + r->h - rc.y);
+encode_tight.c:    rc.x = r->x;
+encode_tight.c:    for (rc.x = r->x + rc.w; rc.x < r->x + w_prev;) {
+encode_tight.c:      rc.w = (rc.x + MAX_SPLIT_TILE_SIZE <= r->x + w_prev) ?
+encode_tight.c:        MAX_SPLIT_TILE_SIZE : (r->x + w_prev - rc.x);
+encode_tight.c:    w_prev = rc.x - r->x;
+encode_tight.c:    if (w_prev * (rc.y + rc.h - r->y) > w_best * h_best) {
+encode_tight.c:      h_best = rc.y + rc.h - r->y;
+encode_tight.c:  SET_RECT(result, r->x, r->y, w_best, h_best);
+encode_tight.c:  rtemp.x = r->x;
+encode_tight.c:  rtemp.w = r->w;
+encode_tight.c:  if (r->y > 0) {
+encode_tight.c:    for (rtemp.y = r->y - 1; rtemp.y >= r_bounds->y; rtemp.y--) {
+encode_tight.c:    r->h += r->y - (rtemp.y + 1);
+encode_tight.c:    r->y = rtemp.y + 1;
+encode_tight.c:  for (rtemp.y = r->y + r->h; rtemp.y < r_bounds->y + r_bounds->h; rtemp.y++) {
+encode_tight.c:  r->h += rtemp.y - (r->y + r->h);
+encode_tight.c:  rtemp.y = r->y;
+encode_tight.c:  rtemp.h = r->h;
+encode_tight.c:  if (r->x > 0) {
+encode_tight.c:    for (rtemp.x = r->x - 1; rtemp.x >= r_bounds->x; rtemp.x--) {
+encode_tight.c:    r->w += r->x - (rtemp.x + 1);
+encode_tight.c:    r->x = rtemp.x + 1;
+encode_tight.c:  for (rtemp.x = r->x + r->w; rtemp.x < r_bounds->x + r_bounds->w; rtemp.x++) {
+encode_tight.c:  r->w += rtemp.x - (r->x + r->w);
+encode_tight.c: * set to non-zero, then also check that its color equals to the
+encode_tight.c:  fb_ptr = &g_framebuffer[r->y * g_fb_width + r->x];
+encode_tight.c:  for (dx = 0; dx < r->w; dx++) {
+encode_tight.c:  /* Check other rows -- memcmp() does it faster. */
+encode_tight.c:  for (dy = 1; dy < r->h; dy++) {
+encode_tight.c:    if (memcmp(fb_ptr, &fb_ptr[dy * g_fb_width], r->w * sizeof(CARD32)) != 0)
+encode_tight.c:  maxBeforeSize = maxRectSize * (cl->format.bits_pixel / 8);
+encode_tight.c:  if (r->w > maxRectWidth || r->w * r->h > maxRectSize) {
+encode_tight.c:    subrectMaxWidth = (r->w > maxRectWidth) ? maxRectWidth : r->w;
+encode_tight.c:    for (sr.y = r->y; sr.y < r->y + r->h; sr.y += subrectMaxHeight) {
+encode_tight.c:      for (sr.x = r->x; sr.x < r->x + r->w; sr.x += maxRectWidth) {
+encode_tight.c:        sr.w = (sr.x - r->x + maxRectWidth < r->w) ?
+encode_tight.c:          maxRectWidth : r->x + r->w - sr.x;
+encode_tight.c:        sr.h = (sr.y - r->y + subrectMaxHeight < r->h) ?
+encode_tight.c:          subrectMaxHeight : r->y + r->h - sr.y;
+encode_tight.c:     (don't translate when the client requests 24-bit colors). */
+encode_tight.c:    (*cl->trans_func)(tightBeforeBuf, r, cl->trans_table);
+encode_tight.c:    r->w * r->h / tightConf[compressLevel].idxMaxColorsDivisor;
+encode_tight.c:       r->w * r->h >= tightConf[compressLevel].monoMinRectSize ) {
+encode_tight.c:  switch (cl->format.bits_pixel) {
+encode_tight.c:    FillPalette8(r->w * r->h);
+encode_tight.c:    FillPalette16(r->w * r->h);
+encode_tight.c:    FillPalette32(r->w * r->h);
+encode_tight.c:    if (qualityLevel != -1 && DetectSmoothImage(&cl->format, r)) {
+encode_tight.c:      success = SendFullColorRect(cl, r->w, r->h);
+encode_tight.c:    /* Two-color rectangle */
+encode_tight.c:    success = SendMonoRect(cl, r->w, r->h);
+encode_tight.c:         qualityLevel != -1 && qualityLevel <= 3 &&
+encode_tight.c:         DetectSmoothImage(&cl->format, r) ) {
+encode_tight.c:      success = SendIndexedRect(cl, r->w, r->h);
+encode_tight.c:  r->enc = RFB_ENCODING_TIGHT;
+encode_tight.c:    len = cl->format.bits_pixel / 8;
+encode_tight.c:  buf[2] = 1;                   /* number of colors - 1 */
+encode_tight.c:  switch (cl->format.bits_pixel) {
+encode_tight.c:  buf[2] = (CARD8)(paletteNumColors - 1);
+encode_tight.c:  switch (cl->format.bits_pixel) {
+encode_tight.c:        palette.entry[i].listNode->rgb;
+encode_tight.c:        (CARD16)palette.entry[i].listNode->rgb;
+encode_tight.c:    len = cl->format.bits_pixel / 8;
+encode_tight.c:  pz = &cl->zs_struct[streamId];
+encode_tight.c:  if (!cl->zs_active[streamId]) {
+encode_tight.c:    pz->zalloc = Z_NULL;
+encode_tight.c:    pz->zfree = Z_NULL;
+encode_tight.c:    pz->opaque = Z_NULL;
+encode_tight.c:    cl->zs_active[streamId] = 1;
+encode_tight.c:    cl->zs_level[streamId] = zlibLevel;
+encode_tight.c:  pz->next_in = (Bytef *)tightBeforeBuf;
+encode_tight.c:  pz->avail_in = dataLen;
+encode_tight.c:  pz->next_out = (Bytef *)tightAfterBuf;
+encode_tight.c:  pz->avail_out = tightAfterBufSize;
+encode_tight.c:  if (zlibLevel != cl->zs_level[streamId]) {
+encode_tight.c:    cl->zs_level[streamId] = zlibLevel;
+encode_tight.c:       pz->avail_in != 0 || pz->avail_out == 0 ) {
+encode_tight.c:  SendCompressedData(tightAfterBufSize - pz->avail_out);
+encode_tight.c:    buf[len_bytes-1] |= 0x80;
+encode_tight.c:      buf[len_bytes-1] |= 0x80;
+encode_tight.c:        paletteNumColors = 0;   /* Full-color encoding preferred */     \
+encode_tight.c:        if (pnode->rgb == rgb) {
+encode_tight.c:            new_idx = idx = pnode->idx;
+encode_tight.c:            if (new_idx && palette.entry[new_idx-1].numPixels < count) {
+encode_tight.c:                    palette.entry[new_idx] = palette.entry[new_idx-1];
+encode_tight.c:                    palette.entry[new_idx].listNode->idx = new_idx;
+encode_tight.c:                    new_idx--;
+encode_tight.c:                while (new_idx && palette.entry[new_idx-1].numPixels < count);
+encode_tight.c:                pnode->idx = new_idx;
+encode_tight.c:        pnode = pnode->next;
+encode_tight.c:          idx > 0 && palette.entry[idx-1].numPixels < numPixels;
+encode_tight.c:          idx-- ) {
+encode_tight.c:        palette.entry[idx] = palette.entry[idx-1];
+encode_tight.c:        palette.entry[idx].listNode->idx = idx;
+encode_tight.c:        prev_pnode->next = pnode;
+encode_tight.c:    pnode->next = NULL;
+encode_tight.c:    pnode->idx = idx;
+encode_tight.c:    pnode->rgb = rgb;
+encode_tight.c: * Convert 32-bit color samples into 24-bit colors, in place. Source
+encode_tight.c:    while (count--) {
+encode_tight.c:    while (count--) {                                                   \
+encode_tight.c:            rep++, src++, count--;                                      \
+encode_tight.c:            if ((CARD##bpp)pnode->rgb == rgb) {                         \
+encode_tight.c:                *buf++ = (CARD8)pnode->idx;                             \
+encode_tight.c:                    *buf++ = (CARD8)pnode->idx;                         \
+encode_tight.c:                    rep--;                                              \
+encode_tight.c:            pnode = pnode->next;                                        \
+encode_tight.c:    aligned_width = w - w % 8;                                          \
+encode_tight.c:  if ( qualityLevel == -1 || fmt->bits_pixel == 8 ||
+encode_tight.c:       r->w < DETECT_MIN_WIDTH || r->h < DETECT_MIN_HEIGHT ||
+encode_tight.c:       r->w * r->h < JPEG_MIN_RECT_SIZE ) {
+encode_tight.c:  while (y < r->h && x < r->w) {
+encode_tight.c:    for (d = 0; d < r->h - y && d < r->w - x - DETECT_SUBROW_WIDTH; d++) {
+encode_tight.c:      pix = g_framebuffer[(r->y + y + d) * g_fb_width + (r->x + x + d)];
+encode_tight.c:        pix = g_framebuffer[(r->y + y + d) * g_fb_width + (r->x + x + d + dx)];
+encode_tight.c:        diffStat[abs((pix >> 16 & 0xFF) - left[0])]++;
+encode_tight.c:        diffStat[abs((pix >>  8 & 0xFF) - left[1])]++;
+encode_tight.c:        diffStat[abs((pix       & 0xFF) - left[2])]++;
+encode_tight.c:    if (r->w > r->h) {
+encode_tight.c:      x += r->h;
+encode_tight.c:      y += r->w;
+encode_tight.c:    if (diffStat[c] == 0 || diffStat[c] > diffStat[c-1] * 2)
+encode_tight.c:  avgError /= (pixelCount * 3 - diffStat[0]);
+encode_tight.c:  srcBuf = (CARD8 *)malloc(r->w * 3);
+encode_tight.c:  cinfo.image_width = r->w;
+encode_tight.c:  cinfo.image_height = r->h;
+encode_tight.c:  for (dy = 0; dy < r->h; dy++) {
+encode_tight.c:    PrepareRowForJpeg(srcBuf, r->x, r->y + dy, r->w);
+encode_tight.c:  while (count--) {
+encode_tight.c:  jpegDstDataLen = tightAfterBufSize - jpegDstManager.free_in_buffer;
+encode_tight.c:  cinfo->dest = &jpegDstManager;
+fbs_files.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+fbs_files.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+fbs_files.c: * presentation solutions in a totally Web-based environment.  For more
+fbs_files.c:      len = sizeof(fbs_desktop_name) - 1;
+fbs_files.c:      log_write(LL_WARN, "Could not re-open FBS file for writing");
+fbs_files.c:    log_write(LL_MSG, "Re-opened FBS file for writing: %s", fname);
+fbs_files.c:  timestamp = (CARD32)((s_fbs_time.tv_sec - s_fbs_start_time.tv_sec) * 1000 +
+fbs_files.c:                       (s_fbs_time.tv_usec - s_fbs_start_time.tv_usec) / 1000);
+fbs_files.c:  padding = 3 - ((len - 1) & 0x03);
+fbs_files.c:    fbs_write_data(s_fbs_buffer, s_fbs_buffer_ptr - s_fbs_buffer);
+host_connect.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+host_connect.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+host_connect.c: * presentation solutions in a totally Web-based environment.  For more
+host_connect.c:  log_write(LL_MSG, "--------------------------------------------");
+host_connect.c:    /* Forward reflector -> host connection */
+host_connect.c: for (aux = res; aux ;aux = aux->ai_next) {
+host_connect.c:    host_fd = socket(aux->ai_family, aux->ai_socktype, aux->ai_protocol);
+host_connect.c:    if (connect(host_fd, aux->ai_addr, aux->ai_addrlen) < 0) {
+host_connect.c:    memcpy(&host_addr.sin_addr.s_addr, phe->h_addr, phe->h_length);
+host_connect.c:    if (host_fd == -1) {
+host_connect.c:    /* Reversed host -> reflector connection, start listening */
+host_connect.c:    log_write(LL_ERROR, "VNC server - Password too loong");
+host_connect.c:  /* Truncate at the end of first line, respecting MS-DOS end-of-lines */
+host_connect.c:   	  for(i=0; i<colon_position-1 ; i++ ) ipv6Address[i]=vncServerName[i+1];
+host_connect.c:        for (i= strlen(vncServerName)-1; vncServerName[i] != ':' && i >= 0; i--) colon_position++;
+host_connect.c:      strncpy(s_hostname, vncServerName, strlen(vncServerName)-colon_position-1);
+host_connect.c:  cur_slot->type = TYPE_HOST_CONNECTING_SLOT;
+host_connect.c:  cur_slot->type = TYPE_HOST_LISTENING_SLOT;
+host_connect.c:  log_write(LL_MSG, "Accepted host connection from %s", cur_slot->name);
+host_connect.c:  char *buf = (char *)cur_slot->readbuf;
+host_connect.c:    log_write(LL_WARN, "Protocol sub-version does not match (ignoring)");
+host_connect.c:  value32 = buf_get_CARD32(cur_slot->readbuf);
+host_connect.c:    hs->temp_len = buf_get_CARD32(&cur_slot->readbuf[4]);
+host_connect.c:    aio_setread(rf_host_conn_failed, NULL, hs->temp_len);
+host_connect.c:            (int)hs->temp_len, cur_slot->readbuf);
+host_connect.c:  rfb_crypt(response, cur_slot->readbuf, s_host_password);
+host_connect.c:  log_write(LL_DEBUG, "Sending DES-encrypted response");
+host_connect.c:  value32 = buf_get_CARD32(cur_slot->readbuf);
+host_connect.c:            (shared_session != 0) ? "non-shared" : "shared");
+host_connect.c:  hs->fb_width = buf_get_CARD16(cur_slot->readbuf);
+host_connect.c:  hs->fb_height = buf_get_CARD16(&cur_slot->readbuf[2]);
+host_connect.c:            (int)hs->fb_width, (int)hs->fb_height);
+host_connect.c:  hs->temp_len = buf_get_CARD32(&cur_slot->readbuf[20]);
+host_connect.c:  aio_setread(rf_host_set_formats, NULL, hs->temp_len);
+host_connect.c:    0,                          /* Padding -- not used */
+host_connect.c:            (int)hs->temp_len, cur_slot->readbuf);
+host_connect.c:  new_name = malloc((size_t)hs->temp_len + 1);
+host_connect.c:    g_screen_info.name_length = hs->temp_len;
+host_connect.c:    memcpy(g_screen_info.name, cur_slot->readbuf, hs->temp_len);
+host_connect.c:    g_screen_info.name[hs->temp_len] = '\0';
+host_io.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+host_io.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+host_io.c: * presentation solutions in a totally Web-based environment.  For more
+host_io.c:/* On-close hook */
+host_io.c:  if (cur_slot->type == TYPE_HOST_ACTIVE_SLOT) {
+host_io.c:  if (cur_slot->errread_f) {
+host_io.c:    if (cur_slot->io_errno) {
+host_io.c:                strerror(cur_slot->io_errno));
+host_io.c:  } else if (cur_slot->errwrite_f) {
+host_io.c:    if (cur_slot->io_errno) {
+host_io.c:                strerror(cur_slot->io_errno));
+host_io.c:  } else if (cur_slot->errio_f) {
+host_io.c:  slot->type = TYPE_HOST_ACTIVE_SLOT;
+host_io.c:  if (!alloc_framebuffer(hs->fb_width, hs->fb_height)) {
+host_io.c:  g_screen_info.width = hs->fb_width;
+host_io.c:  g_screen_info.height = hs->fb_height;
+host_io.c:  fbs_open_file(hs->fb_width, hs->fb_height);
+host_io.c:  r.w = hs->fb_width;
+host_io.c:  r.h = hs->fb_height;
+host_io.c:  msg_id = (int)cur_slot->readbuf[0] & 0xFF;
+host_io.c:    fbs_write_data(cur_slot->readbuf, 1);
+host_io.c:  rect_count = buf_get_CARD16(&cur_slot->readbuf[1]);
+host_io.c:  memcpy(&hdr_buf[1], cur_slot->readbuf, 3);
+host_io.c:  cur_rect.x = buf_get_CARD16(cur_slot->readbuf);
+host_io.c:  cur_rect.y = buf_get_CARD16(&cur_slot->readbuf[2]);
+host_io.c:  cur_rect.w = buf_get_CARD16(&cur_slot->readbuf[4]);
+host_io.c:  cur_rect.h = buf_get_CARD16(&cur_slot->readbuf[6]);
+host_io.c:  cur_rect.enc = buf_get_CARD32(&cur_slot->readbuf[8]);
+host_io.c:  fbs_spool_data(cur_slot->readbuf, 12);
+host_io.c:  /* Ignore zero-size rectangles */
+host_io.c:    log_write(LL_WARN, "Zero-size rectangle %dx%d at %d,%d (ignoring)",
+host_io.c:    g_screen_info.width = hs->fb_width = cur_rect.w;
+host_io.c:    g_screen_info.height = hs->fb_height = cur_rect.h;
+host_io.c:    if (!alloc_framebuffer(hs->fb_width, hs->fb_height)) {
+host_io.c:    log_write(LL_DEBUG, "Receiving Hextile-encoded data");
+host_io.c:    log_write(LL_DEBUG, "Receiving Tight-encoded data");
+host_io.c:  fbs_spool_data(cur_slot->readbuf, cur_rect.w * sizeof(CARD32));
+host_io.c:  fbs_spool_data(cur_slot->readbuf, 4);
+host_io.c:  cur_rect.src_x = buf_get_CARD16(cur_slot->readbuf);
+host_io.c:  cur_rect.src_y = buf_get_CARD16(&cur_slot->readbuf[2]);
+host_io.c:    src_ptr = &g_framebuffer[(cur_rect.src_y + cur_rect.h - 1) * width +
+host_io.c:    dst_ptr = &g_framebuffer[(cur_rect.y + cur_rect.h - 1) * width +
+host_io.c:      src_ptr -= width;
+host_io.c:      dst_ptr -= width;
+host_io.c:  fb_ptr = &g_framebuffer[r->y * (int)g_fb_width + r->x];
+host_io.c:  for (x = 0; x < r->w; x++)
+host_io.c:  for (y = 1; y < r->h; y++)
+host_io.c:    memcpy(&fb_ptr[y * g_fb_width], fb_ptr, r->w * sizeof(CARD32));
+host_io.c:  if (--rect_count) {
+host_io.c:  num_colors = buf_get_CARD16(&cur_slot->readbuf[3]);
+host_io.c:  cut_len = (size_t)buf_get_CARD32(&cur_slot->readbuf[3]);
+host_io.c:  cut_text = cur_slot->readbuf;
+host_io.c:  r.w = hs->fb_width;
+host_io.c:  r.h = hs->fb_height;
+host_io.c:  buf_put_CARD16(&fbupdatereq_msg[6], hs->fb_width);
+host_io.c:  buf_put_CARD16(&fbupdatereq_msg[8], hs->fb_height);
+logging.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+logging.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+logging.c: * presentation solutions in a totally Web-based environment.  For more
+logging.c:static int log_file_level = -1;
+logging.c:static int log_stderr_level = -1;
+logging.c:static char log_lchar[] = "@!*+-: ";
+logging.c: *      -1 turns logging off.
+logging.c:  log_file_level = -1;
+logging.c:  log_stderr_level = -1;
+logging.c:    if (level >= 0 && level < sizeof(log_lchar) - 1)
+main.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+main.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+main.c: * presentation solutions in a totally Web-based environment.  For more
+main.c:"VNC Reflector %s.  Copyright (C) 2001-2003 HorizonLive.com, Inc.\n\n"
+main.c:"HorizonLive provides e-Learning and collaborative synchronous presentation\n"
+main.c:"solutions in a totally Web-based environment.  For more information about\n"
+main.c:                (opt_foreground) ? opt_stderr_loglevel : -1)) {
+main.c:    log_write(LL_INFO, "---------- haciendo bind -----------");
+main.c:    log_write(LL_INFO, "----------main.c-----------");
+main.c:  opt_stderr_loglevel = -1;
+main.c:  opt_file_loglevel = -1;
+main.c:  opt_cl_listen_port = -1;
+main.c:  opt_tight_level = -1;
+main.c:         (c = getopt(argc, argv, "hqjv:f:p:a:c:g:l:i:s:b:tT:")) != -1) {
+main.c:      if (opt_file_loglevel != -1)
+main.c:      if (opt_stderr_loglevel != -1)
+main.c:      if (opt_cl_listen_port != -1)
+main.c:  if (err || optind != argc - 1) {
+main.c:  if (opt_file_loglevel == -1)
+main.c:  if (opt_cl_listen_port == -1)
+main.c:    sprintf(opt_pid_file, "%.*s.%s", (int)(255 - strlen(temp_buf) - 1),
+main.c:          "VNC Reflector %s.  Copyright (C) 2001-2003 HorizonLive.com, Inc."
+main.c:          "  -i PID_FILE     - write pid file, appending listening port"
+main.c:          "  -p PASSWD_FILE  - read a plaintext client password file"
+main.c:          "  -a ACTIVE_FILE  - create file during times when a host is"
+main.c:          "  -c ACTIONS_FILE - on events, execute commands specified in"
+main.c:          "  -l LISTEN_PORT  - port to listen for client connections"
+main.c:          "  -b IP_ADDRESS   - bind listening sockets to a specific IP"
+main.c:          "  -s FBS_PREFIX   - save host sessions in rfbproxy-compatible"
+main.c:          "                    (optionally appending 3-digit session IDs"
+main.c:          " -j option)\n"
+main.c:          "  -j              - join saved sessions (see -s option) in one"
+main.c:          "  -t              - use Tight encoding for host communications"
+main.c:          "  -T COMPR_LEVEL  - like -t, but use the specified compression"
+main.c:          "  -g LOG_FILE     - write logs to the specified file"
+main.c:          "  -v LOG_LEVEL    - set verbosity level for the log file (0..%d)"
+main.c:          "  -f LOG_LEVEL    - run in foreground, show logs on stderr"
+main.c:          "  -q              - suppress printing copyright banner at startup\n"
+main.c:          "  -h              - print this help message\n\n",
+main.c:      c = getc(passwd_fp);      /* Handle MS-DOS-style end of line */
+main.c:      line--;
+main.c:    log_write(LL_DETAIL, "Read-only client password not specified");
+main.c:  if (pid_fd == -1) {
+region.c:*   forth in Subparagraph (c)(1)(ii)  of  DFARS  252.227-7013,  *
+region.c:*   or  in  FAR 52.227-19, as applicable.                       *
+region.c: * (non-overlapping) rectangles, plus an "extent" rectangle which is the
+region.c: * smallest single rectangle that contains all the non-overlapping rectangles.
+region.c: * A Region is implemented as a "y-x-banded" array of rectangles.  This array
+region.c: * The y-x band representation does not minimize rectangles.  In particular,
+region.c: *  -----------				    -----------
+region.c: *  |         |  --------		    -----------  --------
+region.c: *  |         |  |      |  in y-x banded    |         |  |      |   band 1
+region.c: *  -----------  |      |		    -----------  --------
+region.c: *               --------				 --------
+region.c:      (!( ((r1)->x2 <= (r2)->x1)  || \
+region.c:          ((r1)->x1 >= (r2)->x2)  || \
+region.c:          ((r1)->y2 <= (r2)->y1)  || \
+region.c:          ((r1)->y1 >= (r2)->y2) ) )
+region.c:      ( ((r)->x2 >  x) && \
+region.c:        ((r)->x1 <= x) && \
+region.c:        ((r)->y2 >  y) && \
+region.c:        ((r)->y1 <= y) )
+region.c:      ( ((r1)->x1 <= (r2)->x1) && \
+region.c:        ((r1)->x2 >= (r2)->x2) && \
+region.c:        ((r1)->y1 <= (r2)->y1) && \
+region.c:        ((r1)->y2 >= (r2)->y2) )
+region.c:#define xfreeData(reg)   if ((reg)->data && (reg)->data->size) \
+region.c:                           free((reg)->data)
+region.c:if (!(pReg)->data || (((pReg)->data->numRects + (n)) > (pReg)->data->size)) \
+region.c:if (!(pReg)->data || (((pReg)->data->numRects + (n)) > (pReg)->data->size)) \
+region.c:    pNextRect->x1 = nx1;			\
+region.c:    pNextRect->y1 = ny1;			\
+region.c:    pNextRect->x2 = nx2;			\
+region.c:    pNextRect->y2 = ny2;			\
+region.c:    if (!(pReg)->data || ((pReg)->data->numRects == (pReg)->data->size))\
+region.c:    pReg->data->numRects++;						\
+region.c:    assert(pReg->data->numRects<=pReg->data->size);			\
+region.c:if (((numRects) < ((reg)->data->size >> 1)) && ((reg)->data->size > 50)) \
+region.c:    NewData = (RegDataPtr)xrealloc((reg)->data, REGION_SZOF(numRects));	 \
+region.c:	NewData->size = (numRects);					 \
+region.c:	(reg)->data = NewData;						 \
+region.c:	   rgn->extents.x1, rgn->extents.y1, rgn->extents.x2, rgn->extents.y2);
+region.c:    if (reg1->extents.x1 != reg2->extents.x1) return FALSE;
+region.c:    if (reg1->extents.x2 != reg2->extents.x2) return FALSE;
+region.c:    if (reg1->extents.y1 != reg2->extents.y1) return FALSE;
+region.c:    if (reg1->extents.y2 != reg2->extents.y2) return FALSE;
+region.c:    if ((reg->extents.x1 > reg->extents.x2) ||
+region.c:	(reg->extents.y1 > reg->extents.y2))
+region.c:	return ((reg->extents.x1 == reg->extents.x2) &&
+region.c:		(reg->extents.y1 == reg->extents.y2) &&
+region.c:		(reg->data->size || (reg->data == &miEmptyData)));
+region.c:	return (!reg->data);
+region.c:	box.y2 = pboxP[numRects-1].y2;
+region.c:	for (i = numRects; --i > 0; pboxP++, pboxN++)
+region.c:	    if ((pboxN->x1 >= pboxN->x2) ||
+region.c:		(pboxN->y1 >= pboxN->y2))
+region.c:	    if (pboxN->x1 < box.x1)
+region.c:	        box.x1 = pboxN->x1;
+region.c:	    if (pboxN->x2 > box.x2)
+region.c:		box.x2 = pboxN->x2;
+region.c:	    if ((pboxN->y1 < pboxP->y1) ||
+region.c:		((pboxN->y1 == pboxP->y1) &&
+region.c:		 ((pboxN->x1 < pboxP->x2) || (pboxN->y2 != pboxP->y2))))
+region.c:	return ((box.x1 == reg->extents.x1) &&
+region.c:		(box.x2 == reg->extents.x2) &&
+region.c:		(box.y1 == reg->extents.y1) &&
+region.c:		(box.y2 == reg->extents.y2));
+region.c:	pReg->extents = *rect;
+region.c:	pReg->data = (RegDataPtr)NULL;
+region.c:	pReg->extents = miEmptyBox;
+region.c:	if ((size > 1) && (pReg->data = xallocData(size)))
+region.c:	    pReg->data->size = size;
+region.c:	    pReg->data->numRects = 0;
+region.c:	    pReg->data = &miEmptyData;
+region.c:	pReg->extents = *rect;
+region.c:	pReg->data = (RegDataPtr)NULL;
+region.c:	pReg->extents = miEmptyBox;
+region.c:	if ((size > 1) && (pReg->data = xallocData(size)))
+region.c:	    pReg->data->size = size;
+region.c:	    pReg->data->numRects = 0;
+region.c:	    pReg->data = &miEmptyData;
+region.c:    pReg->extents = miEmptyBox;
+region.c:    pReg->data = &miBrokenData;
+region.c:    if (!pRgn->data)
+region.c:	pRgn->data = xallocData(n);
+region.c:	if (!pRgn->data)
+region.c:	pRgn->data->numRects = 1;
+region.c:	*REGION_BOXPTR(pRgn) = pRgn->extents;
+region.c:    else if (!pRgn->data->size)
+region.c:	pRgn->data = xallocData(n);
+region.c:	if (!pRgn->data)
+region.c:	pRgn->data->numRects = 0;
+region.c:	    n = pRgn->data->numRects;
+region.c:	n += pRgn->data->numRects;
+region.c:	data = (RegDataPtr)xrealloc(pRgn->data, REGION_SZOF(n));
+region.c:	pRgn->data = data;
+region.c:    pRgn->data->size = n;
+region.c:    dst->extents = src->extents;
+region.c:    if (!src->data || !src->data->size)
+region.c:	dst->data = src->data;
+region.c:    if (!dst->data || (dst->data->size < src->data->numRects))
+region.c:	dst->data = xallocData(src->data->numRects);
+region.c:	if (!dst->data)
+region.c:	dst->data->size = src->data->numRects;
+region.c:    dst->data->numRects = src->data->numRects;
+region.c:	  dst->data->numRects * sizeof(BoxRec));
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miCoalesce --
+region.c: *	    - rectangles in the previous band will have their y2 fields
+region.c: *	    - pReg->data->numRects will be decreased.
+region.c: *-----------------------------------------------------------------------
+region.c:    numRects = curStart - prevStart;
+region.c:    assert(numRects == pReg->data->numRects - curStart);
+region.c:    if (pPrevBox->y2 != pCurBox->y1) return curStart;
+region.c:    y2 = pCurBox->y2;
+region.c:	if ((pPrevBox->x1 != pCurBox->x1) || (pPrevBox->x2 != pCurBox->x2)) {
+region.c:	numRects--;
+region.c:    numRects = curStart - prevStart;
+region.c:    pReg->data->numRects -= numRects;
+region.c:	pPrevBox--;
+region.c:	pPrevBox->y2 = y2;
+region.c:	numRects--;
+region.c:    if (curBand - prevBand == newReg->data->numRects - curBand) {	\
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miAppendNonO --
+region.c: *	Handle a non-overlapping band for the union and subtract operations.
+region.c: *      Just adds the (top/bottom-clipped) rectangles into the region.
+region.c: *	pReg->data->numRects is incremented and the rectangles overwritten
+region.c: *-----------------------------------------------------------------------
+region.c:    newRects = rEnd - r;
+region.c:    pReg->data->numRects += newRects;
+region.c:	assert(r->x1 < r->x2);
+region.c:	ADDRECT(pNextRect, r->x1, y1, r->x2, y2);
+region.c:    ry1 = r->y1;					    \
+region.c:    while ((rBandEnd != rEnd) && (rBandEnd->y1 == ry1)) {   \
+region.c:    if ((newRects = rEnd - r)) {					\
+region.c:	newReg->data->numRects += newRects;				\
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miRegionOp --
+region.c: *-----------------------------------------------------------------------
+region.c:    OverlapProcPtr  overlapFunc,            /* Function to call for over-
+region.c:    Bool	    appendNon1,		    /* Append non-overlapping bands  */
+region.c:    Bool	    appendNon2,		    /* Append non-overlapping bands  */
+region.c:    short	    top;		    /* Top of non-overlapping band   */
+region.c:    short	    bot;		    /* Bottom of non-overlapping band*/
+region.c:    register int    r1y1;		    /* Temps for r1->y1 and r2->y1   */
+region.c:	oldData = newReg->data;
+region.c:	newReg->data = &miEmptyData;
+region.c:    if (!newReg->data)
+region.c:	newReg->data = &miEmptyData;
+region.c:    else if (newReg->data->size)
+region.c:	newReg->data->numRects = 0;
+region.c:    if (newSize > newReg->data->size)
+region.c:     * on whether the band being handled is an overlapping or non-overlapping
+region.c:     * 	In the case of a non-overlapping band (only one of the regions
+region.c:    ybot = min(r1->y1, r2->y1);
+region.c:	 * This algorithm proceeds one source-band (as opposed to a
+region.c:	 * non-intersecting region at once, so if a region has n
+region.c:		bot = min(r1->y2, r2y1);
+region.c:		    curBand = newReg->data->numRects;
+region.c:		bot = min(r2->y2, r1y1);
+region.c:		    curBand = newReg->data->numRects;
+region.c:	ybot = min(r1->y2, r2->y2);
+region.c:	    curBand = newReg->data->numRects;
+region.c:	if (r1->y2 == ybot) r1 = r1BandEnd;
+region.c:	if (r2->y2 == ybot) r2 = r2BandEnd;
+region.c:	curBand = newReg->data->numRects;
+region.c:	miAppendNonO(newReg, r1, r1BandEnd, max(r1y1, ybot), r1->y2);
+region.c:	curBand = newReg->data->numRects;
+region.c:	miAppendNonO(newReg, r2, r2BandEnd, max(r2y1, ybot), r2->y2);
+region.c:    if (!(numRects = newReg->data->numRects))
+region.c:	newReg->data = &miEmptyData;
+region.c:	newReg->extents = *REGION_BOXPTR(newReg);
+region.c:	newReg->data = (RegDataPtr)NULL;
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miSetExtents --
+region.c: *-----------------------------------------------------------------------
+region.c:    if (!pReg->data)
+region.c:    if (!pReg->data->size)
+region.c:	pReg->extents.x2 = pReg->extents.x1;
+region.c:	pReg->extents.y2 = pReg->extents.y1;
+region.c:    pReg->extents.x1 = pBox->x1;
+region.c:    pReg->extents.y1 = pBox->y1;
+region.c:    pReg->extents.x2 = pBoxEnd->x2;
+region.c:    pReg->extents.y2 = pBoxEnd->y2;
+region.c:    assert(pReg->extents.y1 < pReg->extents.y2);
+region.c:	if (pBox->x1 < pReg->extents.x1)
+region.c:	    pReg->extents.x1 = pBox->x1;
+region.c:	if (pBox->x2 > pReg->extents.x2)
+region.c:	    pReg->extents.x2 = pBox->x2;
+region.c:    assert(pReg->extents.x1 < pReg->extents.x2);
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miIntersectO --
+region.c: *-----------------------------------------------------------------------
+region.c:	x1 = max(r1->x1, r2->x1);
+region.c:	x2 = min(r1->x2, r2->x2);
+region.c:	if (r1->x2 == x2) {
+region.c:	if (r2->x2 == x2) {
+region.c:	!EXTENTCHECK(&reg1->extents, &reg2->extents))
+region.c:	newReg->extents.x2 = newReg->extents.x1;
+region.c:	newReg->extents.y2 = newReg->extents.y1;
+region.c:	    newReg->data = &miBrokenData;
+region.c:	    newReg->data = &miEmptyData;
+region.c:    else if (!reg1->data && !reg2->data)
+region.c:	newReg->extents.x1 = max(reg1->extents.x1, reg2->extents.x1);
+region.c:	newReg->extents.y1 = max(reg1->extents.y1, reg2->extents.y1);
+region.c:	newReg->extents.x2 = min(reg1->extents.x2, reg2->extents.x2);
+region.c:	newReg->extents.y2 = min(reg1->extents.y2, reg2->extents.y2);
+region.c:	newReg->data = (RegDataPtr)NULL;
+region.c:    else if (!reg2->data && SUBSUMES(&reg2->extents, &reg1->extents))
+region.c:    else if (!reg1->data && SUBSUMES(&reg1->extents, &reg2->extents))
+region.c:    if (r->x1 <= x2) {						\
+region.c:	if (r->x1 < x2) *pOverlap = TRUE;				\
+region.c:	if (x2 < r->x2) x2 = r->x2;				\
+region.c:	x1 = r->x1;						\
+region.c:	x2 = r->x2;						\
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miUnionO --
+region.c: *	left-most rectangle each time and merges it into the region.
+region.c: *-----------------------------------------------------------------------
+region.c:    if (r1->x1 < r2->x1)
+region.c:	x1 = r1->x1;
+region.c:	x2 = r1->x2;
+region.c:	x1 = r2->x1;
+region.c:	x2 = r2->x2;
+region.c:	if (r1->x1 < r2->x1) MERGERECT(r1) else MERGERECT(r2);
+region.c:    if (!reg1->data && SUBSUMES(&reg1->extents, &reg2->extents))
+region.c:    if (!reg2->data && SUBSUMES(&reg2->extents, &reg1->extents))
+region.c:    newReg->extents.x1 = min(reg1->extents.x1, reg2->extents.x1);
+region.c:    newReg->extents.y1 = min(reg1->extents.y1, reg2->extents.y1);
+region.c:    newReg->extents.x2 = max(reg1->extents.x2, reg2->extents.x2);
+region.c:    newReg->extents.y2 = max(reg1->extents.y2, reg2->extents.y2);
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miRegionAppend --
+region.c: *      knowledge of YX-banding when it's easy.  Otherwise, dstrgn just
+region.c: *      becomes a non-y-x-banded random collection of rectangles, and not
+region.c:    if (!rgn->data && (dstrgn->data == &miEmptyData))
+region.c:	dstrgn->extents = rgn->extents;
+region.c:	dstrgn->data = (RegDataPtr)NULL;
+region.c:	dstrgn->extents = rgn->extents;
+region.c:    else if (dstrgn->extents.x2 > dstrgn->extents.x1)
+region.c:	last = REGION_BOXPTR(dstrgn) + (dnumRects - 1);
+region.c:	if ((first->y1 > last->y2) ||
+region.c:	    ((first->y1 == last->y1) && (first->y2 == last->y2) &&
+region.c:	     (first->x1 > last->x2)))
+region.c:	    if (rgn->extents.x1 < dstrgn->extents.x1)
+region.c:		dstrgn->extents.x1 = rgn->extents.x1;
+region.c:	    if (rgn->extents.x2 > dstrgn->extents.x2)
+region.c:		dstrgn->extents.x2 = rgn->extents.x2;
+region.c:	    dstrgn->extents.y2 = rgn->extents.y2;
+region.c:	    last = old + (numRects - 1);
+region.c:	    if ((first->y1 > last->y2) ||
+region.c:		((first->y1 == last->y1) && (first->y2 == last->y2) &&
+region.c:		 (first->x1 > last->x2)))
+region.c:		if (rgn->extents.x1 < dstrgn->extents.x1)
+region.c:		    dstrgn->extents.x1 = rgn->extents.x1;
+region.c:		if (rgn->extents.x2 > dstrgn->extents.x2)
+region.c:		    dstrgn->extents.x2 = rgn->extents.x2;
+region.c:		dstrgn->extents.y1 = rgn->extents.y1;
+region.c:		dstrgn->extents.x2 = dstrgn->extents.x1;
+region.c:    dstrgn->data->numRects += numRects;
+region.c:		     (r->y1 < y1 || (r->y1 == y1 && r->x1 < x1)));
+region.c:		r--;
+region.c:		j--;
+region.c:            } while (y1 < r->y1 || (y1 == r->y1 && x1 < r->x1));
+region.c:        if (numRects-j-1 > 1)
+region.c:	    QuickSortRects(&rects[j+1], numRects-j-1);
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miRegionValidate --
+region.c: *      Take a ``region'' which is a non-y-x-banded random collection of
+region.c: *      The passed-in ``region'' may be modified.
+region.c: *      Step 2. Split the rectangles into the minimum number of proper y-x
+region.c: *-----------------------------------------------------------------------
+region.c:    if (!badreg->data)
+region.c:    numRects = badreg->data->numRects;
+region.c:    if (badreg->extents.x1 < badreg->extents.x2)
+region.c:	    badreg->data = (RegDataPtr) NULL;
+region.c:    ri[0].reg.data->numRects = 1;
+region.c:       in the region to be split up in order to maintain y-x banding, just
+region.c:    for (i = numRects; --i > 0;)
+region.c:	for (j = numRI, rit = ri; --j >= 0; rit++)
+region.c:	    reg = &rit->reg;
+region.c:	    if (box->y1 == riBox->y1 && box->y2 == riBox->y2)
+region.c:		if (box->x1 <= riBox->x2)
+region.c:		    if (box->x1 < riBox->x2) *pOverlap = TRUE;
+region.c:		    if (box->x2 > riBox->x2) riBox->x2 = box->x2;
+region.c:		    reg->data->numRects++;
+region.c:	    else if (box->y1 >= riBox->y2)
+region.c:		if (reg->extents.x2 < riBox->x2) reg->extents.x2 = riBox->x2;
+region.c:		if (reg->extents.x1 > box->x1)   reg->extents.x1 = box->x1;
+region.c:		Coalesce(reg, rit->prevBand, rit->curBand);
+region.c:		rit->curBand = reg->data->numRects;
+region.c:		reg->data->numRects++;
+region.c:	/* Uh-oh.  No regions were appropriate.  Create a new one. */
+region.c:	rit->prevBand = 0;
+region.c:	rit->curBand = 0;
+region.c:	rit->reg.extents = *box;
+region.c:	rit->reg.data = (RegDataPtr)NULL;
+region.c:	if (!miRectAlloc(&rit->reg, (i+numRI) / numRI)) /* MUST force allocation */
+region.c:    for (j = numRI, rit = ri; --j >= 0; rit++)
+region.c:	reg = &rit->reg;
+region.c:	reg->extents.y2 = riBox->y2;
+region.c:	if (reg->extents.x2 < riBox->x2) reg->extents.x2 = riBox->x2;
+region.c:	Coalesce(reg, rit->prevBand, rit->curBand);
+region.c:	if (reg->data->numRects == 1) /* keep unions happy below */
+region.c:	    reg->data = (RegDataPtr)NULL;
+region.c:	    if (hreg->extents.x1 < reg->extents.x1)
+region.c:		reg->extents.x1 = hreg->extents.x1;
+region.c:	    if (hreg->extents.y1 < reg->extents.y1)
+region.c:		reg->extents.y1 = hreg->extents.y1;
+region.c:	    if (hreg->extents.x2 > reg->extents.x2)
+region.c:		reg->extents.x2 = hreg->extents.x2;
+region.c:	    if (hreg->extents.y2 > reg->extents.y2)
+region.c:		reg->extents.y2 = hreg->extents.y2;
+region.c:	numRI -= half;
+region.c:	x1 = prect->x;
+region.c:	y1 = prect->y;
+region.c:	if ((x2 = x1 + (int) prect->width) > MAXSHORT)
+region.c:	if ((y2 = y1 + (int) prect->height) > MAXSHORT)
+region.c:	    pRgn->extents.x1 = x1;
+region.c:	    pRgn->extents.y1 = y1;
+region.c:	    pRgn->extents.x2 = x2;
+region.c:	    pRgn->extents.y2 = y2;
+region.c:	    pRgn->data = (RegDataPtr)NULL;
+region.c:    for (i = nrects; --i >= 0; prect++)
+region.c:	x1 = prect->x;
+region.c:	y1 = prect->y;
+region.c:	if ((x2 = x1 + (int) prect->width) > MAXSHORT)
+region.c:	if ((y2 = y1 + (int) prect->height) > MAXSHORT)
+region.c:	    pBox->x1 = x1;
+region.c:	    pBox->y1 = y1;
+region.c:	    pBox->x2 = x2;
+region.c:	    pBox->y2 = y2;
+region.c:	pData->size = nrects;
+region.c:	pData->numRects = pBox - (BoxPtr) (pData + 1);
+region.c:    	pRgn->data = pData;
+region.c:	    pRgn->extents.x1 = pRgn->extents.x2 = 0;
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miSubtractO --
+region.c: *	Overlapping band subtraction. x1 is the left-most point not yet
+region.c: *-----------------------------------------------------------------------
+region.c:    x1 = r1->x1;
+region.c:	if (r2->x2 <= x1)
+region.c:	else if (r2->x1 <= x1)
+region.c:	    x1 = r2->x2;
+region.c:	    if (x1 >= r1->x2)
+region.c:		    x1 = r1->x1;
+region.c:	else if (r2->x1 < r1->x2)
+region.c:	    assert(x1<r2->x1);
+region.c:	    NEWRECT(pReg, pNextRect, x1, y1, r2->x1, y2);
+region.c:	    x1 = r2->x2;
+region.c:	    if (x1 >= r1->x2)
+region.c:		    x1 = r1->x1;
+region.c:	    if (r1->x2 > x1)
+region.c:		NEWRECT(pReg, pNextRect, x1, y1, r1->x2, y2);
+region.c:		x1 = r1->x1;
+region.c:	assert(x1<r1->x2);
+region.c:	NEWRECT(pReg, pNextRect, x1, y1, r1->x2, y2);
+region.c:	    x1 = r1->x1;
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miSubtract --
+region.c: *-----------------------------------------------------------------------
+region.c:	!EXTENTCHECK(&regM->extents, &regS->extents))
+region.c:	regD->extents.x2 = regD->extents.x1;
+region.c:	regD->extents.y2 = regD->extents.y1;
+region.c:	regD->data = &miEmptyData;
+region.c:/*-
+region.c: *-----------------------------------------------------------------------
+region.c: * miInverse --
+region.c: *-----------------------------------------------------------------------
+region.c:    if (REGION_NIL(reg1) || !EXTENTCHECK(invRect, &reg1->extents))
+region.c:	newReg->extents = *invRect;
+region.c:	newReg->data = (RegDataPtr)NULL;
+region.c: *   box has been partially covered (partIn == partOut == TRUE -- because of
+region.c:    if (!numRects || !EXTENTCHECK(&region->extents, prect))
+region.c:	if (SUBSUMES(&region->extents, prect))
+region.c:    x = prect->x1;
+region.c:    y = prect->y1;
+region.c:    /* can stop when both partOut and partIn are TRUE, or we reach prect->y2 */
+region.c:        if (pbox->y2 <= y)
+region.c:        if (pbox->y1 > y)
+region.c:           if (partIn || (pbox->y1 >= prect->y2))
+region.c:           y = pbox->y1;        /* x guaranteed to be == prect->x1 */
+region.c:        if (pbox->x2 <= x)
+region.c:        if (pbox->x1 > x)
+region.c:        if (pbox->x1 < prect->x2)
+region.c:        if (pbox->x2 >= prect->x2)
+region.c:           y = pbox->y2;        /* finished with this band */
+region.c:           if (y >= prect->y2)
+region.c:           x = prect->x1;       /* reset x out to left again */
+region.c:    return(partIn ? ((y < prect->y2) ? rgnPART : rgnIN) : rgnOUT);
+region.c:    pReg->extents.x1 = x1 = pReg->extents.x1 + x;
+region.c:    pReg->extents.y1 = y1 = pReg->extents.y1 + y;
+region.c:    pReg->extents.x2 = x2 = pReg->extents.x2 + x;
+region.c:    pReg->extents.y2 = y2 = pReg->extents.y2 + y;
+region.c:    if (((x1 - MINSHORT)|(y1 - MINSHORT)|(MAXSHORT - x2)|(MAXSHORT - y2)) >= 0)
+region.c:	if (pReg->data && (nbox = pReg->data->numRects))
+region.c:	    for (pbox = REGION_BOXPTR(pReg); nbox--; pbox++)
+region.c:		pbox->x1 += x;
+region.c:		pbox->y1 += y;
+region.c:		pbox->x2 += x;
+region.c:		pbox->y2 += y;
+region.c:    if (((x2 - MINSHORT)|(y2 - MINSHORT)|(MAXSHORT - x1)|(MAXSHORT - y1)) <= 0)
+region.c:	pReg->extents.x2 = pReg->extents.x1;
+region.c:	pReg->extents.y2 = pReg->extents.y1;
+region.c:	pReg->data = &miEmptyData;
+region.c:	pReg->extents.x1 = MINSHORT;
+region.c:	pReg->extents.x2 = MAXSHORT;
+region.c:	pReg->extents.y1 = MINSHORT;
+region.c:	pReg->extents.y2 = MAXSHORT;
+region.c:    if (pReg->data && (nbox = pReg->data->numRects))
+region.c:	for (pboxout = pbox = REGION_BOXPTR(pReg); nbox--; pbox++)
+region.c:	    pboxout->x1 = x1 = pbox->x1 + x;
+region.c:	    pboxout->y1 = y1 = pbox->y1 + y;
+region.c:	    pboxout->x2 = x2 = pbox->x2 + x;
+region.c:	    pboxout->y2 = y2 = pbox->y2 + y;
+region.c:	    if (((x2 - MINSHORT)|(y2 - MINSHORT)|
+region.c:		 (MAXSHORT - x1)|(MAXSHORT - y1)) <= 0)
+region.c:		pReg->data->numRects--;
+region.c:		pboxout->x1 = MINSHORT;
+region.c:		pboxout->x2 = MAXSHORT;
+region.c:		pboxout->y1 = MINSHORT;
+region.c:		pboxout->y2 = MAXSHORT;
+region.c:	    if (pReg->data->numRects == 1)
+region.c:		pReg->extents = *REGION_BOXPTR(pReg);
+region.c:		pReg->data = (RegDataPtr)NULL;
+region.c:    if (dst->data) 
+region.c:    if (!src->data || !src->data->size)
+region.c:	dst->data = (RegDataPtr)NULL;
+region.c:    if (!dst->data || (dst->data->size < src->data->numRects))
+region.c:	dst->data = xallocData(src->data->numRects);
+region.c:	if (!dst->data)
+region.c:    dst->data->size = src->data->size;
+region.c:    dst->data->numRects = src->data->numRects;
+region.c:    assert(pBox->x1<=pBox->x2);
+region.c:    assert(pBox->y1<=pBox->y2);
+region.c:    pReg->extents = *pBox;
+region.c:    pReg->data = (RegDataPtr)NULL;
+region.c:    if (!numRects || !INBOX(&pReg->extents, x, y))
+region.c:	*box = pReg->extents;
+region.c:        if (y >= pbox->y2)
+region.c:	if ((y < pbox->y1) || (x < pbox->x1))
+region.c:	if (x >= pbox->x2)
+region.c:    pReg->extents.x2 = pReg->extents.x1;
+region.c:    pReg->extents.y2 = pReg->extents.y1;
+region.c:    pReg->data = &miEmptyData;
+region.c:    return(&pReg->extents);
+region.c:		    for (k = i; k != j; k--)
+region.c:			spans[k] = spans[k-1];
+region.c:			widths[k] = widths[k-1];
+region.c:	if (spans[m].y > spans[numSpans-1].y)   ExchangeSpans(m, numSpans-1);
+region.c:            } while (i != numSpans && r->y < y);
+region.c:		r--;
+region.c:		j--;
+region.c:            } while (y < r->y);
+region.c:        if (numSpans-j-1 > 1)
+region.c:	    QuickSortSpans(&spans[j+1], &widths[j+1], numSpans-j-1);
+region.c:    clipy1 = pboxBandStart->y1;					    \
+region.c:    clipy2 = pboxBandStart->y2;					    \
+region.c:    while (pboxBandEnd != pboxLast && pboxBandEnd->y1 == clipy1) {  \
+region.c:    for (; ppt != pptLast && ppt->y < clipy1; ppt++, pwidth++) {} \
+region.c:    space.  FSorted is non-zero if the scanline origins are in ascending
+region.c:    if (!prgnDst->data)
+region.c:	clipx1 = prgnDst->extents.x1;
+region.c:	clipy1 = prgnDst->extents.y1;
+region.c:	clipx2 = prgnDst->extents.x2;
+region.c:	clipy2 = prgnDst->extents.y2;
+region.c:	    y = ppt->y;
+region.c:	    x1 = ppt->x;
+region.c:		    pptNew->x = x1;
+region.c:		    pptNew->y = y;
+region.c:		    *pwidthNew = x2 - x1;
+region.c:    else if ((numRects = prgnDst->data->numRects))
+region.c:	    y = ppt->y;
+region.c:		x1 = ppt->x;
+region.c:		    if (newx1 < pbox->x1)   newx1 = pbox->x1;
+region.c:		    if (newx2 > pbox->x2)   newx2 = pbox->x2;
+region.c:			pptNew->x = newx1;
+region.c:			pptNew->y = y;
+region.c:			*pwidthNew = newx2 - newx1;
+region.c:    return (pwidthNew - pwidthNewStart);
+region.c:	yThisBand = pbox->y1;
+region.c:	while((nbox > 0) && (pbox->y1 == yThisBand))
+region.c:	    nbox--;
+region_more.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+region_more.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+region_more.c: * presentation solutions in a totally Web-based environment.  For more
+region_more.c:      height = this_rect.y2 - this_rect.y1;
+region_more.c:      overhead = (this_rect.x1 - prev_rect.x2) * height;
+region_more.c:      area1 = (prev_rect.x2 - prev_rect.x1) * (prev_rect.y2 - prev_rect.y1);
+region_more.c:      area2 = (this_rect.x2 - this_rect.x1) * (this_rect.y2 - this_rect.y1);
+region_more.c:      area3 = (tmp_rect.x2 - tmp_rect.x1) * (tmp_rect.y2 - tmp_rect.y1);
+region_more.c:      overhead = area3 - area2 - area1;
+region_more.c:    log_write(LL_DEBUG, "Joined rectangles: %d -> %d, overhead %d",
+region_more.c:    log_write(LL_WARN, "Bad rectangle order in regions - not packing");
+rfblib.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+rfblib.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+rfblib.c: * presentation solutions in a totally Web-based environment.  For more
+rfblib.c:  format->r_max = buf_get_CARD16(&bbuf[4]);
+rfblib.c:  format->g_max = buf_get_CARD16(&bbuf[6]);
+rfblib.c:  format->b_max = buf_get_CARD16(&bbuf[8]);
+rfblib.c:  buf_put_CARD16(&bbuf[4], format->r_max);
+rfblib.c:  buf_put_CARD16(&bbuf[6], format->g_max);
+rfblib.c:  buf_put_CARD16(&bbuf[8], format->b_max);
+translate.c: * Copyright (C) 2001-2003 HorizonLive.com, Inc.  All rights reserved.
+translate.c: * included.  HorizonLive provides e-Learning and collaborative synchronous
+translate.c: * presentation solutions in a totally Web-based environment.  For more
+translate.c:  switch(fmt->bits_pixel) {
+translate.c:  /* Allocate space for 3 tables for 8-bit R, G, B components */        \
+translate.c:      r = (CARD##bpp)((c * fmt->r_max + 127) / 255 << fmt->r_shift);    \
+translate.c:      g = (CARD##bpp)((c * fmt->g_max + 127) / 255 << fmt->g_shift);    \
+translate.c:      b = (CARD##bpp)((c * fmt->b_max + 127) / 255 << fmt->b_shift);    \
+translate.c:      if ((fmt->big_endian != 0) ==                                     \
+translate.c:  fb_ptr = &g_framebuffer[r->y * g_fb_width + r->x];
+translate.c:  for (y = 0; y < r->h; y++) {
+translate.c:    memcpy(dst_ptr, fb_ptr, r->w * sizeof(CARD32));
+translate.c:    dst_ptr += r->w;
+translate.c:  fb_ptr = &g_framebuffer[r->y * g_fb_width + r->x];            \
+translate.c:  for (y = 0; y < r->h; y++) {                                  \
+translate.c:    for (x = 0; x < r->w; x++) {                                \
+translate.c:    fb_ptr += (g_fb_width - r->w);                              \
+translate.c:  fb_ptr = &g_framebuffer[r->y * g_fb_width + r->x];            \
+translate.c:  for (y = 0; y < r->h; y++) {                                  \
+translate.c:    for (x = 0; x < r->w; x++) {                                \
+translate.c:    fb_ptr += (g_fb_width - r->w);                              \
+translate.c:  fb_ptr = &g_framebuffer[r->y * g_fb_width + r->x];            \
+translate.c:  w = r->w;                                                     \
+translate.c:  h = r->h;                                                     \
+translate.c:        fb_pixel = *(fb_ptr - 1);                               \
+translate.c:    fb_ptr += (g_fb_width - w);                                 \

@@ -1,0 +1,315 @@
+/---------------------------------------------\
+| Documentacion de MCU                        | 
+\---------------------------------------------/
+
+--------------------
+COMANDOS DE CONTROL:
+--------------------
+
+-------------------------
+1- Primitivas de sesión
+-------------------------
+
+- create_session(ID_sesion):
+	o Descripcion:
+          Crea una sesion.
+	o Parametros:
+		o IDsession: nº de sesion.
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+- remove_session(ID_session):
+	o Descripcion: Elimina una sesion.
+	o Parametros:
+		o IDsession: nº de sesion.
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+-------------------------
+2- Primitivas de participantes
+-------------------------
+
+- new_participant( ID_session,ip,rx_port1,[,rx_port2,rx_port3,...])
+	o Descripción:
+          Se crea un participante y se definen los puertos que debe
+          escuchar la MCU.
+	o Parametros:
+		o ID_session: nº de sesion.
+		o ip: direccion IP del participante
+		o rx_port: puertos donde debe escuchar la MCU
+	o retorna:
+		o OK: [ID_participante]
+		o ERROR: [tipo de error]
+
+- new_nat_participant( ID_session,rx_port1,[,rx_port2,rx_port3,...])
+	o Descripción:
+          Se crea un participante que se supone está detrás de un NAT,
+          es decir, se mandarán los flujos a la dirección desde donde
+          recibamos los flujos. Se definen los puertos que debe escuchar
+          la MCU, que deben ser únicos para este participante.
+	o Parametros:
+		o ID_session: nº de sesion.
+		o rx_port: puertos donde debe escuchar la MCU
+	o retorna:
+		o OK: [ID_participante]
+		o ERROR: [tipo de error]
+			    
+- remove_participant(ID_session, ID_part)
+	o Descripcion:
+          Elimina el participante de la sesión.
+	o Parametros:
+		o ID_session: nº de sesion.
+		o ID_part: ID del participante.
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+		
+- bind_rtp ( ID_session,ID_part,PT,remoteRTPport,localRTPport,localRTCPport)
+	o Descripcion:
+          Mediante este comando le indicamos a la MCU que en caso de
+          enviar un flujo a un participante con cierto PT, debemos
+          enviarlo al puerto remotePort desde localPort, y esperar
+          información RTCP en el puerto localRTCP.
+	o Parametros:
+		o ID_session: nº de sesion.
+		o ID_part: ID del participante.
+		o PT: Payloadtype
+		o remoteRTPport: puerto al que envía la MCU
+		o localRTPport: puerto desde el que envía la MCU
+		o localRTCPport: puerto en el que espera RTCP
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+- unbind_rtp ( ID_session,ID_part,PT)
+	o Descripcion:
+          Dejamos de enviar el flujo con PT a dicho puerto.
+	o Parametros:
+		o ID_session: nº de sesion.
+		o ID_part: ID del participante.
+		o PT: Payloadtype	
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+- bind_rtcp (ID_session,ID_part,localRTPport,remoteRTCPport)\n";
+	o Descripcion:
+          Mediante este comando le indicamos a la MCU a qué puerto debe
+          enviarse el flujo RTCP con las estadísticas que genera el
+          tráfico RTP del puerto localRTPport.
+	o Parametros:
+		o ID_session: nº de sesion.
+		o ID_part: ID del participante.
+		o PT: Payloadtype	
+		o localRTPport: puerto RTP que genera las estadísticas
+		o remoteRTCPport: puerto al que se envían estadísticas RTCP
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+- unbind_rtcp (ID_session,ID_part,localRTPport,remoteRTCPport)\n";
+	o Descripcion:
+          Mediante este comando le indicamos a la MCU que deje de enviar
+          el flujo RTCP con las estadísticas que genera el tráfico RTP
+          del puerto localRTPport.
+	o Parametros:
+		o ID_session: nº de sesion.
+		o ID_part: ID del participante.
+		o PT: Payloadtype	
+		o localRTPport: puerto RTP que genera las estadísticas
+		o remoteRTCPport: puerto al que se envían estadísticas RTCP
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+	o NOTA: NO IMPLEMENTADO
+
+- configure_participant(ID_session,ID_part,PT,ALIVE,FEC,BW)
+	o Descripcion:
+          Con este comando configuramos el pipeline de salida del
+          participante para cierto flujo, es decir, si queremos proteger
+          el flujo con FEC, enviar paquetes basura para poder crear una
+          entrada en los NATs y el ancho de banda máximo que soporta
+          (discarding).
+	               
+	o Parametros:
+		o ID_session: nº de sesion.
+		o ID_part: ID del participante.
+		o PT: Payloadtype	
+		o ALIVE: {1,0}, indica si queremos enviar paquetes basura
+		o FEC: {1,24}, indica la k de protección (0 --> OFF)
+		o BW: indica BW máximo de salida en bps (0 --> OFF)
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+	
+
+-------------------------
+3- Primitivas de medios
+-------------------------
+
+- get _codecs()
+	o Descripcion:
+          Devuelve lista de codecs soporados por PayloadType.
+	o Parametros: ninguno
+	o Retorna: OK: PT1,PT2,PT3,[...]
+		
+- receive(ID_session,ID_part_rx,ID_part_tx,PT)
+	o Descripcion:
+          Este comando sirve para poder indicar a la MCU que envíe cierto PT
+          de un origen a un destino. Se utiliza para flujos distintos a
+          video/audio, ya que dichos flujos tienen comandos propios.
+	o Parametros:
+		o ID_session: nº de sesion.
+		o ID_part_rx: ID del participante que recibe el flujo.
+		o ID_part_tx: ID del participante que envía el flujo.
+		o PT: Payloadtype				
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+- discard (ID_session,ID_part_rx,ID_part_tx,PT)
+	o Descripcion:
+          Este comando sirve para indicar a la MCU que deje de enviar
+          cierto PT de un origen a un destino. Se usa para flujos
+          distintos a video/audio, ya que dichos flujos tienen
+          comandos propios.
+	o Parametros:
+		o ID_session: nº de sesion.
+		o ID_part_rx: ID del participante que deja de recibir el flujo.
+		o ID_part_tx: ID del participante que envía el flujo.
+		o PT: Payloadtype				
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+- receive_video_mode ( ID_session,ID_part,mode[,PT,BW,FR,Q,Width,Height,SSRC,GRID_MODE])
+	o Description:
+          Con este comando decidimos el modo en el que el participante
+          ID_part recibe los flujos de video. Tenemos varias opciones
+          dependiendo de si mode es:
+              1) SWITCH_MODE y no indicamos ningún parámetro opcional,
+                 nos encontramos en modo conmutacion.
+              2) SWITCH_MODE e indicamos parámetros opcionales, entonces
+                 nos encontramos transcodificando, con dichos parámetros
+                 opcionales. Son obligatorios PT y BW, el resto si no se
+                 indican o se escribe 0, se cogerá el valor del flujo de
+                 entrada.
+              3) GRID_MODE e indicamos TODOS los valores opcionales a
+                 excepción de SSRC, que si no se indica se alige uno
+                 aleatorio, y GRID_MODE que por defecto usa el modo de
+                 mosaico automático.
+              4) GRID2_MODE e indicamos TODOS los valores opcionales a
+                 excepción de SSRC, que si no se indica se alige uno
+                 aleatorio, y GRID2_MODE que por defecto usa el modo de
+                 mosaico automático, la diferencia con el anterior es que
+                 todos los receptores comparten el mismo MOSAICO
+                 (es más escalable).
+	 o Parametros:
+		o ID_session: nº session
+		o ID_part: nº participante
+		o mode: SWITCH_MODE, GRID_MODE, GRID2_MODE
+		o PT: PayloadType (opcional)
+		o BW: Ancho de banda (opcional)
+		o FR: Frame rate (opcional)
+		o Q: caldad (opcional)
+		o Width: ancho (opcional)
+		o Height: alto (opcional)
+		o SSRC: nº de fuente RTP (opcinal)
+		o GRID_MODE: GRID_AUTO, GRID_BORDER, GRID_BORDER_TR, GRID_CIRCLE, GRID_PIP (opcional)
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+ 
+- receive_video( ID_session,ID_part_rx,ID_part_tx[,PT,BW,FR,Q,Width,Height,SSRC])
+	o Descripción:
+          Si estamos en SWITCH_MODE, se envía el video especificado al
+          participante que así lo desee, si no especificamos parametros
+          adicionales, la MCU simplemente conmuta.
+          Si especificamos valores adicionales, entonces transcodificamos 
+          con esos valores, mínimo debe especificarse PT y BW, el resto si
+          no se especifican se cogen del flujo de entrada.
+          Si estamos en modo GRID_MODE, no hay que especificar valores
+          adicionales y se añade el flujo al mosaico.
+	o Parámetros: 
+		o ID_session: nº session
+		o ID_part_rx: nº participante receptor
+		o ID_part_tx: nº participante emisor
+		o PT: PayloadType (opcional)
+		o BW: Ancho de banda (opcional)
+		o FR: Frame rate (opcional)
+		o Q: calidad (opcional)
+		o Width: ancho (opcional)
+		o Height: alto (opcional)
+		o SSRC: nº de fuente RTP (opcinal)
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+- discard_video( ID_session,ID_part_rx,ID_part_tx)
+	o Descripción:
+          Se elimina el participante de los video que recibe, si se trata
+          de conmutación, simplemente deja de conmutarlo, si se trata de
+          transcodificación, elimina del flowProcessor transcodificador
+          dicho destino, si un flowProcessor transcodificador se queda
+          sin destinos se elimina.
+          GRID_MODE: Debe rehacerse el mosaico, dejando de utilizar el
+                      vídeo indicado.
+	o Parámetros: 
+	    o ID_session: nº session
+		o ID_part_rx: nº participante receptor
+		o ID_part_tx: nº participante emisor
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+- receive_audio_mode ( ID_session,ID_part,mode[,PT,SL,SSRC])
+	o Descripcion:
+          Con este comando decidimos si el participante desea recibir el
+          audio por separado (SWITCH_MODE) o una suma de todos los audios
+          (MIX_MODE), en caso de especificar MIX_MODE, debemos indicar el
+          PT de salida (Codec) y SL(opsional) si deseamos detección de
+          silencio. En caso de SWITCH_MODE podemos opcionalmente indicar
+          PT si deseamos cambiar el codec de salida, SL (si se elige PT)
+          si deseamos detección de silencio y SSRC de salida.
+	o Parámetros: 
+	    o ID_session: nº session
+		o ID_part: nº participante receptor
+		o Mode: SWITCH_MODE o MIX_MODE
+		o PT: PayloadType (opcinal)
+		o SL: Silence Level if wanted silence detection (opcinal)
+		o SSRC: nº de fuente RTP (opcinal)
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+- receive_audio( ID_session,ID_part_rx,ID_part_tx[,SSRC])
+	o Descripcion:
+          Si nos encontramos en SWITCH_MODE, enviaremos dicho flujo al
+          participante, sin más modificación en caso de que se haya
+          configurado PT = -1, se transcodifica en caso de PT distinto
+          de -1. En caso de encontrarnos en MIX_MODE, añadimos el flujo
+          a la hora de mezclarlos.
+	o Parámetros: 
+		o ID_session: nº de sesion.
+		o ID_part_rx: ID del participante que desea recibir el flujo.
+		o ID_part_tx: ID del participante que envía el flujo.
+		o SSRC: nº de fuente RTP (opcinal)
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+
+
+- discard_audio( ID_session,ID_part_rx,ID_part_tx)
+	o Descripcion:
+          En SWITCH_MODE deja de conmutarse el flujo de audio, en MIX_MODE
+          deja de sumarse el flujo de audio.
+	o Parámetros: 
+		o ID_session: nº de sesion.
+		o ID_part_rx: ID del participante que deja de recibir el flujo.
+		o ID_part_tx: ID del participante que envía el flujo.
+	o Retorna:
+		o OK
+		o ERROR: [tipo de error]
+

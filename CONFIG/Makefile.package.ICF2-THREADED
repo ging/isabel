@@ -1,0 +1,40 @@
+#
+# ICF & SDK top directories are common for all OS
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.baselib       -- root of subsystem libraries
+#	*.library       -- root of subsystem libraries (-L)
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+ICF.topdir       :=$(PROJECT_ROOT_DIR)/lib/ICF2
+ICF.include      :=$(ICF.topdir)/include
+ICF.include.files:=\
+	$(wildcard $(ICF.include)/icf2/*.hh)    \
+	$(wildcard $(ICF.include)/icf2/*.h)
+
+ICF.baselib.ugly:=$(OBJS_ROOT_DIR)/lib/ICF2/libThreaded
+ICF.baselib:=$(shell echo $(ICF.baselib.ugly)|sed 's@^\(./\)*@@;s@/./@/@')
+
+ICF.library      :=-L$(ICF.baselib)
+ICF.library.libs :=-lthreadedicf
+
+MKDEPVERSION+= -include $(ICF.topdir)/version
+
+CONFIG.generic.define+=\
+	-D__THREADED_ICF
+
+
+ifeq ($(USER.ENABLE_DEBUG),y)
+CONFIG.generic.define+=\
+	-D__DEBUG               \
+	-D__DEBUG_ICF           
+endif
+
+CONFIG.generic.include+=\
+	-I$(ICF.include)
+
+LINK.ICF:=$(ICF.library) $(ICF.library.libs)

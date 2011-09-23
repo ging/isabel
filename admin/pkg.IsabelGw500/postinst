@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+pdir=$(echo /usr/local/$DPKG_MAINTSCRIPT_PACKAGE | sed "s/isabelgw/isabel/") 
+
+echo "postinst: $pdir"
+
+cd $pdir
+
+# Gateway configuration:
+/bin/mkdir -p /etc/isabel/gw
+if [ ! -f "/etc/isabel/gw/gapi.1.0.0.xml" ] ; then 
+   /bin/cp $pdir/lib/defaults/gapi.1.0.0.xml /etc/isabel/gw/.
+fi
+if [ ! -f "/etc/isabel/gw/gwsip.1.0.0.xml" ] ; then 
+   /bin/cp $pdir/lib/defaults/gwsip.1.0.0.xml /etc/isabel/gw/.
+fi
+/bin/cp $pdir/lib/defaults/video.sdp /etc/isabel/gw/.
+/bin/cp $pdir/lib/defaults/audio.sdp /etc/isabel/gw/.
+/bin/cp $pdir/lib/defaults/todo.sdp /etc/isabel/gw/.
+/bin/cp $pdir/lib/defaults/preseth264 /etc/isabel/gw/.
+/bin/cp $pdir/lib/defaults/preseth264HttpLive /etc/isabel/gw/.
+
+

@@ -1,0 +1,18 @@
+;----------------------------------------------------------------------------
+;
+;    symbian.pkg - installation file
+;    
+;----------------------------------------------------------------------------
+
+; Package header (English only, add other languages here)
+#{"symbian DLL"}, (0x0A385009), 1, 0, 0
+
+; Language independent files
+"..\..\..\\epoc32\release\thumb\urel\symbian.dll"-"!:\system\libs\symbian.dll"
+
+; Test application
+"..\..\..\\epoc32\release\thumb\urel\symbiantest.app"-"!:\system\apps\symbiantest\symbiantest.app"
+"..\..\..\\Epoc32\data\z\system\apps\symbiantest\symbiantest.rsc"-"!:\system\apps\symbiantest\symbiantest.rsc" 
+
+
+; End of file

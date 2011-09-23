@@ -1,0 +1,537 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# info.itcl
+#
+# Classs CameraLayoutInfoC maintains information about the current
+# geometry, grab size, bandwidth and framerate of all the video channels.
+#
+#########################################################################
+
+
+class CameraLayoutInfoC {
+
+    # Global bandwidth factor
+    private common bwfactor 1
+ 
+    # Global framerate factor
+    private common frameratefactor 1
+ 
+    # Global grabsize factor
+    private common grabsizefactor 1
+
+    # Global quality factor 
+    private common qltyfactor 1
+ 
+    # $codec($siteid): codec of site $siteid
+    private common codec
+
+    # $grabsize($siteid): grabsize of site $siteid
+    private common grabsize
+
+    # $name($siteid): public name of site $siteid
+    private common name
+
+    # $geometry($siteid): geometry of site $siteid
+    private common geometry
+    
+    # $bw($siteid): bw of site $siteid
+    private common bw
+
+    # $framerate($siteid): framerate of site $siteid
+    private common framerate
+
+    # $qlty($siteid): quality of site $siteid
+    private common qlty
+
+    # $mapped($siteid): 1 if the site $siteid is mapped.
+    private common mapped
+
+    #---------------------    
+
+    # Toplevel window
+    private common wroot ""
+
+    # I am waiting for "Draw" to start
+    private common drawPending 0
+
+    #---------------------    
+
+    # Cleanup
+    public proc Cleanup {}
+
+    # Declare/Remove sites.
+    public proc AddChannel {siteid}
+    public proc DelChannel {siteid}
+
+    # Site has been mapped/unmaped.
+    public proc Map {siteid} 
+    public proc Unmap {siteid} 
+
+    # Geometry of site has been set to $geometry.
+    public proc Geometry {siteid _geometry}
+
+    # Codec of site has been set to $c.
+    public proc Codec {siteid c}
+
+    # Bandwidth of site has been set to $_bw.
+    public proc BW {siteid _bw}
+
+    # Framerate of site has been set to $_fr.
+    public proc Framerate {siteid _fr}
+
+    # Grabsize of site has been sets to $gs.
+    public proc GrabSize {siteid gs}
+
+    # Sets the quality of the site.
+    public proc Qlty {siteid q}
+
+    # Sets global grabsize factor.
+    public proc GrabSizeFactor {gsf}
+
+    # Sets global bandwidth factor.
+    public proc BWFactor {bwf}
+
+    # Sets global framerate factor.
+    public proc FramerateFactor {frf}
+
+    # Sets the quality factor.
+    public proc QltyFactor {qf}
+
+
+    # Dump information
+    public proc Dump {}
+
+    # Update GUI when idle
+    public proc UpdateGUI {}
+
+    # Update GUI now
+    private proc UpdateGUINow {}
+
+    # Create the information frame for the camera channels.
+    public proc GUI {_wroot}
+
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::Cleanup {} {
+
+    foreach _siteid [array names name] {
+	unset name($_siteid)
+	unset geometry($_siteid)
+	unset bw($_siteid)
+	unset framerate($_siteid)
+	unset grabsize($_siteid)
+	unset codec($_siteid)
+	unset qlty($_siteid)
+	unset mapped($_siteid)
+    }
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::AddChannel {siteid} {
+
+    set name($siteid)      $siteid
+    set geometry($siteid)  ""
+    set bw($siteid)        ""
+    set framerate($siteid) ""
+    set grabsize($siteid)  ""
+    set codec($siteid)     ""
+    set qlty($siteid)      ""
+    set mapped($siteid)    0
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::DelChannel {siteid} {
+
+    unset name($siteid)
+    unset geometry($siteid)
+    unset bw($siteid)
+    unset framerate($siteid)
+    unset grabsize($siteid)
+    unset codec($siteid)
+    unset qlty($siteid)
+    unset mapped($siteid)
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::Map {siteid} {
+
+    set mapped($siteid) 1
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::Unmap {siteid} {
+
+    set geometry($siteid)  ""
+    set bw($siteid)        ""
+    set framerate($siteid) ""
+    set grabsize($siteid)  ""
+    set codec($siteid)     ""
+    set qlty($siteid)      ""
+
+    set mapped($siteid) 0
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::Geometry {siteid _geometry} {
+
+    if {$siteid == "*" } {
+	foreach siteid [array names name] {
+	    set geometry($siteid) $_geometry
+	}
+    } else {
+	set geometry($siteid) $_geometry
+    }
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::BW {siteid _bw} {
+
+    if {$siteid == "*" } {
+	foreach siteid [array names name] {
+	    set bw($siteid) $_bw
+	}
+    } else {
+	set bw($siteid) $_bw
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::Framerate {siteid _fr} {
+
+    if {$siteid == "*" } {
+	foreach siteid [array names name] {
+	    set framerate($siteid) $_fr
+	}
+    } else {
+	set framerate($siteid) $_fr
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::GrabSize {siteid gs} {
+
+    if {$siteid == "*" } {
+	foreach siteid [array names name] {
+	    set grabsize($siteid) $gs
+	}
+    } else {
+	set grabsize($siteid) $gs
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::Codec {siteid c} {
+
+    if {$siteid == "*" } {
+	foreach siteid [array names name] {
+	    set codec($siteid) $c
+	}
+    } else {
+	set codec($siteid) $c
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::Qlty {siteid q} {
+
+    if {$siteid == "*" } {
+	foreach siteid [array names name] {
+	    set qlty($siteid) $q
+	}
+    } else {
+	set qlty($siteid) $q
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::GrabSizeFactor {gsf} {
+
+    set grabsizefactor $gsf
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::BWFactor {bwf} {
+
+    set bwfactor $bwf
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::FramerateFactor {frf} {
+
+    set frameratefactor $frf
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::QltyFactor {qf} {
+
+    set qltyfactor $qf
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::Dump {} {
+
+    WriteTraceMsg "Video Layout Information"
+    
+    foreach siteid [array names name] {
+	WriteTraceMsg "  $siteid = $grabsize($siteid) $geometry($siteid) $bw($siteid) $framerate($siteid) $codec($siteid) $qlty($siteid)" 
+    }
+
+    WriteTraceMsg "  Bandwidth factor = $bwfactor"
+    WriteTraceMsg "  Framerate factor = $frameratefactor"
+    WriteTraceMsg "  Grab size factor = $grabsizefactor"
+    WriteTraceMsg "  Quality factor   = $qltyfactor"
+
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::UpdateGUI {} {
+
+    if {$wroot == ""} return
+
+    if {![winfo exists $wroot]} return
+
+    if {$drawPending == 0} {
+	set drawPending 1
+	after idle [code UpdateGUINow]
+    }
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::UpdateGUINow {} {
+
+    set drawPending 0
+
+    foreach w [grid slaves $wroot.f2] {
+	grid forget $w
+	destroy $w
+    }
+
+    grid columnconfigure $wroot.f2 0 -weight 1
+    grid columnconfigure $wroot.f2 1 -weight 1
+    grid columnconfigure $wroot.f2 2 -weight 1
+    grid columnconfigure $wroot.f2 3 -weight 1
+    grid columnconfigure $wroot.f2 4 -weight 1
+    grid columnconfigure $wroot.f2 5 -weight 1
+    grid columnconfigure $wroot.f2 6 -weight 1
+    
+    set _font [IsabelFontsC::GetFont small medium]
+
+    label $wroot.f2.acro0  -text Site      -relief groove -bd 1 -font $_font
+    label $wroot.f2.codec0 -text Codec     -relief groove -bd 1 -font $_font
+    label $wroot.f2.geom0  -text Geom      -relief groove -bd 1 -font $_font
+    label $wroot.f2.fbw0   -text BW        -relief groove -bd 1 -font $_font
+    label $wroot.f2.ffr0   -text FRate     -relief groove -bd 1 -font $_font
+    label $wroot.f2.gsize0 -text GrabSize  -relief groove -bd 1 -font $_font
+    label $wroot.f2.qf0    -text Qlty      -relief groove -bd 1 -font $_font
+    
+    grid  $wroot.f2.acro0  -row 0 -column 0 -sticky we
+    grid  $wroot.f2.codec0 -row 0 -column 1 -sticky we
+    grid  $wroot.f2.geom0  -row 0 -column 2 -sticky we
+    grid  $wroot.f2.fbw0   -row 0 -column 3 -sticky we
+    grid  $wroot.f2.ffr0   -row 0 -column 4 -sticky we
+    grid  $wroot.f2.gsize0 -row 0 -column 5 -sticky we
+    grid  $wroot.f2.qf0    -row 0 -column 6 -sticky we
+    
+    set row 0
+    set indnames [lsort -dictionary [array names name]]
+    foreach u $indnames {
+	incr row
+
+	label $wroot.f2.acro$row \
+	    -text $name($u) \
+	    -foreground black \
+	    -relief groove \
+	    -bd 1 \
+	    -font $_font
+	
+
+	if {$mapped($u)} {
+	    set _t $codec($u)
+	} else {
+	    set _t ""
+	}
+	label $wroot.f2.codec$row \
+	    -text $_t \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -font $_font
+	
+
+	if {$mapped($u)} {
+	    set _t $geometry($u)
+	} else {
+	    set _t ""
+	}
+	label $wroot.f2.geom$row  \
+	    -text $_t  \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -anchor e \
+	    -font $_font
+
+	if {$bw($u) == ""  || ! $mapped($u)} {
+	    set fbw ""
+	} else {
+	    set fbw [format %.2f [expr $bwfactor*$bw($u)]]
+	}
+	label $wroot.f2.fbw$row  \
+	    -text $fbw \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -anchor e \
+	    -font $_font
+
+	if {$framerate($u) == ""  || ! $mapped($u)} {
+	    set ffr ""
+	} else {
+	    set ffr [format %.2f [expr $frameratefactor*$framerate($u)]]
+	}
+	label $wroot.f2.ffr$row  \
+	    -text $ffr  \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -anchor e \
+	    -font $_font
+
+	if {$grabsize($u) == ""  || ! $mapped($u)} {
+	    set gs ""
+	} else {
+	    regexp {^0*([0-9]+)x0*([0-9]+)} $grabsize($u) all w h
+	    set w16 [expr round($w*$grabsizefactor/16)]
+	    set h16 [expr round($h*$grabsizefactor/16)]
+	    set w [expr $w16*16]
+	    set h [expr $h16*16]
+	    set gs "${w}x${h}"
+	}
+	label $wroot.f2.gsize$row \
+	    -text $gs \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -anchor e \
+	    -font $_font
+	
+
+	if {$qlty($u) == ""  || ! $mapped($u)} {
+	    set fq ""
+	} else {
+	    set fq [format %.2f [expr $qltyfactor*$qlty($u)]]
+	    if {$fq < 1}   {set fq 1}
+	    if {$fq > 100} {set fq 100}
+	}
+	label $wroot.f2.qf$row \
+	    -text $fq \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -anchor e \
+	    -font $_font
+
+	grid  $wroot.f2.acro$row  -row $row -column 0 -sticky we
+	grid  $wroot.f2.codec$row -row $row -column 1 -sticky we
+	grid  $wroot.f2.geom$row  -row $row -column 2 -sticky we
+	grid  $wroot.f2.fbw$row   -row $row -column 3 -sticky we
+	grid  $wroot.f2.ffr$row   -row $row -column 4 -sticky we
+	grid  $wroot.f2.gsize$row -row $row -column 5 -sticky we
+	grid  $wroot.f2.qf$row    -row $row -column 6 -sticky we
+    }
+}
+
+#-----------------------------------------------------------------------
+
+body  CameraLayoutInfoC::GUI {_wroot} {
+
+    set wroot $_wroot
+
+    frame $wroot
+    
+    label $wroot.title \
+	-text "Video Camera Layouts" \
+	-font [IsabelFontsC::GetFont large]
+
+    pack $wroot.title
+    
+    frame $wroot.f2
+    pack  $wroot.f2 -expand 1 -fill both
+
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+

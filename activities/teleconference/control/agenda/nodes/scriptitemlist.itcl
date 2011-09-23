@@ -1,0 +1,341 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#-----------------------------------------
+
+class ScriptItemListTCC {
+    inherit NodeTCC
+    
+    #-- Node attributes
+    
+    public variable scriptitems
+    
+    #-- Building the tree
+    
+    # $args is a list of script items
+    constructor {_agendaobj args} {
+	NodeTCC::constructor $_agendaobj} {}
+    
+    destructor {}
+    
+    public proc parse {agendaobj str}
+    
+    public method prettyPrinter {{offset 0}}
+    
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+    
+    public method getNodes {}
+
+    #-- Node creation
+
+    # Create a new scriptitem child node with the
+    # current selections.
+    public method save {}
+
+    # Replace the given scriptitem with a new scriptitem child node. The
+    # new scriptitem child node is created with the current selections.
+    public method replaceScriptItem {_scriptitem}
+
+    # Create a new scriptitem child node with the given values.
+    public method generateItem {_mode _capss _resourceIds}
+
+    #-- Node deletion
+ 
+    # Delete the indicated child node.
+    # It is a ScriptItemTCC object.
+    public method deleteScriptItem {_scriptitem}
+
+    # Delete all the child nodes.
+    public method deleteAllScriptItem {}
+
+    #-- Children operations
+       
+    # Move the given scriptitem $_offset positions in $scriptitems
+    public method moveScriptItem {_scriptitem _offset}
+
+    # Returns 1 if $_scriptitem is the first scripitem, otherwise returns 0.
+    public method firstScriptItem {_scriptitem}
+    
+    # Returns 1 if $_scriptitem is the last scriptitem, otherwise returns 0.
+    public method lastScriptItem {_scriptitem}
+
+    #-- Carrousel
+
+    # Starts the carrousel
+    public method play {}
+
+    # Stops the carrousel
+    public method stop {}
+
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::constructor {_agendaobj args} {
+    
+    foreach _si $args {
+	CheckClass  $_si ScriptItemTCC
+	CheckUnique $_si
+	$_si setParent $this
+    }
+    set scriptitems $args
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::destructor {} {
+    
+    set _auxscriptitems $scriptitems
+    set scriptitems ""
+    foreach _si $_auxscriptitems {
+	delete object $_si
+    }
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::parse {agendaobj str} {
+    
+    set _sil ""
+    set cont 0
+    set _si [lindex $str $cont]
+    while {$_si != ""} {
+        set _scriptitem [ScriptItemTCC::parse $agendaobj $_si]
+        lappend _sil $_scriptitem
+        incr cont
+        set _si [lindex $str $cont]
+    }
+
+    set me [eval ScriptItemListTCC ::#auto $agendaobj $_sil]
+
+    foreach _si $_sil {
+        $_si setParent $me
+    }
+
+    return $me
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::prettyPrinter {{offset 0}} {
+    
+    set _res ""
+    foreach si $scriptitems {
+        if {$_res != ""} {
+	    set _res "$_res\n"
+	}
+        set _res "$_res[$si prettyPrinter $offset]"
+    }
+    return $_res
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::getMyNode {} {
+
+    set _icons ""
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    list \
+	[getMyUid] \
+	"Script" \
+	"script branch" \
+	"$_icons icasave icaplay icastop"
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::getNodes {} {
+    
+    set res ""
+    foreach _si $scriptitems {
+	lappend res [$_si getMyNode]
+    }
+    return $res
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::save {} {
+
+    set _si [ScriptItemTCC::newFromSelection $agendaobj]
+        
+    $_si setParent $this
+    
+    lappend scriptitems $_si
+    
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::replaceScriptItem {_scriptitem} {
+    
+    set _pos [lsearch -exact $scriptitems $_scriptitem]
+    
+    if {$_pos == -1} return
+    
+    $_scriptitem kill    
+    
+    set _si [ScriptItemTCC::newFromSelection $agendaobj]
+        
+    $_si setParent $this
+    
+    set scriptitems [lreplace $scriptitems $_pos $_pos $_si]
+    
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::generateItem {_mode _capss _resourceRefs} {
+
+    set _prselobj [$agendaobj getSelection]
+    
+    set _robjs [$_prselobj getSelectedResources]
+    
+    #--
+
+    set _si [ScriptItemTCC "::#auto" $agendaobj $_mode $_capss $_robjs]
+        
+    $_si setParent $this
+    
+    lappend scriptitems $_si
+    
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::deleteScriptItem {_scriptitem} {
+    
+    set _pos [lsearch -exact $scriptitems $_scriptitem]
+    
+    if {$_pos == -1} return
+    
+    set _child [lindex $scriptitems $_pos]
+    set scriptitems [lreplace $scriptitems $_pos $_pos]
+    $_child kill
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::deleteAllScriptItem {} {
+    
+    foreach _s $scriptitems {
+	$_s kill
+    }
+
+    set scriptitems ""
+    
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::moveScriptItem {_scriptitem _offset} {
+    
+    set _pos [lsearch -exact $scriptitems $_scriptitem]
+    
+    if {$_pos == -1} return
+    
+    set _child [lindex $scriptitems $_pos]
+    set scriptitems [lreplace $scriptitems $_pos $_pos]
+    
+    set _newpos [expr $_pos + $_offset]
+
+    set scriptitems [linsert $scriptitems $_newpos $_child]
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::firstScriptItem {_scriptitem} {
+
+    if {[lindex $scriptitems 0] == $_scriptitem} {
+	return 1
+    } else {
+	return 0
+    }
+}
+    
+#-----------------------------------------
+
+body ScriptItemListTCC::lastScriptItem {_scriptitem} {
+
+    if {[lindex $scriptitems end] == $_scriptitem} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::play {} {
+
+    set _carrouselobj [$agendaobj getCarrousel]
+
+    $_carrouselobj play $this
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::stop {} {
+
+    set _carrouselobj [$agendaobj getCarrousel]
+
+    $_carrouselobj stop
+}
+
+#-----------------------------------------
+
+body ScriptItemListTCC::configureItemMenu {{menu ""}} {
+
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "Delete all script items" \
+	-command [code $this deleteAllScriptItem]
+    
+    return $menu   
+}
+
+#-----------------------------------------
+

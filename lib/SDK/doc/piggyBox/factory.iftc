@@ -1,0 +1,225 @@
+\section{Factorías, Descriptores y elementos}
+\label{factory:chap}
+
+La manera de incorporar elementos de proceso al demonio tiene siempre
+la misma estructura, independientemente del tipo de elemento que se
+trate: {\em codecs, fuentes, sumideros, etc}.
+
+Esta estructura consiste en tener {\em factorías} de objetos, que se
+registran en el sistema bajo distintos {\em descriptores}. Cuando
+el demonio necesita un elemento de proceso mira su base de datos de
+elementos registrados e invoca a la factoría adecuada para que
+ésta cree el elemento de proceso.
+
+Dado que los objetos de proceso no son conocidos en el momento de la
+compilación del demonio (sino que se compilan separadamente y se
+cargan bajo demanda), resulta imposible construir estos objetos
+de proceso de la manera habitual. Esto es, invocando al constructor.
+Hace falta un mecanismo de {\em constructores virtuales}. La forma
+más habitual de realizar estos es mediante la técnica de factorias.
+
+Así, la parte de iniciación del módulo cargado construye un
+objeto (la factoría) de una clase que instrumenta una interfaz
+({\tt codecFactory\_t} por ejemplo). Esta clase factoría debe
+proveer un método virtual que construye objetos (codecs en
+este caso).  El resultado final es que podemos crear objetos de
+manera virtual.
+
+Es evidente que para que todo funcione resulta necesario que
+el objeto factoría quede registrado en una base de datos junto
+con información suficiente sobre el tipo de objetos que es
+capaz de construir (por ejemplo, puede ser necesario en un momento
+dado construir un objeto que sepa traducir JPEG a GIF, esto implica
+buscar una factoría que prometa crear objetos con esta funcionalidad).
+Esta {\em información suficiente} queda recogida en el descriptor
+de la factoría.
+
+Tal y como está dise\~nado el demonio, el descriptor no es parte de
+la factoría sino un objeto aparte. Esto es así para permitir
+registrar una misma factoría bajo distintos descriptores. Es
+simplemente una decisión de dise\~no\footnote{ Un dise\~no alternativo
+podría haber sido prescindir del descriptor y que toda la información
+que describe a la factoría formase parte (como atributos) de la
+factoría. Lo prefiero a mi manera, me parece más flexible.}, permitiendo
+que una factoría fabrique distintos tipos de objetos.
+
+\subsection{Ejemplo de PseudoCódigo}
+El siguiente ejemplo\footnote{Es pseudo C++, no es compilable tal cual.
+Ejemplos que sí son compilables en próximas secciones.} es un módulo
+para el demonio que registra una factoría de {\em xxx} (codec, fuentes...)
+bajo dos descriptores distintos.
+
+
+\begin{verbatim}
+#include <icf2/general.h>
+#include <Isabel_SDK/dlm.hh>
+#include <Isabel_SDK/systemRegistry.hh>
+
+unsigned const moduleVersion = 1;
+unsigned const moduleRevision= 0;
+
+char const * const moduleName        = "sampleModule";
+char const * const moduleDescription = "sample module";
+char const * const moduleCopyright   = "(c) Copyright 2001";
+
+static int moduleInitFunction(int argc, const char *argv[]);
+static int moduleShutdownFunction(int argc, const char *argv[]);
+
+DLM_CONTROL_STRUCT(
+    moduleVersion,
+    moduleRevision,
+    moduleName,
+    moduleDescription,
+    moduleCopyright,
+    moduleInitFunction,
+    moduleShutdownFunction
+);
+
+
+//
+// ...
+//
+
+
+class myA_xxxObject_t: public xxxObject_t
+{
+    ...
+};
+
+class myB_xxxObject_t: public xxxObject_t
+{
+    ...
+};
+
+class my_xxxDescriptor_t: public xxxDescriptor_t
+{
+    ...
+};
+
+class my_xxxFactory_t: public xxxFactory_t
+{
+    //
+    // ...
+    //
+
+    xxxObject_ref createObject(xxxDescriptor_ref d) {
+
+        xxxDescriptor_t    *dPtr   = d;
+        my_xxxDescriptor_t *my_dPtr= static_cast<my_xxxDescriptor_t *>(dPtr);
+
+        int discrim= evalDiscrim(my_dPtr);
+
+        switch(discrim) {
+            case A: return new myA_xxxObject_t( ... );
+            case B: return new myB_xxxObject_t( ... );
+  
+            default: return NULL;
+        }
+    }//;
+};
+
+static int
+moduleInitFunction(int argc, const char *argv[])
+{
+    ...
+
+    xxxDescriptor_t *desc1= new my_xxxDescriptor( ... );
+    xxxDescriptor_t *desc2= new my_xxxDescriptor( ... );
+
+    xxxFactory_t    *fact= new my_xxxFactory_t( ... );
+
+
+    registerXxxFactory(desc1, fact);
+    registerXxxFactory(desc2, fact);
+
+
+    return 0;
+}
+
+static int
+moduleShutdownFunction(int argc, const char *argv[])
+{
+    return 0;
+}
+\end{verbatim}
+
+\subsection{Sistema de registro de factorías}
+
+La forma de trabajo descrita se basa por tanto en el registro de
+factorías asociando a cada factoría un descriptor que define
+el comportamiento de los objetos que puede crear dicha factoría.
+El programa piggyBox se basa en este sistema de registro para
+proporcionar los sevicios que el usuario necesita. A continuación
+se muestran el tipo de factorías que se pueden regitrar (fichero
+{\tt Isabel\_SDK/systemRegistry.hh}:
+
+\begin{verbatim}
+
+//
+// Registro de fuentes de imagenes, ejemplo: video4linux
+//
+extern bool
+    registerSourceFactory(sourceDescriptor_ref, sourceFactory_ref);
+extern sourceFactoryInfoList_ref
+    getSourceFactoryInfoList(void);
+
+
+//
+// Registro de codecs, ejemplo: codec RAW_FORMAT -> MJPEG_STD_FORMAT 
+//
+extern bool
+    registerCodecFactory(codecDescriptor_ref, codecFactory_ref);
+
+extern codecFactoryInfoList_ref
+    getCodecFactoryInfoList(void);
+
+
+//
+// Registro de fragmentadores, ejemplo: fragmentador de
+// imagenes MJPEG_STD_FORMAT 
+//
+extern bool
+    registerFragmenterFactory(fragmenterDescriptor_ref, fragmenterFactory_ref);
+ 
+extern fragmenterFactoryInfoList_ref
+    getFragmenterFactoryInfoList(void);
+ 
+
+
+//
+// Registro de cargadores de imagenes, ejemplo: cargador de MJPEG_STD_FORMAT
+//
+extern bool
+    registerImageLoader(imageLoaderDescriptor_ref, imageLoader_ref);
+
+extern imageLoaderInfoList_ref getImageLoaderInfoList(void);
+
+
+//
+// Registro de grabadores de imagenes, ejemplo guarda imagen
+// en RAW_FORMAT como MJPEG_STD_FORMAT
+//
+extern bool
+    registerImageSaverFactory(imageSaverDescriptor_ref, imageSaverFactory_ref);
+
+extern imageSaverFactoryInfoList_ref
+    getImageSaverFactoryInfoList(void);
+extern imageSaverFactoryInfoList_ref
+    getImageSaverFactoryInfoListByName(const char *const name);
+extern imageSaverFactoryInfoList_ref
+    getImageSaverFactoryInfoListByInputFormat(formatId_t fi);
+
+
+//
+// Registro de programas, ejemplo: programa videoNG 
+//
+extern bool
+    registerProgramFactory(programDescriptor_ref, programFactory_ref pf);
+extern programFactoryInfoList_ref
+    getProgramFactoryInfoList(void);
+extern programFactoryInfo_ref
+    matchProgram(const char *name);
+
+
+\end{verbatim}
+

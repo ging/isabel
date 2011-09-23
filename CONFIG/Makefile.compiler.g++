@@ -1,0 +1,6 @@
+CONFIG.CXX      :=g++
+CONFIG.CXX.name :=g++
+CONFIG.LD       :=g++
+CONFIG.LD.STATIC:=g++ -static -rdynamic
+
+include $(PROJECT_ROOT_DIR)/CONFIG/Makefile.compiler.$(CONFIG.COMPILER).$(TARGET.OS)

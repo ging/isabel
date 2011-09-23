@@ -1,0 +1,58 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#--------------------------------------------------------------------
+# INTERACTION MODE: appsharingmode
+#--------------------------------------------------------------------
+
+appsharingmode.whatis: imode
+appsharingmode.scene.name: application sharing
+
+appsharingmode.Audio:  -active 1 -skip 1
+
+appsharingmode.Video: -active 1 -skip 1
+
+appsharingmode.Questions: -active 1 \
+                          -resetlayout "lvnc_reset+lpay1lq lvnc_reset+lpay2lq lvnc_reset+lpay6lq lvnc_reset+lpay24lq lvnc_reset+lpay35lq" \
+                          -layout lvnc_ques \
+                          -othermap 0
+
+appsharingmode.VNC: -active 1 \
+                    -layout lappsharingmode \
+                    -shdisplaycodec  "_ISERV_SHDIS_CODEC -qlty _ISERV_SHDIS_QLTY" \
+                    -bw     _ISERV_SHDIS_BW \
+                    -capturearea _ISERV_VNCVIEWER_SHDISP_CAPTURE_AREA
+
+# --------------------------------------------------------------------
+
+VNC.viewerlayout.lappsharingmode: _ISERV_VNCVIEWER_APPSHARING_LAYOUT
+
+# --------------------------------------------------------------------
+
+Video.layout.lvnc_reset: \
+ {video 192x144+000+000 _ISERV_VID_VNC_RESET_BW}
+
+Video.layout.lvnc_ques: \
+ {video 192x144+000+187 _ISERV_VID_VNC_QUES_BW} \
+ {video 192x144+000+000 _ISERV_VID_VNC_QUES_BW}
+
+# --------------------------------------------------------------------

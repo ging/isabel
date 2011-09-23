@@ -1,0 +1,268 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# siteManager.itcl
+#
+# Stores site information.
+#
+#########################################################################
+
+
+class SiteManager {
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    public proc AddMySite  {userid tool site_id isabelversion isabelrelease master host secoid \
+				name connectTo connectToIP useMulticast mcastbw useFlowserver fsupbw fsdownbw uname \
+				connectionTime} 
+    
+    public proc DelMySite {}
+    
+    public proc AddRemoteSite  {userid new tool site_id isabelversion isabelrelease master host secoid \
+				    name connectTo connectToIP useMulticast mcastbw useFlowserver fsupbw fsdownbw uname \
+				    connectionTime} 
+    private proc AddRemoteSite2  {userid new tool site_id isabelversion isabelrelease master host secoid \
+				    name connectTo connectToIP useMulticast mcastbw useFlowserver fsupbw fsdownbw uname \
+				    connectionTime} 
+    
+    public proc DelRemoteSite {site_id}
+
+    public proc ExitComponent {}
+    
+    # Returns the list with the site_id of the connected sites.
+    public proc GetSites {}
+
+    # Returns 0 if the site site_id is not in the list of the connected sites.
+    # If the site is connected, returns 1
+    public proc SiteConnected {site_id}
+
+    # Gets information from the SiteInfoC class
+    public proc GetSiteInfo {site_id what}
+    
+    # Sets my site_id and my ch_id
+    public proc SetMySiteAndChId {site_id ch_id} 
+
+    # Returns my chId.
+    public proc MyChId {} 
+
+    # Returns my site_id
+    public proc MySiteId {} 
+
+    # Returns my roles: 
+    # Returns the value stored in SiteInfoC it it exists, or
+    # use my site_id to caculate my roles.
+    # NOTE: This method has been created when the CAL architecture was 
+    #       developed, because sometimes I do not receive the 
+    #       AddMySite message.
+    public proc GetMyRoles {}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # my userid
+    private common myChId ""
+
+    # my site_id
+    private common mySiteId ""
+
+    # list of the site_id of the connected sites.
+    private common connectedSites ""
+
+    # $siteobj($site_id) is the object with the information of the given site.
+    private common siteobj    
+
+    # Cache to store my roles.
+    private common roles_cache ""
+}
+
+#-----------------------------------------------------------------
+
+body SiteManager::AddMySite  {userid tool site_id isabelversion isabelrelease master host secoid \
+				  name connectTo connectToIP useMulticast mcastbw useFlowserver fsupbw fsdownbw uname \
+				  connectionTime} {
+
+    DebugTraceMsg "- Adding my site: $site_id - $name ($host $userid)" 1
+
+    lappend connectedSites $site_id
+
+    set siteobj($site_id) [SiteInfoC "#auto" $tool $userid $site_id $isabelversion $isabelrelease $master $host \
+	      $secoid $name \
+	      $connectTo $connectToIP $useMulticast $mcastbw $useFlowserver $fsupbw $fsdownbw $uname $connectionTime]
+
+    component AddMySite
+}
+
+#-----------------------------------------------------------------
+
+body SiteManager::DelMySite {} {
+    
+    set connectedSites [ldelete $connectedSites $mySiteId]
+
+    component DelMySite   
+}
+
+#-----------------------------------------------------------------
+
+body SiteManager::AddRemoteSite  {userid new tool site_id isabelversion isabelrelease master host secoid name connectTo connectToIP useMulticast mcastbw useFlowserver fsupbw fsdownbw uname connectionTime} {
+    
+    AddRemoteSite2  $userid $new $tool $site_id $isabelversion $isabelrelease $master $host $secoid $name $connectTo $connectToIP $useMulticast $mcastbw $useFlowserver $fsupbw $fsdownbw $uname $connectionTime
+}
+	  
+#-----------------------------------------------------------------
+
+body SiteManager::AddRemoteSite2  {userid new tool site_id isabelversion isabelrelease master host secoid \
+				      name connectTo connectToIP useMulticast mcastbw useFlowserver fsupbw fsdownbw uname \
+				      connectionTime} {
+					  
+    DebugTraceMsg "- Adding remote site: $site_id - $name ($host $userid)" 1
+				      
+    lappend connectedSites $site_id
+
+    set siteobj($site_id) [SiteInfoC "#auto" $tool $userid $site_id $isabelversion $isabelrelease $master $host \
+	    $secoid $name \
+	    $connectTo $connectToIP $useMulticast $mcastbw $useFlowserver $fsupbw $fsdownbw $uname $connectionTime]
+
+    component AddRemoteSite $site_id $new
+}
+
+#-----------------------------------------------------------------
+
+body SiteManager::DelRemoteSite {site_id} {
+
+    set _chid [GetSiteInfo $site_id chid]
+
+    set connectedSites [ldelete $connectedSites $site_id]
+    
+    component DelRemoteSite $site_id
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::ExitComponent {} {
+
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::SiteConnected {site_id} {
+
+    if {[lsearch -exact $connectedSites $site_id] != -1} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::GetSites {} {
+
+    return $connectedSites
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::GetSiteInfo {site_id what} {
+
+    if { ! [info exists siteobj($site_id)]} {
+	return ""
+    }
+
+    return [$siteobj($site_id) cget -$what]
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::SetMySiteAndChId {site_id ch_id} {
+
+    set mySiteId $site_id
+    set myChId  $ch_id
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::MyChId {} {
+    
+    return $myChId
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::MySiteId {} {
+
+    return $mySiteId
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::GetMyRoles {} {
+    global env
+
+    if {[info exists siteobj($mySiteId)]} {
+
+	return [GetSiteInfo $mySiteId roles]
+
+    } elseif {$roles_cache != ""} {
+
+	return $roles_cache
+
+    } else {
+
+	set _userroles ""
+	foreach _role [session Activity GetToolRoles $env(ISABEL_ROLE)] {
+
+	    set _insert 0
+	    
+	    foreach _u [session Activity GetResource $_role sites] {
+		if {[string match $_u $mySiteId]} {
+		    set _insert 1
+		    break
+		}
+	    }	
+	    
+	    if {$_insert} {
+		foreach _e [session Activity GetResource  $_role except] {
+		    if {[string match $_e $mySiteId]} {
+			set _insert 0
+			break
+		    }
+		}
+	    }
+	    
+	    if {$_insert} {
+		lappend _userroles $_role
+	    }
+	}
+	
+	set roles_cache $_userroles
+
+	return $_userroles
+    }
+}
+
+
+#------------------------------------------------------------------

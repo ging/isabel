@@ -1,0 +1,115 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+class LSEComponentClass {
+    inherit Component
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args}
+    public method Cmd {args}
+
+    constructor {} {   
+	Component::constructor LSE
+    } {
+    }
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Objects that implements the control behaviour
+    private variable ctrlobj ""
+
+}
+
+#---------------------------------------------------------------
+
+body LSEComponentClass::destructor {} {
+
+    if {$ctrlobj != ""} {
+	delete object $ctrlobj
+	set ctrlobj ""
+    }
+
+}
+
+#---------------------------------------------------------------
+
+body LSEComponentClass::Create {first} {
+
+    set ctrlobj [LseCtrlC "#auto"]
+    
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body LSEComponentClass::AddMySite {} {
+
+    # set _me [SiteManager::MySiteId]
+
+}
+
+#---------------------------------------------------------------
+
+body LSEComponentClass::AddRemoteSite {site_id new} {
+
+}
+
+#---------------------------------------------------------------
+
+body LSEComponentClass::DelMySite {} {
+
+    # set _me [SiteManager::MySiteId]
+}
+
+#---------------------------------------------------------------
+
+body LSEComponentClass::DelRemoteSite {site_id} {
+
+}
+
+#---------------------------------------------------------------
+
+body LSEComponentClass::SetInteractionMode {imname nsec useridlist args} {
+
+}
+
+#---------------------------------------------------------------
+
+body LSEComponentClass::Cmd {args} {
+
+}
+
+#---------------------------------------------------------------
+

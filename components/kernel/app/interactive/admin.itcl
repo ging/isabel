@@ -1,0 +1,928 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# admin.itcl
+#
+# Sites and components administration window.
+#
+#########################################################################
+
+#---------------------------------------------------------------
+# AdminC
+#
+# Class definition.
+#---------------------------------------------------------------
+
+class AdminC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create an Admin object.
+    constructor {} {}
+
+    # Delete the Admin object.
+    destructor {}
+
+    # Show the actions frame if you are an actioner user.
+    public method actions {}
+
+    # Show and Hide the window
+    public method showhide {}
+
+    # Show the window
+    public method show {}
+
+    # Hide the window
+    public method hide {}
+
+    # Refresh KeepAlive information
+    public method RefreshKeepAlive {id delay}
+
+    # Dump the internal variables.
+    public  method Dump     {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # toplevel widget name
+    private variable toplevel 
+
+    # selected action 
+    private common selectedAction 
+
+    # keep user and component information
+    private variable siteIdList ""
+    private variable sitePos
+
+    private variable nextCompPos 1
+    private variable compNameList ""
+    private variable compPos
+
+    # The last delay of the keepalive ping received from master.
+    # It is used to not to write identical traces saying that the delay is 0
+    private variable last_delay -1
+
+    # Create the GUI.
+    private method makeGUI {}
+
+    # Adds the site site_id to the pannel
+    private method addUser  {site_id}
+
+    # Removes the site site_id from the pannel
+    private method rmUser   {site_id}
+
+    # Declare an user.
+    private method declareUser {site_id name {regrid 1}} {}
+
+    # Rebuild the grid
+    private method regrid {}
+
+    # Declare a component. 
+    private method declareComp {name}
+
+    # Update the state of the pair site_idid - compName
+    private method updateUC {site_id compName}
+
+    # Update the state of the pair ip - cname
+    private method updateUC2 {site_id cname {mkgrid 1}}
+
+    private method invoke   {site_id cname}
+
+    private method kill     {site_id compName}
+    private method start    {site_id compName}
+    private method reset    {site_id compName}
+
+    private method userinfo     {site_id}
+
+    private method InShowComponents {cname}
+
+    # Starts all the death components.
+    private method startAllComponents {}
+}
+
+#---------------------------------------------------------------
+
+body AdminC::constructor {} {
+
+    SiteManager::ConnectionCB                 AddUnique [code $this addUser] 
+    SiteManager::DisconnectionCB              AddUnique [code $this rmUser] 
+    ComponentManager::StartComponentCB        AddUnique [code $this updateUC]
+    ComponentManager::StartComponentSuccessCB AddUnique [code $this updateUC]
+    ComponentManager::KillComponentCB         AddUnique [code $this updateUC]
+
+    makeGUI
+}
+
+#---------------------------------------------------------------
+
+body AdminC::makeGUI {} {
+    global ISABEL_DIR 
+
+    set display [session Environ cget -ctrl_display]
+    set toplevel [toplevel .tlp -screen $display]
+    set selectedAction($this) ""
+
+    set siteIdList   ""
+    
+    set nextCompPos  1
+    set compNameList ""
+
+    #---------------------------------------------------------------
+    
+    frame $toplevel.cc -borderwidth 3 -relief ridge
+    grid $toplevel.cc -row 0 -column 0 -sticky nswe
+    grid columnconfigure $toplevel 0 -weight 1
+    grid rowconfigure    $toplevel 0 -weight 1
+    
+    label $toplevel.cc.cname -text "Admin" \
+	-font [IsabelFontsC::GetFont large] \
+	-pady 0 \
+	-bd 0 \
+	-anchor w 
+    grid  $toplevel.cc.cname -column 0 -row 0 -padx 1 -pady 0 -sticky nswe
+
+    grid columnconfigure $toplevel.cc 0 -weight 1
+    grid rowconfigure    $toplevel.cc 0 -weight 1
+
+    
+    #---------------------------------------------------------------
+
+    set an       [session Activity GetName]
+    set geometry [session Activity GetResource $an stategeometry ""]
+
+    set dvirtualobj [DVirtualC #auto $display]
+    set geometry [$dvirtualobj V2R_Geometry $geometry 0 1 1 NW]
+    delete object $dvirtualobj
+
+    if {$geometry == ""} {
+	set x [expr [winfo screenwidth  .]/3]
+	set y [expr [winfo screenheight .]/3]
+	set geometry +$x+$y
+    }
+    wm geometry   $toplevel $geometry
+
+    wm title      $toplevel Administration
+    wm iconname   $toplevel Administration
+    wm iconbitmap $toplevel @$ISABEL_DIR/lib/images/xbm/net_partners.xbm
+    
+    wm withdraw $toplevel
+
+    #---------------------------------------------------------------
+
+    foreach c [session Activity GetComponents] {
+	declareComp $c
+    }
+
+    #---------------------------------------------------------------
+
+    foreach _s [SiteManager::GetSites] {
+	addUser $_s
+    }
+}
+
+#---------------------------------------------------------------
+
+body AdminC::destructor {} {
+
+    if {[winfo exists $toplevel]} {
+	destroy $toplevel
+    }
+}
+
+#---------------------------------------------------------------
+
+body AdminC::actions {} {
+    global ISABEL_DIR
+
+    if {[winfo exists $toplevel.cmd]} return
+
+    set actioners [session Activity GetResource [session Activity GetName] actioners ""]
+    set create 0
+    if {$actioners != ""} {
+	foreach r [SiteManager::GetSiteInfo [SiteManager::MySiteId] roles] {
+	    if {[lsearch -exact $actioners $r] != -1 } {
+		set create 1
+		break
+	    }
+	}
+    }
+    
+    frame $toplevel.cmd
+    grid $toplevel.cmd -row 1 -column 0 -sticky nwes
+    grid rowconfigure $toplevel 1 -weight 0
+    
+    if {$create} {
+	
+	checkbutton $toplevel.cmd.kill \
+		-variable [scope selectedAction($this)] \
+		-relief   raised \
+		-onvalue  kill \
+		-offvalue void \
+		-anchor   w \
+		-bitmap   @$ISABEL_DIR/lib/images/xbm/pirate.xbm 
+	balloon add  $toplevel.cmd.kill "Stop components"
+	grid $toplevel.cmd.kill  -row 0 -column 0 
+	grid rowconfigure    $toplevel.cmd 0 -weight 0
+	grid columnconfigure $toplevel.cmd 0 -weight 1
+	
+	checkbutton $toplevel.cmd.start \
+		-variable [scope selectedAction($this)] \
+		-relief   raised \
+		-onvalue  start \
+		-offvalue void \
+		-anchor   w \
+		-text     Start
+	balloon add  $toplevel.cmd.start "Start components"
+	grid $toplevel.cmd.start -row 0 -column 1 
+	grid columnconfigure $toplevel.cmd 1 -weight 1
+	
+	checkbutton $toplevel.cmd.reset \
+		-variable [scope selectedAction($this)] \
+		-relief   raised \
+		-onvalue  reset \
+		-offvalue void \
+		-anchor   w \
+		-text     Reset
+	balloon add  $toplevel.cmd.reset "Restart components"
+	grid $toplevel.cmd.reset -row 0 -column 2 
+	grid columnconfigure $toplevel.cmd 2 -weight 1
+	
+    }
+    
+    checkbutton $toplevel.cmd.info \
+	    -variable [scope selectedAction($this)] \
+	    -relief   raised \
+	    -onvalue  userinfo \
+	    -offvalue void \
+	    -anchor   w \
+	    -text     "User Info"
+    balloon add  $toplevel.cmd.info "Show site information"
+    grid $toplevel.cmd.info -row 0 -column 3 
+    grid columnconfigure $toplevel.cmd 3 -weight 1
+
+    CreateImage redcross gif/redcross.gif
+    button $toplevel.cmd.doctor \
+	-image     redcross \
+	-command  [code $this startAllComponents] 
+    balloon add  $toplevel.cmd.doctor "Auto repair components"
+    grid $toplevel.cmd.doctor -row 0 -column 4 
+    grid columnconfigure $toplevel.cmd 4 -weight 4
+    
+    button $toplevel.cmd.dismiss \
+	-text Dismiss \
+	-command  "$this hide"
+    balloon add  $toplevel.cmd.dismiss "Dismiss window"
+    grid $toplevel.cmd.dismiss -row 0 -column 5 
+    grid columnconfigure $toplevel.cmd 5 -weight 1
+    
+    return
+}
+
+#---------------------------------------------------------------
+
+body AdminC::startAllComponents {} {
+    
+    set _my_site_id [SiteManager::MySiteId] 
+    
+    foreach compName [session Activity GetComponents] {
+	
+	if { ! [GlobalState::ComponentExists $compName]} {
+	    ComponentManager::StartComponent $_my_site_id $compName
+	}
+	
+	foreach _site_id [SiteManager::GetSites] {
+	    if {[lsearch -exact [GlobalState::GetComponentsByState $_site_id "Waiting Running"] $compName] == -1} {
+		ComponentManager::StartComponent $_site_id $compName
+	    }
+	}  
+    }
+}
+
+#---------------------------------------------------------------
+
+body AdminC::showhide {} {
+
+    if {![winfo exists $toplevel]} {
+	makeGUI
+	actions
+    }
+    
+    switch [wm state $toplevel] {
+	normal    { 
+	    wm withdraw  $toplevel
+	}
+	iconic    { 
+	    wm deiconify $toplevel
+	    wm geometry  $toplevel ""
+	}
+	withdrawn { 
+	    wm deiconify $toplevel
+	    wm geometry  $toplevel ""
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body AdminC::show {} {
+
+    if {![winfo exists $toplevel]} {
+	makeGUI
+	actions
+    } else {
+	
+	switch [wm state $toplevel] {
+	    normal    { 
+		wm withdraw  $toplevel
+		wm deiconify $toplevel
+		
+	    }
+	    iconic    { 
+		wm deiconify $toplevel
+		wm geometry  $toplevel ""
+	    }
+	    withdrawn { 
+		wm deiconify $toplevel
+		wm geometry  $toplevel ""
+	    }
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body AdminC::hide {} {
+
+    if {![winfo exists $toplevel]} {
+	return
+    }
+    
+    wm withdraw  $toplevel
+}
+
+#---------------------------------------------------------------
+
+body AdminC::addUser {site_id} {
+
+    if {![winfo exists $toplevel]} {
+	makeGUI
+	actions
+    }
+
+    set _chid  [SiteManager::GetSiteInfo $site_id chid]
+
+    if {![SiteManager::SiteConnected $site_id]} return
+    
+    set _name  [SiteManager::GetSiteInfo $site_id name]
+    set _host  [SiteManager::GetSiteInfo $site_id host]
+
+    regsub -all {(\.|:)} $site_id _ _wname
+    
+    declareUser $site_id $_name 1
+    
+    $toplevel.cc.user$_wname configure \
+	    -state normal \
+	    -relief raised \
+	    -foreground black \
+	    -activeforeground black 
+    
+    balloon add $toplevel.cc.user$_wname "$_name ($_chid-$_host)"
+    
+    foreach cn $compNameList {
+	updateUC2 $site_id $cn 0
+    }
+}
+
+#---------------------------------------------------------------
+
+body AdminC::declareUser {site_id name {regrid 1}} {
+
+    regsub -all {(\.|:)} $site_id _ _wname
+    
+    if {[lsearch -exact $siteIdList $site_id] != -1} return
+    
+    lappend siteIdList $site_id
+
+    button  $toplevel.cc.user$_wname \
+	-foreground red \
+	-activeforeground red \
+	-disabledforeground red \
+	-padx 0 -pady 0 \
+	-highlightthickness 0 \
+	-text $site_id \
+	-anchor w \
+	-command [code $this invoke $site_id *] \
+	-state disabled \
+	-font [IsabelFontsC::GetFont small medium] \
+	-bd 1 \
+	-relief raised
+    
+    balloon add $toplevel.cc.user$_wname $name
+    
+    foreach cn $compNameList {
+	updateUC2 $site_id $cn 0
+    }
+
+    if {$regrid} {
+	regrid
+    }    
+}
+
+#---------------------------------------------------------------
+
+body AdminC::regrid {} {
+
+    set siteIdList [lsort -dictionary $siteIdList]
+
+    set kont 1
+    foreach sk $siteIdList {
+	
+	set sitePos($sk) $kont
+
+	regsub -all {(\.|:)} $sk _ _wname
+	
+	grid $toplevel.cc.user$_wname \
+	    -column 0 -row $kont -padx 1 -pady 0 -sticky nswe
+	grid rowconfigure $toplevel.cc $kont -weight 1
+	
+	foreach cn $compNameList {
+	    grid $toplevel.cc.state${cn}_$_wname \
+		-column $compPos($cn) -row $kont \
+		-padx 0 -pady 0 -sticky nswe
+	}
+	
+	incr kont
+    }
+}
+
+#---------------------------------------------------------------
+
+body AdminC::rmUser  {site_id} {
+
+    if {![winfo exists $toplevel]} {
+	makeGUI
+	actions
+    }
+    
+    set _chid [SiteManager::GetSiteInfo $site_id chid]
+    if {$_chid == ""} return
+    
+    regsub -all {(\.|:)} $site_id _ _wname
+    
+    $toplevel.cc.user$_wname conf \
+	    -state disabled \
+	    -relief groove \
+	    -foreground red \
+	    -activeforeground red 
+    
+    foreach cn $compNameList {
+	updateUC2 $site_id $cn 0
+    }
+}
+
+#---------------------------------------------------------------
+
+body AdminC::declareComp {cname} {
+    
+    if {![InShowComponents $cname]} return
+
+    if {[lsearch -exact $compNameList $cname] != -1} return
+    
+    lappend compNameList $cname
+    button $toplevel.cc.comp$cname  \
+	-foreground black \
+	-activeforeground black \
+	-disabledforeground black \
+	-text $cname \
+	-padx 0 -pady 0 \
+	-highlightthickness 0 \
+	-borderwidth 1 \
+	-anchor w \
+	-width 3 \
+	-font [IsabelFontsC::GetFont small medium] \
+	-command [code $this invoke * $cname]
+    
+    balloon add $toplevel.cc.comp$cname $cname
+    
+    set compPos($cname) $nextCompPos
+    incr nextCompPos
+    
+    grid $toplevel.cc.comp$cname \
+	    -column $compPos($cname) -row 0 \
+	    -padx 0 -pady 0 -sticky nswe
+    
+    grid columnconfigure $toplevel.cc $compPos($cname) -weight 1
+    
+    foreach _site_id $siteIdList {
+	updateUC2 $_site_id $cname 1
+    }
+}
+
+#---------------------------------------------------------------
+
+body AdminC::updateUC {site_id compName} {
+
+    if {![winfo exists $toplevel]} {
+	makeGUI
+	actions
+    }
+
+    updateUC2 $site_id $compName 0
+}
+
+#---------------------------------------------------------------
+
+body AdminC::updateUC2 {site_id cname {mkgrid 1}} {
+    global ISABEL_DIR 
+
+    if {![InShowComponents $cname]} return
+
+    regsub -all {(\.|:)} $site_id _ _wname
+
+    if {![winfo exists $toplevel.cc.state${cname}_$_wname]} {
+	button  $toplevel.cc.state${cname}_$_wname \
+	    -padx 0 -pady 0 \
+	    -highlightthickness 0 \
+	    -anchor c \
+	    -bd 1 \
+	    -command [code $this invoke $site_id $cname]
+    }
+
+    if {$mkgrid} {
+	grid $toplevel.cc.state${cname}_$_wname \
+	    -column $compPos($cname) -row $sitePos($site_id) \
+	    -padx 0 -pady 0 -sticky nswe
+	grid columnconfigure $toplevel.cc $compPos($cname) -weight 1
+	grid rowconfigure    $toplevel.cc $sitePos($site_id)    -weight 1
+    }
+
+    set bitmap @$ISABEL_DIR/lib/images/xbm/uno_off.xbm 
+    
+    switch [GlobalState::GetState $site_id $cname] {
+	Disabled {
+	    set state  disabled
+	    set relief groove
+	    set color #a3a3a3
+	}
+	Stopped {
+	    set state  normal
+	    set relief raised
+	    set color red
+	}
+	Waiting {
+	    set state  normal
+	    set relief raised
+	    set color orange
+	}
+	Running {
+	    set state  normal
+	    set relief raised
+	    set color blue
+	}
+	default {
+	    set state  disabled
+	    set relief groove
+	    set color  #a3a3a3
+	}
+    }
+
+    $toplevel.cc.state${cname}_$_wname conf \
+	    -state              $state \
+	    -relief             $relief \
+	    -bitmap             $bitmap \
+	    -foreground         $color \
+	    -disabledforeground $color \
+	    -activeforeground   $color 
+	
+}
+
+#---------------------------------------------------------------
+# AdminC::invoke
+#
+# Invokes the current command over the site and the component 
+# associated with site_id and cname.
+# site_id equals to * means all users.
+# cname equals to * means all components.
+#---------------------------------------------------------------
+body AdminC::invoke {site_id cname} {
+
+    switch $selectedAction($this) {
+	kill {
+	    kill $site_id $cname
+	}
+	start {
+	    start $site_id $cname
+	}
+	reset {
+	    reset $site_id $cname
+	}
+	userinfo {
+	    userinfo $site_id
+	}
+    }
+}
+
+
+#---------------------------------------------------------------
+# AdminC::kill
+#
+# Invokes the kill command over site site_id and component compName.
+# site_id equals to * means all sites.
+# compName equals to * means all components.
+#---------------------------------------------------------------
+body AdminC::kill {site_id compName} {
+
+    set me [SiteManager::MySiteId]
+
+    if {$compName == "*"} {
+	SiteManager::SiteDisconnection $site_id "Session finished by \
+		[SiteManager::GetSiteInfo $me name]@[SiteManager::GetSiteInfo $me host]"
+	return
+    } 
+
+    if {$site_id == "*"} {
+	foreach _site_id [SiteManager::GetSites] {
+	    ComponentManager::KillComponent $_site_id $compName
+	}
+	return
+    }
+
+    ComponentManager::KillComponent $site_id $compName
+}
+
+
+#---------------------------------------------------------------
+# AdminC::start
+#
+# Invokes the StartComponent command over site site_id and component compName.
+# site_id equals to * means all sites.
+# compName equals to * means all components.
+#---------------------------------------------------------------
+body AdminC::start {site_id compName} {
+
+    if {$compName == "*"} {
+
+	foreach compName [GlobalState::GetAllComponentsByState "Running Waiting"] {
+	    if {[lsearch -exact [GlobalState::GetComponentsByState $site_id \
+		    "Waiting Running"] $compName] == -1} {
+		ComponentManager::StartComponent $site_id $compName
+	    }
+	}
+	return
+    }
+
+    if {$site_id == "*"} {
+	foreach _site_id [SiteManager::GetSites] {
+
+	    if {[lsearch -exact [GlobalState::GetSitesByState $compName Running] $_site_id] == -1} {
+		ComponentManager::StartComponent $_site_id $compName
+	    }
+	}
+	return
+    }
+
+    ComponentManager::StartComponent $site_id $compName
+}
+
+
+#---------------------------------------------------------------
+# AdminC::reset
+#
+# Invokes the Kill and Start commands over site site_id and component compName.
+# site_id equals to * means all sites.
+# compName equals to * means all components.
+#---------------------------------------------------------------
+body AdminC::reset {site_id compName} {
+
+    if {$compName == "*"} {
+	foreach compName [GlobalState::GetAllComponentsByState "Running Waiting"] {
+
+	    if {[GlobalState::GetState $site_id $compName] == "Running"} {
+		ComponentManager::KillComponent $site_id $compName
+		after idle after 2000 ComponentManager::StartComponent $site_id $compName
+	    } elseif {[GlobalState::GetState $site_id $compName] == "Waiting"} {
+		after idle after 2000 ComponentManager::KillComponent $site_id $compName
+		after idle after 4000 ComponentManager::StartComponent $site_id $compName
+	    }
+	}
+	return
+    } 
+
+    if {$site_id == "*"} {
+	foreach _site_id [SiteManager::GetSites] {
+
+	    if {[GlobalState::GetState $_site_id $compName] == "Running"} {
+		ComponentManager::KillComponent $_site_id $compName
+		after idle after 2000 ComponentManager::StartComponent $_site_id $compName
+	    } elseif {[GlobalState::GetState $_site_id $compName] == "Waiting"} {
+		after idle after 2000 ComponentManager::KillComponent $_site_id $compName
+		after idle after 4000 ComponentManager::StartComponent $_site_id $compName
+	    }
+	}
+	return
+    }
+
+    if {[GlobalState::GetState $site_id $compName] == "Running"} {
+	ComponentManager::KillComponent $site_id $compName
+	after idle after 2000 ComponentManager::StartComponent $site_id $compName
+    } elseif {[GlobalState::GetState $site_id $compName] == "Waiting"} {
+	after idle after 2000 ComponentManager::KillComponent $site_id $compName
+	after idle after 4000 ComponentManager::StartComponent $site_id $compName
+    } elseif {[GlobalState::GetState $site_id $compName] == "Stopped"} {
+	ComponentManager::StartComponent $site_id $compName
+    }
+}
+
+#---------------------------------------------------------------
+# AdminC::userinfo
+#
+# Invokes the info command over site site_id.
+#---------------------------------------------------------------
+body AdminC::userinfo {site_id} {
+    global ISABEL_Version ISABEL_Release
+
+    set w $toplevel.userinfo
+    
+    if {![winfo exists $w]} {
+	
+	toplevel $w
+	
+	label $w.l -text "Site Information"
+	pack  $w.l -side top 
+	
+	button $w.c -text Close -bd 5 -command "destroy $w" 
+	pack   $w.c -side bottom
+
+	text  $w.t \
+		-yscrollcommand "$w.sb set"
+	pack   $w.t -side left -expand 1 -fill both -padx 2 -pady 5
+
+	scrollbar $w.sb -orient vertical -command "$w.t yview"
+	pack $w.sb -side right -fill y -pady 5
+    }
+
+    $w.t conf -state normal
+
+    $w.t delete 0.0 end
+
+    $w.t tag configure title \
+	-font -adobe-*-bold-r-*-*-20-*-*-*-*-*-*-* \
+	-foreground black
+
+    if {[SiteManager::SiteConnected $site_id]} {
+
+	$w.t insert end "MASTER Information\n" title
+	
+	$w.t insert end "ISABEL version = [session GetMasterInfo isabel_version]\n"
+	$w.t insert end "Service name = [session Activity GetName]\n"
+	$w.t insert end "Service quality = [session GetMasterInfo isaqlty]\n"
+	$w.t insert end "\n"
+
+	$w.t insert end "SITE Information\n" title
+
+	$w.t insert end "Site Role = [SiteManager::GetSiteInfo $site_id tool]\n"
+	$w.t insert end "Site ID = $site_id\n"
+	$w.t insert end "Public name = [SiteManager::GetSiteInfo $site_id name]\n"
+
+	$w.t insert end "\n"
+	$w.t insert end "ISABEL version = [SiteManager::GetSiteInfo $site_id isabelversion]\n"
+	$w.t insert end "ISABEL release = [SiteManager::GetSiteInfo $site_id isabelrelease]\n"
+
+	$w.t insert end "\n"
+
+	$w.t insert end "Network interface = [SiteManager::GetSiteInfo $site_id host]\n"
+
+	$w.t insert end "\n"
+
+	$w.t insert end "Ch Id = [SiteManager::GetSiteInfo $site_id chid]\n"
+	$w.t insert end "SeCo Id = [SiteManager::GetSiteInfo $site_id secoid]\n"
+
+	$w.t insert end "\n"
+
+	$w.t insert end "Connection time = [clock format [SiteManager::GetSiteInfo $site_id connectionTime]]\n"
+
+	$w.t insert end "\n"
+
+	$w.t insert end "Network =\n"
+
+	set ccto   [SiteManager::GetSiteInfo $site_id connectTo]
+	set cctoip [SiteManager::GetSiteInfo $site_id connectToIP]
+	if {$ccto != "" && $ccto != "{}" } {
+	    $w.t insert end "   o Access to isabone network connecting to \"$ccto ($cctoip)\".\n"
+	} else {
+	    $w.t insert end "   o Root isabone node.\n"
+	}
+
+	if {[SiteManager::GetSiteInfo $site_id useMulticast]} {
+	    $w.t insert end "   o Radiate multimedia flows to multicast.\n"
+	    $w.t insert end "     BW = [SiteManager::GetSiteInfo $site_id mcastbw] Kbps.\n"
+	} else {
+	    $w.t insert end "   o Don't radiate multimedia flows to multicast.\n"
+	}
+
+	if {[SiteManager::GetSiteInfo $site_id useFlowserver]} {
+	    $w.t insert end "   o Send and receive multimedia flows to/from the isabone access node.\n"
+	    $w.t insert end "       upBW = [SiteManager::GetSiteInfo $site_id fsupbw] Kbps "
+	    $w.t insert end "     downBW = [SiteManager::GetSiteInfo $site_id fsdownbw] Kbps.\n"
+	} else {
+	    $w.t insert end "   o Don't send and receive multimedia flows to/from the isabone access node.\n"
+	}
+
+	$w.t insert end "\n"
+
+	$w.t insert end "SysInfo = [SiteManager::GetSiteInfo $site_id uname]\n"
+    }
+
+    $w.t conf -state disabled
+}
+
+#---------------------------------------------------------------
+# AdminC::InShowComponents
+#
+# Return 1 if the name component must be shown in the admin window.
+#---------------------------------------------------------------
+body AdminC::InShowComponents {cname} {
+
+
+    set show [session Activity GetResource $cname admin.show 1]
+
+    if {$show == 1} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+
+#---------------------------------------------------------------
+#
+# KeepAlive
+#
+#---------------------------------------------------------------
+
+body AdminC::RefreshKeepAlive {id delay} {
+
+    if {$delay == "0" && $delay == $last_delay} {
+	return
+    }
+ 
+    set last_delay $delay
+
+    WriteTraceMsg "KeepAlive from Master delayed $delay seconds."
+}
+
+#---------------------------------------------------------------
+
+body AdminC::Dump {} {
+
+    puts \n===================================================
+    
+    puts "toplevel = $toplevel"
+
+    puts "selectedAction = $selectedAction($this) "
+    
+    puts "nextCompPos = $nextCompPos"
+    
+    puts "\nsiteIdList = $siteIdList"
+    foreach sk $siteIdList {
+	puts "Site Id $sk:"
+	puts "SITEPOS en state ($sk)"
+	puts "   pos = $sitePos($sk)"
+    }
+
+    puts "\ncompNameList = $compNameList"
+    foreach cname $compNameList {
+	puts "Component $cname:"
+	puts "   pos = $compPos($cname)"
+    }
+    
+    puts ===================================================\n
+}
+
+#---------------------------------------------------------------
+
+

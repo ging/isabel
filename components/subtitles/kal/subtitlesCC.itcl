@@ -1,0 +1,119 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+class SubTitlesComponentClass {
+    inherit Component
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args}
+    public method Cmd {args}
+
+    constructor {} {   
+	Component::constructor SubTitles
+    } {
+    }
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Object that implements the component behaviour
+    private variable subtitlesobj ""
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesComponentClass::destructor {} {
+
+    if {$subtitlesobj != ""} {
+	delete object $subtitlesobj
+	set subtitlesobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesComponentClass::Create {first} {
+
+    set subtitlesobj [SubTitlesC "#auto"]
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesComponentClass::AddMySite {} {
+
+    set _me [SiteManager::MySiteId]
+
+    $subtitlesobj AddSite $_me
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesComponentClass::AddRemoteSite {site_id new} {
+
+    $subtitlesobj AddSite $site_id
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesComponentClass::DelMySite {} {
+
+    set _me [SiteManager::MySiteId]
+
+    $subtitlesobj DelSite $_me
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesComponentClass::DelRemoteSite {site_id} {
+
+    $subtitlesobj DelSite $site_id
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesComponentClass::SetInteractionMode {imname nsec useridlist args} {
+
+}
+
+#---------------------------------------------------------------
+
+body SubTitlesComponentClass::Cmd {args} {
+
+    eval $subtitlesobj $args
+}
+
+#---------------------------------------------------------------
+

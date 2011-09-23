@@ -1,0 +1,44 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+mode4.whatis:      imode
+mode4.scene.name: video
+
+mode4.Audio:       -active 1 \
+                   -setmutes 1
+
+mode4.Video:       -active 1 -layout lmode4
+
+
+mode4.SldFtp:     -active 1 \
+                  -videobwfactor _ISERV_SLDFTP_VF_BW \
+                  -maxbw _ISERV_SLDFTP_FTP_BW
+
+#------------------------------------
+
+Video.layout.lmode4: \
+ {video 320x240+090+064 _ISERV_VID_MODE4_BW} \
+ {video 320x240+584+064 _ISERV_VID_MODE4_BW} \
+ {video 320x240+090+397 _ISERV_VID_MODE4_BW} \
+ {video 320x240+584+397 _ISERV_VID_MODE4_BW} 
+
+#------------------------------------

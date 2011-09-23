@@ -1,0 +1,925 @@
+2004-07-12 21:00 acosta
+
+        * Added IPv6Readme
+        * Added isabel_vnc_reflector.spec
+
+2004-03-10 11:00 acosta
+	
+	* host_connect.c: IPv6 support. Parse_host_info support IPv6 host
+        * host_io.c : Exit on vncserver conexion closed.
+ 
+2003-04-27 02:47  const
+
+	* async_io.c: The aio_mainloop() version which uses select() did
+	not install signal handlers.
+
+2003-04-22 00:20  const
+
+	* README, actions.c, active.c, async_io.c, async_io.h, client_io.h,
+	control.c, decode_hextile.c, decode_tight.c, encode.c, encode.h,
+	encode_tight.c, fbs_files.c, host_connect.h, host_io.c, host_io.h,
+	logging.c, logging.h, reflector.h, rfblib.c, translate.c,
+	translate.h: Version strings changed for version 1.2.4, copyrights
+	updated.
+
+2003-04-17 00:32  const
+
+	* Makefile: Build with speed optimizations by default.
+
+2003-04-17 00:31  const
+
+	* encode_tight.c: Major speed optimization in the CheckSolidTile()
+	function, made after profiling the reflector with many client
+	connections active.
+
+2003-04-10 01:44  const
+
+	* Makefile, client_io.c, region.h, region_more.c: Trying to reduce
+	the number of rectangles in regions before sending updates to
+	clients.
+
+2003-01-11 15:44  const
+
+	* not-connected.pnm: File removed.
+
+2003-01-11 15:44  const
+
+	* README, client_io.c, host_connect.c, main.c, reflector.h,
+	rfblib.h: Version strings changed for the 1.2.3 release, copyright
+	strings updated.
+
+2003-01-11 15:14  const
+
+	* rfblib.h: Removed a non-sense "FIXME" comment.
+
+2003-01-11 15:13  const
+
+	* host_connect.c: Minor cleanup.
+
+2003-01-09 21:35  const
+
+	* client_io.c: Finished full support for CopyRect encoding. Fixed a
+	number of minor issues in client update handling.
+
+2003-01-09 14:47  const
+
+	* rfblib.h: One more "FIXME" comment.
+
+2003-01-09 14:47  const
+
+	* client_io.c: Fixed a logical bug in tracking client update
+	requests -- the reflector could stop sending updates if changes in
+	the framebuffer did not affect the rectangle requested by the
+	client.
+
+2003-01-09 12:41  const
+
+	* client_io.c: Clearing pending CopyRect regions on receiving
+	non-incremental update requests from clients.
+
+2003-01-09 12:25  const
+
+	* client_io.c: Fixes and cleanups in handling of pending client
+	updates.
+
+2003-01-06 13:07  const
+
+	* client_io.c: NewFBSize handling has been improved.
+
+2003-01-06 10:38  const
+
+	* Makefile: Added -L/usr/local/lib to LDFLAGS.
+
+2002-10-11 19:05  const
+
+	* client_io.c: Making sure rectangle dimensions in updates will fit
+	into area requested by clients. Not a fully reliable solution yet,
+	but should work in real-life cases.
+
+2002-10-03 23:25  const
+
+	* client_io.c, client_io.h, host_io.c: First implementation of
+	support for CopyRect encoding in new X regions based architecture.
+
+2002-09-30 12:11  const
+
+	* client_io.c, client_io.h: Fixed NewFBSize handling which was
+	seriously broken after porting X regions code.
+
+2002-09-22 17:40  const
+
+	* decode_tight.c: Fixed a problem with resetting zlib streams on
+	host switching in saved sessions.
+
+2002-09-21 20:08  const
+
+	* decode_tight.c, host_io.c, host_io.h: Bugfix -- zlib streams were
+	not reset between host connections.
+
+2002-09-21 19:43  const
+
+	* Makefile, client_io.c, client_io.h, control.c, decode_hextile.c,
+	decode_tight.c, encode.c, encode_tight.c, host_connect.c,
+	host_io.c, main.c, rect.c, rect.h, region.c, region.h, rfblib.h,
+	translate.c: Ported X region stuff, from miregion.c. This will
+	allow the Reflector to maintain not just a list of rectangles in
+	the same order as received from the host, but an X region structure
+	which consists of non-overlapped rectangles.
+
+2002-09-18 18:01  const
+
+	* README, reflector.h: Version strings changed, version 1.2.2.
+
+2002-09-18 18:01  const
+
+	* decode_hextile.c, decode_tight.c, fbs_files.c, reflector.h: Now
+	Tight-encoded host sessions can be saved in FBS files.	Minor
+	optimization in writing FBS sessions.
+
+2002-09-10 14:59  const
+
+	* README, reflector.h: Version strings changed, version 1.2.1.
+
+2002-09-10 14:42  const
+
+	* encode_tight.c: Decreased JPEG quality factors for low quality
+	levels.
+
+2002-09-10 14:10  const
+
+	* client_io.c: Fixed a bug causing double free() when a client
+	requests change in its pixel format.
+
+2002-09-10 13:58  const
+
+	* encode_tight.c: Fixed a bug with color translation into the
+	24-bit mode in solid-color areas.
+
+2002-09-09 14:35  const
+
+	* LICENSE, README, async_io.c, async_io.h, client_io.c,
+	client_io.h, control.c, decode_hextile.c, decode_tight.c, encode.c,
+	encode.h, fbs_files.c, host_connect.c, host_connect.h, host_io.c,
+	host_io.h, logging.c, logging.h, rect.c, rect.h, reflector.h,
+	rfblib.c, rfblib.h, translate.c, translate.h: Copyright strings
+	updated.
+
+2002-09-09 14:27  const
+
+	* README, reflector.h: Version strings changed, version 1.2.0.
+
+2002-09-09 02:37  const
+
+	* Makefile, README, client_io.c, client_io.h, encode.c, encode.h,
+	encode_tight.c, encode_tight8.c, rect.h, rfblib.h: Implemented
+	fully-functional Tight encoder with JPEG compression.
+
+2002-09-07 13:10  const
+
+	* README, host_connect.c, host_connect.h, main.c: New -t and -T
+	command-line options to enable Tight encoding and to specify
+	compression level. Now the default encoding is Hextile again.
+
+2002-09-04 10:07  const
+
+	* encode.c, encode.h: It was not necessary to make the Hextile
+	cache variables global -- now they're static.
+
+2002-09-04 09:53  const
+
+	* decode_tight.c: Implemented the "gradient" filter in the Tight
+	decoder.  Better error checking.
+
+2002-09-04 09:52  const
+
+	* rfblib.h: Tiny cleanup.
+
+2002-09-04 09:12  const
+
+	* decode_tight.c: Fixed two problems introduced in the previous
+	commit.
+
+2002-09-04 09:09  const
+
+	* decode_tight.c: Implemented checking for errors where necessary.
+	Removed debug output.  Minor optimizations.
+
+2002-09-04 02:57  const
+
+	* Makefile, decode_hextile.c, decode_tight.c, encode_tight8.c,
+	host_connect.c, host_io.c, host_io.h, main.c, rfblib.h,
+	translate.c: Tight decoder has been implemented. Currently it does
+	not handle "gradient"-filtered data correctly, and there is no way
+	to turn it off in favor of Hextile.
+
+2002-09-03 20:16  const
+
+	* Makefile, control.c, decode_hextile.c, fbs_files.c,
+	host_connect.c, host_io.c, host_io.h, main.c, reflector.h: Code
+	reorganization -- Hextile decoder and session saving code were
+	placed into separate files.
+
+2002-09-03 17:59  const
+
+	* actions.h, active.h, control.h: Got rid of three header files.
+
+2002-09-03 17:48  const
+
+	* Makefile, actions.c, active.c, control.c, host_io.c, main.c,
+	reflector.h: Got rid of three header files.
+
+2002-09-02 21:26  const
+
+	* host_connect.c, host_io.c: Support for LastRect pseudo-encoding.
+
+2002-07-30 14:11  const
+
+	* Makefile: Dependencies updated, the link command line fixed to
+	work under Cygwin.
+
+2002-07-26 00:04  const
+
+	* reflector.h: Version numbers changed.
+
+2002-07-25 23:59  const
+
+	* Makefile, README, actions.c, actions.h, active.c, host_io.c,
+	main.c: Implemented new -c option allowing to execute custom
+	commands on events. Currently, the only supported event is
+	`host_activate'.
+
+2002-07-10 22:46  const
+
+	* Makefile, active.c, active.h, host_io.c, main.c: Applied patch
+	from HorizonLive, Inc. to implement new -a option to create
+	specified file during times when a host is connected.
+
+2002-07-05 19:41  const
+
+	* README, host_io.c, host_io.h, main.c, reflector.h: New -j
+	command-line option allowing to save all sessions in one FBS file.
+	This is achieved by appending new data to the end of previous
+	session after an optional NewFBSize message with new desktop
+	dimensions.
+
+2002-06-27 21:40  const
+
+	* host_connect.c: A typo fixed.
+
+2002-03-08 04:04  const
+
+	* README, reflector.h: Version string change, version 1.1.7.
+
+2002-03-08 04:03  const
+
+	* async_io.c: Fixed a bug with re-using revents fields in pollfd
+	structures.
+
+2001-12-07 00:01  const
+
+	* client_io.c: A hack to prevent clipping rectangles after a
+	framebuffer size change.
+
+2001-12-06 02:18  const
+
+	* encode_tight8.c: Bug fixed: Tight encoder did not initialize the
+	encoding-type field in rectangle headers.
+
+2001-12-04 20:15  const
+
+	* README, host_connect.c, main.c: Handling MS-DOS-style
+	end-of-lines in password and host_info files.  Allowing negative
+	display numbers for reflector->host connections.  Minor
+	documentation update.
+
+2001-12-02 14:30  const
+
+	* .cvsignore, README, client_io.c, client_io.h, control.c, d3des.c,
+	encode.c, encode.h, encode_tight8.c, host_connect.c,
+	host_connect.h, host_io.c, host_io.h, main.c, rect.c, rect.h,
+	reflector.h, rfblib.h: Handling of host connections with different
+	geometries improved, support for NewFBSize pseudo-encoding added.
+	NewFBSize allows a server to inform clients about changes in
+	framebuffer size.
+
+2001-10-12 00:14  const
+
+	* README, reflector.h: README extended with brief "About..." note.
+	Version strings changed, version 1.1.5.
+
+2001-10-11 23:50  const
+
+	* translate.c: Cleanups and one more alternative transfunc8
+	implementation to compare performance.
+
+2001-10-11 21:31  const
+
+	* host_io.c: The hextile_fill_subrect function optimized. The
+	result is not impressive but pofiling proves that there is not much
+	space for further optimization.
+
+2001-10-11 19:48  const
+
+	* host_io.c: hextile_fill_tile function optimized for speed.
+	Profiling results for test session: original implementation
+	consumed 66% of all process time when dealing with host connection,
+	optimized version consumes only 20% time. Now this function is the
+	second time consumer in host interaction after hextile_fill_subrect
+	function.
+
+2001-10-11 19:20  const
+
+	* translate.c: Added another variant of the color translation
+	function, which is should be faster in most situation. Profiling
+	showed ~30% speed improvement in color translation to 8-bit BGR233
+	pixel format.
+
+2001-10-11 16:27  const
+
+	* encode.c: The analyze_rectNN functions replaced by better
+	optimized equivalent function from Tight encoder. Profiling shows
+	30..50% speedup for this particular function which was the second
+	time consumer in one-client Hextile sessions.
+
+2001-10-11 15:58  const
+
+	* encode_tight8.c: Numerous minor cleanups in code, Tight's
+	detect_colors function is now equivalent to analyze_rect8 of the
+	Hextile encoder, but better optimized for speed.
+
+2001-10-11 15:56  const
+
+	* encode.c, encode.h, host_connect.c, host_io.c, main.c:
+	xxx_encoders_cache functions renamed to xxx_enc_cache,
+	analyze_rectNN function turned to static again.
+
+2001-10-10 18:43  const
+
+	* README, reflector.h: Version strings changed, version 1.1.4.
+
+2001-10-10 18:18  const
+
+	* encode.c, encode.h: Major changes in structures implementing
+	cache for screen updates. Now the "hints" can hold only meta-data
+	(color info) but Hextile-encoded data may be absent. This design
+	makes the cache more usable for other encoders such as Tight.
+	Besides that, Hextile data is kept in its original form, not in a
+	semi-parsed representation.
+
+2001-10-10 13:36  const
+
+	* encode.c: Minor change in comment.
+
+2001-10-10 13:33  const
+
+	* encode.c, encode.h, host_connect.c, host_io.c, main.c,
+	reflector.h: All the code dealing with caching updates moved to
+	encode.c module.
+
+2001-10-09 22:32  const
+
+	* main.c: Reporting caching statistics more accurately.
+
+2001-10-09 22:22  const
+
+	* encode.c: Got rid of static variable storing background and
+	foreground of current tile.
+
+2001-10-09 21:57  const
+
+	* encode.c: And even more work towards caching re-usable in the
+	Tight encoder.
+
+2001-10-09 21:20  const
+
+	* encode.c: More work towards caching re-usable in the Tight
+	encoder.
+
+2001-10-09 17:34  const
+
+	* encode.c, encode.h: Major re-organization in the Hextile encoder
+	code, to better arrange the code between functions, and to separate
+	caching in the future, to simplify re-using of the caching code by
+	other encoders such as Tight.
+
+2001-10-07 00:58  const
+
+	* encode.c: Code cleanups.
+
+2001-10-05 17:38  const
+
+	* README, reflector.h: Version strings changed, version 1.1.3.
+
+2001-10-05 17:36  const
+
+	* Makefile, async_io.h, client_io.c, client_io.h, control.c,
+	encode.c, encode.h, encode_tight8.c, host_connect.c, host_io.c,
+	logging.c, main.c, rfblib.c, rfblib.h, translate.c: First working
+	version of the BGR233 Tight encoder. Changes to eliminate warnings
+	on gcc -Wall compilation. Improvements and cleanups in encoders'
+	code.
+
+2001-10-02 21:23  const
+
+	* client_io.c, client_io.h, host_io.c, rfblib.h: Supporting
+	clients' requests for Tight encoding and compression levels.
+
+2001-10-02 19:25  const
+
+	* main.c: Printing extra message to stderr on startup is there was
+	no -q option.
+
+2001-10-02 16:59  const
+
+	* README: Formatting changes.
+
+2001-10-02 16:51  const
+
+	* .cvsignore: Ignoring file named "host_info" instead of "passwd".
+
+2001-10-02 16:44  const
+
+	* README, reflector.h: Version strings changed, version 1.1.2.
+
+2001-10-02 16:43  const
+
+	* README, main.c: Printing copyright and advertising banner at
+	startup, can be disabled with -q command-line option.
+
+2001-10-02 16:03  const
+
+	* LICENSE, README, async_io.c, async_io.h, client_io.c,
+	client_io.h, control.c, control.h, d3des.c, d3des.h, encode.c,
+	encode.h, host_connect.c, host_connect.h, host_io.c, host_io.h,
+	logging.c, logging.h, main.c, rect.c, rect.h, reflector.h,
+	rfblib.c, rfblib.h, translate.c, translate.h: Licensing and
+	advertising info added to each source file. BSD-like license
+	included.
+
+2001-09-08 14:49  const
+
+	* reflector.h: Version string changed: 1.1.1.
+
+2001-09-08 14:46  const
+
+	* async_io.c, host_io.c: Preventing situations when read function
+	expects 0 bytes to be read.
+
+2001-08-29 01:16  const
+
+	* README, reflector.h: More docs, version string changed.
+
+2001-08-29 01:11  const
+
+	* async_io.c, async_io.h, main.c: Binding listening sockets to
+	specific IP address.
+
+2001-08-29 00:28  const
+
+	* async_io.c, async_io.h, control.c, host_connect.c,
+	host_connect.h, host_io.c, host_io.h: Reversed host -> client
+	connection. Many fixes of incorrect logic both in async I/O library
+	and in the reflector itself. Now re-connecting code should work
+	much more reliable.
+
+2001-08-27 15:37  const
+
+	* async_io.c, async_io.h: Now async I/O library should be able to
+	listen on more than one fd.  Special listening type of AIO_SLOT
+	introduced. However, external interface with I/O library was not
+	changed.
+
+2001-08-26 22:20  const
+
+	* client_io.c: Clients' pointer events are not passed directly to
+	host any more. Now we make sure that x and y position fit into the
+	host's screen.
+
+2001-08-26 22:09  const
+
+	* client_io.c, encode.c, host_connect.c, host_io.c, translate.c,
+	translate.h: Supporting host connections with different screen
+	sizes. Framebuffer geometry is determined on first host connection.
+
+2001-08-26 21:25  const
+
+	* async_io.c: Marking s_sig_func_set variable "volatile".
+
+2001-08-26 21:15  const
+
+	* host_io.c: Erasing framebuffer after connection to host has been
+	closed.
+
+2001-08-26 21:01  const
+
+	* not-connected.pnm: A picture to draw in the framebuffer when
+	there is no connection to host.
+
+2001-08-26 20:46  const
+
+	* host_connect.c, main.c, reflector.h, rfblib.h: Introducing
+	g_fb_width and g_fb_height global variables to keep actual
+	framebuffer width, to make it possible to support hosts with
+	different screen geometry.
+
+2001-08-26 20:34  const
+
+	* client_io.c, encode.c, host_connect.c, host_io.c, main.c,
+	reflector.h, rfblib.h, translate.c: g_screen_info is allocated
+	statically, only screen name is allocated with malloc(). More
+	debugging output in client_io.c.
+
+2001-08-24 16:15  const
+
+	* client_io.c, reflector.h: Code cleanups: some memcpy calls
+	replaced by structure assignments.  Version string change: 1.0
+	version ready.
+
+2001-08-24 16:12  const
+
+	* rect.c: Code cleanups: some memcpy calls replaced by structure
+	assignments.
+
+2001-08-24 14:57  const
+
+	* client_io.c, client_io.h, rect.c, rect.h: Clipping framebuffer
+	updates to screen areas specified by clients.
+
+2001-08-24 12:55  const
+
+	* Makefile, client_io.c, encode.c, encode.h, host_io.c, main.c,
+	rect.c: Caching hextile-encoded 16x16 tiles.
+
+2001-08-24 07:50  const
+
+	* client_io.c, client_io.h, host_connect.c, main.c, reflector.h:
+	Preparing for implementation of caching hextile-encoded updates.
+	Data structures for BGR233 hextile cache now being allocated. New
+	bgr233_f flag in client I/O slot structure introduced to allow
+	quick checking if BGR233 pixel format is used.
+
+2001-08-24 04:19  const
+
+	* README, host_io.c, host_io.h, main.c: Saving sessions in
+	rfbproxy-compatible FBS files.
+
+2001-08-23 22:24  const
+
+	* README, async_io.c, async_io.h, control.c, host_connect.c,
+	host_connect.h, host_io.c, host_io.h, main.c, reflector.h:
+	Re-connecting to different hosts on SIGUSR1 signal, preserving
+	client connections. Changes in the command line syntax; now
+	hostname, host port and host password are obtained from separate
+	file. Some documentation added.
+
+2001-08-23 18:42  const
+
+	* async_io.c: Minor change in the way custom function list is
+	processed.
+
+2001-08-23 17:52  const
+
+	* Makefile, async_io.c, control.c, control.h, host_connect.c,
+	main.c: Featuring custom signal processing in async I/O library. 
+	Catching SIGHUP signal, disconnecting all clients on it.
+
+2001-08-23 17:06  const
+
+	* Makefile: Corrected dependencies.
+
+2001-08-23 16:27  const
+
+	* host_connect.c, host_io.c, main.c: New option to write pid file,
+	command-line switch -i.
+
+2001-08-23 05:35  const
+
+	* host_connect.c, host_connect.h, host_io.c, host_io.h, main.c:
+	Connecting to host using async I/O library, preparing for
+	implementation of re-connect feature.
+
+2001-08-23 00:53  const
+
+	* Makefile, client_io.c, host_connect.c, rfblib.c, rfblib.h:
+	Auth-related stuff moved to rfblib.c
+
+2001-08-20 18:58  const
+
+	* client_io.c, host_io.c, rect.c, rect.h: CopyRect encoding support
+	on client side.
+
+2001-08-20 17:04  const
+
+	* async_io.c: Correct exit on SIGTERM and SIGINT signals. Now using
+	kill command or Ctrl-C terminates the program correctly, causing it
+	to close all connections and use exit() syscall.
+
+2001-08-20 16:52  const
+
+	* async_io.c, async_io.h: Previous versions of async I/O library
+	used to remember only one hook function supposed to be called after
+	write operation. When several write operations happened, only last
+	hook function had been executed.  This has been fixed now. As a
+	result, ServerCutText messages do not cause client freezes any
+	more.
+
+2001-08-20 16:05  const
+
+	* client_io.c: Minor cleanup.
+
+2001-08-20 01:41  const
+
+	* async_io.c: Forgot to remove debugging code.
+
+2001-08-20 01:38  const
+
+	* Makefile, async_io.c, async_io.h, client_io.c, host_io.c: Now
+	async I/O library can use poll(2) syscall instead of select(2);
+	it's a compile-time option.
+
+2001-08-19 20:56  const
+
+	* Makefile, client_io.c, client_io.h, encode.c, encode.h,
+	host_io.c, main.c, translate.c, translate.h: Fast pixel format
+	translation based on lookup tables. Operating on client pixel
+	format in hextile encoder. Bugfix in the hextile encoder: raw
+	sub-encoding used to destroy background color of previous tile.
+
+2001-08-18 17:44  const
+
+	* Makefile, translate.c, translate.h: Work on fast pixel format
+	translation has been started. Null translation function and
+	functions to fill in translation tables are ready but not tested
+	yet.
+
+2001-08-15 19:20  const
+
+	* client_io.c, client_io.h, host_connect.c, host_connect.h, main.c:
+	Read-only client mode implemented. Password file may contain up to
+	three passwords -- for the host, for normal clients, for read-only
+	clients.
+
+2001-08-11 10:11  const
+
+	* client_io.c, client_io.h: Hextile encoding is used only when a
+	client prefers it to raw.
+
+2001-08-11 09:49  const
+
+	* reflector.h: Version string changed, version 0.8.
+
+2001-08-11 09:49  const
+
+	* client_io.c, encode.c, encode.h: Hextile encoder implemented.
+
+2001-08-11 09:48  const
+
+	* Makefile: A space removed. :-)
+
+2001-08-11 09:47  const
+
+	* rfblib.c, rfblib.h: buf_get_CARD* and buf_put_CARD* functions
+	replaced by macros.
+
+2001-08-08 21:42  const
+
+	* host_connect.c, host_io.c, rfblib.h: Added support for CopyRect
+	encoding on host side.
+
+2001-08-08 19:56  const
+
+	* client_io.c, rect.c, rect.h: Got rid of extra parameter in
+	rlist_add_rect function.
+
+2001-08-08 19:34  const
+
+	* reflector.h: Version string changed: version 0.4.
+
+2001-08-08 19:34  const
+
+	* client_io.c, client_io.h, host_io.c, host_io.h: Passing
+	ClientCutText messages from clients to host.
+
+2001-08-08 18:17  const
+
+	* client_io.c, client_io.h: Properly ignoring FixColourMapEntries
+	message received from clients.
+
+2001-08-08 18:04  const
+
+	* client_io.c: Bugfix: Setting up correct initial pixel format for
+	clients.
+
+2001-08-08 16:52  const
+
+	* client_io.c: Now we disconnect non-authorized clients correctly
+	after sending "auth failed" notification. We used to drop such
+	connections too early.
+
+2001-08-08 16:49  const
+
+	* host_connect.c: Minor changes in log messages text.
+
+2001-08-08 16:48  const
+
+	* async_io.c: Minor bugfix.
+
+2001-08-08 16:36  const
+
+	* client_io.c, client_io.h, host_io.c, main.c: ServerCutText
+	message is now passed from host to clients. If password set for
+	clients is empty, we don't ask for authentication anymore.
+
+2001-08-07 21:00  const
+
+	* client_io.c: Bugfix: we should not queue rectangles for clients
+	that have not passed protocol handshaking phase yet.
+
+2001-08-07 06:30  const
+
+	* host_connect.c, host_io.c, rfblib.h: Hextile decoder implemented
+	to get hextile-encoded data from host.
+
+2001-08-05 05:25  const
+
+	* client_io.c: Log levels corrected.
+
+2001-08-05 05:23  const
+
+	* Makefile, client_io.c, host_io.c, host_io.h: Pointer and keyboard
+	events are now passed to the host.
+
+2001-08-05 05:06  const
+
+	* reflector.h: Version string changed.
+
+2001-08-05 05:06  const
+
+	* client_io.c, client_io.h: Now we respect FramebufferUpdateRequest
+	messages asking for non-incremental update.
+
+2001-08-05 04:58  const
+
+	* Makefile, async_io.c, async_io.h, client_io.c, client_io.h,
+	encode.c, encode.h, host_io.c, main.c, rect.c, rect.h: Incremental
+	updates for clients implemented.
+
+2001-08-05 00:32  const
+
+	* Makefile: Dependencies.
+
+2001-08-05 00:29  const
+
+	* Makefile, client_io.c, client_io.h, encode.c, encode.h,
+	host_connect.c, host_io.c, rfblib.h: Correct processing of
+	FramebufferUpdateRequest client messages, better way to send
+	FramebufferUpdate messages, correct color translation, improved I/O
+	error handling, a number of code cleanups.
+
+2001-08-05 00:25  const
+
+	* async_io.c, async_io.h: New aio_write_nocopy function to queue
+	output data without copying it into newly-allocated memory.
+
+2001-08-04 19:43  const
+
+	* Makefile: Using gccmakedep as makedepend.
+
+2001-08-04 19:26  const
+
+	* async_io.c: Disabling exit on SIGPIPE signal.
+
+2001-08-03 20:06  const
+
+	* Makefile, client_io.c, client_io.h, host_connect.c,
+	host_connect.h, host_io.c, main.c, reflector.h, rfblib.c, rfblib.h:
+	Finally, now we send framebuffer updates to clients. Currently,
+	this is done in a _very_ inefficient way, full raw framebuffer is
+	sent after each update request. Color format translation does not
+	work yet.  Anyway, this is the first version where remote screen
+	can be seen.
+
+2001-08-03 14:34  const
+
+	* Makefile, client_io.c, client_io.h, main.c: New CL_SLOT structure
+	extends AIO_SLOT to keep client state for each client connection.
+
+2001-08-03 13:52  const
+
+	* async_io.c, async_io.h, client_io.c, host_io.c, main.c: Now
+	clients' IP addresses are kept in I/O slot structure, in text form,
+	and reported to logs in messages caused by client connections.
+
+2001-08-03 02:50  const
+
+	* async_io.c, async_io.h, client_io.c, host_io.c, main.c: Finally,
+	we can watch for errors on connections and can close connections
+	correctly on errors or on intention.
+
+2001-08-02 23:50  const
+
+	* main.c: Minor cleanups.
+
+2001-08-02 23:47  const
+
+	* Makefile, client_io.c, client_io.h, main.c: More client
+	interaction implemented, at this moment up to authentication and
+	receiving ClientInitialisation message.
+
+2001-08-02 22:54  const
+
+	* main.c: New -v option to set log verbosity level, option -f now
+	requires argument, also verbosity level, but for stderr messages.
+
+2001-08-02 22:33  const
+
+	* Makefile, async_io.c, async_io.h, client_io.c, client_io.h,
+	main.c: Now we successfully accept client connections and are able
+	to read RFB versions clients require.
+
+2001-08-02 20:37  const
+
+	* host_io.c: Now we understand and process correctly all 4 types of
+	RFB server-to-client messages.
+
+2001-08-02 19:18  const
+
+	* main.c: Switching to the background mode when there was no -f
+	option.
+
+2001-08-02 18:53  const
+
+	* host_io.c, main.c, rfblib.h: Raw-encoded framebuffer updates now
+	should place pixels in correct areas of the local framebuffer.
+
+2001-08-02 18:23  const
+
+	* Makefile, host_connect.c, host_connect.h, hostconnect.c,
+	hostconnect.h, main.c: hostconnect.* renamed into host_connect.*
+
+2001-08-02 18:15  const
+
+	* .cvsignore: Putting .cvsignore under the CVS control. :-)
+
+2001-08-02 18:13  const
+
+	* Makefile, async_io.c, async_io.h, dispatch.c, dispatch.h,
+	host_io.c, host_io.h, hostconnect.c, main.c: Async I/O library
+	implementation seems to work now, the program is able to receive
+	framebuffer updates from host using new I/O stuff. The code from
+	dispatch.c has been split into async_io.c and host_io.c, old
+	dispatch.c is obsolete, removed from sources.
+
+2001-08-02 16:35  const
+
+	* dispatch.c: Correction in a format string for log_write().
+
+2001-08-02 02:55  const
+
+	* async_io.c, async_io.h: Async I/O library implementation, not
+	finished yet.
+
+2001-08-01 23:06  const
+
+	* Makefile, dispatch.c, hostconnect.c, rfblib.c, rfblib.h: Ok, now
+	the program is able to receive framebuffer updates continuously in
+	non-blocking mode. Note: the code in dispatch is far from being
+	ideal, it should have been re-organized and unified.
+
+2001-08-01 18:49  const
+
+	* Makefile, dispatch.c, dispatch.h, main.c, reflector.h: Added
+	dispatch.h, dispatch.c.
+
+2001-08-01 18:35  const
+
+	* Makefile: Dependency information included, only dependencies
+	within current directory.
+
+2001-08-01 18:32  const
+
+	* main.c, reflector.h: Allocating framebuffer.	Configuration
+	options made local to main.c.  read_pasword_file() now always
+	returns 1.  Error on log_close() is reported on stderr only in
+	foreground mode.
+
+2001-08-01 18:29  const
+
+	* rfblib.h: bytes_row member added to RFB_DESKTOP_INFO structure.
+
+2001-08-01 18:18  const
+
+	* Makefile: Dependency information made with makedepend removed.
+
+2001-08-01 11:58  const
+
+	* Makefile, d3des.c, d3des.h, hostconnect.c, hostconnect.h,
+	logging.c, logging.h, main.c, reflector.h, rfblib.h: Initial
+	revision
+
+2001-08-01 11:58  const
+
+	* Makefile, d3des.c, d3des.h, hostconnect.c, hostconnect.h,
+	logging.c, logging.h, main.c, reflector.h, rfblib.h: Sources placed
+	into CVS tree
+

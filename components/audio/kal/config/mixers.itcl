@@ -1,0 +1,268 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#------------------------------------------------------------
+# Create a frame to pack the alsamixer, gamix, etc. launch buttons
+#------------------------------------------------------------
+
+class AudioMixerConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    constructor {w} {}
+
+    destructor {}
+
+    # Build the gui.
+    public method MakeGui {}
+
+    # Methods to launch alsamixer and gamix
+    public method LaunchGnomeVolumeControl {}
+    public method LaunchAlsamixer {}
+    public method LaunchGamix {}
+
+    # Callback to execute when alsamixer, gamix, etc. die.
+    public method QuitGnomeVolCtrlCB {}
+    public method QuitAlsamixerCB {}
+    public method QuitGamixCB {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # root widget
+    private variable wroot
+
+    # ExternalC objects created to launch alsamixer, gamix, etc.
+    private variable gnomevolctrlExtObj
+    private variable alsamixerExtObj
+    private variable gamixExtObj
+
+    # control display
+    private variable display
+
+    # Check if the commands alsamixer and gamix are available
+    # in order to enable or diable de menu entries.
+    private method UpdateState {}
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::constructor {w} {
+
+    set wroot $w
+
+    set display [session Environ cget -audio_ctrl_display]
+
+    set alsamixerExtObj ""
+    set gamixExtObj ""
+    set gnomevolctrlExtObj ""
+
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::MakeGui {} {
+    global env
+
+
+    frame $wroot -relief sunken -bd 1
+
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+
+    #-------------
+
+    button $wroot.gvc \
+	-text "gnome-volume-control" \
+	-pady 1 \
+	-command [code $this LaunchGnomeVolumeControl]
+    balloon add $wroot.gvc "Launch gnome-volume-control" 
+
+    button $wroot.am \
+	-text "alsamixer" \
+	-pady 1 \
+	-command [code $this LaunchAlsamixer]
+    balloon add $wroot.am "Launch alsamixer" 
+
+    button $wroot.g \
+	-text "gamix"     \
+	-pady 1 \
+	-command [code $this LaunchGamix]
+    balloon add $wroot.g "Launch gamix" 
+
+    label $wroot.help \
+	-relief flat \
+	-justify left \
+	-font $font \
+	-text "Launch an audio configurator."
+	
+
+    #--
+
+    grid $wroot.am  -row 0 -column 0 -sticky we
+    grid $wroot.g   -row 1 -column 0 -sticky we
+    grid $wroot.gvc -row 2 -column 0 -sticky we
+
+    grid $wroot.help   -row 1 -column 1 -pady 1 -ipadx 6 -sticky w
+    
+    grid columnconfigure $wroot 1 -weight 1
+    #grid rowconfigure    $wroot 1 -weight 1
+
+    #-------------
+
+    bind $wroot <Map> "+[code $this UpdateState]"
+    bind $wroot <Destroy> "delete object $this"
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::destructor {} {
+
+    if {[winfo exists $wroot]} {
+        bind $wroot <Destroy> ""
+        destroy $wroot
+    }
+
+    catch {delete object $alsamixerExtObj}
+    catch {delete object $gamixExtObj}
+    catch {delete object $gnomevolctrlExtObj}
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::UpdateState {} {
+
+    if {[catch {exec which gnome-volume-control}]} {
+	$wroot.gvc configure -state disabled
+    } else {
+	$wroot.gvc configure -state normal
+    }
+
+    if {[catch {exec which alsamixer}]} {
+	$wroot.am configure -state disabled
+    } else {
+	$wroot.am configure -state normal
+    }
+
+    if {[catch {exec which gamix}]} {
+	$wroot.g configure -state disabled
+    } else {
+	$wroot.g configure -state normal
+    }
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::LaunchGnomeVolumeControl {} {
+
+    if {$gnomevolctrlExtObj != ""} {
+	return
+    }
+
+    set quitcb [code $this QuitGnomeVolCtrlCB]
+    set cmd "sh -c \"DISPLAY=$display gnome-volume-control\""
+    set gnomevolctrlExtObj [ExternalC #auto gnome-volume-control $cmd $quitcb]
+
+    if {[catch {$gnomevolctrlExtObj Start pid} errmsg]} {
+	ErrorTraceMsg "Trying to launch \"gnome-volume-control\", I get:\n$errmsg"
+	catch {delete object $gnomevolctrlExtObj} 
+	set gnomevolctrlExtObj ""
+    }
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::LaunchAlsamixer {} {
+
+    if {$alsamixerExtObj != ""} {
+	return
+    }
+
+    set _cap_device [AudioDeviceSelectorC::GetCurrentCaptureDevice]
+
+    set quitcb [code $this QuitAlsamixerCB]
+    set cmd "xterm -T alsamixer -geometry +100+200 -display $display -e alsamixer -V all -c $_cap_device"
+    set alsamixerExtObj [ExternalC #auto alsamixer $cmd $quitcb]
+
+    if {[catch {$alsamixerExtObj Start pid} errmsg]} {
+	ErrorTraceMsg "Trying to launch \"alsamixer\", I get:\n$errmsg"
+	catch {delete object $alsamixerExtObj} 
+	set alsamixerExtObj ""
+    }
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::LaunchGamix {} {
+
+    if {$gamixExtObj != ""} {
+	return
+    }
+
+    set quitcb [code $this QuitGamixCB]
+    set cmd "sh -c \"DISPLAY=$display gamix\""
+    set gamixExtObj [ExternalC #auto gamix $cmd $quitcb gamix]
+
+    if {[catch {$gamixExtObj Start pid} errmsg]} {
+	ErrorTraceMsg "Trying to launch \"gamix\", I get:\n$errmsg"
+	catch {delete object $gamixExtObj} 
+	set gamixExtObj ""
+    }
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::QuitGnomeVolCtrlCB {} {
+
+    set gnomevolctrlExtObj ""
+
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::QuitAlsamixerCB {} {
+
+    set alsamixerExtObj ""
+
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::QuitGamixCB {} {
+
+    set gamixExtObj ""
+
+}
+
+#------------------------------------------------------------
+
+
+
+
+
+
+
+

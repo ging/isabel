@@ -1,0 +1,13 @@
+#!/bin/sh
+
+
+echo "Stopping Isabel services: ..."
+
+/usr/bin/pkill -f app.isabel.Server || true > /dev/null 2>&1
+/usr/bin/pkill -f NetworkManagerServer  || true > /dev/null 2>&1
+
+/usr/local/isabel/bin/isabel_openvpn clean_up || true > /dev/null 2>&1
+
+/usr/bin/killall -q isabel_openvpn
+
+echo "Stopping Isabel services: Done"

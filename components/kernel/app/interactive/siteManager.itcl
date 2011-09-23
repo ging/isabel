@@ -1,0 +1,453 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# siteManager.itcl
+#
+# Defines the SiteManager class.
+#
+#########################################################################
+
+
+class SiteManager {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Send a SiteConnection request to the master.
+    public proc SiteConnection {} 
+
+    # This method is called from the master to inform the interactive site
+    # about the connection requested
+    # if chid is -1, there's an error message (errmsg)
+    # if chid != -1, sets the variable "myChId" in the just connected user.
+    public proc SiteResponse {siteId chid {errmsg ""}} 
+    
+    # Send a SiteDisconnection request to the registrator.
+    public proc SiteDisconnection {site_id {endmsg ""}}
+
+    # Returns the list with the site_id of the connected sites.
+    public proc GetSites {}
+
+    # Returns 0 if the site is not in the list of the connected sites.
+    # If the site is connected, returns 1
+    public proc SiteConnected {site_id}
+
+    # Gets information from the SiteInfoC class
+    public proc GetSiteInfo {site_id what}
+    
+    # Returns my chid
+    public proc MyChId {} 
+
+    # Returns my site_id
+    public proc MySiteId {} 
+
+    #- CallBacks Handling
+
+    # Sets a callback to be executed when a site connects 
+    # $op must be a CBManagerC method name. 
+    # When the callbacks are executed, the site_id of the site is added as argument.
+    public proc ConnectionCB {op cb}
+
+    # Sets a callback to be executed when a site disconnects
+    # $op must be a CBManagerC method name. 
+    # When the callbacks are executed, the site_id of the site is added as argument.
+    public proc DisconnectionCB {op cb}
+
+
+    # 4.12
+    # State about connected sites.
+    public proc ConnectedSitesState {args}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # list of the site_id of the connected sites.
+    private common connectedSites ""
+    
+     # $siteobj($site_id) is the object with the information of the given site.
+    private common siteobj    
+
+    # CB objects
+    private common UMConnectionCB    ""
+    private common UMDisconnectionCB ""
+
+    # my chid
+    private common myChId ""
+
+    # my site_id
+    private common mySiteId ""
+
+    # Set all the variables associated with a new user connection.
+    private proc DeclareUser {tool userid site_id isabelversion isabelrelease master host secoid \
+	    name connectTo connectToIP useMulticast mcastbw useFlowserver fsupbw fsdownbw uname \
+            connectionTime} 
+
+    # Checks if the myChId variable has been modified
+    private proc CheckMyChId {}
+
+    # Delete an existing site
+    private proc DelSite {siteid}
+
+    # To update the variables when site $site_id disconnects.
+    private proc SetSiteDisconnectionValues {site_id endmsg} 
+
+    # Send a ping with my ping key (site-$site_id) to the KeepAlive center 
+    # of the master, in order to reset the timeout.
+    private proc SiteKeepAlivePing {key} 
+
+    # Master doesn't respond and the keepalive will disconnect me.
+    private proc MasterNoRespond {}
+}
+
+#-----------------------------------------------------------------
+
+body SiteManager::SiteConnection {} {
+    global ISABEL_WORKDIR env
+    global ISABEL_Version ISABEL_Release
+
+    set site_id_setup [session Environ cget -site_id]
+    
+    if {[regsub -all {[^-a-zA-Z0-9]} $site_id_setup {_} newsite_id] != 0} {
+	set emsg1 "Invalid Site ID specified in Setup: (\"$site_id_setup\")."
+	set emsg2 "Site ID valid characters are: a-z, A-Z, 0-9, - and _."
+	set emsg3 "Then, \"$site_id_setup\" has been replaced by \"$newsite_id\"."
+	ErrorTraceMsg "$emsg1 $emsg2 $emsg3"
+	
+	set mySiteId $newsite_id
+    } else {
+	set mySiteId $site_id_setup
+    }
+    
+    network MasterRequest UM SiteConnection \
+	[session Environ cget -role] \
+        $ISABEL_Version \
+	$ISABEL_Release \
+	[session Environ cget -password] \
+	$mySiteId \
+	[session Environ cget -is_master] \
+	[session Environ cget -hostname] \
+	[session Environ cget -public_name] \
+	[network WhoAmI] \
+	[session Environ cget -connect_to] \
+	[session Environ cget -connect_to_ip] \
+	[session Environ cget -use_multicast] \
+	[session Environ cget -mcast_bw] \
+	[session Environ cget -use_flowserver] \
+	[session Environ cget -fs_upbw] \
+	[session Environ cget -fs_downbw] \
+	Linux 
+    
+    after 60000 [code CheckMyChId]
+    vwait [scope myChId]
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::CheckMyChId {} {
+    if {[MyChId] == ""} {
+	ErrorMsgC #auto close -grab \
+                "Error:" "Server connection timeout."
+	exit 1
+    }
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::SiteResponse {siteId chid {errmsg ""}} {
+
+    if {$mySiteId != $siteId} return
+ 
+    if {$chid == -1} {
+	ErrorTraceMsg $errmsg
+	ErrorMsgC "#auto" close -grab -timeout 20000 $errmsg
+	exit 1
+    }
+
+    set myChId $chid
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::SiteKeepAlivePing {key} {
+
+    network MasterRequest XS KeepAlive Ping $key
+    after 10000 [code SiteKeepAlivePing $key]
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::DeclareUser {tool userid site_id isabelversion isabelrelease master host \
+				   secoid name connectTo connectToIP useMulticast mcastbw useFlowserver fsupbw fsdownbw uname connectionTime} {
+    
+    if {[lsearch -exact $connectedSites $site_id] != -1} return
+
+    DebugTraceMsg "- Declaring User: $site_id - $name ($host $userid)" 1
+
+    lappend connectedSites $site_id
+
+    set siteobj($site_id) [SiteInfoC "#auto" $tool $userid $site_id $isabelversion $isabelrelease $master $host \
+	    $secoid $name \
+	    $connectTo $connectToIP $useMulticast $mcastbw $useFlowserver $fsupbw $fsdownbw $uname $connectionTime]
+
+
+    GlobalState::RegisterSite $site_id
+
+    if {$userid == $myChId} {
+	interface UpdateUserActionButtons
+	interface UpdateMenuitemsMenu
+	# Create the actions frame in the Admin window
+	interface Admin actions  
+
+	if {[info exists env(ISABEL_KEEPALIVE_TIMEOUT)]} {
+	    set _ka_timeout $env(ISABEL_KEEPALIVE_TIMEOUT)
+	} else {
+	    set _ka_timeout 60
+	}
+
+	services KeepAlive Add Master [code MasterNoRespond] $_ka_timeout "interface Admin RefreshKeepAlive"
+	
+	SiteKeepAlivePing site-$site_id
+    }
+
+    if {$UMConnectionCB != ""} {
+	$UMConnectionCB Exec $site_id
+    }
+
+    if {$userid == $myChId} {
+	ComponentManager::StartAllComponents $site_id
+    }
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::MasterNoRespond {} {
+
+    ErrorTraceMsg "- Master (or access point) does not respond."
+    
+    AtExit::ExitMsg 1 Warning "ISABEL Master (or access point) does not respond." \
+	    "Closing Session."
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::SiteDisconnection {site_id {endmsg ""}} {
+
+   network MasterRequest UM SiteDisconnection $site_id $endmsg
+
+   if {[MySiteId] == $site_id} {
+       after 5000 [code SiteManager::SetSiteDisconnectionValues $site_id $endmsg]
+   }
+}
+
+#---------------------------------------------------------------
+
+body SiteManager::SetSiteDisconnectionValues {site_id endmsg} {
+
+    set userid [SiteManager::GetSiteInfo $site_id chid]
+    
+    if {![SiteConnected $site_id]} return
+
+    # If I am $userid then I exit.
+    if {[MyChId] == $userid} {
+	delete object network
+	AtExit::Exit 0
+    }
+    DebugTraceMsg "- SiteDisconnection $site_id" 1
+
+    foreach c [GlobalState::GetComponentsByState $site_id "Disabled Stopped Waiting Running"] {
+	GlobalState::RemoveComponent $c $site_id
+    }
+    
+    DelSite $site_id
+    # Remove the ping entry
+    # DeletePingEntry [SiteManager::GetRpc $userid]
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::DelSite {siteid} {
+
+    set userid [GetSiteInfo $siteid chid]
+
+    set connectedSites [ldelete $connectedSites $siteid]
+
+    if {$UMDisconnectionCB != ""} {
+	$UMDisconnectionCB Exec $siteid
+    }
+
+    delete object $siteobj($siteid)
+    unset siteobj($siteid)
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::ConnectionCB {op cb} {
+
+    if {$UMConnectionCB == ""} {
+	set UMConnectionCB [CBManagerC #auto]
+    }
+    $UMConnectionCB $op $cb
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::DisconnectionCB {op cb} {
+
+    if {$UMDisconnectionCB == ""} {
+	set UMDisconnectionCB [CBManagerC #auto]
+    }
+    $UMDisconnectionCB $op $cb
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::SiteConnected {site_id} {
+
+    if {[lsearch -exact $connectedSites $site_id] != -1} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::GetSites {} {
+
+    return $connectedSites
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::GetSiteInfo {site_id what} {
+
+    if { ! [info exists siteobj($site_id)]} {
+	return ""
+    }
+
+    return [$siteobj($site_id) cget -$what]
+}
+
+
+#------------------------------------------------------------------
+
+body SiteManager::MyChId {} {
+
+    return $myChId
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::MySiteId {} {
+
+    return $mySiteId
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::ConnectedSitesState {args} {
+
+    # The new $connected value 
+    set _new_connectedSites ""
+    
+    foreach _site $args {
+
+	set _tool        [lindex $_site 0]
+        set _chid        [lindex $_site 1]
+	set _site_id     [lindex $_site 2]
+	set _version     [lindex $_site 3]
+	set _release     [lindex $_site 4]
+	set _master      [lindex $_site 5]
+	set _host        [lindex $_site 6]
+	set _secoid      [lindex $_site 7]
+	set _name        [lindex $_site 8]
+	set _ccto        [lindex $_site 9]
+	set _cctoip      [lindex $_site 10]
+	set _mcast       [lindex $_site 11]
+	set _mcastbw     [lindex $_site 12]
+	set _fs          [lindex $_site 13]
+	set _fsupbw      [lindex $_site 14]
+	set _fsdownbw    [lindex $_site 15]
+	set _uname       [lindex $_site 16]
+	set _cctime      [lindex $_site 17]
+	set _comp_states [lindex $_site 18]
+	
+	if {[lsearch -exact $connectedSites $_site_id] == -1} {
+	    # It is a new connected site.
+	    lappend _new_connectedSites $_site_id
+
+	    DeclareUser $_tool $_chid $_site_id \
+		$_version $_release \
+		$_master \
+		$_host $_secoid \
+		$_name $_ccto $_cctoip \
+		$_mcast $_mcastbw \
+		$_fs $_fsupbw $_fsdownbw \
+		$_uname \
+		$_cctime
+
+	    ComponentManager::UpdateComponentStates $_site_id $_comp_states
+
+	} elseif {[$siteobj($_site_id) cget -connectionTime] != $_cctime} {
+	    # This site was disconnected and it has reconnected again
+	    
+	    lappend _new_connectedSites $_site_id
+	    
+	    SetSiteDisconnectionValues $_site_id "Reconnection"
+
+	    DeclareUser $_tool $_chid $_site_id \
+		$_version $_release \
+		$_master \
+		$_host $_secoid \
+		$_name $_ccto $_cctoip \
+		$_mcast $_mcastbw \
+		$_fs $_fsupbw $_fsdownbw \
+		$_uname \
+		$_cctime
+
+	    ComponentManager::UpdateComponentStates $_site_id $_comp_states
+
+	} else {
+	    # This site is still connected.
+	    lappend _new_connectedSites $_site_id
+
+	    ComponentManager::UpdateComponentStates $_site_id $_comp_states
+	}
+    }
+
+    # Look for disconnected sites:
+    foreach _site_id $connectedSites {
+	if {[lsearch -exact $_new_connectedSites $_site_id] == -1} {
+	    # $_site_id site has disconnected.
+
+	    ComponentManager::UpdateComponentStates $_site_id ""
+
+	    SetSiteDisconnectionValues $_site_id "$_site_id left the session."
+	}
+    }
+}
+
+#------------------------------------------------------------------

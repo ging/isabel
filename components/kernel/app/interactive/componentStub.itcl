@@ -1,0 +1,215 @@
+
+#########################################################################
+#
+# componentStub.itcl
+#
+# (C) Copyright 1993-99. Dpto Ingenieria Sistemas Telematicos UPM Spain
+# Dec 31, 1999 Transfered to Agora Systems S.A.     
+# (C) Copyright 2000. Agora Systems S.A.     
+#
+# Defines the ComponentStubC class.
+#
+#########################################################################
+
+class ComponentStubC {
+    
+    # Identifies the Component
+    private variable name
+
+    # ExternalC object created to execute the component.
+    private variable cobj ""
+
+    constructor {name_} {}
+    destructor {}
+
+    # Starts the component. 
+    # This method calls Create, and wait for it finishes. If Create returns 0, then
+    # a StartSuccessfull mesage is sent to master, else a KillComponent message is sent.
+    # $first is 1 if this is the first created instance of the component, 
+    # else 0.
+    public method Start {first} 
+
+    # Method which is called to inform me about other site running this component.
+    # $site_id is the identifier of the remote site running the component too.
+    # $new is a boolean value (1|0) which indicates if $site_id is a new site, i.e.:
+    #     * if $new is 1 then $site_id is a new site. He has just connected to the component.
+    #     * if $new is 0 then $site_id is an old site. He was already connected to the
+    #       component.
+    # Then, this method with be called with "new" equal to 1 for new sites, and will be
+    # called with "new" equal to 0 for sites already running the component.
+    # It is an abstract method.
+    public method AddRemoteSite {site_id new}
+
+    # Method called when I am created successfully.
+    # It is an abstract method.
+    public method AddMySite {}
+
+    # Method which is called when a remote site leaves the component.
+    # It is an abstract method.
+    public method DelRemoteSite {site_id}
+
+    # Method which is called I left the component.
+    # It is an abstract method.
+    public method DelMySite {}
+
+    # Method which is called I must quit the component.
+    # It is an abstract method.
+    public method ExitComponent {}
+
+    # Do nothing.
+    public method Nop {} {}
+
+    # Auxiliar method used by Start
+    private method Start_ {first}
+
+    # Auxiliar method used by Start
+    # It is an abstract method.
+    private method Create {first}
+
+    # Sends the "$args" message/command to the $cname component.
+    # The component must be joined to the "local_isabel_comp_$cname" SeCo local group.
+    public proc SendCmd {cname args}
+}
+
+#------------------------------------------------
+
+body ComponentStubC::constructor {_name} {
+
+    set name $_name
+}
+
+#------------------------------------------------
+
+body ComponentStubC::destructor {} {
+
+    if {$cobj != ""} {
+	delete object $cobj
+	set cobj ""
+    }
+}
+
+#------------------------------------------------
+
+body ComponentStubC::Start {first} {
+    after idle [code $this Start_ $first]
+}
+
+#------------------------------------------------
+
+body ComponentStubC::Start_ {first} {
+    
+    if {[catch {Create $first} res] == 0} {
+	if {$res == -1} {
+	    DebugTraceMsg "Error creating component $name, Create returns -1." 1
+	    ComponentManager::KillComponent [SiteManager::MySiteId] $name
+	    return
+	}
+    } else {
+	ErrorTraceMsg "Creating component $name :\n$res"
+	ComponentManager::KillComponent [SiteManager::MySiteId] $name	    
+	return
+    }
+}
+
+#------------------------------------------------
+
+body ComponentStubC::Create {first} {
+    global ISABEL_DIR env
+
+    set _my_siteid [SiteManager::MySiteId]
+    set _my_chid   [SiteManager::GetSiteInfo $_my_siteid chid]
+
+    set _quit_cb "ComponentManager::KillComponent $_my_siteid $name"
+
+    set _cmd "[session Environ cget -tcl] $ISABEL_DIR/lib/isatcl/isacomp_$name $name $_my_chid $_my_siteid $first >> $env(ISABEL_SESSION_LOGS_DIR)/isacomp_$name.log"
+
+    set cobj [ExternalC "#auto" $name $_cmd $_quit_cb]
+    
+    $cobj Start pid
+}
+
+#------------------------------------------------
+
+body ComponentStubC::SendCmd {cname args} {
+    
+    set _group local_isabel_comp_$cname
+    
+    network RDOLocalGroup $_group $args
+}
+
+#------------------------------------------------
+
+body ComponentStubC::AddRemoteSite {site_id new} {
+
+    SendCmd $name CAL AddRemoteSite \
+	[SiteManager::GetSiteInfo $site_id chid] \
+	$new \
+	[SiteManager::GetSiteInfo $site_id tool] \
+	$site_id \
+	[SiteManager::GetSiteInfo $site_id isabelversion] \
+	[SiteManager::GetSiteInfo $site_id isabelrelease] \
+	[SiteManager::GetSiteInfo $site_id master] \
+	[SiteManager::GetSiteInfo $site_id host] \
+	[SiteManager::GetSiteInfo $site_id secoid] \
+	[SiteManager::GetSiteInfo $site_id name] \
+	[SiteManager::GetSiteInfo $site_id connectTo] \
+	[SiteManager::GetSiteInfo $site_id connectToIP] \
+	[SiteManager::GetSiteInfo $site_id useMulticast] \
+	[SiteManager::GetSiteInfo $site_id mcastbw] \
+	[SiteManager::GetSiteInfo $site_id useFlowserver] \
+	[SiteManager::GetSiteInfo $site_id fsupbw] \
+	[SiteManager::GetSiteInfo $site_id fsdownbw] \
+	[SiteManager::GetSiteInfo $site_id uname] \
+	[SiteManager::GetSiteInfo $site_id connectionTime]
+}
+
+#------------------------------------------------
+
+body ComponentStubC::AddMySite {} {
+
+    set _mysite_id [SiteManager::MySiteId]
+
+    SendCmd $name CAL AddMySite \
+	[SiteManager::GetSiteInfo $_mysite_id chid] \
+	[SiteManager::GetSiteInfo $_mysite_id tool] \
+	$_mysite_id \
+	[SiteManager::GetSiteInfo $_mysite_id isabelversion] \
+	[SiteManager::GetSiteInfo $_mysite_id isabelrelease] \
+	[SiteManager::GetSiteInfo $_mysite_id master] \
+	[SiteManager::GetSiteInfo $_mysite_id host] \
+	[SiteManager::GetSiteInfo $_mysite_id secoid] \
+	[SiteManager::GetSiteInfo $_mysite_id name] \
+	[SiteManager::GetSiteInfo $_mysite_id connectTo] \
+	[SiteManager::GetSiteInfo $_mysite_id connectToIP] \
+	[SiteManager::GetSiteInfo $_mysite_id useMulticast] \
+	[SiteManager::GetSiteInfo $_mysite_id mcastbw] \
+	[SiteManager::GetSiteInfo $_mysite_id useFlowserver] \
+	[SiteManager::GetSiteInfo $_mysite_id fsupbw] \
+	[SiteManager::GetSiteInfo $_mysite_id fsdownbw] \
+	[SiteManager::GetSiteInfo $_mysite_id uname] \
+	[SiteManager::GetSiteInfo $_mysite_id connectionTime]
+}
+
+#------------------------------------------------
+
+body ComponentStubC::DelRemoteSite {site_id} {
+
+    SendCmd $name CAL DelRemoteSite $site_id
+}
+
+#------------------------------------------------
+
+body ComponentStubC::DelMySite {} {
+
+    SendCmd $name CAL DelMySite
+}
+
+#------------------------------------------------
+
+body ComponentStubC::ExitComponent {} {
+
+    SendCmd $name CAL ExitComponent
+}
+
+#---------------------------------------------------------------
+

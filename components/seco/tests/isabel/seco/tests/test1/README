@@ -1,0 +1,4 @@
+Prueba muy sencilla del funcionamiento del SeCo
+Lanza dos clientes de Seco uno pregunta por la suma de
+dos numeros y el otro le envia la respuesta
+Tiene que estar lanzado un SeCo para que funcione, después ejecutar el archivo startTest1.sh

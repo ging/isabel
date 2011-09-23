@@ -1,0 +1,388 @@
+#! /bin/bash
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------------------
+# isabel directory.
+#-----------------------------------------------------
+if [ -z "$ISABEL_DIR" ] ; then
+  ISABEL_DIR=/usr/local/isabel
+  export ISABEL_DIR
+fi
+
+#-----------------------------------------------------
+# isabel common code
+#-----------------------------------------------------
+. $ISABEL_DIR/bin/isabel.common.sh
+
+#-----------------------------------------------------
+# isabel environment variables
+#-----------------------------------------------------
+. $ISABEL_DIR/bin/isabel.environ.sh
+
+
+#-----------------------------------------------------
+# Checking that a license file exists.
+#-----------------------------------------------------
+if [ ! -f $ISABEL_USER_DIR/license ] ; then
+   $ISABEL_TCL $ISABEL_DIR/lib/isatcl/isabel_register -gotoagree -geometry 750x600+100+50
+   if [ "$?" = "1" ] ; then
+      exit "$?"
+   fi
+fi
+
+
+#-----------------------------------------------------
+# Command line options.
+#-----------------------------------------------------
+if [ "$#" != 2 ] ; then
+   ErrorLogMsg "Usage: isabel_launch sessionID siteID"
+   $ISABEL_TCL $ISABEL_DIR/lib/isatcl/isabel_error \
+                              "- Error:" \
+                              "Usage: isabel_launch sessionID siteID" 
+   exit 1
+fi
+isarg_sessionName="$1"
+export isarg_sessionName
+isarg_siteName="$2"
+export isarg_siteName
+
+if [ ! -f "$ISABEL_SETUP_DIR/$isarg_sessionName/config.$isarg_siteName" ] ; then
+   ErrorLogMsg "FATAL ERROR: I can not find configuration file \"$ISABEL_SETUP_DIR/$isarg_sessionName/config.$isarg_siteName\"."
+   $ISABEL_TCL $ISABEL_DIR/lib/isatcl/isabel_error \
+                              "- Error:" \
+                              "I can not find configuration file:" \
+                              "$ISABEL_SETUP_DIR/$isarg_sessionName/config.$isarg_siteName"
+   exit 1
+fi
+
+#-----------------------------------------------------
+# Checking ISABEL requirements
+#-----------------------------------------------------
+. $ISABEL_DIR/bin/isabel.requires.sh
+
+#-----------------------------------------------------
+# Some log messages
+#-----------------------------------------------------
+WriteLogMsg "Launching isabel_launch $1 $2 ($ISABEL_VERSION-$ISABEL_RELEASE)"
+
+#-----------------------------------------------------
+# Load configuration as environment variables
+#-----------------------------------------------------
+WriteLogMsg "Loading \"$isarg_siteName\" site configuration."
+while read vvn ; do
+    echo $vvn | egrep "^#" > /dev/null
+    if [ "$?" = "0" ] ; then continue ; fi
+    vn=$(echo $vvn | sed "s/^\([^=]*\)=.*$/\1/")
+    vv=$(echo $vvn | sed "s/^[^=]*=\(.*\)$/\1/")
+    eval export $vn=\$vv
+done < "$ISABEL_SETUP_DIR/$isarg_sessionName/config.$isarg_siteName"
+
+#
+# ISABEL_CONNECT_TO_IP
+#
+if [ -z "$ISABEL_CONNECT_TO" ] ; then
+   export ISABEL_IS_MASTER=1
+   export ISABEL_CONNECT_TO_IP=""
+else
+   export ISABEL_IS_MASTER=0
+   export ISABEL_CONNECT_TO_IP=$(isabel_gethostbyname $ISABEL_CONNECT_TO)
+fi
+
+#cat >> "$ISABEL_SETUP_DIR/$isarg_sessionName/config.$isarg_siteName" <<EOF
+#ISABEL_CONNECT_TO_IP=$ISABEL_CONNECT_TO_IP
+#EOF
+
+#
+# Temporal patches
+#
+if [ -z "$ISABEL_IROUTER_FEC" ] ; then
+   export ISABEL_IROUTER_FEC=""
+fi
+if [ -z "$ISABEL_IROUTER_AUDIOMIXER" ] ; then
+   export ISABEL_IROUTER_AUDIOMIXER=""
+fi
+
+#-----------------------------------------------------
+# Gateway SIP
+#-----------------------------------------------------
+#if [ -z "$MCU_USE_ONLY_IPv4" ] ; then
+#   export MCU_USE_ONLY_IPv4=1
+#fi
+
+#
+## Checkes that ser is installed.
+#if [ "$ISABEL_ROLE" = "SipGateway" ] ; then
+#   CheckSer 
+#fi
+#
+
+#-----------------------------------------------------
+# It's a must to stop previous sessions before restart.
+#-----------------------------------------------------
+if [ -f "$ISABEL_TMP_DIR/isabel_is_running" ] ; then
+
+   # Look for pid
+   _pid_=$(cat $ISABEL_TMP_DIR/isabel_is_running | grep "^pid=" | sed "s/^pid=//")
+   ps $_pid_ > /dev/null
+   if [ "$?" = "0" ] ; then
+      # if pid process exists, then checks date
+      _iir_=$(cat $ISABEL_TMP_DIR/isabel_is_running | grep "^date=" | sed "s/^date=//")
+      _now_=$(date +%s)
+      _uptime_=$(sed "s/\..*//" /proc/uptime)
+      _bootat_=$(expr $_now_ - $_uptime_)
+      if [ ${_iir_:-0} -gt $_bootat_ ] ; then 
+         WriteLogMsg "ISABEL is already running at $ISABEL_HOSTNAME. Stop it before starting a new one."
+         $ISABEL_TCL $ISABEL_DIR/lib/isatcl/isabel_error "Error." \
+                            "ISABEL is already running at $ISABEL_HOSTNAME." \
+                            "Stop it before starting a new one."
+         exit 1
+      fi
+   fi
+   # delete old *.pid files
+   rm -f $ISABEL_TMP_DIR/*.pid
+fi
+
+
+#-----------------------------------------------------
+# Disabling screen saver and DPMS.
+#-----------------------------------------------------
+#echo "- Disabling screen saver and DPMS."
+xset s off
+xset -dpms
+
+
+#-----------------------------------------------------
+# Flag: isabel is running
+# Contains session information.
+#-----------------------------------------------------
+cat > $ISABEL_TMP_DIR/isabel_is_running <<EOF
+# Session identification
+# $(date)
+date=$(date +%s) 
+pid=$$
+session=$isarg_sessionName
+site=$isarg_siteName
+EOF
+
+#-----------------------------------------------------
+# Creating Gateway audio pipes
+#-----------------------------------------------------
+if ! test -p $ISABEL_TMP_DIR/audioPipeIn ; then
+    /usr/bin/mkfifo $ISABEL_TMP_DIR/audioPipeIn;
+fi
+if ! test -p $ISABEL_TMP_DIR/audioPipeOut ; then
+    /usr/bin/mkfifo $ISABEL_TMP_DIR/audioPipeOut;
+fi
+
+
+#-----------------------------------------------------
+# Checking CONTROL DISPLAY access.
+#-----------------------------------------------------
+if [ "$ISABEL_CTRL_DISPLAY" != "" ] ; then
+   CheckDisplayAccess $ISABEL_CTRL_DISPLAY "Isabel can not be launched"
+   if [ "$?" != 0 ] ; then
+      return
+   fi
+fi
+
+#-----------------------------------------------------
+# Create logging config file
+#-----------------------------------------------------
+if [ ! -f $ISABEL_CONFIG_DIR/logging.properties ] ; then
+   cp $ISABEL_DIR/lib/logging.properties $ISABEL_CONFIG_DIR/.
+fi
+if [ ! -f $ISABEL_CONFIG_DIR/logback.xml ] ; then
+   cp $ISABEL_DIR/lib/logback.xml $ISABEL_CONFIG_DIR/.
+fi
+
+
+
+#-----------------------------------------------------
+# Auxiliar function used to set a gnome database value,
+# and it also saved the current value in a file. This
+# value will be restored later.
+# Parameters:
+#   $1 - file where thw current value is saved.
+#        The file is placed at $ISABEL_TMP_DIR
+#   $2 - value type
+#   $3 - new value
+#   $4, $5, etc - gnome database entries.
+#                 The value is set in the first existing entry.
+#-----------------------------------------------------
+AuxGnomeSetValue()
+{
+   __file="$ISABEL_TMP_DIR/$1"
+   shift
+
+   __type=$1
+   shift
+
+   __value=$1
+   shift
+
+   __entries=$*
+
+   for _entry in $__entries ; do 
+
+      _dirname=$(dirname $_entry)
+      _basename=$(basename $_entry)
+
+      gconftool-2 --dir-exists=$_dirname
+      if [ "$?" -eq 0 ] ; then
+         gconftool-2 -R $_dirname | grep "\<$_basename\>" > /dev/null
+         if [ "$?" -eq 0 ] ; then
+
+            if [ ! -f "$__file" ] ; then
+               gconftool-2 --get $_entry > $__file
+            fi
+
+            gconftool-2 --type $__type --set $_entry $__value
+
+            return
+         fi
+      fi
+   done
+}
+
+
+#-----------------------------------------------------
+# Save background
+# Autohide top panel and bottom panel.
+# Hide desktop icons
+#-----------------------------------------------------
+ConfigDesktop()
+{
+   # if GNOME is running 
+   which gconftool-2 > /dev/null
+   if [ "$?" -eq 0 ] ; then
+      if [ "$($ISABEL_DIR/bin/isabel_fp -a0 gnome-panel)" != "" ] ; then
+         if [ ! -f "$ISABEL_TMP_DIR/background_name" ] ; then
+            gconftool-2 --get /desktop/gnome/background/picture_filename > $ISABEL_TMP_DIR/background_name
+            gconftool-2 --get /desktop/gnome/background/picture_options  > $ISABEL_TMP_DIR/background_opts
+         fi
+
+         if [ ! -f "$ISABEL_TMP_DIR/autohide_g_top_panel" ] ; then
+            gconftool-2 --get /apps/panel/toplevels/top_panel_screen0/auto_hide > $ISABEL_TMP_DIR/autohide_g_top_panel
+         fi
+         gconftool-2 --type bool --set /apps/panel/toplevels/top_panel_screen0/auto_hide true
+
+         if [ ! -f "$ISABEL_TMP_DIR/autohide_g_bottom_panel" ] ; then
+            gconftool-2 --get /apps/panel/toplevels/bottom_panel_screen0/auto_hide > $ISABEL_TMP_DIR/autohide_g_bottom_panel
+         fi
+         gconftool-2 --type bool --set /apps/panel/toplevels/bottom_panel_screen0/auto_hide true
+
+
+         AuxGnomeSetValue screensaver_activated \
+                          bool \
+                          false \
+                          /apps/gnome-screensaver/idle_activation_enabled
+
+
+         AuxGnomeSetValue power_manager_ac_sleep_computer \
+                          integer \
+                          0 \
+                          /apps/gnome-power-manager/ac_sleep_computer \
+                          /apps/gnome-power-manager/timeout/sleep_computer_ac
+         AuxGnomeSetValue power_manager_battery_sleep_computer \
+                          integer \
+                          0 \
+                          /apps/gnome-power-manager/battery_sleep_computer \
+                          /apps/gnome-power-manager/timeout/sleep_computer_battery
+
+         AuxGnomeSetValue power_manager_ac_sleep_display \
+                          integer \
+                          0 \
+                          /apps/gnome-power-manager/ac_sleep_display \
+                          /apps/gnome-power-manager/timeout/sleep_display_ac
+         AuxGnomeSetValue power_manager_battery_sleep_display \
+                          integer \
+                          0 \
+                          /apps/gnome-power-manager/battery_sleep_display \
+                          /apps/gnome-power-manager/timeout/sleep_display_battery
+
+         AuxGnomeSetValue power_manager_action_ac_button_lid \
+                          string \
+                          nothing \
+                          /apps/gnome-power-manager/action_ac_button_lid \
+                          /apps/gnome-power-manager/buttons/lid_ac
+         AuxGnomeSetValue power_manager_action_battery_button_lid \
+                          string \
+                          nothing \
+                          /apps/gnome-power-manager/action_battery_button_lid \
+                          /apps/gnome-power-manager/buttons/lid_battery
+
+
+	 gconftool-2 --type bool --set /apps/nautilus/preferences/show_desktop false
+	 #/bin/ps -C nautilus > /dev/null
+	 #if [ "$?" -eq 0 ] ; then
+         #   gconftool-2 --type bool --set /apps/nautilus/preferences/show_desktop false
+         #   nautilus -q
+         #fi
+         #gconftool-2 --type bool --set /apps/nautilus/preferences/show_desktop true
+
+         return 
+      fi
+   fi
+
+   # if KDE is running
+   which dcop
+   if [ "$?" -eq 0 ] ; then
+      if [ "$($ISABEL_DIR/bin/isabel_fp -a0 kdesktop)" != "" ] ; then
+          if [ ! -f "$ISABEL_TMP_DIR/background_dcop" ] ; then
+            dcop kdesktop KBackgroundIface currentWallpaper 0 > $ISABEL_TMP_DIR/background_dcop
+          fi
+
+          if [ ! -f "$ISABEL_TMP_DIR/desktop_icons_dcop" ] ; then
+             dcop kdesktop KDesktopIface isIconsEnabled > $ISABEL_TMP_DIR/desktop_icons_dcop
+          fi
+          dcop kdesktop KDesktopIface setIconsEnabled false
+
+          return
+      fi
+  fi
+}
+ConfigDesktop
+
+#-----------------------------------------------------
+# Starts isabel launcher application
+#-----------------------------------------------------
+java -Disabel.dir=$ISABEL_DIR \
+     -Disabel.user.dir=$ISABEL_USER_DIR \
+     -Disabel.tmp.dir=$ISABEL_TMP_DIR \
+     -Disabel.logs.dir=$ISABEL_LOGS_DIR/session \
+     -Disabel.config.dir=$ISABEL_CONFIG_DIR \
+     -Disabel.sessions.dir=$ISABEL_SESSIONS_DIR \
+     -Disabel.setup.dir=$ISABEL_SETUP_DIR \
+     -Djava.util.logging.config.file=$ISABEL_CONFIG_DIR/logging.properties \
+     -Dlogback.configurationFile=$ISABEL_CONFIG_DIR/logback.xml \
+     -DDISPLAY=${ISABEL_CTRL_DISPLAY:-$DISPLAY} \
+     -DADISPLAY=$ADISPLAY \
+     -jar $ISABEL_DIR/libexec/isabel_launcher.jar \
+     "$1" "$2"
+
+#-----------------------------------------------------
+# Cleanup.
+#-----------------------------------------------------
+CleanUp
+
+exit 0

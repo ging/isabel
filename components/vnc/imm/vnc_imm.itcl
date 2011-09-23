@@ -1,0 +1,197 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vnc_imm.itcl
+#
+# VNC: interaction mode manager.
+#
+#########################################################################
+
+
+class VNC_IMM_Class {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    public proc SetInteractionMode {imname nsec site_id_list _args}
+
+    #------------------
+    # PRIVATE INTERFACE
+    #------------------
+
+    # SMS Vnc state options:
+    private common sms_nsec
+
+    private common sms_speaker_site
+    private common sms_viewer_layout
+    private common sms_shdisplay_bw
+    private common sms_shdisplay_codec
+
+    private common sms_distribution_network
+    private common sms_access_site
+
+    private common sms_hint
+    private common sms_vnc_server
+    private common sms_password
+
+    private common sms_active
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private proc GetOptionListValue {list optname {default ""}}
+
+}
+
+#---------------------------------------------------------------
+
+body VNC_IMM_Class::SetInteractionMode {imname nsec site_id_list _args} {
+
+    set scenary [session Activity GetResource $imname VNC]
+    
+    set active [GetOptionListValue $scenary -active 0]
+
+    set sms_nsec   $nsec
+
+    # VNC not used in this interaction mode.
+    if {$active == 0} {
+
+	set sms_active 0 
+	
+	sms forceState Vnc add \
+	    -nsec   $sms_nsec \
+	    -active $sms_active
+
+	return
+    } 
+
+    # Speaker: who is going to make the presentation?
+    set _speakersites    [GetOptionListValue $_args -speakersites "__none__"]
+    if {$_speakersites != "__none__"} {
+	set site_id_list $_speakersites
+    }
+    set sms_speaker_site [lindex $site_id_list 0]
+
+    # Layout of the viewer's window.
+    set sms_viewer_layout [GetOptionListValue $scenary -layout]
+
+    # ShDisplay: bw
+    set sms_shdisplay_bw [GetOptionListValue $scenary -bw 500]
+    
+    # ShDisplay: codec and its options 
+    set sms_shdisplay_codec [GetOptionListValue $scenary -shdisplaycodec "MPEG-4 -qlty 50"]
+
+    #---
+
+    # $vnccfg valid formats:
+    #
+    #  <dist_net> <access_site> 
+    #  <dist_net> <access_site> hint <hint>
+    #  <dist_net> <access_site> server <server> <password>
+    #
+
+    # Get -vnccfg option:
+    set vnccfgopt [GetOptionListValue $_args -vnccfg]
+
+    if {$vnccfgopt != ""} {
+	#
+	# The -vnccfg option is present.
+	#
+
+	# Gets the distribution net:
+	set sms_distribution_network [lindex $vnccfgopt 0]
+	
+	# Gets the vnc server access site.
+	# (Only used with NeReDa).
+	set sms_access_site ""
+	if {$sms_distribution_network == "NeReDa"} {
+	    set sms_access_site [lindex $vnccfgopt 1]
+	    if {$sms_access_site == ""} {
+		set sms_access_site $sms_speaker_site
+	    }
+	}
+	
+	# Select the given server
+	set vncserversel [lindex $vnccfgopt 2]
+
+	if {$vncserversel == "hint"} {
+
+	    set sms_vnc_server ""	    
+	    set sms_password   ""	    
+	    set sms_hint       [string trim [lindex $vnccfgopt 3]]
+	    set sms_active     1
+
+	} elseif {$vncserversel == "server"} {
+	    # Use the given server and password.
+
+	    set sms_vnc_server [string trim [lindex $vnccfgopt 3]]
+	    set sms_password   [string trim [lindex $vnccfgopt 4]]
+            set sms_hint       ""	    
+	    set sms_active     1
+
+
+	} else {
+	    ErrorTraceMsg "VNC IMM: Invalid vnc server selection: \"$vnccfgopt\"."
+
+	    set sms_active 0 
+
+	    sms forceState Vnc add \
+		-nsec   $sms_nsec \
+		-active $sms_active
+	    
+	    return
+	}
+
+	sms forceState Vnc add \
+	    -speaker_site    $sms_speaker_site \
+	    -viewer_layout   $sms_viewer_layout \
+	    -nsec            $sms_nsec \
+	    -shdisplay_bw    $sms_shdisplay_bw \
+	    -shdisplay_codec $sms_shdisplay_codec \
+	    -distribution_network $sms_distribution_network \
+	    -access_site     $sms_access_site \
+	    -hint            $sms_hint \
+	    -vnc_server      $sms_vnc_server \
+	    -password        $sms_password \
+	    -active          $sms_active
+
+    }
+}
+
+#---------------------------------------------------------------
+
+body VNC_IMM_Class::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+
+#---------------------------------------------------------------

@@ -1,0 +1,29 @@
+#
+# VCODECS configuration for Linux
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.baselib       -- root of subsystem libraries
+#	*.library       -- root of subsystem libraries (-L)
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+VCODECS.topdir       :=$(PROJECT_ROOT_DIR)/lib/vCodecs
+VCODECS.include      :=$(VCODECS.topdir)/include
+VCODECS.include.files:=\
+	$(wildcard $(VCODECS.include)/vCodecs/*.hh)    \
+	$(wildcard $(VCODECS.include)/vCodecs/*.h)
+
+VCODECS.baselib.ugly:=$(OBJS_ROOT_DIR)/lib/vCodecs/src
+VCODECS.baselib:=$(shell echo $(VCODECS.baselib.ugly)|sed 's@^\(./\)*@@;s@/./@/@')
+
+VCODECS.library      :=-L$(VCODECS.baselib)
+VCODECS.library.libs :=-lvcodecs
+
+MKDEPVERSION+= -include $(VCODECS.topdir)/version
+
+CONFIG.generic.include+= -I$(VCODECS.include)
+
+LINK.VCODECS:=$(VCODECS.library) $(VCODECS.library.libs)

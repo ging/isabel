@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Connect To
+Comment=Connect to a Isabel session
+Exec=/usr/local/isabel/bin/isrv_ConnectTo.sh
+Icon=/usr/local/isabel/lib/images/gif/pcamdoc.gif
+Terminal=false
+Type=Application
+StartupNotify=true

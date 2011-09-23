@@ -1,0 +1,382 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# dserializer.itcl
+#
+# Description
+#
+#   Send one primitive at a time to the C daemons.
+#
+#########################################################################
+
+
+class DSerializerC {
+
+    # daemon name
+    private variable name
+
+    # socket descriptor
+    private variable sap
+
+    # timeout to close daemon connection.
+    private variable timeout
+
+    # add a newline at the end of the commands.
+    private variable addnewline 
+
+    # daemon state: idle, working or dead.
+    private variable daemon_state
+
+    # the queue of requests.
+    private variable queue
+
+    # counter of requested commands.
+    private variable req_cont
+
+    # counter of invoked commands. 
+    private variable inv_cont
+  
+    # If there is a pending rpc request, this variabe stores its associated counter.
+    # Note that it can only exist one pendinf rpc request. 
+    private variable pending_rpc_cont
+
+    # info about the current request
+    private variable current_type
+    private variable current_cmd
+    private variable current_cb
+    private variable current_response
+
+    # after descriptor of the CheckDeadlock process.
+    private variable after_deadlock
+
+    # variable use by RPC calls to tkwait until the reponse is ready
+    private common rpc_lock
+
+    # quit command
+    private variable quit_cmd
+
+    constructor {n socket t q {addnl 0}} {
+
+	set name $n
+	set sap $socket
+
+	fconfigure $sap -buffering none -blocking 0
+
+	#fileevent $sap readable [code $this Response]
+	hs_readable $sap [code $this Response]
+	hs_atclose  $sap -append [code $this SetAsDead]
+
+	set timeout    $t
+	set quit_cmd   $q
+	set addnewline $addnl
+
+	set daemon_state idle
+	set queue        [DQueueC #auto]
+
+	set current_type      ""
+	set current_cmd       ""
+	set current_cb        ""
+	set current_response  ""
+
+	# Number of RPC requested to the daemon.
+	set req_cont     0
+
+	# Number of RPC invocations
+	set inv_cont     0
+
+	set pending_rpc_cont 0
+
+	set after_deadlock  [CheckDeadlock $req_cont]
+    }
+
+
+    destructor {
+
+	after cancel $after_deadlock
+	after cancel [code $this NextRequest]
+
+	delete object $queue
+
+	if {$sap != ""} {
+	    # Don't call to the Response method any more:
+	    hs_readable $sap ""
+	}
+	Quit
+    }
+
+
+    #
+    # This method is called when the daemon closes the control socket.
+    #
+    private method SetAsDead {} {
+
+	DebugTraceMsg "- $name daemon has closed its control socket." 3 
+	set sap ""
+	set daemon_state dead
+
+	if {$pending_rpc_cont != 0} {
+	    set pending_rpc_cont 0
+	    set rpc_lock($this,$pending_rpc_cont) ""
+	}
+    }
+
+
+    # Send the quit command to the daemon.
+    private method Quit {} {
+	if {$sap != ""} {
+	    DebugTraceMsg "- Daemon Request: $quit_cmd" 3
+	    if {$addnewline} {
+		puts -nonewline $sap $quit_cmd\n
+	    } else {
+		puts -nonewline $sap $quit_cmd
+	    }
+	    hs_close $sap
+
+	    SetAsDead
+	}
+    }
+
+
+
+    public method RDO {cmd} {
+	if {$daemon_state == "dead"} {
+	    return -1
+	}
+	incr inv_cont
+	$queue PutRDO $cmd
+	Request
+	return 0
+    }
+    
+    
+    public method RPC {cmd} {
+
+	if {$daemon_state == "dead"} {
+	    return ""
+	}
+	incr inv_cont
+	$queue PutRPC $cmd 
+	Request
+	if {$daemon_state == "dead"} {
+	    return ""
+	} else {
+	    set rpc_lock($this,$inv_cont) ""
+	    set save $inv_cont
+	    tkwait variable [scope rpc_lock($this,$inv_cont)]
+	    if {$this != ""} {
+		set response $rpc_lock($this,$save)
+		unset rpc_lock($this,$save)
+		return $response
+	    } else {
+		return ""
+	    }
+	}  
+    }
+    
+
+    public method RCB {cmd cb} {
+	if {$daemon_state == "dead"} {
+	    return -1
+	}
+	incr inv_cont
+	$queue PutRCB $cmd $cb
+	Request
+	return 0
+    }
+
+
+    # Send a new command to the daemon if idle.
+    private method Request {} {
+
+	if {$daemon_state == "idle"} {
+	    
+	    if {[$queue Empty] == 1} return
+
+	    $queue Get current_type current_cmd current_cb 
+	    set current_response ""
+	    
+	    set daemon_state working
+	    incr req_cont
+
+	    if {$current_type == "rpc"} {
+		set pending_rpc_cont $req_cont
+	    }
+
+	    DebugTraceMsg "- Daemon Request $req_cont: $current_cmd" 3
+	    
+	    if {[catch {
+		if {$addnewline} {
+		    puts -nonewline $sap $current_cmd\n
+		} else {
+		    puts -nonewline $sap $current_cmd
+		}
+	    } emsg]} {
+
+	    }
+	}
+    }
+    
+    
+    private method Response {} {
+
+	if {$sap == ""} {
+	    error "$name daemon serializer: connection socket was disabled."
+	}
+
+	set current_response [read $sap]
+
+	if {$daemon_state == "dead"} return
+	
+	DebugTraceMsg "- $current_cmd ($req_cont): $current_response" 3
+	
+	set current_cmd "NO-PENDING-REQUEST"
+
+	set cb $current_cb
+	if {$cb != ""} {
+	    if {[catch {uplevel "#0" $cb [list $current_response]} emsg]} {
+		ErrorTraceMsg "- $name Daemon Callback error: $cb $current_response\n$emsg" 
+	    }
+	}
+	
+	if {$current_type == "rpc"} {
+	    set pending_rpc_cont 0
+	    set current_type ""
+	    set rpc_lock($this,$req_cont) $current_response
+	    after idle [code $this NextRequest]
+	} else {	
+	    set current_type ""
+	    NextRequest
+	}
+    }
+
+    private method NextRequest {} {
+
+	if {$daemon_state == "dead"} return
+
+	set daemon_state idle
+	Request
+    }
+
+
+    #-------------------------------------------------------------------------
+    # Check periodically if the daemon is dead.
+    #-------------------------------------------------------------------------
+    private method CheckDeadlock {lastcont} {
+
+
+	if {$daemon_state == "dead"} {
+	    ErrorTraceMsg "- Deadlock: $name daemon is dead."
+	    return
+	}
+	if {$daemon_state == "working"} {
+	    if {$lastcont == $req_cont} {
+		ErrorTraceMsg "- Deadlock ($req_cont): $name daemon doesn't respond to command: $current_cmd."
+
+		hs_close $sap
+		
+		set sap ""
+		set daemon_state dead
+		
+		if {$pending_rpc_cont != 0} {
+		    set pending_rpc_cont 0
+		    set rpc_lock($this,$pending_rpc_cont) ""
+		}
+		return
+	    }
+	}
+	set lastcont $req_cont
+	set after_deadlock [after $timeout [code $this CheckDeadlock $lastcont]]
+    }
+}
+
+
+
+#==================================================================
+#
+# Class: Queue of requests.
+#
+# The request formats are:
+#       rdo <command>
+#       rpc <command>
+#       rcb <command> <callback>
+#
+#==================================================================
+
+
+class DQueueC {
+
+    # the queue
+    private variable queue
+
+    constructor {} {
+	set queue ""
+    }
+
+    destructor {
+    }
+
+    # Is the queue empty?
+    public method Empty {} {
+	if {$queue == ""} {
+	    return 1
+	} else {
+	    return 0
+	}
+    }
+    
+    # Get the next request from the queue
+    public method Get {type cmd cb} {
+	upvar $type t $cmd m $cb b
+	
+	set req [lindex $queue 0]
+	set queue [lreplace $queue 0 0]
+	set t [lindex $req 0]
+	set m [lindex $req 1]
+	if {$t == "rcb"} { 
+	    set b [lindex $req 2]
+	} else {
+	    set b ""
+	}
+	return
+    }
+    
+
+    # Put in a RDO request inside the queue
+    public method PutRDO {cmd} {
+	lappend queue [list rdo $cmd ""]
+    }
+
+
+    # Put in a RPC request inside the queue
+    public method PutRPC {cmd} {
+	lappend queue [list rpc $cmd ""]
+    }
+
+
+    # Put in a RCB request inside the queue
+    public method PutRCB {cmd cb} {
+	lappend queue [list rcb $cmd $cb]
+    }
+}
+

@@ -1,0 +1,22 @@
+/* Copyright (c) 2004, Nokia. All rights reserved */
+
+
+//  INCLUDES
+#include <apcaptionfile.rh>
+#include "CSSync.loc"
+
+
+//  RESOURCE DEFINITIONS
+// -----------------------------------------------------------------------------
+//
+// Caption data for CSAsync
+//
+// -----------------------------------------------------------------------------
+//
+RESOURCE CAPTION_DATA
+    {
+    caption = qtn_cssy_caption_string;
+    shortcaption = qtn_cssy_short_caption_string;
+    }
+
+// End of File

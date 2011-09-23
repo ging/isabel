@@ -1,0 +1,363 @@
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# config.itcl
+#
+# Audio configuration.
+#
+#########################################################################
+
+class AudioConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    #--- Class initialization
+    public proc Initialize {_acdobj}
+
+    #---- Change gui visibility.
+    public proc Show {}
+    public proc Hide {}
+    public proc ToggleShowHide {}
+
+    # ---- Site Configuration
+
+    public proc CreateSiteConfiguration {siteId}
+    public proc DestroySiteConfiguration {siteId}
+
+    #---- Access to internal objects
+
+    public proc CodecCmd {args}  
+    public proc TonesCmd {args}  
+    public proc AlsaMixerCmd {args}  
+
+    public proc SiteConfigCmd {siteId targetObj args}  
+
+    #---- Others
+
+    # Save value $v to file $filename
+    public proc Save {filename v}
+    
+    # Load value from $filename.
+    # Return $default on error.
+    public proc Load {filename default}
+
+    #---- Others
+
+    # Am I a control site?
+    public proc ControlSite {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # toplevel widget.
+    private common wroot .audio_config_tl
+
+    # Audio C daemon object
+    private common acdobj
+
+    # Create the user interface.
+    private proc GUI {}
+
+    #----  Control
+
+    # If I am a control site, I have more options in the window.
+    # $ctrlsite - 1 if I am a control site, otherwise 0.
+    private common ctrlsite ""
+
+    # ---- Site Configuration
+
+    # $siteConfigObj($siteId) = Control object (and window) for $siteId site. 
+    private common siteConfigObj
+
+    #------------------------
+    
+
+    #----  Internal Objects:
+
+    private common codecObj
+    private common tonesObj
+    private common alsaMixerObj
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::Initialize {_acdobj} {
+
+    set acdobj $_acdobj 
+
+    set codecObj     [AudioCodecConfigC "#auto" $wroot.codec $_acdobj]
+    set tonesObj     [AudioTonesConfigC "#auto" $wroot.tones]
+    set alsaMixerObj [AudioMixerConfigC "#auto" $wroot.mixers]
+}
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::CreateSiteConfiguration {siteId} {
+
+    set siteConfigObj($siteId) [AudioSiteConfigC "#auto" $siteId $acdobj]
+}
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::DestroySiteConfiguration {siteId} {
+
+    if {[info exists siteConfigObj($siteId)]} {
+	delete object $siteConfigObj($siteId)
+	unset siteConfigObj($siteId)
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::CodecCmd {args} {
+
+    eval $codecObj $args
+}  
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::TonesCmd {args} {
+
+    eval $tonesObj $args
+}  
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::AlsaMixerCmd {args} {
+
+    eval $alsaMixerObj $args
+}  
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::SiteConfigCmd {siteId targetObj args} {
+
+    if { ![info exists siteConfigObj($siteId)]} {
+	return
+    }
+
+    switch -exact -- $targetObj {
+        GUI {
+	    eval $siteConfigObj($siteId) $args
+	}
+	CDevice {
+	    eval $siteConfigObj($siteId) CDeviceCmd $args
+	}
+	PBuffer {
+	    eval $siteConfigObj($siteId) PBufferCmd $args
+	}
+	Silence {
+	    eval $siteConfigObj($siteId) SilenceCmd $args
+	}
+	SupEcho {
+	    eval $siteConfigObj($siteId) SupEchoCmd $args
+	}
+	AGC {
+	    eval $siteConfigObj($siteId) AGCCmd $args
+	}
+	Bypass {
+	    eval $siteConfigObj($siteId) BypassCmd $args
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::GUI {} {
+
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    set display [session Environ cget -audio_ctrl_display]
+
+    toplevel $wroot -screen $display
+
+    wm title $wroot "Audio Config"
+
+    label $wroot.l \
+	-text "Audio Configuration" \
+	-font [IsabelFontsC::GetFont large medium] \
+	-pady 0
+
+    #--------------------------------
+
+    # Codec
+    if {[ControlSite]} {
+	$codecObj MakeGui 
+    }
+
+    # Tones
+    $tonesObj MakeGui
+
+    # SO mixers
+    $alsaMixerObj MakeGui
+
+    #--------------------------------
+    # Dismiss
+    #--------------------------------
+
+    button $wroot.close \
+	-text Dismiss \
+	-pady 3 \
+	-command AudioConfigC::Hide
+
+    #--------------------------------
+    # Packing
+    #--------------------------------
+
+    grid $wroot.l       -row 0 -column 0 -pady 1
+    if {[ControlSite]} {
+	set _mcu_mixer_enabled [session Activity GetResource Audio irouter.mixer 1]
+	if {! $_mcu_mixer_enabled} {
+	    grid $wroot.codec   -row 2 -column 0 -pady 0 -padx 6 -sticky wens
+	}
+    }
+    if {[$tonesObj ToneSite]} {
+	grid $wroot.tones   -row 7 -column 0 -pady 0 -padx 6 -sticky wens
+    }
+    grid $wroot.mixers  -row 8 -column 0 -pady 0 -padx 6 -sticky wens
+
+    grid $wroot.close   -row 10 -column 0 -pady 1
+
+    grid columnconfigure $wroot 0  -weight 1
+    grid rowconfigure    $wroot 1  -weight 1
+    grid rowconfigure    $wroot 2  -weight 0
+    grid rowconfigure    $wroot 3  -weight 0
+    grid rowconfigure    $wroot 4  -weight 0
+    grid rowconfigure    $wroot 5  -weight 0
+    grid rowconfigure    $wroot 6  -weight 0
+    grid rowconfigure    $wroot 7  -weight 1
+    grid rowconfigure    $wroot 8  -weight 0
+    grid rowconfigure    $wroot 9  -weight 1
+    grid rowconfigure    $wroot 10 -weight 0
+}
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::Show {} {
+    
+    if {![winfo exist $wroot]} { 
+	GUI
+    } else {
+	wm deiconify $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::Hide {} {
+
+    if {[winfo exist $wroot]} { 
+	wm withdraw $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::ToggleShowHide {} {
+    
+    if {![winfo exist $wroot]} { 
+	Show
+    } else {
+	if {[wm state $wroot] != "normal"} {
+	    Show
+	} else {
+	    Hide
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+#
+# Others
+#
+#---------------------------------------------------------------------------
+
+body AudioConfigC::Save {filename v} {
+
+    set cfg_dir [session Environ cget -config_dir]/audio
+    file mkdir $cfg_dir
+
+    if {[catch { 
+	set fd [open $cfg_dir/$filename w]
+	puts $fd $v
+	close $fd
+    } emsg]} {
+	ErrorTraceMsg "Audio ($filename): $emsg"
+    }
+    return
+}
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::Load {filename default} {
+
+    set cfg_dir [session Environ cget -config_dir]/audio
+    file mkdir $cfg_dir
+    
+    if {[catch {
+	set fd [open $cfg_dir/$filename r]
+	gets $fd v
+	close $fd
+    } emsg]} {
+	return $default
+    }
+    if {$v == ""} {
+	return $default
+    } else {
+	return $v
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioConfigC::ControlSite {} {
+
+    if {$ctrlsite != ""} {
+	return $ctrlsite
+    }
+
+    set ctrlsiteroles [session Activity GetResource Audio ctrlsites ""]
+    if {$ctrlsiteroles == ""} {
+	set ctrlsite 1
+    } else {
+	set ctrlsite 0
+	set myroles [SiteManager::GetMyRoles]
+	foreach r $ctrlsiteroles {
+	    if {[lsearch -exact $myroles $r] != -1} {
+		set ctrlsite 1
+		break
+	    }
+	}
+    }
+
+    return $ctrlsite
+}
+
+#---------------------------------------------------------------------------

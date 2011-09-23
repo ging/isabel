@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Logs
+Comment=Shows main log filess
+Exec=/usr/local/isabel/bin/isrv_IsabelLogs.sh
+Icon=/usr/local/isabel/lib/images/gif/graph2.gif
+Terminal=false
+Type=Application
+StartupNotify=true

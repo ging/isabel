@@ -1,0 +1,226 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# videodaemontask.itcl
+#
+# Description
+#
+#   Task to start and access to the C video daemon.
+#
+#########################################################################
+
+class McuDaemonTaskC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+    destructor {}
+
+    # Starts the task: launch de mcu daemon.
+    public method Start {}
+    
+    public method RDO {cmd}
+    public method RPC {cmd}
+    public method RCB {cmd cb}
+
+
+    # Objects that are warned when the daemon dies and
+    # it is restarted again.
+    # When the daemon is running again, this task executes 
+    # all the callbacks stored in the $listeners list.
+    public method AddListener    {cb}
+    public method RemoveListener {cb}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # 1 if the created object is working.
+    private variable active 0
+    
+    # Mcu daemon object
+    private common mcudobj ""
+
+    # Listeners.
+    # This is a list of methods to call when the daemon restart.
+    private variable listeners ""
+
+    #----
+
+    # Start the daemon.
+    private method CreateDaemon {}
+
+    # Executed when the daemon exits.
+    private method NoCCDaemon {}
+
+    # Executes all the callbacks stored in the $listeners list.
+    private method ExecListeners {}
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::constructor {} {
+
+    WriteTraceMsg "Mcu Daemon Task: constructing ..."
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::destructor {} {
+    
+    set active 0
+
+    if {$mcudobj != ""} {
+	delete object $mcudobj
+	set mcudobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::Start {} {
+
+    WriteTraceMsg "Mcu Daemon Task: starting ..."
+
+    CreateDaemon
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::CreateDaemon {} {
+    
+    if {$mcudobj != ""} return
+    
+    WriteTraceMsg "MCU Daemon Task: Creating a new daemon ..."
+    
+    set no_cc_cb [code $this NoCCDaemon]
+    set mcudobj [DMcuC "#auto" $no_cc_cb]
+    WriteTraceMsg "MCU Daemon Task: The new MCU daemon object was created. Connecting ..."
+    if {[catch {$mcudobj Start} res]} {
+	WriteTraceMsg "MCU Daemon Task: Unsuccessful connection to the new MCU daemon."
+	delete object $mcudobj
+	NoCCDaemon
+	ErrorTraceMsg "MCU Daemon Task: MCU daemon can not be created: $res"
+	return
+    }
+    
+    WriteTraceMsg "Mcu Daemon Task: Successful connection to the new MCU daemon."
+    WriteTraceMsg "Mcu Daemon Task: Activating ..."
+    
+    set active 1
+    
+    WriteTraceMsg "MCU Daemon Task: Activation done."
+    
+    #-------------------
+    
+    WriteTraceMsg "MCU Daemon Task: Begining calling listeners."
+    ExecListeners
+    WriteTraceMsg "MCU Daemon Task: Done calling Listeners."
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::NoCCDaemon {} {
+    global env
+
+    set active 0
+    set mcudobj  ""
+
+    if {[info exists env(ISABEL_AUTORESTART)]} {
+	
+	if {$env(ISABEL_AUTORESTART) != 0} {
+	    set restart 1
+	} else {
+	    set restart 0
+	}
+
+    } else {
+	set restart 1
+    }
+
+    if {$restart} {
+	after 1000 after idle [code $this CreateDaemon]
+    } else {
+	WarningTraceMsg "The MCU daemon is dead and it will no be restarted."
+    }
+
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::RDO {cmd} {
+
+    if {! $active} return
+    
+    $mcudobj RDO $cmd
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::RPC {cmd} {
+
+    if {! $active} return ""
+    
+    $mcudobj RPC $cmd
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::RCB {cmd cb} {
+
+    if {! $active} return
+    
+    $mcudobj RCB $cmd $cb
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::AddListener {cb} {
+    
+    lappend listeners $cb
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::RemoveListener {cb} {
+
+    set listeners [lremove $listeners $cb]
+}
+
+#---------------------------------------------------------------
+
+body McuDaemonTaskC::ExecListeners {} {
+
+    foreach cb $listeners {
+    WriteTraceMsg "MCU Daemon Task: Listener invocation: $cb."
+	if {[catch {uplevel "#0" $cb} emsg]} {
+	    ErrorTraceMsg "- MCU Daemon Task:: Callback error: \"$cb\" produces \"$emsg\"" 
+	}
+    }
+}
+
+#---------------------------------------------------------------
+

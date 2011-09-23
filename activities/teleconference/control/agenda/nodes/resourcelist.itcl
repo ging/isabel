@@ -1,0 +1,345 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class ResourceListTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    public variable resources
+
+    #-- Building the tree
+
+    # $args is a list of resources.
+    # Valid resource classes: 
+    #      AppSharingResourceTCC 
+    #      VideoResourceTCC  
+    constructor {_agendaobj args} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+    
+    public method getNodes {}
+
+    #-- Node creation
+    
+    # Create a new empty child node.
+    public method newAppSharingResourceChild {}
+    public method newVideoResourceChild {}
+    public method newWallpaperResourceChild {}
+
+    #-- Node deletion
+
+    # Delete the indicated child node, a resource object.
+    public method deleteResource {_resource}
+
+    #-- Children operations
+
+    # Moves the given resource $_offset positions in $resources
+    public method moveResource {_resource _offset}
+
+    # Add the given resource object to the list of resources.
+    public method addResource {_resource}
+
+    # Extract the given resource from the list, but do not delete the
+    # object.
+    public method extractResource {_resource}
+
+    # Returns 1 if $_resource is the first resource, otherwise returns 0.
+    public method firstResource {_resource}
+    
+    # Returns 1 if $_resource is the last resource, otherwise returns 0.
+    public method lastResource {_resource}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::constructor {_agendaobj args} {
+
+    foreach r $args {
+	CheckClass $r AppSharingResourceTCC VideoResourceTCC WallpaperResourceTCC
+
+	CheckUnique $r
+	
+	$r setParent $this
+    }
+    set resources $args
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::destructor {} {
+
+    set _auxresources $resources
+    set resources ""
+    foreach r $_auxresources {
+	    delete object $r
+    }
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::parse {agendaobj str} {
+
+    set rl ""
+    set cont 0
+    set r [lindex $str $cont]
+    while {$r != ""} {
+        set rtype [lindex $r 0]
+        switch $rtype {
+            AppSharingResource {
+                set resource [AppSharingResourceTCC::parse $agendaobj $r]
+		lappend rl $resource
+            }
+            VideoResource {
+                set resource [VideoResourceTCC::parse $agendaobj $r]
+		lappend rl $resource
+            }
+            WallpaperResource {
+                set resource [WallpaperResourceTCC::parse $agendaobj $r]
+		lappend rl $resource
+            }
+	    SlidesResource {
+		# Slides resource was deprecated.
+	    }
+            default {
+                set _emsg "ERROR:: Unknown resource: $str"
+                puts $_emsg
+                error $_emsg
+            }
+        }
+        incr cont
+        set r [lindex $str $cont]
+    }
+
+    set me [eval ResourceListTCC ::#auto $agendaobj $rl]
+
+    foreach r $rl {
+        $r setParent $me
+    }
+
+    return $me
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::prettyPrinter {{offset 0}} {
+
+    set _res ""
+    foreach r $resources {
+        if {$_res != ""} {
+	    set _res "$_res\n"
+	}
+        set _res "$_res[$r prettyPrinter $offset]"
+    }
+    return $_res
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::getMyNode {} {
+
+    set _icons ""
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    list \
+	[getMyUid] \
+	"Resources" \
+	"resourcesnode branch" \
+	$_icons
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::getNodes {} {
+
+    set res ""
+    foreach r $resources {
+	lappend res [$r getMyNode]
+    }
+    return $res
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::newAppSharingResourceChild {} {
+
+    set child [AppSharingResourceTCC::new $agendaobj]
+
+    if {$child != ""} {
+	$child setParent $this
+	lappend resources $child
+    }
+    $agendaobj refresh
+
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::newVideoResourceChild {} {
+
+    set child [VideoResourceTCC::new $agendaobj]
+
+    if {$child != ""} {
+	$child setParent $this
+	lappend resources $child
+    }
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::newWallpaperResourceChild {} {
+
+    set child [WallpaperResourceTCC::new $agendaobj]
+
+    if {$child != ""} {
+	$child setParent $this
+	lappend resources $child
+    }
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::deleteResource {_resource} {
+
+    set pos [lsearch -exact $resources $_resource]
+
+    if {$pos == -1} return
+
+    set child [lindex $resources $pos]
+    set resources [lreplace $resources $pos $pos]
+    $child kill
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::moveResource {_resource _offset} {
+
+    set pos [lsearch -exact $resources $_resource]
+
+    if {$pos == -1} return
+
+    set child [lindex $resources $pos]
+    set resources [lreplace $resources $pos $pos]
+
+    set newpos [expr $pos + $_offset]
+
+    set resources [linsert $resources $newpos $child]
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::addResource {_resource} {
+
+    set pos [lsearch -exact $resources $_resource]
+
+    if {$pos != -1} return
+
+    lappend resources $_resource
+
+    $_resource setParent $this
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::extractResource {_resource} {
+
+    set pos [lsearch -exact $resources $_resource]
+
+    if {$pos == -1} return
+
+    set resources [lreplace $resources $pos $pos]
+
+    $_resource setParent ""
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::firstResource {_resource} {
+    
+    if {[lindex $resources 0] == $_resource} {
+	return 1
+    } else {
+	return 0
+    }
+}
+   
+#-----------------------------------------
+
+body ResourceListTCC::lastResource {_resource} {
+
+    if {[lindex $resources end] == $_resource} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#-----------------------------------------
+
+body ResourceListTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "New Application Sharing Resource" \
+	-command [code $this newAppSharingResourceChild]
+
+    $menu add command -label "New Video Site Resource" \
+	-command [code $this newVideoResourceChild]
+
+    $menu add command -label "New Wallpaper Resource" \
+	-command [code $this newWallpaperResourceChild]
+
+    return $menu   
+}
+
+#-----------------------------------------

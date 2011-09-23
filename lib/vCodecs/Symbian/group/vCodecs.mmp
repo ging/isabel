@@ -1,0 +1,151 @@
+/*
+ * ISABEL: A group collaboration tool for the Internet
+ * Copyright (C) 2009 Agora System S.A.
+ * 
+ * This file is part of Isabel.
+ * 
+ * Isabel is free software: you can redistribute it and/or modify
+ * it under the terms of the Affero GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * Isabel is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * Affero GNU General Public License for more details.
+ * 
+ * You should have received a copy of the Affero GNU General Public License
+ * along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+ */
+/*
+* ============================================================================
+*  Name     : vCodecsSymbian.mmp
+*  Part of  : vCodecsSymbian
+*  Created  : 12.04.2005 by 
+*  Description:
+*     vCodecsSymbian.mmp - project definition file
+*  Version  :
+*  Copyright: 
+* ============================================================================
+*/
+
+TARGET            CodecServer.exe
+TARGETTYPE        epocexe
+UID               0x1000008d 0x10005BD9
+
+/* Server files */
+SOURCEPATH        ..\server\src
+SOURCE            CodecSession.cpp
+SOURCE            CodecServer.cpp
+
+USERINCLUDE       ..\server\inc
+USERINCLUDE       ..\common
+
+/* vCodecs files */
+USERINCLUDE     ..\inc
+USERINCLUDE     ..\..\lib\codecs
+USERINCLUDE     ..\..\lib\codecs\H263
+USERINCLUDE     ..\..\lib\codecs\xvid
+USERINCLUDE		..\..\lib\codecs\xvid\src
+USERINCLUDE		..\..\lib\codecs\xvid\src\image
+USERINCLUDE		..\..\lib\codecs\xvid\src\dct
+USERINCLUDE		..\..\lib\codecs\xvid\src\bitstream
+USERINCLUDE		..\..\lib\codecs\xvid\src\motion
+USERINCLUDE		..\..\lib\codecs\xvid\src\prediction
+USERINCLUDE		..\..\lib\codecs\xvid\src\quant
+USERINCLUDE		..\..\lib\codecs\xvid\src\utils
+USERINCLUDE		..\..\lib\codecs\xvid\src\plugins
+
+USERINCLUDE     ..\..\lib\codecs\JPEG
+USERINCLUDE     ..\..\include
+
+SYSTEMINCLUDE   ..\..\include
+SYSTEMINCLUDE   ..\inc
+SYSTEMINCLUDE   \epoc32\include
+SYSTEMINCLUDE   \epoc32\include\libc
+
+SOURCEPATH      ..\group
+DOCUMENT        bld.inf
+
+SOURCEPATH      ..
+//SOURCE          src\vCodecsSymbian.cpp
+//SOURCE          src\vCodecsSymbianDllMain.cpp
+
+SOURCEPATH      ..\..\lib
+SOURCE		codec.cxx
+SOURCE		codecs.cxx
+SOURCE		vUtils.cxx
+SOURCE		codecs\H263Codec.cxx
+SOURCE		codecs\XVIDCodec.cxx
+SOURCE		codecs\yuvrgb.cxx
+SOURCE		codecs\xvid\src\decoder.c
+SOURCE		codecs\xvid\src\encoder.c
+SOURCE		codecs\xvid\src\xvid.c
+SOURCE		codecs\xvid\src\bitstream\bitstream.c
+SOURCE		codecs\xvid\src\bitstream\cbp.c
+SOURCE		codecs\xvid\src\bitstream\mbcoding.c
+SOURCE		codecs\xvid\src\dct\fdct.c
+SOURCE		codecs\xvid\src\dct\idct.c
+SOURCE		codecs\xvid\src\dct\simple_idct.c
+SOURCE		codecs\xvid\src\image\colorspace.c
+SOURCE		codecs\xvid\src\image\font.c
+SOURCE		codecs\xvid\src\image\image.c
+SOURCE		codecs\xvid\src\image\interpolate8x8.c
+SOURCE		codecs\xvid\src\image\postprocessing.c
+SOURCE		codecs\xvid\src\image\qpel.c
+SOURCE		codecs\xvid\src\image\reduced.c
+SOURCE		codecs\xvid\src\motion\estimation_bvop.c
+SOURCE		codecs\xvid\src\motion\estimation_common.c
+SOURCE		codecs\xvid\src\motion\estimation_gmc.c
+SOURCE		codecs\xvid\src\motion\estimation_pvop.c
+SOURCE		codecs\xvid\src\motion\estimation_rd_based.c
+SOURCE		codecs\xvid\src\motion\gmc.c
+SOURCE		codecs\xvid\src\motion\motion_comp.c
+SOURCE		codecs\xvid\src\motion\sad.c
+SOURCE		codecs\xvid\src\motion\vop_type_decision.c
+SOURCE		codecs\xvid\src\prediction\mbprediction.c
+SOURCE		codecs\xvid\src\quant\quant_h263.c
+SOURCE		codecs\xvid\src\quant\quant_matrix.c
+SOURCE		codecs\xvid\src\quant\quant_mpeg.c
+SOURCE		codecs\xvid\src\utils\emms.c
+SOURCE		codecs\xvid\src\utils\mbtransquant.c
+SOURCE		codecs\xvid\src\utils\mem_align.c
+SOURCE		codecs\xvid\src\utils\mem_transfer.c
+SOURCE		codecs\xvid\src\utils\timer.c
+SOURCE		codecs\xvid\src\plugins\plugin_2pass1.c
+SOURCE		codecs\xvid\src\plugins\plugin_2pass2.c
+SOURCE		codecs\xvid\src\plugins\plugin_dump.c
+SOURCE		codecs\xvid\src\plugins\plugin_lumimasking.c
+SOURCE		codecs\xvid\src\plugins\plugin_psnr.c
+SOURCE		codecs\xvid\src\plugins\plugin_single.c
+SOURCE		codecs\H263\chendct.cxx
+SOURCE		codecs\H263\cod.cxx
+SOURCE		codecs\H263\dec.cxx
+SOURCE		codecs\H263\escritor.cxx
+SOURCE		codecs\H263\H263Encoder.cxx
+SOURCE		codecs\H263\H263Impl.cxx
+SOURCE		codecs\H263\lector.cxx
+SOURCE		codecs\H263\tablas.cxx
+
+MACRO		__SYMBIAN32__
+MACRO       _DEBUG
+MACRO		_UNICODE
+MACRO		ARCH_IS_32BIT
+MACRO		ARCH_IS_LITTLE_ENDIAN
+MACRO		HAVE_AV_CONFIG_H
+MACRO		ARCH_IS_GENERIC
+MACRO		__BUILD_FOR_ARM_SYMBIAN
+
+LIBRARY			estlib.lib
+LIBRARY         EDLL.LIB
+LIBRARY         euser.lib
+LIBRARY          efsrv.lib 
+
+#if !defined(WINS)
+LIBRARY libgcc.a
+#endif
+
+START WINS
+WIN32_LIBRARY msvcrtd.lib
+END
+// End of file

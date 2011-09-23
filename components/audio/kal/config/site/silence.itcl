@@ -1,0 +1,314 @@
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# silence.itcl
+#
+# Audio Capture Silence Threshold configuration.
+#
+#########################################################################
+
+class AudioSilenceConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {_siteId w _acdobj} {}
+    destructor {}
+
+    # Build the gui.
+    public method MakeGui {}
+
+    public method GetSilenceActive {}
+    public method SetSilenceActive {a}
+
+    public method GetSilenceLevel {}
+    public method SetSilenceLevel {l}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # SiteId of the site
+    private variable siteId
+
+    # root widget
+    private variable wroot ""
+
+    # Audio C daemon object
+    private variable acdobj
+
+    # Current silence detention values
+    private variable silenceActive ""
+    private variable silenceLevel  ""
+
+    # Initialize silenceActive and silenceLevel
+    private method InitSilence {}
+
+    # Send new value to the SMS server
+    private method UpdateSmsSilence {args}
+    private method UpdateSmsSilenceNow {}
+
+    # Process SMS received data
+    #
+    # Sets the silence detection state for the given site 
+    #
+    # $args has this format:
+    #     -site_id <site_id> -active <0|1> -level <#>
+    private method ProcessSmsSilence {args}
+
+    # Configure the audio daemon
+    private method ApplyDaemon {}
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::constructor {_siteId w _acdobj} {
+
+    set siteId $_siteId
+    set wroot  $w
+    set acdobj $_acdobj
+
+    InitSilence
+
+    sms joinKey Audio_silence_$_siteId [code $this ProcessSmsSilence]
+
+    set _mySiteId [SiteManager::MySiteId]
+    if {$siteId == $_mySiteId} {
+	sms forceState Audio_silence_$siteId add \
+	    -site_id $siteId \
+	    -active $silenceActive \
+	    -level  $silenceLevel
+    }
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::destructor {} {
+
+    sms leaveKey Audio_silence_$siteId 
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::InitSilence {} {
+
+    set _mySiteId [SiteManager::MySiteId]
+    
+    if {$siteId == $_mySiteId} {
+
+	set silenceActive [AudioConfigC::Load audio.silence.active 1]
+	set silenceLevel  [AudioConfigC::Load audio.silence.level -48]
+
+	ApplyDaemon
+    
+	UpdateSmsSilence
+
+    } else {
+
+	set silenceActive ""
+	set silenceLevel  ""
+
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::MakeGui {} {
+    
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    frame $wroot  -relief sunken -bd 1
+    
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+
+    #--
+
+    checkbutton $wroot.active \
+	-text " Capture silence threshold (dBs):" \
+	-padx 0 -pady 0 \
+	-highlightthickness 0 \
+	-onvalue  1 \
+	-offvalue 0 \
+	-variable [scope silenceActive] \
+	-command  [code $this UpdateSmsSilence]
+
+    if {[catch "$wroot.active cget -tristatevalue"]} {
+	$wroot.active configure -selectcolor green
+    }
+
+    set bg [$wroot.active cget -background]
+    $wroot.active conf -activebackground $bg
+    
+    balloon add $wroot.active "Silence detector switch"
+    
+
+    scale $wroot.level \
+	-showvalue 1 \
+	-from -50 -to -28 \
+	-orient horizontal \
+	-width 10 \
+	-borderwidth 1 \
+	-state normal  \
+	-highlightthickness 0 \
+	-variable [scope silenceLevel]
+    InitScaleValue $wroot.level $silenceLevel [code $this UpdateSmsSilence]
+
+    balloon add $wroot.level "Silence detector level (dBs)"
+
+    label $wroot.help \
+	-relief flat \
+	-justify left \
+	-font $font \
+	-text "Defaults: Checked, -48"
+	
+    #--
+
+    set _mySiteId [SiteManager::MySiteId]
+    if { ! [AudioConfigC::ControlSite] && $siteId != $_mySiteId} {
+	$wroot.active configure -state disabled
+	$wroot.level  configure -state disabled
+	$wroot.help   configure -state disabled
+    }
+
+    #--
+
+    grid $wroot.active -row 1 -column 0 -pady 1 -ipadx 6  -sticky ws
+    grid $wroot.level  -row 1 -column 1 -pady 1 -ipadx 6  -sticky wes 
+    grid $wroot.help   -row 1 -column 2 -pady 1 -ipadx 6  -sticky ws 
+
+    grid columnconfigure $wroot 1 -weight 1
+
+    grid rowconfigure $wroot 0 -weight 1
+    grid rowconfigure $wroot 1 -weight 0
+    grid rowconfigure $wroot 2 -weight 1
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::GetSilenceActive {} {
+    
+    return $silenceActive
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::SetSilenceActive {a} {
+
+    if {$silenceActive != $a} {
+	set silenceActive $a
+	
+	set _mySiteId [SiteManager::MySiteId]
+	if {$siteId == $_mySiteId} {
+	    ApplyDaemon
+	    AudioConfigC::Save audio.silence.active $silenceActive
+	}
+	
+	UpdateSmsSilenceNow
+    }
+}
+    
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::GetSilenceLevel {} {
+    
+    return $silenceLevel
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::SetSilenceLevel {l} {
+    
+    if {$silenceLevel != $l} {
+	set silenceLevel $l
+	
+	set _mySiteId [SiteManager::MySiteId]
+	if {$siteId == $_mySiteId} {
+	    ApplyDaemon
+	    AudioConfigC::Save audio.silence.level $silenceLevel
+	}
+	
+	UpdateSmsSilenceNow
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::UpdateSmsSilence {args} {
+
+    after cancel [code $this UpdateSmsSilenceNow]
+    
+    after 200 [code $this UpdateSmsSilenceNow]
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::UpdateSmsSilenceNow {} {
+    
+    after cancel [code $this UpdateSmsSilenceNow]
+    
+    sms forceState Audio_silence_$siteId add \
+	-site_id $siteId \
+	-active $silenceActive \
+	-level $silenceLevel
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::ProcessSmsSilence {args} {
+
+    # set _site_id [getOptionListValue $args -site_id ""]
+
+    set _active [getOptionListValue $args -active 0]
+    set _level  [getOptionListValue $args -level -50]
+
+    set silenceActive $_active
+    set silenceLevel  $_level
+
+    set _mySiteId [SiteManager::MySiteId]
+    if {$siteId == $_mySiteId} {
+	ApplyDaemon
+	AudioConfigC::Save audio.silence.active $silenceActive
+	AudioConfigC::Save audio.silence.level $silenceLevel
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSilenceConfigC::ApplyDaemon {} {
+
+    if {$silenceActive} {
+	$acdobj RDO audio_set_silence_level($silenceLevel)
+    } else {
+	$acdobj RDO audio_set_silence_level(-50)
+    }
+}
+
+#---------------------------------------------------------------------------

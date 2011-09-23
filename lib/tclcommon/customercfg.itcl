@@ -1,0 +1,133 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# customercfg.itcl
+#
+# Description
+#
+#   Configuration of Logos, Titles, etc. for a giver customer.
+#
+#
+#########################################################################
+
+
+class CustomerCfgC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+
+    # Returns the values stored for the given key, or
+    # returns $default, if it doesn't exist. 
+    public method GetValue {key {default ""}}
+
+    # Dump the stored values
+    public method Dump {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Array with the configuration values.
+    # $values($key) is the value for that key
+    private variable values
+
+    # Read the values from the given configuration file.
+    private method LoadValues {file}
+}
+
+#--------------------------------------------------------------------------
+
+body CustomerCfgC::constructor {} {
+    global env
+
+    # Read the values from $ISABEL_DIR/lib/customer.cfg,
+    # and then from $ISABEL_CONFIG_DIR/config/customer.cfg.
+    LoadValues $env(ISABEL_DIR)/lib/customer.cfg
+    LoadValues $env(ISABEL_CONFIG_DIR)/config/customer.cfg
+
+}
+
+#--------------------------------------------------------------------------
+
+body CustomerCfgC::LoadValues {file} {
+
+    if {![file readable $file]} return
+
+    set o [open $file r]
+
+    while {![eof $o]} {
+	gets $o linea
+
+	# removes coments and empty lines.
+	set c0 [string index $linea 0]
+	if {$c0 == "!" || $c0 == "#" || [string trim $linea] == ""} {
+	    continue
+	}
+
+	set linea [string trimleft $linea]
+	if {[regexp {^([^=]+)=(.*)$} $linea todo key val] == 0} {
+	    ErrorTraceMsg "Customer configuration file: line \"$linea\" of the \"$file\"." 
+	    continue
+	} else {
+	    set key [string trim $key]
+	    set val [string trim $val]
+
+	    set values($key) $val
+	}
+    }
+
+    close $o
+}
+
+#--------------------------------------------------------------------------
+
+body CustomerCfgC::GetValue {key {default ""}} {
+
+    if {[info exists values($key)]} {
+	return $values($key)
+    } else {
+	return $default
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body CustomerCfgC::Dump {} {
+
+    DebugTraceMsg "Customer Configuration:"
+    foreach key [array names values] {
+	DebugTraceMsg "   $key = $values($key)"
+    }
+}
+
+#--------------------------------------------------------------------------
+
+
+
+
+
+

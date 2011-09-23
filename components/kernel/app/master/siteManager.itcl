@@ -1,0 +1,384 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# siteManager.itcl
+#
+# Defines the SiteManager class.
+#
+#########################################################################
+
+class SiteManager {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # A site wants to connect to the session.
+    # The chid of the connecting site is set to -1 if the site can't connect.
+    public proc SiteConnection {tool isabelversion isabelrelease password site_id master host \
+	    name secoid connectTo connectToIP useMulticast mcastbw \
+	    useFlowserver fsupbw fsdownbw uname} 
+
+    # Inform that the site "site_id" leaves the session.
+    public proc SiteDisconnection {site_id {endmsg ""}} 
+
+    # The master exits, so it forces all the users to exit.
+    public proc MasterDisconnection {} 
+
+    # Returns the list with the site_id of the connected sites.
+    public proc GetSites {}
+
+    # Returns 0 if the site is not in the list of the connected sites.
+    # If the site is connected, returns 1
+    public proc SiteConnected {site_id}
+
+    # Gets information from the SiteInfoC class
+    public proc GetSiteInfo {site_id what}
+    
+    #- CallBacks Handling
+
+    # Sets a callback to be executed when a site connects.
+    # $op must be a CBManagerC method name. 
+    # When the callbacks are executed, the site_id of the connected site is added as argument.
+    public proc ConnectionCB {op cb}
+
+    # Sets a callback to be executed when a site disconnects.
+    # $op must be a CBManagerC method name. 
+    # When the callbacks are executed, the site_id of the connected site is added as argument.
+    public proc DisconnectionCB {op cb}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # last chid Used
+    private common lastChidUsed [expr [clock seconds] % 9999 + 1000 ]
+
+    # $rememberChid($site_id) a cache to remember the chid value assigned to the
+    # the site with the given $site_id.
+    # This chid value is always assigned to that site. 
+    private common rememberChid
+
+    # list of the site_id of the connected sites.
+    private common connectedSites ""
+    
+    # $siteobj($site_id) is the object with the information of the given site.
+    private common siteobj    
+    
+    # CB objects
+    private common UMConnectionCB    ""
+    private common UMDisconnectionCB ""
+
+    # $last_delay($id) is the last delay of the keepalive ping received from $id.
+    # It is used to not to write identical traces saying that the delay is 0
+    private common last_delay 
+
+    # Send a ping with my ping key to the KeepAlive center 
+    # of the site $to_site_id, in order to reset the timeout.
+    # The ping key used by the master is "Master".
+    private proc SiteKeepAlivePing {key to_site_id} 
+
+    # Callback to execute when a ping message is received.
+    private proc SiteKeepAliveCB {key delay}
+
+    # Site $site_id doesn't respond and the keepalive will disconnect it.
+    private proc SiteNoRespond {site_id} 
+
+    # To update the master state when the site $site_id disconnect.
+    private proc MasterDisconnectionValues {site_id endmsg} 
+
+}
+
+#------------------------------------------------------------------
+
+
+body SiteManager::SiteConnection {tool isabelversion isabelrelease password site_id master host name secoid connectTo connectToIP useMulticast mcastbw useFlowserver fsupbw fsdownbw uname} {
+    global env
+
+    if {[info exists rememberChid($site_id)]} {
+	set chid $rememberChid($site_id)
+    } else {
+	incr lastChidUsed 
+	set chid $lastChidUsed 
+	set rememberChid($site_id) $chid 
+    }
+    
+    WriteTraceMsg "- User Connection Request from $site_id - $name ($host $chid)" 1
+
+    #------------------------------------------------------------------
+
+    set from $secoid
+
+    #------------------------------------------------------------------
+
+    # Check password
+
+    set master_passwd [session Environ cget -password]
+    if {$master_passwd != ""} {
+	
+	set master_key [session Environ cget -site_id]
+	set master_password [session Environ cget -password]
+
+	if {[catch {exec openssl enc -des -d -a -A -pass pass:error$site_id << $password} claro1]} {
+	    set msg  "Connection refused - invalid site password." 
+	    network RDO $from "UM SiteResponse $site_id -1 \{$msg\}"	
+	    return
+	}
+
+	if {[catch {exec openssl enc -des -d -a -A -pass pass:error$master_key << $master_password} claro2]} {
+	    set msg  "Connection refused - invalid master password." 
+	    network RDO $from "UM SiteResponse $site_id -1 \{$msg\}"	
+	    return
+	}
+
+	if {$claro1 != $claro2} {
+	    set msg  "Connection refused - wrong password." 
+	    network RDO $from "UM SiteResponse $site_id -1 \{$msg\}"	
+	    return
+	}
+    }
+
+    #------------------------------------------------------------------
+
+    # If there is already a connected site with the given site_id, the connection is rejected.
+    if {[SiteConnected $site_id]} {
+	set msg  "Connection refused.\nThere is already a connected site with the \"$site_id\" Site ID." 
+	WriteTraceMsg $msg
+	network RDO $from "UM SiteResponse $site_id -1 \{$msg\}"	
+	return
+    }
+
+    #------------------------------------------------------------------
+
+    set maxsites [session Activity GetResource [session Activity GetName] maxsites 25]
+
+    if {[llength $connectedSites] >= $maxsites} {
+	set msg  "Connection refused.\nConference limited to $maxsites sites." 
+	WriteTraceMsg $msg
+	network RDO $from "UM SiteResponse $site_id -1 \{$msg\}"	
+	return
+    }
+
+    #------------------------------------------------------------------
+
+    set connectionTime [clock seconds]
+
+    #------------------------------------------------------------------
+
+    # Creates the user object
+    lappend connectedSites $site_id
+
+    set siteobj($site_id) [SiteInfoC "#auto" $tool $chid $site_id $isabelversion $isabelrelease $master $host \
+			      $secoid $name \
+			      [list $connectTo] [list $connectToIP] $useMulticast $mcastbw $useFlowserver $fsupbw $fsdownbw \
+                              [list $uname] $connectionTime]
+
+    # Registers the new site
+    GlobalState::RegisterSite $site_id
+    GlobalState::RefreshSiteConnections
+
+    #------------------------------------------------------------------
+
+    # Evaluates callback
+    if {$UMConnectionCB != ""} {
+	$UMConnectionCB Exec $site_id
+    }
+
+    #------------------------------------------------------------------
+    
+    # Set the new user id value.
+
+    network RDO $from "UM SiteResponse $site_id $chid"
+
+    #------------------------------------------------------------------
+
+    if {[info exists env(ISABEL_KEEPALIVE_TIMEOUT)]} {
+	set _ka_timeout $env(ISABEL_KEEPALIVE_TIMEOUT)
+    } else {
+	set _ka_timeout 60
+    }
+
+    services KeepAlive Add site-$site_id [code SiteNoRespond $site_id] $_ka_timeout [code SiteKeepAliveCB]
+
+    SiteKeepAlivePing Master $site_id 
+}
+
+
+#------------------------------------------------------------------
+
+body SiteManager::SiteKeepAliveCB {key delay} {
+
+    if {$delay == "0" && [info exists last_delay($key)] && $delay == $last_delay($key)} {
+	return
+    }
+
+    set last_delay($key) $delay
+
+    regexp {site-(.*)} $key all _site_id
+    WriteTraceMsg "KeepAlive from $_site_id delayed $delay seconds."
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::SiteKeepAlivePing {key to_site_id} {
+
+    if {![SiteConnected $to_site_id]} return
+
+    network RDO [GetSiteInfo $to_site_id secoid] "XS KeepAlive Ping $key"
+    after 10000 [code SiteKeepAlivePing $key $to_site_id]
+}
+
+
+#------------------------------------------------------------------
+
+body SiteManager::SiteNoRespond {site_id} {
+    
+    ErrorTraceMsg "- Site $site_id does not respond to ping."
+
+    SiteDisconnection $site_id "Warning:\n$site_id does not respond.\nClosing Session."
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::MasterDisconnection {} {
+
+    foreach _s [GetSites] {
+	set msg "Session finished by Master"
+	SiteDisconnection $_s $msg 
+    }
+
+    after 2000 delete object network
+
+    exit 0
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::SiteDisconnection {site_id {endmsg ""}} {
+
+    set chid [GetSiteInfo $site_id chid] 
+    
+    if {![SiteConnected $site_id]} return
+
+    # If I am the interactive part of a master site, then I kill the master and
+    # all the interactive sites.
+    set killmaster [GetSiteInfo $site_id master]
+
+    # Quit the user components.
+    foreach c [GlobalState::GetComponentsByState $site_id "Waiting Running"] {
+	ComponentManager::KillComponent $site_id $c
+    }   
+
+    foreach c [GlobalState::GetComponentsByState $site_id "Disabled Stopped Waiting Running"] {
+	GlobalState::RemoveComponent $c $site_id
+        GlobalState::RefreshSiteConnections
+    }
+
+    MasterDisconnectionValues $site_id $endmsg
+
+    services KeepAlive Del site-$site_id
+
+    #------------------------------------------------------------------
+
+    # The interactive part of a master site.
+    if {$killmaster} {
+	MasterDisconnection
+    }
+}
+
+
+
+#---------------------------------------------------------------
+
+body SiteManager::MasterDisconnectionValues {site_id endmsg} {
+
+    set chid [GetSiteInfo $site_id chid] 
+
+    if {![SiteConnected $site_id]} return
+
+    DebugTraceMsg "- SiteDisconnection $site_id" 1
+
+    set connectedSites [ldelete $connectedSites $site_id]
+
+    if {$UMDisconnectionCB != ""} {
+	$UMDisconnectionCB Exec $site_id
+    }
+
+    delete object $siteobj($site_id)
+    unset siteobj($site_id)
+}
+
+
+#------------------------------------------------------------------
+
+body SiteManager::ConnectionCB {op cb} {
+
+    if {$UMConnectionCB == ""} {
+	set UMConnectionCB [CBManagerC #auto]
+    }
+    $UMConnectionCB $op $cb
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::DisconnectionCB {op cb} {
+
+    if {$UMDisconnectionCB == ""} {
+	set UMDisconnectionCB [CBManagerC #auto]
+    }
+    $UMDisconnectionCB $op $cb
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::SiteConnected {site_id} {
+
+    if {[lsearch -exact [GetSites] $site_id] != -1} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::GetSites {} {
+
+    return $connectedSites
+}
+
+#------------------------------------------------------------------
+
+body SiteManager::GetSiteInfo {site_id what} {
+
+    return [$siteobj($site_id) cget -$what]
+}
+
+#------------------------------------------------------------------
+
+
+
+
+
+

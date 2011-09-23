@@ -1,0 +1,372 @@
+<!--
+ - ISABEL: A group collaboration tool for the Internet
+ - Copyright (C) 2009 Agora System S.A.
+ -
+ - This file is part of Isabel.
+ -
+ - Isabel is free software: you can redistribute it and/or modify
+ - it under the terms of the Affero GNU General Public License as published by
+ - the Free Software Foundation, either version 3 of the License, or
+ - (at your option) any later version.
+ -
+ - Isabel is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - Affero GNU General Public License for more details.
+ -
+ - You should have received a copy of the Affero GNU General Public License
+ - along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+ -
+-->
+<html>
+<head>
+   <title>5.- Interfaz gr&aacute;fica del Agente</title>
+</head>
+
+<body>
+
+<center>
+<table border=0 width=585>
+<tr>
+    <th align=center>
+        <h2>
+        <img SRC="../images/monitorIcon.gif" height=32 width=32><b> <u>5.- Interfaz
+        gr&aacute;fica del Agente</u></b></h2>
+        <img SRC="../images/linecl.gif" >
+    </th>
+</tr>
+<tr>
+    <td align=left>
+Es la que nos permite ver los datos de que dispone
+el agente sin necesidad de usar un gestor SNMP. Por tanto no es imprescindible
+activarla cuando se pretende trabajar desde un gestor; es m&aacute;s se
+recomienda no lanzarla, ya que consume muchos recursos del sistema. Para
+activarla existen dos m&eacute;todos:<p>
+<ul>
+    <li>
+    Con el par&aacute;metro -<i>printStats</i> en el momento de lanzar el agente.</li>
+    <li>
+    Cuando el agente ya est&aacute; lanzado, con el comando de control <i>snmp_gui(1).</i></li>
+</ul>
+
+Una vez que se lanza la interfaz gr&aacute;fica
+del agente, lo primero que nos aparece es la ventana principal. Para hacerlo,
+no es necesario que ISABEL est&eacute; ejecut&aacute;ndose. La diferencia
+est&aacute;, en que mientras ISABEL no se ejecute, todas las tablas y formularios
+aparecer&aacute;n en vac&iacute;os.<p>
+
+<h3><img SRC="../images/blueball.gif" > <u>5.1.- Ventana principal</u></h3>
+
+Podemos verla en la siguiente figura. Se
+trata de una interfaz gr&aacute;fica muy sencilla, y bastante intuitiva.
+Se divide en 3 zonas:<p>
+
+<img src="../images/audioIF.gif">
+
+<br>
+<h3><u>5.1.1.- Zona de Men&uacute;s</u></h3>
+Se encuentran en la parte superior de la pantalla.
+Algunas de las funciones que ofrecen tambi&eacute;n son accesibles mediante
+los botones inferiores, otras sin embargo, son solo accesibles a trav&eacute;s
+de los men&uacute;s. Veamos el contenido de cada uno de ellos:<p>
+<ul>
+    <li><b>Men&uacute; Archivo</b><br>
+         <img src="../images/menuOptions.gif"><br>
+         <ul>
+            <li><b>Configuraci&oacute;n
+            puertos...:</b> da acceso a una nueva ventana en la que podemos ver los
+            puertos de atenci&oacute;n de los distintos servidores, y en el caso del
+            servidor SNMP, podemos modificar el valor, para que este comience a esperar
+            mensajes SNMP en un nuevo puerto. Si al arrancar hemos usado la opci&oacute;n
+            -<i>shell</i> tambi&eacute;n aparecer&aacute; reflejado con un mensaje
+            en el espacio reservado al servidor de control.<br>
+            <img src="../images/portConf.gif"><br>
+
+            <li><b>Eliminar
+            GUI</b>: desactiva la interfaz gr&aacute;fica del agente. Tiene el mismo
+            efecto que el comando de control <i>snmp_gui(0).</i>
+
+            <li><b>Salir</b>:
+            cierra por completo todo el agente SNMP. Dejando de servir estad&iacute;sticas
+            a gestores SNMP, aunque los componentes sigan recogiendo estas.
+         </ul>
+
+    <li><b>Men&uacute; Unidades</b><br>
+        Permite escoger las unidades en que aparecen los datos en las distintas
+        tablas, para los anchos de banda y los frame rates. En el primer caso son
+        tres las opciones que ofrece: <i>Kbytes</i>/sg, Kbits/sg y cent&eacute;simas
+        de <i>Bytes</i>/sg. En el caso del frame rate las unidades son siempre
+        las mismas: <i>frames</i>/sg. Cuando se seleccionan unas unidades estas
+        tienen para el ancho de banda estas se aplican a todos los anchos de banda
+        de todos los canales de todos los componentes.<br>
+        <img src="../images/menuBW.gif"><br>
+
+    <li><b>Men&uacute; Ayuda :</b><br>
+    Ofrece dos opciones: Manual de usuario que nos presenta
+    esta misma documentaci&oacute;n en formato HTML; y Acerca de donde podemos
+    encontrar informaci&oacute;n del autor y la versi&oacute;n del programa.
+</ul>
+
+<br>
+<h3><u>5.1.2.- Zona Central: presentaci&oacute;n de datos</u></h3>
+Es la zona en la que van a aparecer todas las medidas
+disponibles en cada momento. Se trata de un panel con pesta&ntilde;as,
+en las que cada una de ellas nos da acceso a la informaci&oacute;n de un
+componente distinto.<p>
+<ul>
+    <li><b>Componente de Audio:</b><br>
+    <img src="../images/audioIF.gif"><br>
+    Presenta una tabla donde cada fila de datos se corresponde con un
+    canal activo en el audio.
+    Por cada canal los datos que tenemos accesibles son:
+        <ul>
+        <li><i>ChIndex</i>: identificador de canal
+        <li><i>sentBW</i>: ancho de banda de datos enviado
+        <li><i>recvBW</i>: ancho de banda de datos recibidos
+        <li><i>DiscardedPkts</i>: paquetes descartados (duplicados)
+        <li><i>LostPkts</i>: paquetes perdidos (si llegan tarde, luego
+            se restan y se añaden al campo anterior)
+        <li><i>jitter</i>: jitter en el canal
+        <li><i>Buffer</i>: capacidad de almacenamiento
+        </ul>
+
+    <li><b>Componente de Video:</b><br>
+    <img src="../images/videoIF.gif"><br>
+    Presenta una tabla donde cada fila de datos se corresponde con un
+    canal activo en el video.
+    Por cada canal los datos que tenemos accesibles son:
+        <ul>
+        <li><i>ChIndex</i>: identificador de canal
+        <li><i>desFR</i>: frame rate deseado
+        <li><i>desBW</i>: ancho de banda deseado
+        <li><i>sentFR</i>: frame rate de datos enviados
+        <li><i>sentBW</i>: ancho de banda de datos enviado
+        <li><i>recvBW</i>: ancho de banda de datos recibidos
+        <li><i>ensFR</i>: frame rate de datos ensamblados
+        <li><i>ensBW</i>: ancho de banda de datos ensamblados
+        <li><i>paintFR</i>: frame rate de datos pintados o fotogramas
+        por segundo que se pintan para ese canal de video.
+        </ul>
+
+
+    <li><b>Componente de Shared-Display:</b><br>
+      <img src="../images/shdisIF.gif"><br>
+    Presenta una tabla donde cada fila de datos se corresponde con un
+    canal activo en el shared display.
+    Por cada canal los datos que tenemos accesibles son:
+        <ul>
+        <li><i>ChIndex</i>: identificador de canal
+        <li><i>desFR</i>: frame rate deseado
+        <li><i>desBW</i>: ancho de banda deseado
+        <li><i>sentFR</i>: frame rate de datos enviados
+        <li><i>sentBW</i>: ancho de banda de datos enviado
+        <li><i>recvBW</i>: ancho de banda de datos recibidos
+        <li><i>ensFR</i>: frame rate de datos ensamblados
+        <li><i>ensBW</i>: ancho de banda de datos ensamblados
+        <li><i>paintFR</i>: frame rate de datos pintados o fotogramas
+        por segundo que se pintan para ese canal de video.
+        </ul>
+
+    <li><b>Componente de Irouter:</b><br>
+      <img src="../images/irouterIF.gif"><br>
+    Presenta dos tablas, la superior para datos recibidos, la inferior
+    para datos enviados. Cada fila de datos se corresponde con un
+    canal activo en el irouter.
+    Por cada canal receptor los datos que tenemos accesibles son:
+        <ul>
+        <li><i>ChId</i>: n&uacute;mero de canal (SSRC en RTP)
+        <li><i>Media</i>: nombre del medio
+        <li><i>SourceIP</i>: direcci&oacute;n IP de donde procede el flujo
+        <li><i>Pkts</i>: n&uacute;mero de paquetes en intervalo
+            de muestreo (3 segs.)
+        <li><i>DataBW</i>: ancho de banda medio de datos recibidos
+            en intervalo de muestreo (3 segs.)
+        <li><i>FecPkts</i>: n&uacute;mero de paquetes de protecci&oacute;n FEC
+            en intervalo de muestreo (3 segs.)
+        <li><i>FecBW</i>: ancho de banda medio de protecci&oacute;n FEC
+             recibidos en intervalo de muestreo (3 segs.)
+        <li><i>Lost</i>: paquetes perdidos totales en tr&aacute;fico RTP
+        <li><i>Disordered</i>: paquetes desordenados totales en tr&aacute;fico RTP
+        <li><i>Duplicated</i>: paquetes duplicados en tr&aacute;fico RTP
+        <li><i>Jitter</i>: jitter medio de llegada de paquetes en el
+            intervalo de muestreo (3 segs.) en tr&aacute;fico RTP
+        </ul>
+
+    NOTA: Si existe un hueco en los n&uacute;meros de secuencia,
+    el paquete se considera perdido. Si llega posteriormente,
+    se elimina de los perdidos y se añade a los desordenados.
+
+    Por cada flujo enviado los datos que tenemos accesibles son:
+        <ul>
+        <li><i>ChId</i>: n&uacute;mero de canal (SSRC en tr&aacute;fico RTP)
+        <li><i>Media</i>: nombre del medio
+        <li><i>DestinyIP</i>: direcci&oacute;n IP donde se dirigen los datos
+        <li><i>Pkts</i>: n&uacute;mero de paquetes totales en el
+            intervalo de muestreo (3 segs.)
+        <li><i>DataBW</i>: ancho de banda medio de datos enviados en
+            el intervalo de muestreo (3 segs.)
+        <li><i>FecPkts</i>: n&uacute;mero de paquetes de protecci&oacute;n FEC
+            en intervalo de muestreo (3 segs.)
+        <li><i>FecBW</i>: ancho de banda medio de protecci&oacute;n FEC
+             enviado en intervalo de muestreo (3 segs.)
+        <li><i>Discarded</i>: n&uacte;mero de paquetes totales descartados
+        </ul>
+
+    <li><b>Otros Componentes:</b><br>
+    En el futuro se piensa
+    a&ntilde;adir la gesti&oacute;n de otros componentes de ISABEL, a los que
+    accederemos pulsando en la pesta&ntilde;a correspondiente. El contenido
+    del nuevo panel, lo definir&aacute; aquel que integre el nuevo componente
+    y no tiene porque tratarse exclusivamente de una tabla, sino que puede
+    ser un formulario, o incluso un gr&aacute;fico.
+</ul>
+
+<br>
+<h3><u>5.1.3.- Zona Inferior: Botones</u></h3>
+
+En la parte inferior de la interfaz gr&aacute;fica
+aparecen tres botones que tienen las siguientes funcionalidades:
+<ul>
+    <li><b>Dibujar :</b>
+    Permite ver la representaci&oacute;n gr&aacute;fica de la evoluci&oacute;n
+    temporal del dato que previamente hayamos seleccionado de alguna de las
+    tablas. No todos los datos son susceptibles de ser representados gr&aacute;ficamente;
+    en caso de haber escogido alguno que no lo sea, nos saldr&aacute; una mensaje
+    de aviso.<br>
+
+    <li><b>ElimiarGUI :</b>
+     Elimina la interfaz gr&aacute;fica que el agente. Es exactamente
+    igual que la opci&oacute;n del men&uacute; archivo o que el comando de
+    control <i>snmp_gui(0).</i><br>
+
+    <li><b>Salir :</b>
+    Cierra todo el agente, al igual que la opci&oacute;n de igual nombre del
+    men&uacute; archivo o que el comando de control <i>snmp_quit().</i><br>
+
+</ul>
+
+<h3><img SRC="../images/blueball.gif" > <u>5.2.- Ventana de Gr&aacute;ficos</u></h3>
+
+Es el tipo de ventanas en las que se realizan las
+representaciones gr&aacute;ficas de la evoluci&oacute;n de las estad&iacute;sticas.
+Su aspecto para un ancho de banda es el de la figura X.El t&iacute;tulo
+de la ventana nos informa en todo momento de cual es el dato que estamos
+representando en su interior.<p>
+<br>
+Para poder dibujar la evoluci&oacute;n de un dato
+debemos seleccionar el dato de la tabla haciendo un simple clic sobre la
+celda, y posteriormente pulsar el bot&oacute;n dibujar. Podemos tener abiertas
+tantas ventanas de representaci&oacute;n gr&aacute;fica como queramos.<p>
+<br>
+Dependiendo de que el dato que vamos a representar
+sea un ancho de banda, un frame rate o paquetes/sg, el formato de esta
+ventana ser&aacute; un poco distinto. Al igual que hicimos con la ventana
+principal vamos a ver las distintas partes en que se dividen estas ventanas.<p>
+<br>
+</td>
+</tr>
+<tr>
+<td align=center>
+<img src="../images/graphWin.gif">
+</td>
+</tr>
+<tr>
+<td align=left>
+<br>
+<h3><u>5.2.1.- Zona de Men&uacute;s</u></h3>
+Son dos los men&uacute;s disponibles en estas ventanas.
+El men&uacute; archivo que nos permite cerrar la ventana en la que est&aacute;
+el men&uacute; (Cerrar), eliminar la interfaz gr&aacute;fica por completo
+(Eliminar GUI), o cerrar todo el agente (Salir). <p>
+<br>
+El otro men&uacute;, el de ayuda nos permite acceder
+a este manual de usuario en formato HTML, y tambi&eacute;n nos permite
+obtener informaci&oacute;n sobre la versi&oacute;n del programa y el autor.<p>
+<br>
+
+<h3><u>5.2.2.- Zona de Unidades</u></h3>
+Es la parte superior izquierda de la ventana de dibujo.
+Esta es la &uacute;nica parte de la ventana que var&iacute;a seg&uacute;n
+el tipo de informaci&oacute;n que se est&eacute; representando. As&iacute;
+si se trata de un frame rate o de paquetes/sg, se trata de un subpanel
+no interactivo donde aparecen las unidades del eje Y de la representaci&oacute;n.
+Si lo que estamos dibujando es la evoluci&oacute;n temporal de un ancho
+de banda, entonces nos ofrece la posibilidad de escoger entre tres unidades
+para el eje Y. Las unidades que aqu&iacute; escojamos s&oacute;lo afectan
+al dibujo contenido en esta ventana, y no al resto de los dibujos o a los
+datos de las tablas.i<p><br>
+
+<h3><u>5.2.3.- Zona de Configuraci&oacute;n</u></h3>
+
+Es el subpanel situado en la parte suprior derecha,
+y contiene dos botones que dan acceso a sendas ventanas de configuraci&oacute;n.<p>
+<br>
+<ul>
+    <li><b>Bot&oacute;n Color...:</b>
+    Nos permite escoger el
+    color de la gr&aacute;fica, esto nos ayuda a distinguir unos dibujos de
+    otros con un simple vistazo, sin necesidad de estar mirando el t&iacute;tulo
+    de la ventana en cada momento.<p><br>
+    <img src="../images/colorConf.gif">
+
+    <li><b>Bot&oacute;n Otros...:</b>
+    Nos da acceso a una ventana donde podemos configurar
+    los siguientes aspectos del gr&aacute;fico:<br>
+    <img src="../images/graphConf.gif">
+    <ul>
+        <li>Si
+        queremos o no, que aparezca en la parte inferior de la ventana de representaci&oacute;n
+        gr&aacute;fica el valor del &uacute;ltimo punto pintado.<br>
+
+        <li>Si
+        queremos o no, que aparezcan unidades y divisiones en el eje vertical.<br>
+
+        <li>Si
+        queremos o no, que aparezca la escala de tiempos sobre el eje horizontal.<br>
+
+        <li>Si
+        queremos o no, que el eje vertical comience siempre en cero, o que se encoja
+        de forma que entren todos los puntos, pero las diferencias entre ellos
+        se magnifiquen lo m&aacute;ximo posible.<br>
+
+        <li>Por
+        &uacute;ltimo tenemos un <i>slider </i>en el que podemos seleccionar el
+        tiempo que queremos que aparezca en pantalla. Si seleccionamos 100, veremos
+        los &uacute;ltimos 20 puntos, pues el intervalo entre puntos es de cinco
+        segundos.<br>
+    <ul>
+<ul>
+Cuando las necesidades sean mayores, como es fijar
+alarmas, o almacenar en un fichero los datos de una sesi&oacute;n, deber&aacute;
+recurrirse al uso de gestores SNMP. La interfaz gr&aacute;fica del agente
+est&aacute; dise&ntilde;ada pensando en que se use en aquellos momentos
+donde &uacute;nicamente se pretende realizar unas peque&ntilde;as pruebas
+y no se requiere la gran cantidad de funcionalidades que ofrecen los gestores
+que actualmente hay en el marcado.<br>
+    </td>
+</tr>
+<tr>
+    <td>
+        <img src="../images/linecl.gif">
+    </td>
+</tr>
+<tr>
+    <td align=center>
+        <a href="helpIndex.html"><h1>INDICE</h1></a>
+    </td>
+</tr>
+<tr>
+    <td>
+        <img src="../images/linecl.gif">
+    </td>
+</tr>
+<tr>
+    <td align=center>
+        <p><a href="http://isabel.dit.upm.es">http://isabel.dit.upm.es</a></center>
+    </td>
+</tr>
+</table>
+</center>
+</body>
+</html>
+

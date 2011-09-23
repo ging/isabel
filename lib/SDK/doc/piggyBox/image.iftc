@@ -1,0 +1,153 @@
+\section{Imágenes}
+
+Todas la funcionalidades incorporadas por un  módulo cargable
+(grabbers, codecs, etc) manipulan objetos de tipo imagen. En
+esta sección está descrita la estructura de estos objetos y
+toda la burocracia involucrada en su manejo creación y
+destrucción.
+
+\subsection {La clase {\tt image\_t}}
+La clase {\tt image\_t} es la que representa cualquiern tipo de imagen
+que vayamos a manejar. Su definición se encuentra en el fichero
+{\tt Isabel\_SDK/image.hh} y contiene todos los atributos y 
+métodos para usar una imagen genérica.
+
+\begin{verbatim}
+
+class image_t: public virtual item_t, public virtual collectible_t
+{
+private:
+    imageImplementation_ref __impl; // image implementation
+
+    int      __xPos;
+    int      __yPos;
+
+    unsigned __frameWidth;
+    unsigned __frameHeight;
+    int      __xOffset;
+    int      __yOffset;
+
+
+public:
+    formatId_t getFormat     (void) const { return __impl->getFormat(); }
+    unsigned   getWidth      (void) const { return __impl->getWidth (); }
+    unsigned   getHeight     (void) const { return __impl->getHeight(); }
+    int        getXpos       (void) const { return __xPos;              }
+    int        getYpos       (void) const { return __yPos;              }
+    unsigned   getFrameWidth (void) const { return __frameWidth;        }
+    unsigned   getFrameHeight(void) const { return __frameHeight;       }
+    int        getXoffset    (void) const { return __xOffset;           }
+    int        getYoffset    (void) const { return __yOffset;           }
+
+
+    // 
+    // Access to image implementation 
+    //
+    imageImplementation_ref getImplementation(void) const { 
+        return __impl; 
+    }
+
+    void replaceImplementation(imageImplementation_t *i) {
+        __impl= i;
+    }
+
+    //
+    // Access to image position
+    //
+    void setPosition(int x, int y) { __xPos= x, __yPos= y; }
+
+    const char *className(void) const { return "image_t"; }
+
+    friend class smartReference_t<image_t>;
+};
+
+typedef smartReference_t<image_t>  image_ref;
+
+#define IMAGE_OK(x)     \
+(                                               \
+    ((int)(x).isValid())                        \
+    &&                                          \
+    ((int)(x)->getImplementation().isValid())   \
+)
+
+\end{verbatim}
+
+El atributo {\tt \_\_impl} es la implementación de la imagen y contendrá
+la imagen en el formato adecuado, GIF, JPEG o el que se elija.
+Dado que este atributo es privado, para acceder al mismo es necesario
+utilizar los métodos {\tt getImplementation} (para obtener la 
+implementación de la imagen) y {\tt replaceImplementation} (para modificar
+la implementación de la imagen).
+
+Debido a que se utiliza un sistema de cuenta de referencias para 
+la gestión de memoria de forma automática, es necesario ser 
+conscientes que una vez reservada la memoria el entorno se 
+encargará de liberarla y el hecho de borrarla explícitamente 
+puede provocar errores graves (Léase la parte
+de gestión de memoria en la documentación de la ICF2). Para la 
+comprobación de que una imagen es válida se ha definido la siguiente
+macro que debe utilizarse sobre el siguiente tipo de datos 
+\begin{verbatim}
+typedef smartReference_t <image_t> image_ref
+\end{verbatim}
+y que comprueba que existe la imagen y que además también
+existe su implementación.
+
+La clase que define la implementación se muestra a continuación
+y también está incluida en el fichero {\tt Isabel\_SDK/image.hh}:
+
+\begin{verbatim}
+class imageImplementation_t: public virtual item_t, public virtual collectible_t
+{
+private:
+
+public:
+    virtual formatId_t getFormat(void) const= 0;
+    virtual unsigned   getWidth (void) const= 0;
+    virtual unsigned   getHeight(void) const= 0;
+
+    friend class smartReference_t<imageImplementation_t>;
+};
+typedef smartReference_t<imageImplementation_t> imageImplementation_ref;
+\end{verbatim}
+
+Una implementación está caracterizada por los siguientes parámetros:
+formato, ancho y alto.
+
+\subsection {Ejemplo de generación de una nueva imagen}
+
+Para generar nuestra propia clase de imagen habrá que crear la 
+implementación de nuestra imagen con el formato deseado. Para ello
+hay que heredar de {\tt imageImplementation\_t}:
+
+\begin{verbatim}
+//
+// our image format
+//
+class myImageImplementation_t: public imageImplementation_t
+{
+private:
+   myEncodedImage_t *__hiddenFrame;
+
+
+public:
+    myImageImplementation_t(myEncodedImage_t *img)
+    {
+        __hiddenFrame= img;
+    };
+    virtual ~myImageImplementation_t(void) {
+        delete __hiddenFrame;
+    }
+
+    unsigned   getWidth (void) const { return __hiddenFrame->w; }
+    unsigned   getHeight(void) const { return __hiddenFrame->h; }
+    formatId_t getFormat(void) const { return getFormatIdByName("MY_IMG::MY_IMG"); }
+
+    myImageEncodedImage_t *getMyImage(void) const { return __hiddenFrame; }
+};
+\end{verbatim}
+
+Una vez que ya tenemos nuestra implementación sólo hay que generar
+un objeto de tipo {\tt image\_ref} y reemplazar su implementación por
+la nuestra, utilizando el método {\tt replaceImplementation}.
+

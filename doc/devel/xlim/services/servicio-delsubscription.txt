@@ -1,0 +1,52 @@
+-----------------------------
+
+- Servicio: Delete Subscription
+
+- Descripción: permite borrar ficheros parciales (ficheros de suscripcion de participantes) de una determinada sesion.
+
+- Fichero de parametros utilizado en el protocolo (PARAM): es el fichero que recibe el servidor del servicio y contiene los siguientes parametros:
+	
+	* session: nombre de la sesion de la que se quieren eliminar suscripciones
+	* ids: IDs de los participantes cuya suscripcion quiere borrarse.
+
+- Protocolo: 
+
+          CLIENTE                            SERVIDOR (MASTER de la sesion)
+
+                          PARAM
+              --------------------------------->
+
+
+                           ACK
+              <---------------------------------
+
+El ACK es o XERL (error en el servidor) o nada.
+
+- Ficheros generados: 
+	* Ficheros de log: 
+		· delsubs.log
+		· DELSUBS_CALL.log (contiene el fichero devuelto por el servidor, es decir o un XERL o fichero vacio).
+
+- Paquete: isabel.xlim.services.delsubscription
+
+- Clases:  
+	* DelSubscription
+	* DelSubscriptionPanel
+
+Aboutserver
+
+- Librerias/clases utilizadas por el servicio:
+	* Servutilities: funciones varias
+	* XlimNotifications: para escribir en el fichero de logs del XLIM (.xlim/logs/notif.xlim)
+	* FileGarbageCollector: clase que se encarga de "llevar la cuenta" de los ficheros temporales que se crean durante el servicio y borrarlos cuando finaliza el servicio. Me entere demasiado tarde de la existencia de createTmpDir() y deleteOnExit() de la clase File O:).
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimservices
+	* Ficheros: 
+		· xlimservices/isabel/xlim/services/delsubscription/DelSubscription.java
+		· xlimservices/isabel/xlim/services/delsubscription/DelSubscriptionPanel.java
+
+- Casos especiales: ninguno
+
+- Temas Pendientes: ninguno
+-----------------------------

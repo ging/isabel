@@ -1,0 +1,18 @@
+/* Copyright (c) 2004, Nokia. All rights reserved */
+
+
+#ifndef __CSSYNC_HRH__
+#define __CSSYNC_HRH__
+
+// DATA TYPES
+/** CSSync enumerate command codes */
+enum TCSSyncIds
+    {
+    EDisplayTime=1
+    };
+
+
+#endif // __CSSYNC_HRH__
+
+
+// End of File

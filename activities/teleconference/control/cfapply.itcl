@@ -1,0 +1,130 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# cfapply.itcl
+#
+# The apply button.
+#
+# Public interface:
+#
+#  - Apply
+#
+#########################################################################
+
+class TC_ApplyC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the widget in $w
+    # $_tcobj is a reference to the TeleConferenceControlC object
+    constructor {w _tcobj} {}
+    
+    # Buttom command.
+    public method Apply {}
+
+    # Is the gui visible
+    public method isVisible {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget where it is packed
+    private variable topw
+
+    # Reference to the TeleConferenceControlC object.
+    private variable tcobj
+
+    destructor {}
+
+    # Makes the GUI
+    private method MakeGUI {}
+}
+
+
+#---------------------------------------------------------------
+
+body TC_ApplyC::constructor {w _tcobj} {
+
+    set topw $w
+    
+    set tcobj $_tcobj 
+    
+    MakeGUI
+
+}
+
+#---------------------------------------------------------------
+
+
+body TC_ApplyC::destructor {} {
+
+    catch {bind $topw.destroy <Destroy> ""}
+    if {[winfo exists $topw]} {
+        destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_ApplyC::MakeGUI {} {
+
+    CreateImage applyy  gif/ica/apply.gif 
+
+    button $topw -image applyy -command [code $this Apply]
+
+    frame $topw.destroy
+    bind $topw.destroy <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+
+body TC_ApplyC::isVisible {} {
+    
+    return [winfo ismapped $topw]
+}
+
+#---------------------------------------------------------------
+
+body TC_ApplyC::Apply {} {
+
+    # Stops the carrousel:
+
+    set _agendaobj [$tcobj cget -agendaobj]
+    set _carrousel [$_agendaobj getCarrousel]
+
+    $_carrousel stop
+
+    # Apply the interaction mode:
+
+    set _modesobj [$tcobj cget -modesobj]
+
+    $_modesobj Apply
+}
+
+#---------------------------------------------------------------
+
+

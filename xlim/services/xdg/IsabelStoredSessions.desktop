@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Stored Sessions
+Comment=Stored Sessions
+Exec=/usr/local/isabel/bin/isrv_StoredSessions.sh
+Icon=/usr/local/isabel/lib/images/gif/save.gif
+Terminal=false
+Type=Application
+StartupNotify=true

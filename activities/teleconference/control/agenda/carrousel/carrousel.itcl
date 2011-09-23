@@ -1,0 +1,195 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+class CarrouselTCC {
+
+    # The script node whose items must be applyed.
+    private variable scriptNode
+
+    # After code of the last "after apply" invocation
+    private variable aftercode
+
+    # Period of the apply invocations
+    private variable period
+
+    # Reference to the conference object
+    private variable confobj
+
+    constructor {_confobj} {}
+
+    destructor {}
+
+
+    public method play {_scriptNode}
+
+    public method stop {}
+
+    private method apply {nth}
+
+    public method setPeriod {_period}
+
+    public method getPeriod {}
+}
+
+#----------------------------------------------------
+
+body CarrouselTCC::constructor {_confobj} {
+
+    set aftercode ""
+    set period 10
+    
+    set confobj $_confobj
+
+}
+
+#----------------------------------------------------
+
+body CarrouselTCC::destructor {} {
+
+    if {$aftercode != ""} {
+	after cancel $aftercode
+	set aftercode ""
+    }
+}
+   
+#----------------------------------------------------
+
+body CarrouselTCC::play {_scriptNode} {
+
+    set scriptNode $_scriptNode 
+
+    stop
+    apply 0
+}
+
+#----------------------------------------------------
+
+body CarrouselTCC::stop {} {
+
+    if {$aftercode == ""} {
+	return 
+    }
+
+    after cancel $aftercode
+    set aftercode ""
+
+    ScriptItemTCC::setCarrouselSelection ""
+
+    set _agendaobj [$confobj cget -agendaobj]
+    $_agendaobj refresh
+}
+
+#----------------------------------------------------
+
+body CarrouselTCC::apply {nth} {
+
+    if {![$scriptNode isa ScriptItemListTCC]} {
+	stop
+	return
+    }
+
+    set _scriptitems [$scriptNode cget -scriptitems]
+
+    if {$_scriptitems == ""} return
+
+    if {$nth >= [llength $_scriptitems]} {
+	set nth 0
+    }
+
+    set _scriptitem  [lindex $_scriptitems $nth]
+
+    ScriptItemTCC::setCarrouselSelection $_scriptitem
+
+
+    $_scriptitem viewInteractionMode
+
+	set _agendaobj [$confobj cget -agendaobj]
+	$_agendaobj refresh
+
+
+    set _modesobj [$confobj cget -modesobj]
+    after idle after 100 after idle [code $_modesobj Apply]
+
+    incr nth
+    set aftercode [after ${period}000 [code $this apply $nth]]
+    
+}
+
+#----------------------------------------------------
+
+body CarrouselTCC::setPeriod {_period} {
+    
+    set _p $_period
+
+    regsub {h}   $_p "*3600+" _p
+    regsub {m}   $_p "*60+"   _p
+    regsub {s}   $_p "+"      _p
+    regsub {\+$} $_p ""       _p
+    
+    if {[catch {expr $_p} _p]} {
+	set valid {  Valid format: [<hours>h] [<minutes>m] <seconds>[s]}
+	ErrorTraceMsg "Teleconference Carrousel: Invalid period: $_period\n$valid"
+	
+	ErrorMsgC "#auto" close \
+	    "Error:" \
+	    "" \
+	    $_p
+	
+	return
+    }
+    
+    if {$_p < 1} {
+	set _p 1
+    }
+    
+    set period $_p
+}
+
+#----------------------------------------------------
+
+body CarrouselTCC::getPeriod {} {
+
+    set _s [expr $period % 60]
+    set _m [expr $period / 60 % 60 ]
+    set _h [expr $period / 3600]
+
+    set _res ""
+
+    if {$_h != 0} {
+	set _res ${_h}h
+    }
+
+    if {$_m != 0} {
+	set _res "$_res ${_m}m"
+    }
+
+    if {$_s != 0} {
+	set _res "$_res ${_s}"
+    }
+
+    return $_res
+}
+
+#----------------------------------------------------
+
+

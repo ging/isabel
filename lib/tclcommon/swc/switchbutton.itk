@@ -1,0 +1,415 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#-*- tcl -*-
+# Switchbutton
+# ----------------------------------------------------------------------
+# Implements a button with two states.
+#
+# WISH LIST:
+#    1)  Allow bitmaps and text on the same button face (Tk limitation).
+#    
+# ----------------------------------------------------------------------
+
+
+#
+# Default resources.
+#
+option add *Switchbutton.borderWidth                  2 widgetDefault
+option add *Switchbutton.disabledborderWidth          2 widgetDefault
+option add *Switchbutton.disabledrelief            flat widgetDefault
+option add *Switchbutton.highlightThickness           0 widgetDefault
+option add *Switchbutton.padX                         0 widgetDefault
+option add *Switchbutton.padY                         0 widgetDefault
+option add *Switchbutton.defaultRingPad               0 widgetDefault
+option add *Switchbutton.onForeground            "#1a1" widgetDefault
+option add *Switchbutton.offForeground           "#c33" widgetDefault
+option add *Switchbutton.disabledforeground   "#a3a3a3" widgetDefault
+
+#
+# Usual options.
+#
+itk::usual Switchbutton {
+    keep -activebackground -background \
+	 -cursor -font -highlightbackground \
+	 -highlightcolor -highlightthickness \
+	 -disabledforeground -borderwidth -relief
+}
+
+# ------------------------------------------------------------------
+#                            SWITCHBUTTON
+# ------------------------------------------------------------------
+class swc::Switchbutton {
+    inherit iwidgets::Pushbutton
+
+    constructor {args} {}
+    destructor {}
+
+    itk_option define -onbmp onbmp OnBmp {}
+    itk_option define -offbmp offbmp OffBmp {}
+    itk_option define -ontext ontext OnText "ON"
+    itk_option define -offtext offtext OffText "OFF"
+    itk_option define -onimage onimage OnImage {}
+    itk_option define -offimage offimage OffImage {}
+    itk_option define -status status Status 1
+    itk_option define -state state State normal
+    itk_option define -swstate swstate Swstate active
+    itk_option define -oncmd oncmd OnCmd {}
+    itk_option define -offcmd offcmd OffCmd {}
+    itk_option define -disabledborderwidth disabledborderwidth DisabledBorderWidth 2
+    itk_option define -disabledrelief disabledrelief DisabledRelief flat
+    itk_option define -onforeground onforeground OnForeground "#1a1"
+    itk_option define -offforeground offforeground OffForeground "#c33"
+    itk_option define -disabledforeground disabledForeground DisabledForeground "#a3a3a3"
+
+
+    public method on {} 
+    public method off {} 
+    public method activate {} 
+    public method deactivate {} 
+
+}
+
+#
+# Provide a lowercased access method for the Switchbutton class.
+# 
+proc ::swc::switchbutton {pathName args} {
+    uplevel ::swc::Switchbutton $pathName $args
+}
+
+# ------------------------------------------------------------------
+#                        CONSTRUCTOR
+# ------------------------------------------------------------------
+body swc::Switchbutton::constructor {args} {
+
+    eval itk_initialize $args
+
+    if {$itk_option(-status)== 1} {
+	# configure button as on
+	if {$itk_option(-onimage) != ""} {
+	    $itk_component(pushbutton) configure -image $itk_option(-onimage)
+	} elseif {$itk_option(-onbmp) != ""} {
+	    $itk_component(pushbutton) configure -bitmap $itk_option(-onbmp)
+	} else {
+	    $itk_component(pushbutton) configure -text $itk_option(-ontext)
+	}
+    } else {
+	# configure button as off
+	if {$itk_option(-offimage) != ""} {
+	    $itk_component(pushbutton) configure -image $itk_option(-offimage)
+	} elseif {$itk_option(-offbmp) != ""} {
+	    $itk_component(pushbutton) configure -bitmap $itk_option(-offbmp)
+	} else {
+	    $itk_component(pushbutton) configure -text $itk_option(-offtext)
+	}
+
+    }
+    eval itk_initialize $args
+}
+
+# ------------------------------------------------------------------
+#                           DESTRUCTOR
+# ------------------------------------------------------------------
+body swc::Switchbutton::destructor {} {
+}
+
+# ------------------------------------------------------------------
+#                             OPTIONS
+# ------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+# OPTION: -status
+#
+# Specifies the status of the switch. 1 is on and 0 is off
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::status {
+    if {$itk_option(-status) == 1} {
+	$itk_component(pushbutton) configure -text $itk_option(-ontext)
+	$itk_component(pushbutton) configure -command "$itk_option(-oncmd); $this off"
+	$itk_component(pushbutton) configure -image $itk_option(-onimage)
+	$itk_component(pushbutton) configure -bitmap $itk_option(-onbmp)
+	$itk_component(pushbutton) configure -foreground $itk_option(-onforeground)
+	$itk_component(pushbutton) configure -activeforeground $itk_option(-onforeground)
+	$itk_component(pushbutton) configure -disabledforeground \
+		$itk_option(-onforeground)
+    } elseif {$itk_option(-status) == 0} {
+	$itk_component(pushbutton) configure -text $itk_option(-offtext)
+	$itk_component(pushbutton) configure -command "$itk_option(-offcmd); $this on"
+	$itk_component(pushbutton) configure -image $itk_option(-offimage)
+	$itk_component(pushbutton) configure -bitmap $itk_option(-offbmp)
+	$itk_component(pushbutton) configure -foreground $itk_option(-offforeground)
+	$itk_component(pushbutton) configure -activeforeground $itk_option(-offforeground)
+	$itk_component(pushbutton) configure -disabledforeground \
+		$itk_option(-offforeground)
+    } else {
+	error "bad status value \"$itk_option(-status)\": must 0 or 1"
+    }
+
+}
+
+
+
+# ------------------------------------------------------------------
+# OPTION: -swstate
+#
+# Specifies the switch state of the button: active or deactive
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::swstate {
+    if {$itk_option(-swstate) == "active"} {
+	$itk_component(pushbutton) configure -state normal
+	$itk_component(pushbutton) configure -borderwidth $itk_option(-borderwidth)
+	$itk_component(pushbutton) configure -relief raised
+    } elseif {$itk_option(-swstate) == "deactive"} {
+	$itk_component(pushbutton) configure -state disabled
+	$itk_component(pushbutton) configure -borderwidth \
+	    $itk_option(-disabledborderwidth)
+	$itk_component(pushbutton) configure -relief \
+	    $itk_option(-disabledrelief)
+    } else {
+	error "bad swstate value \"$itk_option(-swstate)\": must be active or deactive"
+    }
+
+#     if {$itk_option(-state) == "normal"} {
+
+# puts "Updating colors in swstate"
+
+# 	switch $itk_option(-state) {
+# 	    1 {
+# 		$itk_component(pushbutton) configure -foreground $itk_option(-onforeground)
+# 		$itk_component(pushbutton) configure \
+# 		    -disabledforeground $itk_option(-onforeground)
+# 	    }
+# 	    0 {
+# 		$itk_component(pushbutton) configure -foreground $itk_option(-offforeground)
+# 		$itk_component(pushbutton) configure \
+# 		    -disabledforeground $itk_option(-offforeground)
+# 	    }
+# 	}
+#     }
+}
+
+
+
+# ------------------------------------------------------------------
+# OPTION: -state
+#
+#   Specifies the state of the button: normal or disabled
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::state {
+    if {$itk_option(-state) == "normal"} {
+	$itk_component(pushbutton) configure -state normal
+	switch $itk_option(-status) {
+	    1 {
+		$itk_component(pushbutton) configure -foreground $itk_option(-onforeground)
+		$itk_component(pushbutton) configure -disabledforeground \
+		    $itk_option(-onforeground)
+	    }
+	    0 {
+		$itk_component(pushbutton) configure -foreground $itk_option(-offforeground)
+		$itk_component(pushbutton) configure -disabledforeground \
+		    $itk_option(-offforeground)
+	    }
+	}
+    } elseif {$itk_option(-state) == "disabled"} {
+	$itk_component(pushbutton) configure -state disabled
+	$itk_component(pushbutton) configure -disabledforeground \
+	    $itk_option(-disabledforeground)
+    } else {
+	error "bad state value \"$itk_option(-state)\": must be normal or disabled"
+    }
+
+}
+
+
+
+
+
+# ------------------------------------------------------------------
+# OPTION: -oncmd
+#
+# Specifies the command to execute when on
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::oncmd {
+    if {$itk_option(-status) == 1} {
+	$itk_component(pushbutton) configure -command "$itk_option(-oncmd); $this off"
+    } 
+}
+
+
+# ------------------------------------------------------------------
+# OPTION: -offcmd
+#
+# Specifies the command to execute when off
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::offcmd {
+    if {$itk_option(-status) == 0} {
+	$itk_component(pushbutton) configure -command "$itk_option(-offcmd); $this on"
+    } 
+}
+
+
+# ------------------------------------------------------------------
+# OPTION: -onbmp
+#
+# Specifies the bitmap to display when on
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::onbmp {
+    if {$itk_option(-status) == 1} {
+	$itk_component(pushbutton) configure -bitmap $itk_option(-onbmp)
+    } 
+}
+
+
+# ------------------------------------------------------------------
+# OPTION: -offbmp
+#
+# Specifies the bitmap to display when off
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::offbmp {
+    if {$itk_option(-status) == 0} {
+	$itk_component(pushbutton) configure -bitmap $itk_option(-offbmp)
+    } 
+}
+
+
+# ------------------------------------------------------------------
+# OPTION: -ontext
+#
+# Specifies the text to display when on
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::ontext {
+    if {$itk_option(-status) == 1} {
+	$itk_component(pushbutton) configure -text $itk_option(-ontext)
+    } 
+}
+
+
+# ------------------------------------------------------------------
+# OPTION: -offtext
+#
+# Specifies the text to display when off
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::offtext {
+    if {$itk_option(-status) == 0} {
+	$itk_component(pushbutton) configure -text $itk_option(-offtext)
+    } 
+}
+
+
+# ------------------------------------------------------------------
+# OPTION: -onimage
+#
+# Specifies the image to display when on
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::onimage {
+    if {$itk_option(-status) == 1} {
+	$itk_component(pushbutton) configure -image $itk_option(-onimage)
+    } 
+}
+
+
+# ------------------------------------------------------------------
+# OPTION: -offimage
+#
+# Specifies the image to display when off
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::offimage {
+    if {$itk_option(-status) == 0} {
+	$itk_component(pushbutton) configure -image $itk_option(-offimage)
+    } 
+}
+
+# ------------------------------------------------------------------
+# OPTION: -onforeground
+#
+# Specifies foreground color when on
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::onforeground {
+    if {$itk_option(-status) == 1} {
+	$itk_component(pushbutton) configure -foreground $itk_option(-onforeground)
+	$itk_component(pushbutton) configure -disabledforeground \
+		$itk_option(-onforeground)
+    } 
+}
+
+
+# ------------------------------------------------------------------
+# OPTION: -offforeground
+#
+# Specifies foreground color when off
+# ------------------------------------------------------------------
+configbody swc::Switchbutton::offforeground {
+    if {$itk_option(-status) == 0} {
+	$itk_component(pushbutton) configure -foreground $itk_option(-offforeground)
+	$itk_component(pushbutton) configure -disabledforeground \
+		$itk_option(-offforeground)
+    } 
+}
+
+
+
+# ------------------------------------------------------------------
+#                            METHODS
+# ------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+# METHOD: on
+#
+# This turns button on
+# ------------------------------------------------------------------
+body swc::Switchbutton::on {} {
+    if {$itk_option(-state) == "disabled"} {return}
+    configure -status 1
+}
+
+# ------------------------------------------------------------------
+# METHOD: off
+#
+# This turns button off
+# ------------------------------------------------------------------
+body swc::Switchbutton::off {} {
+    if {$itk_option(-state) == "disabled"} {return}
+    configure -status 0
+}
+
+
+# ------------------------------------------------------------------
+# METHOD: activate
+#
+# This activates button
+# ------------------------------------------------------------------
+body swc::Switchbutton::activate {} {
+    if {$itk_option(-state) == "disabled"} {return}
+    configure -swstate active
+}
+
+
+# ------------------------------------------------------------------
+# METHOD: deactivate
+#
+# This deactivates button
+# ------------------------------------------------------------------
+body swc::Switchbutton::deactivate {} {
+    if {$itk_option(-state) == "disabled"} {return}
+    configure -swstate deactive
+    
+}
+

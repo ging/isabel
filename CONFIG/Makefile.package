@@ -1,0 +1,4 @@
+include $(PROJECT_ROOT_DIR)/CONFIG/Makefile.package.STD
+ifneq ($(USE.LIBS),)
+include $(foreach PAQ,$(USE.LIBS),$(PROJECT_ROOT_DIR)/CONFIG/Makefile.package.$(PAQ))
+endif

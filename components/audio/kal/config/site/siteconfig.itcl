@@ -1,0 +1,314 @@
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# siteconfig.itcl
+#
+# Audio site configuration.
+#
+#########################################################################
+
+class AudioSiteConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {_siteId _acdobj} {}
+    destructor  {} 
+
+    #---- Change user interface visibility.
+    public method Show {}
+    public proc Hide {}
+    public method ToggleShowHide {}
+
+    #---- Access to internal objects
+
+    public method CDeviceCmd {args}  
+    public method PBufferCmd {args}  
+    public method SilenceCmd {args}  
+    public method SupEchoCmd {args}  
+    public method AGCCmd {args}  
+    public method BypassCmd {args}  
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # SiteId of the site
+    private variable siteId
+
+    # Toplevel widget.
+    private common wtlroot .audio_site_config_tl
+
+    # My frame widget.
+    private variable wroot ""
+
+    # Audio C daemon object
+    private variable acdobj
+
+    # Create the user interface.
+    private proc MakeTopGUI {}
+    private method GUI {}
+
+    #----  Internal Objects:
+    private variable cDeviceObj
+    private variable pBufferObj
+    private variable silenceObj
+    private variable supEchoObj
+    private variable agcObj
+    private variable bypassObj
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::constructor {_siteId _acdobj} {
+
+    set siteId $_siteId
+    set wroot ${wtlroot}.f_${siteId}
+
+    set acdobj $_acdobj 
+
+    set cDeviceObj   [AudioCDeviceConfigC "#auto" $siteId $wroot.cdevice]
+    set pBufferObj   [AudioPBufferConfigC "#auto" $siteId $wroot.buffering $acdobj]
+    set silenceObj   [AudioSilenceConfigC "#auto" $siteId $wroot.silence   $acdobj]
+    set supEchoObj   [AudioSupEchoConfigC "#auto" $siteId $wroot.echosup   $acdobj]
+    set agcObj       [AudioAGCConfigC     "#auto" $siteId $wroot.agc       $acdobj]
+    set bypassObj    [AudioBypassConfigC  "#auto" $siteId $wroot.bypass]
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::destructor {} {
+
+    catch {destroy $wroot}
+
+    catch {destroy $cDeviceObj}
+    catch {destroy $pBufferObj}
+    catch {destroy $silenceObj}
+    catch {destroy $supEchoObj}
+    catch {destroy $agcObj}
+    catch {destroy $bypassObj}
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::CDeviceCmd {args} {
+
+    eval $cDeviceObj $args
+}  
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::PBufferCmd {args} {
+
+    eval $pBufferObj $args
+}  
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::SilenceCmd {args} {
+
+    eval $silenceObj $args
+}  
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::SupEchoCmd {args} {
+
+    eval $supEchoObj $args
+}  
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::AGCCmd {args} {
+
+    eval $agcObj $args
+}  
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::BypassCmd {args} {
+
+    eval $bypassObj $args
+}  
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::MakeTopGUI {} {
+
+    if {[winfo exist $wtlroot]} { 
+	return
+    }
+
+    set display [session Environ cget -audio_ctrl_display]
+
+    toplevel $wtlroot -screen $display
+
+    wm protocol $wtlroot WM_DELETE_WINDOW "wm withdraw $wtlroot"
+
+    wm title $wtlroot "Audio Site Configuration"
+
+    #--------------------------------
+    # Dismiss
+    #--------------------------------
+
+    button $wtlroot.close \
+	-text Dismiss \
+	-pady 3 \
+	-command [code AudioSiteConfigC::Hide]
+
+    #--------------------------------
+    # Packing
+    #--------------------------------
+
+    grid $wtlroot.close -row 1 -column 0 -pady 1
+
+    grid columnconfigure $wtlroot 0  -weight 1
+
+    grid rowconfigure $wtlroot 0 -weight 1
+    grid rowconfigure $wtlroot 1 -weight 0
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::GUI {} {
+
+    MakeTopGUI
+
+    #--------------------------------
+
+    if { ! [winfo exist $wroot]} { 
+
+	frame $wroot
+	
+	label $wroot.l \
+	    -text "$siteId" \
+	    -font [IsabelFontsC::GetFont large medium] \
+	    -pady 0
+	
+	#--------------------------------
+	
+	# Capture device (and control)
+	$cDeviceObj MakeGui
+
+	# Buffering
+	$pBufferObj MakeGui
+	
+	# Silence
+	$silenceObj MakeGui
+	
+	# Echo Suppresor
+	$supEchoObj MakeGui
+	
+	# AGC
+	$agcObj MakeGui
+	
+	# Bypass - Master-slave dependency
+	set _bypass [session Activity GetResource Audio bypass 0]
+	if {$_bypass != "0"} {
+	    $bypassObj MakeGui
+	}
+	
+	#--------------------------------
+	# Packing
+	#--------------------------------
+	
+	grid $wroot.l         -row 0 -column 0 -pady 1
+	grid $wroot.cdevice   -row 1 -column 0 -pady 0 -padx 6 -sticky wens
+	grid $wroot.buffering -row 2 -column 0 -pady 0 -padx 6 -sticky wens
+	grid $wroot.silence   -row 3 -column 0 -pady 0 -padx 6 -sticky wens
+	grid $wroot.echosup   -row 4 -column 0 -pady 0 -padx 6 -sticky wens
+	grid $wroot.agc       -row 5 -column 0 -pady 0 -padx 6 -sticky wens
+	
+	if {$_bypass != "0"} {
+	    grid $wroot.bypass  -row 6 -column 0 -pady 0 -padx 6 -sticky wens
+	}
+	
+	grid columnconfigure $wroot 0  -weight 1
+	
+	grid rowconfigure    $wroot 0  -weight 0
+	grid rowconfigure    $wroot 1  -weight 1
+	grid rowconfigure    $wroot 2  -weight 1
+	grid rowconfigure    $wroot 3  -weight 1
+	grid rowconfigure    $wroot 4  -weight 1
+	grid rowconfigure    $wroot 5  -weight 1
+
+	if {$_bypass != "0"} {
+	    grid rowconfigure    $wroot 6  -weight 1
+	}
+    }
+
+    #--------------------------------
+    # Packing
+    #--------------------------------
+
+    set _w [grid slaves $wtlroot -row 0 -column 0]
+    if {$_w != ""} {
+	grid remove $_w
+    }
+    grid $wroot -row 0 -column 0 -pady 1 -sticky nswe
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::Show {} {
+    
+    GUI
+    wm deiconify $wtlroot
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::Hide {} {
+
+    if {[winfo exist $wtlroot]} { 
+	wm withdraw $wtlroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioSiteConfigC::ToggleShowHide {} {
+
+    if {![winfo exist $wroot]} { 
+	Show
+    } else {
+	if {[wm state $wtlroot] != "normal"} {
+	    Show
+	} else {
+	    if {[grid slaves $wtlroot -row 0 -column 0] != $wroot} {
+		Show
+	    } else {
+		AudioSiteConfigC::Hide
+	    }
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+

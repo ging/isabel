@@ -1,0 +1,312 @@
+#!/bin/sh
+
+
+help()
+{
+   echo "* Usage: mkpkg <package_name> [<option>] [<option>] ..."
+   echo "         mkpkg -h"
+   echo " "
+   echo "   Options:"
+   echo " "
+   echo "      -newMayor    Incrementa el numero mayor de version."
+   echo "      -newMinor    Incrementa el numero menor de version."
+   echo "      -newBeta     Crea una nueva version beta." 
+   echo "      -newPatch    Crea un nuevo parche sobre una version estable."
+   echo "      -stabilize   Crea una version estable."
+   echo "      -newRelease  Incrementa el numero de release. (default)"
+   echo "      -skipVersion No cambiar numeros de version ni release."
+   echo " "
+   echo "      -depend      Regenerar dependencias."
+   echo "      -compile     Compilar fuentes."
+   echo "      -distrib     Distribuir ficheros compilados."
+   echo " "
+   echo "      -pkg         Crear paquete con la distribucion."
+   echo "      -tmppkg      Crear paquete temporal con la distribucion."
+   echo " "
+   echo "      -clean       Limpiar objetos."
+   echo "      -cleanall    Limpiar objetos, ejecutables y distribucion."
+   echo "      -cleandist   Borrar distribucion."
+   echo " "
+   echo "      -svn         Guarda el fichero de version en el Repositorio, y"
+   echo "                   etiqueta (tag) todo con el nombre de la version. "
+   echo " "
+}
+
+
+if [ "$#" -eq "0" ] ; then
+   echo "* ERROR: no arguments present."
+   help
+   exit 1
+fi
+
+if [ "$1" = "-h" ] ; then
+   help
+   exit 0
+fi
+
+SVN_URI=http://seta.dit.upm.es/svn/ging/tiburon
+
+# Directorios relevantes:
+# COMUNES PARA TODOS LOS PAQUETES:
+# MKPKGS_ROOT_DIR: directorio donde reside el mkpkg
+#
+# ESPECIFICOS (distintos) PARA CADA PAQUETE:
+# SRC_DIR: directorio raiz de las fuentes.
+# PKG_INFO_DIR: directorio raiz con ficheros auxiliares de paquetes, como
+#               mkPkg_copy.sh, postinst, postrm, ...
+#
+# DISTRIB_ROOT_DIR: directorio raiz de distribucion de ejecutables, librerias, etc.
+# OBJECTS_DIR: directorio de compilación, 
+# PKG_ROOT_DIR: directorio raiz para la generacion del paquete (rpm, deb, tgz...)
+                 
+MKPKGS_ROOT_DIR=$(pwd)
+
+SRC_DIR="$MKPKGS_ROOT_DIR/.."
+export SRC_DIR
+
+export PKG_NAME=$1
+shift
+
+if [ ! -d "pkg.$PKG_NAME" ] ; then
+   echo "* ERROR: \"$PKG_NAME\" Invalid package name."
+   echo "  Valid package names are:"
+   for i in pkg.* ; do 
+       pkgname=$(echo $i | sed "s/^pkg\.//")
+       echo "      $pkgname"
+   done
+   exit 1
+fi
+
+
+VERSION_FILE="$SRC_DIR/admin/pkg.$PKG_NAME/version"
+if [ ! -f "$VERSION_FILE" ] ; then
+   echo "ERROR: missing version file: $VERSION_FILE"
+   exit 1
+fi
+    
+
+# Actualizar version
+svn update $SRC_DIR/admin/pkg.$PKG_NAME/version
+
+# Version number
+export VERSION=`$SRC_DIR/admin/version.mgr getVersion $VERSION_FILE`
+
+# Release number
+export RELEASE=`$SRC_DIR/admin/version.mgr getRelease $VERSION_FILE`
+
+if [ "$ISAOS" = "" ] ; then
+  ISAOS=$(uname)
+fi
+
+PKG_INFO_DIR="$SRC_DIR/admin/pkg.$PKG_NAME"
+export PKG_INFO_DIR
+
+export DISTRIB_DIR=""
+export PKG_DIR=""
+if [ "$ISAOS" = "Linux" ] ; then
+    DISTRIB_DIR="/usr/tmp/$SRC_DIR/distrib-$ISAOS"
+    PKG_DIR="/usr/tmp/$SRC_DIR/pkg-$ISAOS"
+elif [ "$ISAOS" = "Darwin" ] ; then
+    DISTRIB_DIR="/var/tmp/$SRC_DIR/distrib-$ISAOS"
+    PKG_DIR="/var/tmp/$SRC_DIR/pkg-$ISAOS"
+else
+    echo "CANNOT compute DISTRIB/PKG directories: Linux distribution is unknown"
+    exit 1
+fi
+
+
+# esto se debe comprobar solo si vamos a compilar, que no debería hacerse desde aqui
+if [ "$ISAOS" != "Linux" ] ; then
+  echo "Host:`hostname` with $ISAOS cannot compile for Linux"
+  exit 1
+fi
+
+export LINUX_DISTRIB=""
+if [ -f /etc/SuSE-release ] ; then
+    LINUX_DISTRIB="SuSE"
+    PKG_TYPE=rpm
+    RPM_DIR="/usr/src/packages/RPMS/i586"
+elif [ -f /etc/redhat-release ] ; then
+    LINUX_DISTRIB="redhat"
+    PKG_TYPE=rpm
+    RPM_DIR="/usr/src/redhat/RPMS/i586"
+elif [ "$(grep Ubuntu /etc/lsb-release > /dev/null ; echo $?)" -eq 0 ] ; then
+    LINUX_DISTRIB=$(/usr/bin/awk -F = '
+                       /DISTRIB_ID/        {d_id = $2} 
+                       /DISTRIB_CODENAME/  {d_codename = $2}
+                       END {print d_id "_" d_codename}' /etc/lsb-release)
+    PKG_TYPE=deb
+    DEB_DIR="/tmp"
+elif [ -f /etc/debian_version ] ; then
+    LINUX_DISTRIB="debian"
+    PKG_TYPE=deb
+    DEB_DIR="/tmp"
+else
+    echo "Linux distribution is unknown"
+    exit 1
+fi
+
+export PKG_TYPE
+export RPM_DIR
+export DEB_DIR
+
+
+# 
+# Directorio donde se genera y se copia el paquete 
+# dependiente de la distribucion
+#
+ISA_KERNEL_VERSION=$(uname -r)
+
+export ROOT_VERSIONS_DIR=/home/isavers
+if [ ! -d "$ROOT_VERSIONS_DIR" ] ; then
+    # no estamos en bruja
+    export ROOT_VERSIONS_DIR=/usr/bruja/isavers
+    if [ ! -d "$ROOT_VERSIONS_DIR" ] ; then
+        # no esta la cuenta isavers montada por NFS
+        export ROOT_VERSIONS_DIR=$HOME
+    fi
+fi 
+
+export ISA_VERSIONS_DIR=$ROOT_VERSIONS_DIR/$ISAOS-$LINUX_DISTRIB-$ISA_KERNEL_VERSION
+
+if [ ! -d "$ISA_VERSIONS_DIR" ] ; then
+    mkdir -p $ISA_VERSIONS_DIR
+fi 
+
+
+SetVersion()
+{
+   echo "* Actualizando numero de version: $1 ..."
+
+   if [ "$1" != "-skipVersion" ] ; then
+      local method=$(echo $1 | sed "s/-//")
+      $SRC_DIR/admin/version.mgr $method $VERSION_FILE
+      if [ "$?" = "1" ] ; then
+          exit 1
+      fi
+
+      svn ci -m "Commit by admin/mkpkg" $SRC_DIR/admin/pkg.$PKG_NAME/version
+
+   fi
+
+   VERSION=`$SRC_DIR/admin/version.mgr getVersion $VERSION_FILE`
+   RELEASE=`$SRC_DIR/admin/version.mgr getRelease $VERSION_FILE`
+
+   export VERSION
+   export RELEASE
+
+   echo VERSION is $VERSION-$RELEASE
+}
+
+
+
+
+# Por defecto hacer -newRelease
+echo $* | egrep -- "-newMayor|-newMinor|-newBeta|-newPatch|-stabilize|-newRelease|-skipVersion" > /dev/null
+if [ "$?" = "1" ] ; then
+   SetVersion -newRelease
+fi
+
+
+while [ "$1" != "" ] ; do
+  case $1 in
+    -newMayor)
+       SetVersion -newMayor
+       shift
+       ;;
+    -newMinor)
+       SetVersion -newMinor
+       shift
+       ;;
+    -newBeta)
+       SetVersion -newBeta
+       shift
+       ;;
+    -newPatch)
+       SetVersion -newPatch
+       shift
+       ;;
+    -stabilize)
+       SetVersion -stabilize
+       shift
+       ;;
+    -newRelease)
+       SetVersion -newRelease
+       shift
+       ;;
+    -skipVersion)
+       SetVersion -skipVersion
+       shift
+       ;;
+    -depend)
+       echo "* Rehaciendo dependencias ..."
+       (cd $SRC_DIR ; make depend || (echo ">>> Detectados errores al calcular dependencias. Abortando." ; exit 1)) || exit 1
+       shift
+       ;;
+    -compile)
+       echo "* Compilando ..."
+       (cd $SRC_DIR ; make || (echo ">>> Detectados errores al compilar. Abortando." ; exit 1)) || exit 1
+       shift
+       ;;
+    -distrib)
+       echo "* Distibuyendo ..."
+       (cd $SRC_DIR ; make distrib || (echo ">>> Detectados errores al distribuir. Abortando." ; exit 1)) || exit 1
+       shift
+       ;;
+    -tmppkg)
+       echo "* Empaquetando (version temporal) ..."
+       RELEASE=$RELEASE.$(date "+%Y%m%d%H%M%S")
+       echo "cd $MKPKGS_ROOT_DIR/pkg.$PKG_NAME ; ./mkPkg-$ISAOS"
+       (cd $MKPKGS_ROOT_DIR/pkg.$PKG_NAME ; ./mkPkg-$ISAOS)
+       shift
+       ;;
+    -pkg)
+       echo "* Empaquetando ..."
+       echo "cd $MKPKGS_ROOT_DIR/pkg.$PKG_NAME ; ./mkPkg-$ISAOS"
+       (cd $MKPKGS_ROOT_DIR/pkg.$PKG_NAME ; ./mkPkg-$ISAOS)
+       shift
+       ;;
+    -clean)
+       echo "* Limpiando objetos ..."
+       (cd $SRC_DIR ; make clean)
+       shift
+       ;;
+    -cleanall)
+       echo "* Limpiando todo ..."
+       (cd $SRC_DIR ; make cleanall; make rmDist)
+       shift
+       ;;
+    -cleandist)
+       echo "* Borrando distribucion ..."
+       (cd $SRC_DIR ; make cleandist)
+       shift
+       ;;
+    -svn)
+       echo "* SVN: Guardando version y etiquetando ..."
+       svn ci -m "Commit by admin/mkpkg" $SRC_DIR/admin/pkg.$PKG_NAME/version || true
+       tag=$(echo ${PKG_NAME}_$VERSION-$RELEASE | sed "s/\./_/g")
+       uritags=$SVN_URI/tags/$tag
+       uritagspkg=$uritags/$(date "+%Y%m%d%H%M%S")_${LINUX_DISTRIB}_${USER}
+       svn ls $uritags > /dev/null || svn mkdir $uritags -m "Creando directorio para tags del paquete $tag"
+       svn mkdir $uritagspkg -m "Creating a tags directory for the $tag package."
+       echo "SVN STATUS:"
+       svn status $SRC_DIR
+       svn update
+       echo "svn copy $SRC_DIR $uritagspkg/. -m \"Copiando directorio usado para crear un paquete $tag\""
+       svn copy $SRC_DIR $uritagspkg/. -m "Copiando directorio usado para crear un paquete $tag"
+       shift
+       ;;
+    *)
+       echo "* ERROR: \"$1\" opcion invalida"
+       shift
+       ;;
+  esac
+done
+
+echo "* All done folks"
+
+exit 0
+
+
+
+

@@ -1,0 +1,638 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class PresentationTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    public variable name
+    public variable speakers
+
+    #-- Building the tree
+
+    constructor {_agendaobj _name _speakers} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    public proc parse {agendaobj str}
+    
+    public method prettyPrinter {{offset 0}}
+    
+    public method getTitle {}
+  
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+
+    public method getNodes {}
+
+    #-- Node edition
+    
+    # Auxiliar array variables used to show the personal data of speakers.
+    # Used by new and edit
+    public common aux_acronym
+    public common aux_info
+
+    public method edit {}
+    
+    # Method used to validate the values modified when this node is edited.
+    # $tl is the object created to edit the values.
+    private method validateEdit {tl}
+    
+    # Method used to update the nod3e values with the edited values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the values.
+    private method updateEdit {tl}
+
+    #-- Node creation
+
+    # Create a new empty node, and opens an edition window to edit its values.
+    # If the node is created successfully, then this method returns a reference
+    # to the new created node; else it returns "".
+    # $agendaobj is a reference to the AgendaTCC object which will contain the created node.
+    public proc new {agendaobj}
+
+    # Method used to validate the values of the new node.
+    # $tl is the object created to edit the new values.
+    private proc validateNew {tl}
+
+    # Method used to create the new node with the validated values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the new values.
+    private proc updateNew {tl agendaobj}
+
+    #-- Node deletion
+
+    # Returns 1 if some presentation author is referenced.
+    # That is, there are some scriptsitem pointing to some author.
+    # Otherwise, returns 0.
+    public method isReferenced {}
+
+    # Delete this node
+    public method deleteNode {}
+
+    #-- Scripts
+
+    public method createScriptItems {}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+
+    #-- Order
+
+    # Moves the node in the tree up.
+    public method moveUp {} {}
+
+    # Moves the node in the tree down.
+    public method moveDown {} {}
+
+    #--- 
+    # Parche para soportar ficheros en formato 0.8. En esta
+    # version, las presentaciones podian tener una lista de recursos
+    # locales. Al pasar a la version 0.9 se elimino esta lista. Ahora
+    # solo existe la lista de recursos que cuelga directamente de la
+    # conferencia.  Aqui implemento una cache donde almacenare los
+    # recursos locales de las presentaciones que encuentre al parsear
+    # un fichero de agenda de una version anterior a la 0.9. Despues
+    # de parsear el fichero, los recursos encontrados los movere a la
+    # lista unica de recursos.
+
+    private common resources_08 ""
+    public proc move_resources_08_to_global_resources {agendaobj}
+}
+
+#-----------------------------------------
+
+body PresentationTCC::constructor {_agendaobj _name _speakers} {
+
+    set name    $_name 
+
+    CheckClass  $_speakers AuthorListTCC
+    CheckUnique $_speakers
+    set speakers $_speakers 
+    $speakers setParent $this
+}
+
+#-----------------------------------------
+
+body PresentationTCC::destructor {} {
+
+    delete object $speakers 
+}
+
+#-----------------------------------------
+
+body PresentationTCC::parse {agendaobj str} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class Presentation
+ 
+    set name      [getOptionListValue $str -name]
+
+    WriteTraceMsg "ica: parsing presentation \"$name\""
+
+    set speakers  [AuthorListTCC::parse $agendaobj [getOptionListValue $str -speakers]]
+
+    set me [PresentationTCC ::#auto $agendaobj $name $speakers]
+
+    $speakers   setParent $me
+
+    # Parche para leer fichero de la version 0.8
+    # Esta version podia tener recursos anidados dentro de una presentacion.
+    # Si existen estos recursos, los muevo a los recursos globales.
+    set _resources [ResourceListTCC::parse  $agendaobj [getOptionListValue $str -resources]]
+    foreach _r [$_resources cget -resources] {
+	$_resources extractResource $_r
+	lappend resources_08 $_r
+    }
+    delete object $_resources
+
+    return $me
+}
+
+#-----------------------------------------
+
+body PresentationTCC::move_resources_08_to_global_resources {agendaobj} {
+
+    set _confobj [$agendaobj getConference]
+    set _confresources [$_confobj cget -resources]
+    foreach _r $resources_08 {
+	$_confresources addResource $_r
+    }
+
+    set resources_08 ""
+}
+
+#-----------------------------------------
+
+body PresentationTCC::prettyPrinter {{offset 0}} {
+
+    set _spc1 [NodeTCC::spaces $offset]
+    set _spc2 "$_spc1   "
+
+    set _res "${_spc1}\{Presentation\n"
+
+    set _res "$_res$_spc2-name [list $name]\n"
+
+    set _res "$_res$_spc2-speakers [list [$speakers prettyPrinter]]\n"
+
+    set _res "$_res${_spc1}\}"
+
+    return $_res
+}
+
+#-----------------------------------------
+
+body PresentationTCC::getTitle {} {
+
+    return "$name"
+}
+
+#-----------------------------------------
+
+body PresentationTCC::getMyNode {} {
+
+    set tags ""
+
+    #--
+    
+    set _icons ""
+    
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+    
+    set _show_mv_icons  [$_menubarobj cget -show_mv_icons]
+    if {$_show_mv_icons} {
+	if { ! [$parent firstPresentation $this]} {
+	    lappend _icons icafocusup
+	}
+	if { ! [$parent lastPresentation $this]} {
+	    lappend _icons icafocusdown         
+	} 
+    }
+    
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+    
+    set _show_delete_icon  [$_menubarobj cget -show_delete_icon]
+    if {$_show_delete_icon} {
+	if { ! [isReferenced]} {
+	    lappend _icons icadelete         
+	}
+    }
+    
+    #--
+    
+    list \
+	[getMyUid] \
+	[getTitle] \
+	"content branch $tags" \
+	$_icons
+}
+
+#-----------------------------------------
+
+body PresentationTCC::getNodes {} {
+
+    return [$speakers getNodes]
+
+#-----
+    set res ""
+
+    foreach a [$speakers getNodes] {
+	lappend res $a
+    }
+    
+    return $res
+}
+
+#-----------------------------------------
+
+body PresentationTCC::edit {} {
+
+    set tl [BaseFrameTCC #auto -title "Edit Presentation"]
+    
+    $tl setValidationCmd [code $this validateEdit $tl]
+    
+    $tl setUpdateCmd     [code $this updateEdit $tl]
+    
+    set c [$tl getContent]
+    
+    iwidgets::entryfield $c.name \
+	-labeltext "Name:" \
+	-labelpos w
+    pack $c.name -padx 4 -pady 4 -fill x -expand 1 
+    $c.name component entry insert 0 $name
+    
+    set maxindex [expr [llength [$speakers cget -people]] + 1]
+    if {4 > $maxindex} {
+	set maxindex 4
+    }
+    
+    for {set index 0} {$index < $maxindex} {incr index} {
+	
+	set _speaker [lindex [$speakers cget -people] $index]
+	
+	frame $c.f$index
+	pack $c.f$index -padx 14 -pady 4 -fill both -expand 1 
+	
+	trace vdelete PresentationTCC::aux_acronym($index) w \
+	    "PersonTCC::traceInfo PresentationTCC::aux_info($index)"
+	set aux_info($index)    ""
+	set aux_acronym($index) ""
+	trace variable PresentationTCC::aux_acronym($index) w \
+	    "PersonTCC::traceInfo PresentationTCC::aux_info($index)"
+	
+	::iwidgets::combobox $c.f$index.spk \
+	    -labeltext "Speaker $index:" \
+	    -labelpos w \
+	    -textvariable PresentationTCC::aux_acronym($index)
+	pack $c.f$index.spk -side left -anchor n
+	if {$_speaker != ""} {
+	    $c.f$index.spk component entry insert 0 [[$_speaker cget -person] cget -acronym]
+	    
+	    if {[$_speaker cget -authorreferences] != 0} {
+		$c.f$index.spk configure -state disabled
+	    }
+	}
+	
+	foreach spk [array names PersonTCC::everybody] { 
+	    $c.f$index.spk insert list end $spk
+	}
+	
+	label $c.f$index.spkdata \
+	    -textvariable PresentationTCC::aux_info($index) \
+	    -font [IsabelFontsC::GetFont medium medium]
+	pack $c.f$index.spkdata -side left -anchor n
+	
+    }
+
+    frame $c.end
+    pack $c.end -expand 1
+
+}
+
+#-----------------------------------------
+
+body PresentationTCC::validateEdit {tl} {
+    
+    set c [$tl getContent]
+    
+    # No empty name
+    if {[string trim [$c.name get]] == ""} {
+	return "Presentation Name can not be empty"
+    }
+    
+    if 0 {
+	# There must be at least one no empty speaker
+	set index 1
+	while {1} {
+	    if {! [winfo exists $c.f$index.spk]} {
+		return "All Participants can not be empty"
+	    }
+	    if {[string trim [$c.f$index.spk get]] != ""} break
+	    incr index
+	}
+    }
+    
+    return ""
+}
+
+#-----------------------------------------
+
+body PresentationTCC::updateEdit {tl} {
+
+
+    set c [$tl getContent]
+    
+    set name [string trim [$c.name get]]
+
+    set _new_authors "" 
+    set _old_authors [$speakers cget -people]
+
+    set index 0
+    while {1} {
+	if {! [winfo exists $c.f$index.spk]} {
+	    break
+	}
+
+	if {[$c.f$index.spk cget -state] == "normal"} {
+
+	    # delete old author
+	    set _old_author_obj [lindex $_old_authors 0]
+	    set _old_authors [lrange $_old_authors 1 end]
+	    if {$_old_author_obj != ""} {
+		$_old_author_obj kill
+	    }
+
+	    # create the new author, if acronym is not empty
+	    set _spk [string trim [$c.f$index.spk get]]
+	    if {$_spk != ""} {
+		
+		# If it is a non existing person, the it is created		
+		if {[PersonTCC::getPerson $_spk] == ""} {
+		    set confobj [$agendaobj getConference]
+		    $confobj createUnknownPerson $_spk
+		}
+		
+		set _person_obj [PersonTCC::getPerson $_spk] 
+		set _author_obj [AuthorTCC "::#auto" $agendaobj $_person_obj]
+		
+		lappend _new_authors $_author_obj
+	    }
+	} else {
+	    # move old author to the new list.
+	    set _author_obj [lindex $_old_authors 0]
+	    set _old_authors [lrange $_old_authors 1 end]
+
+	    lappend _new_authors $_author_obj
+	}
+	incr index
+    }
+
+    # Update contents of -speakers
+
+    foreach _author_obj $_new_authors {
+	$_author_obj setParent $speakers
+    }
+    $speakers configure -people $_new_authors
+
+    
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body PresentationTCC::new {agendaobj} {
+
+    set tl [BaseFrameTCC #auto -title "New Presentation"]
+    
+    $tl setValidationCmd [code validateNew $tl]
+    
+    $tl setUpdateCmd     [code updateNew $tl $agendaobj]
+    
+    set c [$tl getContent]
+    
+    iwidgets::entryfield $c.name \
+	-labeltext "Name:" \
+	-labelpos w
+    pack $c.name -padx 14 -pady 4 -fill x -expand 1
+
+
+    foreach index {1 2 3 4} {
+
+	frame $c.f$index
+	pack $c.f$index -padx 14 -pady 4 -fill both -expand 1 
+	
+	trace vdelete PresentationTCC::aux_acronym($index) w \
+	    "PersonTCC::traceInfo PresentationTCC::aux_info($index)"
+	set aux_info($index)    ""
+	set aux_acronym($index) ""
+	trace variable PresentationTCC::aux_acronym($index) w \
+	    "PersonTCC::traceInfo PresentationTCC::aux_info($index)"
+	
+	::iwidgets::combobox $c.f$index.spk \
+	    -labeltext "Speaker $index:" \
+	    -labelpos w \
+	    -textvariable PresentationTCC::aux_acronym($index)
+	pack $c.f$index.spk -side left -anchor n
+	foreach spk [array names PersonTCC::everybody] { 
+	    $c.f$index.spk insert list end $spk
+	}
+
+	label $c.f$index.spkdata \
+	    -textvariable PresentationTCC::aux_info($index) \
+	    -font [IsabelFontsC::GetFont medium medium]
+	pack $c.f$index.spkdata -side left -anchor n
+	
+    }
+    
+    frame $c.end
+    pack $c.end -expand 1
+
+    set res [$tl waitFor]
+    
+    return $res
+}
+
+#-----------------------------------------
+
+body PresentationTCC::validateNew {tl} {
+
+    set c [$tl getContent]
+   
+    # No empty session name:
+    if {[string trim [$c.name get]] == ""} {
+	return "Session Name can not be empty"
+    }
+
+    if 0 {
+	# There must be at least one no empty speaker
+	set index 1
+	while {1} {
+	    if {! [winfo exists $c.f$index.spk]} {
+		return "All Participants can not be empty"
+	    }
+	    if {[string trim [$c.f$index.spk get]] != ""} break
+	    incr index
+	}
+    }
+
+    return "" 
+}
+  
+#-----------------------------------------
+
+body PresentationTCC::updateNew {tl agendaobj} {
+
+    set c [$tl getContent]
+    
+    set _name    [string trim [$c.name get]]
+
+    set _prl ""
+    foreach index {1 2 3 4} {
+	set _spk [string trim [$c.f$index.spk get]]
+	if {$_spk != ""} {
+
+	    # Create a new person if necessary
+	    if {[PersonTCC::getPerson $_spk] == ""} {
+		set confobj [$agendaobj getConference]
+		$confobj createUnknownPerson $_spk
+	    }
+
+	    lappend _prl [list $_spk]
+	}
+    }
+
+    set _presentation [list Presentation \
+			   -name $_name \
+			   -speakers $_prl \
+			   -resources "" \
+			  ]
+    
+    set child [PresentationTCC::parse $agendaobj $_presentation]
+    
+    return $child
+}
+
+#-----------------------------------------
+
+body PresentationTCC::isReferenced {} {
+
+    foreach _authorobj [$speakers cget -people] {
+	if {[$_authorobj cget -authorreferences] != 0} {
+	    return 1
+	}
+    }
+    return 0
+}
+
+#-----------------------------------------
+
+body PresentationTCC::deleteNode {} {
+
+    $parent deletePresentation $this
+}
+
+#-----------------------------------------
+
+body PresentationTCC::createScriptItems {} {
+
+    if 0 {
+	set _presentations [getParent]
+	set _session [$_presentations getParent]
+	set _script [$_session cget -script]
+    }
+
+    foreach _sp [$speakers cget -people] {
+	$_sp createScriptItems
+    }   
+}
+
+#-----------------------------------------
+
+body PresentationTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "Edit Presentation" \
+	-command [code $this edit]
+  
+    $menu add separator
+
+    $menu add command -label "Create some Scripts" \
+	-command "[code $this createScriptItems]" 
+
+    $menu add separator
+
+    #--
+
+    set _show_delete_icon 1
+    if {[isReferenced]} {
+	set _show_delete_icon 0
+    }
+    if {$_show_delete_icon} {
+    $menu add command -image icadelete \
+	-command [code $this deleteNode]
+    }
+
+    #--
+
+    if { ! [$parent firstPresentation $this]} {
+	$menu add command -image icafocusup \
+	    -command [code $this moveUp]
+    }
+    
+    if { ! [$parent lastPresentation $this]} {
+	$menu add command -image icafocusdown \
+	    -command [code $this moveDown]
+    }
+    
+    return $menu   
+}
+
+#-----------------------------------------
+
+body PresentationTCC::moveUp {} {
+
+    $parent movePresentation $this -1
+}
+
+#-----------------------------------------
+
+body PresentationTCC::moveDown {} {
+
+    $parent movePresentation $this 1
+}
+
+#-----------------------------------------
+
+

@@ -1,0 +1,3 @@
+g726_16Imp.o: g726_16Imp.cxx g72x.h
+g726_16Imp.cxx :
+g72x.h :

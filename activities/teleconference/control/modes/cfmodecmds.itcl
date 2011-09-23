@@ -1,0 +1,480 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# cfmodecmds.itcl
+#
+# Commands to execute to set a interaction mode.
+#
+#########################################################################
+
+class TC_ModeCmdsC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the object.
+    # $_tcobj is a reference to the TeleConferenceControlC object
+    constructor {_tcobj} {}
+
+    public method Idle {}
+    public method CameraDoc {}
+    public method Vga {}
+    public method mode1 {}
+    public method mode2 {}
+    public method mode3 {}
+    public method mode4 {}
+    public method mode9 {}
+    public method modeAll {}
+    public method mode1N {}
+    public method AppSharing {}
+    public method Questions {}
+    public method Pannel {}
+    public method Whiteboard {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Reference to the TeleConferenceControlC object.
+    private variable tcobj
+
+    private method AudioSites {}
+    private method AudioAndVgaSites {}
+    private method ControlSites {}
+    private method VgaSite {}
+
+    private method LongRootTitles {nt}
+    private method ShortRootTitles {nt}
+
+    private method GetBackgroundRoot {}
+
+    private method GetScene {}
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::constructor {_tcobj} {
+
+    set tcobj $_tcobj 
+
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::Idle {} {
+
+    network MasterRequest CM InteractionModeRequest \
+	idlemode \
+	"" \
+	-audiosites   [AudioSites] \
+	-ctrlsites    [ControlSites] \
+	-rootimg      [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::CameraDoc {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 2]
+
+    set chairsite [lindex $ulist 1]
+
+    set _sites [VgaSite]
+    if {$_sites == ""} {
+	set _sites "-"
+    }
+    foreach _s $ulist {
+	if {[lsearch -exact $_sites $_s] == -1} {
+	    lappend _sites $_s
+	}
+    }
+
+    network MasterRequest CM InteractionModeRequest \
+	cameradocmode \
+	$_sites \
+	-audiosites   [AudioAndVgaSites] \
+	-ctrlsites    [ControlSites] \
+	-chairmansite $chairsite \
+	-rootimg      [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::Vga {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 2]
+
+    set chairsite [lindex $ulist 1]
+
+    network MasterRequest CM InteractionModeRequest \
+	vgamode \
+	$ulist \
+	-audiosites   [AudioAndVgaSites] \
+	-ctrlsites    [ControlSites] \
+	-chairmansite $chairsite \
+	-rootimg      [GetBackgroundRoot] \
+        -vgasite      [VgaSite] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::mode1 {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 1]
+
+    network MasterRequest CM InteractionModeRequest \
+	mode1 \
+	$ulist \
+	-audiosites   [AudioSites] \
+	-ctrlsites    [ControlSites] \
+	-roottitles   [LongRootTitles 1] \
+	-rootimg      [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::mode2 {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 2]
+
+    network MasterRequest CM InteractionModeRequest \
+	mode2 \
+	$ulist \
+	-audiosites   [AudioSites] \
+	-ctrlsites    [ControlSites] \
+	-roottitles   [LongRootTitles 2] \
+	-rootimg      [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::mode3 {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 3]
+
+    network MasterRequest CM InteractionModeRequest \
+	mode3 \
+	$ulist \
+	-audiosites   [AudioSites] \
+	-ctrlsites    [ControlSites] \
+	-roottitles   [ShortRootTitles 3] \
+	-rootimg      [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::mode4 {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 4]
+
+    network MasterRequest CM InteractionModeRequest \
+	mode4 \
+	$ulist \
+	-audiosites   [AudioSites] \
+	-ctrlsites    [ControlSites] \
+	-rootimg      [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::mode9 {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 9]
+
+    network MasterRequest CM InteractionModeRequest \
+	mode9 \
+	$ulist \
+	-audiosites   [AudioSites] \
+	-ctrlsites    [ControlSites] \
+	-rootimg      [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::modeAll {} {
+
+    network MasterRequest CM InteractionModeRequest \
+	modeall \
+	* \
+	-audiosites   [AudioSites] \
+	-ctrlsites    [ControlSites] \
+	-rootimg      [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::mode1N {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites]
+
+    while 1 {
+	set pos [lsearch -exact $ulist ""]
+	if {$pos == -1} {
+	    break
+	} else {
+	    set ulist [lreplace $ulist $pos $pos]
+	}
+    }
+
+    network MasterRequest CM InteractionModeRequest \
+	mode1N \
+	$ulist \
+	-audiosites   [AudioSites] \
+	-ctrlsites    [ControlSites] \
+	-roottitles   [LongRootTitles 1] \
+	-rootimg      [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::AppSharing {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 2]
+
+    set speaker  [lindex $ulist 0]
+    set chairsite [lindex $ulist 1]
+
+    set _vncobj        [[$tcobj cget -detailsobj] cget -vncobj]
+
+    set vncdistnet    [$_vncobj GetDistNet]
+
+    set vncaccesssite [$_vncobj GetAccessSite]
+
+    set selection [$_vncobj GetSelection]
+    switch $selection {
+	lastused {
+	    set vncserver "lastused"
+	}
+	hint {
+	    set vncserver "hint [$_vncobj GetHint]"
+	}
+	server {
+	    set vncserver "server [$_vncobj GetServer] [$_vncobj GetPassword]"
+	}
+	default {
+	    set vncserver ""
+	}
+    }
+
+    set vnccfg "$vncdistnet \"$vncaccesssite\" $vncserver"
+
+    network MasterRequest CM InteractionModeRequest \
+	appsharingmode \
+	$ulist \
+	-speakersites  $speaker \
+	-audiosites    [AudioSites]  \
+	-ctrlsites     [ControlSites] \
+	-chairmansite  $chairsite \
+	-rootimg       [GetBackgroundRoot] \
+        -vnccfg        $vnccfg \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::Whiteboard {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 2]
+
+    set speaker  [lindex $ulist 0]
+    set chairsite [lindex $ulist 1]
+
+    network MasterRequest CM InteractionModeRequest \
+	wbmode \
+	$ulist \
+	-speakersites  $speaker \
+	-audiosites    [AudioSites]  \
+	-ctrlsites     [ControlSites] \
+	-chairmansite  $chairsite \
+	-rootimg       [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::Questions {} {
+    
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 2]
+
+    set speaker   [lindex $ulist 0]
+
+    set chairsite [lindex $ulist 1]
+
+    set resetlist $ulist
+
+    network MasterRequest CM InteractionModeRequest \
+	quesmode \
+	$resetlist \
+	-speakersites  $speaker \
+	-audiosites    [AudioSites] \
+	-ctrlsites     [ControlSites] \
+	-chairmansite  $chairsite \
+	-roottitles    [LongRootTitles 1] \
+	-rootimg       [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::Pannel {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set ulist [$_usersobj GetVideoSites 6]
+
+    set speakers [lrange $ulist 0 4]
+    regsub -all {(^| +)0} $speakers {} speakers
+    
+    set chairsite [lindex $ulist 5]
+    
+    set resetlist "$speakers $chairsite"
+
+    network MasterRequest CM InteractionModeRequest \
+	pannelmode \
+	$resetlist \
+	-speakersites  $speakers \
+	-audiosites    [AudioSites] \
+	-ctrlsites     [ControlSites] \
+	-chairmansite  $chairsite \
+	-rootimg       [GetBackgroundRoot] \
+	-scene        [GetScene]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::AudioSites {} {
+
+    set _usersobj      [[$tcobj cget -detailsobj] cget -usersobj]
+    set alist [$_usersobj GetAudioSites]
+
+    set siteidlist ""
+    foreach _sid [SiteManager::GetSites] {
+	if {[lsearch -exact $alist $_sid] != -1} {  
+	    lappend siteidlist $_sid
+	}
+    }
+    return $siteidlist
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::AudioAndVgaSites {} {
+
+    set siteidlist [AudioSites]
+    set _vgasite   [VgaSite]
+
+    if {[lsearch -exact $siteidlist $_vgasite] == -1} {
+	    lappend siteidlist $_vgasite
+    }
+
+    return $siteidlist
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::ControlSites {} {
+
+    set _usersobj [[$tcobj cget -detailsobj] cget -usersobj]
+    set clist [$_usersobj GetCtrlSites]
+
+    set siteidlist ""
+    foreach _sid [SiteManager::GetSites] {
+	if {[lsearch -exact $clist $_sid] != -1} {  
+	    lappend siteidlist $_sid
+	}
+    }
+    return $siteidlist
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::VgaSite {} {
+
+    set _videositeobj  [[$tcobj cget -detailsobj] cget -videositeobj]
+    set _videosite [$_videositeobj GetSite]
+
+    return $_videosite
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::LongRootTitles {nt} {
+
+    set _roottitlesobj [[$tcobj cget -detailsobj] cget -roottitlesobj]
+    lrange [$_roottitlesobj GetLongRootTitles] 0 [expr $nt - 1]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::ShortRootTitles {nt} {
+
+    set _roottitlesobj [[$tcobj cget -detailsobj] cget -roottitlesobj]
+    lrange [$_roottitlesobj GetShortRootTitles] 0 [expr $nt - 1]
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::GetBackgroundRoot {} {
+
+    set _wallpaperobj       [[$tcobj cget -detailsobj] cget -wallpaperobj]
+
+    set img [$_wallpaperobj GetImage]
+    if {$img == ""} {
+	return ""
+    } else {
+	return [$_wallpaperobj GetDir]/$img
+    }
+}
+
+#------------------------------------------------------------
+
+body TC_ModeCmdsC::GetScene {} {
+
+    set _sceneobj [[$tcobj cget -detailsobj] cget -sceneobj]
+
+    $_sceneobj GetScene
+}
+#------------------------------------------------------------
+

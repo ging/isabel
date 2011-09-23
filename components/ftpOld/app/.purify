@@ -1,0 +1,8 @@
+suppress umr _get_hostserv_inetnetdir_byname; gethostbyname_r; inetAddr_t::inetAddr_t(const char*,const char*,int)
+suppress umr process_gethost; _door_gethostbyname_r; _get_hostserv_inetnetdir_byname; gethostbyname_r; inetAddr_t::inetAddr_t(const char*,const char*,int)
+suppress umr inetAddr_t::inetAddr_t(const char*,const char*,int)
+suppress umr bind; socketIO_t::init(serviceAddr_t&,int)
+suppress umr __bind; bind; socketIO_t::init(serviceAddr_t&,int)
+suppress umr _s_cpaddr; __getsockname; getsockname; socketIO_t::init(serviceAddr_t&,int)
+suppress umr listen; streamSocket_t::streamSocket_t(inetAddr_t&)
+suppress umr _s_sosendxx; sendto; dgramSocket_t::writeTo(const inetAddr_t&,const void*,int)

@@ -1,0 +1,161 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+###############################################################
+#
+############## Description ####################################
+#
+#  Tele-conferences: Script Title 
+#
+###############################################################
+
+
+## tc_title interface definition.
+
+class tc_title {
+
+    private variable top
+
+    constructor {topw element} {}
+    
+    # Next methods are used to handle the element string.
+    # An element has the following syntax:
+    #  x:y:a:s:string1:...:stringn
+    # Where:
+    # x,y : Screen position of the title
+    # a : Alignment of the title
+    # s : Size of the font
+    # stringi : Title strings.
+
+    private method next {what where} 
+    private method chop {what pos}
+    private method take {what til}
+
+    #Defines de GUI of the toplevel.
+    private method defineGUI {}
+}
+
+## End of interface definition.
+
+
+
+## tc_title body definition.
+
+body tc_title::constructor {topw element} {
+
+    set temp $element
+    set top $topw
+    frame $top.f -height 300 -width 450
+    pack $top.f
+    set w [next ":" $temp]
+    set x [take $temp $w]
+    set temp [chop $temp $w]
+    set w [next ":" $temp]
+    set y [take $temp $w]
+    set temp [chop $temp $w]
+    set w [next ":" $temp]
+    set align [take $temp $w]
+    set temp [chop $temp $w]
+    set w [next ":" $temp]
+    set size [take $temp $w]
+    set temp [chop $temp $w]
+    set i 0
+    set w 1
+    puts $temp
+    while {$w!=-1} {
+	incr i
+	set w [next ":" $temp]
+	if {$w==-1} {
+	    set str(str$i) $temp
+	} else {
+	    set str(str$i) [take $temp $w]
+	}
+	set temp [chop $temp $w]
+    }
+
+    defineGUI 
+    
+    $top.f.x.ent insert end $x
+    $top.f.y.ent insert end $y
+    $top.f.align.ent insert end $align
+    $top.f.size.ent insert end $size
+    for {set h 1} {$h<=$i} {incr h} {
+	$top.f.txt.lab insert end "$str(str$h)\n"
+    }
+}
+
+
+body tc_title::next {what where} {
+    return [string first $what $where]
+}
+
+body tc_title::chop {what pos} {
+    return [string range $what [expr $pos+1] end]
+}
+
+body tc_title::take {what til} {
+    return [string range $what 0 [expr $til-1]]
+}
+
+
+body tc_title::defineGUI {} {
+    #main frames
+    frame $top.f.x
+    frame $top.f.y
+    frame $top.f.align
+    frame $top.f.size
+    frame $top.f.txt
+
+    pack $top.f.x -side top
+    pack $top.f.y -side top
+    pack $top.f.align -side top
+    pack $top.f.size -side top
+    pack $top.f.txt -side top
+    
+
+
+    #labels//entries
+    label $top.f.x.lab -text "X:"
+    entry $top.f.x.ent 
+    pack $top.f.x.lab -side left
+    pack $top.f.x.ent -side left
+
+    label $top.f.y.lab -text "Y:"
+    entry $top.f.y.ent 
+    pack $top.f.y.lab -side left
+    pack $top.f.y.ent -side left
+
+    label $top.f.align.lab -text "Alignment:"
+    entry $top.f.align.ent 
+    pack $top.f.align.lab -side left
+    pack $top.f.align.ent -side left
+
+    label $top.f.size.lab -text "Font size:"
+    entry $top.f.size.ent
+    pack $top.f.size.lab -side left    
+    pack $top.f.size.ent -side left
+
+    text $top.f.txt.lab
+    pack $top.f.txt.lab
+}
+
+
+## End of body definition.

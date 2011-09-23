@@ -1,0 +1,164 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# Component.itcl
+#
+# Base class of the isabel component classes.
+#
+#########################################################################
+
+class Component {
+    
+    # Identifies the Component
+    protected variable name
+
+    constructor {name_} {
+	set name $name_
+    }
+
+    # Starts the component. 
+    # This method calls Create, and wait for it finishes. 
+    # If Create returns 0, then a StartSuccessfull mesage is sent to master.
+    # $first is 1 if this is the first created instance of the component, else 0.
+    public method Start {first} 
+
+    # Method which is called to inform me about other site running this component.
+    # $site_id is the identifier of the remote site running the component too.
+    # $new is a boolean value (1|0) which indicates if $site_id is a new partner, i.e.:
+    #     * if $new is 1 then $site_id is a new partner. He has just connected to the component.
+    #     * if $new is 0 then $site_id is an old partner. He was already connected to the
+    #       component.
+    # Then, this method with be called with "new" equal to 1 for new sites, and will be
+    # called with "new" equal to 0 for sites already running the component.
+    # It is an abstract method.
+    protected method AddRemoteSite {site_id new}
+
+    # Method called when I am created successfully.
+    # It is an abstract method.
+    protected method AddMySite {}
+
+    # Method which is called when a remote site leaves this component.
+    # It is an abstract method.
+    protected method DelRemoteSite {site_id}
+
+    # Method which is called I left the component.
+    # It is an abstract method.
+    protected method DelMySite {}
+
+    # Method which is called I must quit the component.
+    # It is an abstract method.
+    public method ExitComponent {}
+
+    # Configure the component as specified in the $imname interaction mode.
+    # $nsec is the secuence number.
+    # $site_id_list is a list of site_ids.
+    # $args is a list of option-value pairs (ex: -opt1 v1 -opt v2 ...)
+    protected method SetInteractionMode {imname nsec site_id_list args} {}
+
+    # Show/Hide the toplevel control window associated to the component.
+    # Uses the control display.
+    # "hmode" is the hiding mode: iconify or withdraw.
+    public method ShowHideApplToplevel {{hmode withdraw}}
+
+    # Do nothing.
+    public method Nop {} {}
+
+    # Auxiliar method used by Start to create the component.
+    # It is an abstract method.
+    # Returns 0 if the component was created successfully.
+    # $first is 1 if this is the first created instance of the component, else 0.
+    protected method Create {first}
+
+    # Execute an operation which should be documented in the component API. 
+    # $args is the operation to execute, followed by its arguments
+    protected method Cmd {args}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    protected method GetOptionListValue {list optname {default ""}}
+
+    # Execute a SNMP command.
+    public method SnmpCmd {args} {}
+}
+
+#------------------------------------------------
+
+body Component::Start {first} {
+    
+    if {[catch {Create $first} res] == 0} {
+	if {$res == -1} {
+	    ErrorTraceMsg "Error creating component $name, Create returns -1." 
+	    exit 1
+	}
+    } else {
+	ErrorTraceMsg "Creating component $name :\n$res"
+	exit 1
+    }
+    network MasterRequest CM StartComponentSuccess [SiteManager::MySiteId] $name
+}
+
+#---------------------------------------------------------------
+
+body Component::Create {first} {
+
+    ErrorTraceMsg "This is an abstract method which must be overwrite in a derived class." 
+    exit 1
+}
+
+#---------------------------------------------------------------
+
+body Component::ShowHideApplToplevel {{hmode withdraw}} {
+
+   set tl .t$name
+
+   if {![winfo exists $tl]} return 
+
+   if {$hmode != "iconify"} {
+      set hmode withdraw
+   }
+
+   catch { 
+       switch [wm state $tl] {
+	   normal    { wm $hmode    $tl }
+	   iconic    { wm deiconify $tl } 
+	   withdrawn { wm deiconify $tl }
+       }
+   }
+}
+
+#---------------------------------------------------------------
+
+body Component::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#------------------------------------------------

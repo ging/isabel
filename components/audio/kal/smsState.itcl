@@ -1,0 +1,131 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# Description
+#
+#   Audio processing the SMS state.
+#
+#
+#########################################################################
+
+class AudioSmsStateC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the object used to process the received SMS messages.
+    # $_audobj - reference to the internal audio component object.
+    constructor {_audobj} {}
+
+    #
+    # Sets the mixer state for the given site 
+    #
+    # $args has this format:
+    #     -site_id <site_id> -gain <#> -capture 1|0 -input_tone 1|0 -output_tone 1|0
+    public method setSiteState {args}
+
+    #
+    # Sets the global state
+    #
+    # $args has this format:
+    #     -codec <name> -max_bw <#>
+    public method setGlobalState {args}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # The aud object
+    private variable audobj
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method getOptionListValue {list optname {default ""}}
+}
+
+#----------------------------------------------------------------------
+
+body AudioSmsStateC::constructor {_audobj} {
+
+    set audobj $_audobj
+}
+
+#----------------------------------------------------------------------
+
+body AudioSmsStateC::setSiteState {args} {
+
+    set _site_id [getOptionListValue $args -site_id ""]
+
+    set _gain [getOptionListValue $args -gain ""]
+    if {$_gain != ""} {
+	$audobj SetGain $_site_id $_gain	
+    }
+
+    set _capture [getOptionListValue $args -capture ""]
+    if {$_capture != ""} {
+	$audobj SetMute $_site_id $_capture	
+    }
+
+    set _input_tone [getOptionListValue $args -input_tone ""]
+    if {$_input_tone != ""} {
+	$audobj SetInputTone $_site_id $_input_tone	
+    }
+
+    set _output_tone [getOptionListValue $args -output_tone ""]
+    if {$_output_tone != ""} {
+	$audobj SetOutputTone $_site_id $_output_tone	
+    }
+}
+
+#----------------------------------------------------------------------
+
+body AudioSmsStateC::setGlobalState {args} {
+
+    set _codec [getOptionListValue $args -codec ""]
+    set _max_bw [getOptionListValue $args -max_bw ""]
+    
+    if {$_max_bw != ""} {
+	AudioConfigC::CodecCmd SetMaxBW $_max_bw $_codec
+    } elseif {$_codec != ""} {
+	AudioConfigC::CodecCmd SetCurrentCodec $_codec
+    }
+}
+
+#----------------------------------------------------------------------
+
+body AudioSmsStateC::getOptionListValue {list optname {default ""}} {
+    
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#----------------------------------------------------------------------
+

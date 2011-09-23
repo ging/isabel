@@ -1,0 +1,34 @@
+-----------------------------
+
+- Servicio: StartSessionServer
+
+- Descripción: Lanza un servidor de una de las sesiones locales que esten definidas en la maquina
+
+- Fichero de parametros utilizado en el protocolo (PARAM): es el fichero que recibe el servidor del servicio y contiene los siguientes parametros: no hay.
+
+- Protocolo: no hay... todo es en local: despues de almacenar los parametros de entrada, se genera el local.xml, se genra el xedl total y se lanza ISABEL.
+
+- Ficheros generados: 
+	* .isabel/sessions/master/SESSION_NAME/local.xml: fichero local.xml que contiene la informacion del servidor.
+	* .isabel/sessions/master/SESSION_NAME/SESSION_NAME_TMP.xml: fichero xedl total de la sesion generado a partir de los ficheros parciales de cada uno de los participantes (incluido el local.xml del servidor).
+
+- Paquete: isabel.xlim.services.startsessionserver
+
+- Clases:  
+	* StartSessionServer
+
+- Librerias/clases utilizadas por el servicio:
+	* Servutilities: funciones varias
+	* XlimNotifications: para escribir en el fichero de logs del XLIM (.xlim/logs/notif.xlim)
+	* FileGarbageCollector: clase que se encarga de "llevar la cuenta" de los ficheros temporales que se crean durante el servicio y borrarlos cuando finaliza el servicio. Me entere demasiado tarde de la existencia de createTmpDir() y deleteOnExit() de la clase File O:).
+	* XlimServicePanel: para generar la interfaz grafica.
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimservices
+	* Ficheros: 
+		· xlimservices/isabel/xlim/services/startsessionserver/StartSessionServer.java
+
+- Casos especiales: ninguno.
+
+- Temas Pendientes: ninguno.
+-----------------------------

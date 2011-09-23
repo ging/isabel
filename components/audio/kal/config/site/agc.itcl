@@ -1,0 +1,257 @@
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# agc.itcl
+#
+# Audio AGC configuration.
+#
+#########################################################################
+
+class AudioAGCConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {_siteId w _acdobj} {}
+    destructor {}
+
+    # Build the gui.
+    public method MakeGui {}
+
+    # Accessors
+    public method GetAgcActive {}
+    public method SetAgcActive {a}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # SiteId of the site
+    private variable siteId
+
+    # root widget
+    private variable wroot ""
+
+    # Audio C daemon object
+    private variable acdobj
+
+    # Current AGC state
+    private variable agcActive ""
+
+    # Initialize agcActive
+    private method InitAgcActive {}
+
+    # Send new value to the SMS server
+    private method UpdateSmsAgc {}
+    private method UpdateSmsAgcNow {}
+
+    # Process SMS received data
+    #
+    # Sets the AGC state for the given site 
+    #
+    # $args has this format:
+    #     -site_id <site_id> -active <0|1>
+    private method ProcessSmsAgc {args}
+
+    # Configure the audio daemon
+    private method ApplyDaemon {}
+}
+
+#---------------------------------------------------------------------------
+
+body AudioAGCConfigC::constructor {_siteId w _acdobj} {
+
+    set siteId $_siteId
+    set wroot  $w
+    set acdobj $_acdobj
+
+    InitAgcActive
+
+    sms joinKey Audio_agc_$siteId [code $this ProcessSmsAgc]
+
+    set _mySiteId [SiteManager::MySiteId]
+    if {$siteId == $_mySiteId} {
+	sms forceState Audio_agc_$siteId add \
+	    -site_id $siteId \
+	    -active $agcActive
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioAGCConfigC::destructor {} {
+
+    sms leaveKey Audio_agc_$siteId 
+}
+
+#---------------------------------------------------------------------------
+
+body AudioAGCConfigC::InitAgcActive {} {
+
+    set _mySiteId [SiteManager::MySiteId]
+    
+    if {$siteId == $_mySiteId} {
+
+	set agcActive [AudioConfigC::Load audio.agc 1]
+	
+	ApplyDaemon
+	
+	UpdateSmsAgcNow
+
+    } else {
+
+	set agcActive ""
+
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioAGCConfigC::MakeGui {} {
+
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    frame $wroot  -relief sunken -bd 1
+    
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+
+    #--
+
+    checkbutton $wroot.active \
+	-text " AGC - Automatic Gain Control. Default: Checked." \
+	-padx 0 -pady 0 \
+	-highlightthickness 0 \
+	-onvalue  1 \
+	-offvalue 0 \
+	-variable [scope agcActive] \
+	-command  [code $this UpdateSmsAgc]
+
+    if {[catch "$wroot.active cget -tristatevalue"]} {
+	$wroot.active configure -selectcolor green
+    }
+
+    set bg [$wroot.active cget -background]
+    $wroot.active conf -activebackground $bg
+    
+    balloon add $wroot.active "AGC switch"
+    
+    #--
+
+    set _mySiteId [SiteManager::MySiteId]
+    if { ! [AudioConfigC::ControlSite] && $siteId != $_mySiteId} {
+	$wroot.active configure -state disabled
+    }
+
+    #--
+
+    grid $wroot.active -row 0 -column 0 -pady 1 -ipadx 6  -sticky w
+
+    grid columnconfigure $wroot 0 -weight 1
+    grid rowconfigure    $wroot 0 -weight 1
+}
+
+#---------------------------------------------------------------------------
+
+body AudioAGCConfigC::GetAgcActive {} {
+    
+    return $agcActive
+}
+
+#---------------------------------------------------------------------------
+
+body AudioAGCConfigC::SetAgcActive {a} {
+    
+    if {$agcActive != $a} {
+
+	set agcActive $a
+
+	set _mySiteId [SiteManager::MySiteId]
+	if {$siteId == $_mySiteId} {
+	    ApplyDaemon
+	    AudioConfigC::Save audio.agc $agcActive
+	}
+	
+	UpdateSmsAgcNow
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioAGCConfigC::UpdateSmsAgc {} {
+
+    after cancel [code $this UpdateSmsAgcNow]
+    
+    after 200 [code $this UpdateSmsAgcNow]
+}
+
+#---------------------------------------------------------------------------
+
+body AudioAGCConfigC::UpdateSmsAgcNow {} {
+
+    after cancel [code $this UpdateSmsAgcNow]
+
+    sms forceState Audio_agc_$siteId add \
+	-site_id $siteId \
+	-active $agcActive
+}
+
+#---------------------------------------------------------------------------
+
+body AudioAGCConfigC::ProcessSmsAgc {args} {
+
+    # set _site_id [getOptionListValue $args -site_id ""]
+
+    set _active [getOptionListValue $args -active 1]
+
+
+    set agcActive $_active
+    
+    set _mySiteId [SiteManager::MySiteId]
+    if {$siteId == $_mySiteId} {
+	ApplyDaemon
+	AudioConfigC::Save audio.agc $agcActive
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioAGCConfigC::ApplyDaemon {} {
+
+    $acdobj RDO audio_set_cag_window(10)
+    $acdobj RDO audio_set_cag_threshold(-10)
+
+    if {$agcActive} {
+	$acdobj RDO audio_set_cag(3)
+    } else {
+	$acdobj RDO audio_set_cag(0)
+    }
+}
+
+#---------------------------------------------------------------------------
+

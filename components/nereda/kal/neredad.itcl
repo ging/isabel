@@ -1,0 +1,124 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# neredad.itcl
+#
+# Description
+#
+#   Access to the local NeReDa node.
+#
+#########################################################################
+
+
+class NeReDaDaemonC {
+    inherit DaemonC
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    constructor {no_cc_cb} {
+	DaemonC::constructor NeReDa 10000 nereda_quit() \
+	    nereda_nop() 1 $no_cc_cb isabel_nereda
+    } {}
+    
+    destructor {}
+    
+    private method Invoke {}
+
+    # kill the audio daemons.
+    private method CleanUp {}
+
+    private variable pid 0
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+}
+
+#------------------------------------------------------------
+
+body NeReDaDaemonC::constructor {no_cc_cb} {
+    
+}
+
+#------------------------------------------------------------
+
+body NeReDaDaemonC::destructor {} {
+ 
+    CleanUp
+}
+
+#------------------------------------------------------------
+
+body NeReDaDaemonC::Invoke {} {
+    global ISABEL_DIR env
+
+    WriteTraceMsg "Launching NeReDa."
+
+    # Pre clean up:
+    catch {exec $env(ISABEL_DIR)/bin/isabel_fp -k isabel.nereda.NeReDa}
+    catch {exec killall -q isabel_vncreflector}
+
+    set _ccto $env(ISABEL_CONNECT_TO_IP)
+
+    set _jarnereda "$env(ISABEL_DIR)/libexec/isabel_nereda.jar"
+    set _jarlib    "$env(ISABEL_DIR)/libexec/isabel_lib.jar"
+    set _jars      "${_jarlib}:${_jarnereda}"
+
+    set _logconf "-Djava.util.logging.config.file=$env(ISABEL_CONFIG_DIR)/logging.properties"
+
+    set cport 51010
+    set _rfbPort 53021
+
+    if {$_ccto == ""} {
+	WriteTraceMsg "I am the root NeReDa node."
+	set pid [exec java -cp $_jars $_logconf isabel.nereda.NeReDa $_rfbPort -cport $cport &]
+    } else {
+	WriteTraceMsg "NeReDa node will connect to \"$_ccto\"."
+	set pid [exec java -cp $_jars $_logconf isabel.nereda.NeReDa $_rfbPort -tohost $_ccto -cport $cport &]
+    }	    
+    
+    catch {exec echo $pid >> $env(ISABEL_TMP_DIR)/NeReDa.pid}
+
+    DaemonC::Invoke
+}
+
+#------------------------------------------------------------
+
+body NeReDaDaemonC::CleanUp {} {
+    global env
+
+    if {$pid != 0} {
+	after 100 after idle catch \\\"exec kill    $pid >& /dev/null\\\"
+	after 100 after idle catch \\\"exec kill -9 $pid >& /dev/null\\\"
+	set pid 0
+    }
+
+    after 100 after idle catch \\\"exec $env(ISABEL_DIR)/bin/isabel_fp -k isabel.nereda.NeReDa\\\"
+    after 100 after idle catch \\\"exec killall -q isabel_vncreflector\\\"
+}
+
+#------------------------------------------------------------

@@ -1,0 +1,701 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#----------------------------------------------------------------
+# Create a frame to pack a mixer channel.
+#----------------------------------------------------------------
+
+class ChannelGuiC {
+
+    #
+    # Images
+    #
+    private common noneImg 
+    private common unselectedImg 
+    private common muteImg 
+    private common captureImg
+
+    private common micToneOnImg
+    private common micToneOffImg
+    private common spkToneOnImg
+    private common spkToneOffImg
+
+    # root widget
+    private variable wroot
+
+    # 1 in the tone test buttons are visible.
+    private variable test
+
+    constructor {w args} {}
+    destructor {}
+
+
+    # Create an annomynous slot
+    public method CreateSlot {}
+
+    # Assign a identity to the channel.
+    # It is still disabled.
+    public method Identify {title}
+
+    # Activate the channel
+    public method Activate {}
+
+    # Deactivate the channel
+    public method Deactivate {}
+
+    #-- Mute / Capture --------
+
+    # States: muted, capturing, none.
+    #   - none      = disconnected or not assigned channel
+    #   - muted     = this channel is muted
+    #   - capturing = this channel is capturing
+    # This variable is an array using $this as index: $mcState($this)
+    private common mcState
+    
+    # Store the command to execute when the channel is muted. 
+    private variable mutedCmd ""
+    
+    # Store the command to execute when the channel is unmuted.
+    private variable capturingCmd ""
+    
+    # Callback to execute when the mute or capture checkbuttons are pressed.
+    private method UpdateMuteState {}
+
+    # Set mute on/off.
+    public method MuteOn {}
+    public method MuteOff {}
+
+    # Activate/Deactivate mute
+    public method MuteActive {}
+    public method MuteDeactive {}
+    
+    # Command to exec when switching from on to off, and viceversa.
+    public method MuteSetOnToOffCmd {cmd}
+    public method MuteSetOffToOnCmd {cmd}
+    
+    #----------
+
+    # Set send_tone on/off.
+    public method SendToneOn {}
+    public method SendToneOff {}
+
+    # Activate/Deactivate send_tone
+    public method SendToneActive {}
+    public method SendToneDeactive {}
+    
+    # Command to exec when switching from on to off, and viceversa.
+    public method SendToneSetOnToOffCmd {cmd}
+    public method SendToneSetOffToOnCmd {cmd}
+
+    # Set button visibility
+    public method SendToneVisible {bool}
+
+    #----------
+
+    # Sets the command to execute when the config button is pressed
+    public method ConfigCmd {cmd}
+
+    #----------
+
+    # Set local_tone on/off.
+    public method LocalToneOn {}
+    public method LocalToneOff {}
+
+    # Activate/Deactivate local_tone
+    public method LocalToneActive {}
+    public method LocalToneDeactive {}
+    
+    # Command to exec when switching from on to off, and viceversa.
+    public method LocalToneSetOnToOffCmd {cmd}
+    public method LocalToneSetOffToOnCmd {cmd}
+
+    # Set button visibility
+    public method LocalToneVisible {bool}
+
+    #----------
+
+    # Gain scale value
+    private variable gainValue
+
+    # Return current gain value.
+    public method GetGain {}
+    
+    # Set gain value.
+    public method SetGain {value}
+    
+    # Activate gain slider.
+    public method GainActive {}
+    
+    # Deactivate gain slider.
+    public method GainDeactive {}
+    
+    # Command to execute when the gain value is changed.
+    public method GainCmd {cmd}
+
+    #----------
+
+    set noneImg [image create bitmap [scope noneImg] \
+	    -foreground #fff \
+	    -data {
+#define none_width  12
+#define none_height 12
+static unsigned char none_bits[] = {
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    }]
+
+    set unselectedImg [image create bitmap [scope unselectedImg] \
+	    -foreground #fff \
+	    -data {
+#define unsel_width  12
+#define unsel_height 12
+static unsigned char nocsel_bits[] = {
+    0x00, 0x00,
+    0xf8, 0x01,
+    0xfc, 0x03,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfc, 0x03,
+    0xf8, 0x01,
+    0x00, 0x00};
+  }]
+
+    set muteImg  [image create bitmap [scope muteImg] \
+	    -foreground red \
+	    -data {
+#define mute_width  12
+#define mute_height 12
+static unsigned char mute_bits[] = {
+    0x00, 0x00,
+    0xf8, 0x01,
+    0xfc, 0x03,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfc, 0x03,
+    0xf8, 0x01,
+    0x00, 0x00};
+    }]
+
+    set captureImg  [image create bitmap [scope captureImg] \
+	    -foreground #090 \
+	    -data {
+#define capture_width  12
+#define capture_height 12
+static unsigned char capture_bits[] = {
+    0x00, 0x00,
+    0xf8, 0x01,
+    0xfc, 0x03,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfe, 0x07,
+    0xfc, 0x03,
+    0xf8, 0x01,
+    0x00, 0x00};
+    }]
+
+    set micToneOnImg [image create bitmap [scope micToneOnImg] \
+	    -foreground #1a1 \
+	    -data {
+#define mictoneon_width 16
+#define mictoneon_height 13
+static unsigned char micto_bits[] = {
+   0x1e, 0x00, 0x33, 0x00, 0x21, 0x06, 0x21, 0x89, 0x33, 0x89, 0x7e, 0x91,
+   0x78, 0x91, 0xf0, 0x60, 0xe0, 0x00, 0xc0, 0x01, 0x9c, 0x01, 0x22, 0x01,
+   0xc0, 0x00};
+    }]
+
+
+    set micToneOffImg [image create bitmap [scope micToneOffImg] \
+	    -foreground #c33 \
+	    -data {
+#define mictoneoff_width 16
+#define mictoneoff_height 13
+static unsigned char mictoff_bits[] = {
+   0x1e, 0x00, 0x33, 0x00, 0x21, 0x00, 0x21, 0x00, 0x33, 0x00, 0x7e, 0xfe,
+   0x78, 0x00, 0xf0, 0x00, 0xe0, 0x00, 0xc0, 0x01, 0x9c, 0x01, 0x22, 0x01,
+   0xc0, 0x00};
+}]
+
+
+    set spkToneOnImg [image create bitmap [scope spkToneOnImg] \
+	    -foreground #1a1 \
+	    -data {
+#define spktoneon_width 16
+#define spktoneon_height 13
+static unsigned char spkon_bits[] = {
+   0x20, 0x00, 0x30, 0x00, 0x38, 0x00, 0x2c, 0x06, 0x27, 0x89, 0x27, 0x89,
+   0x25, 0x91, 0x25, 0x91, 0x27, 0x60, 0x24, 0x00, 0x28, 0x00, 0x30, 0x00,
+   0x20, 0x00};
+    }]
+
+
+    set spkToneOffImg [image create bitmap [scope spkToneOffImg] \
+	    -foreground #c33 \
+	    -data {
+#define spktoneoff_width 16
+#define spktoneoff_height 13
+static unsigned char spkoff_bits[] = {
+   0x20, 0x00, 0x30, 0x00, 0x38, 0x00, 0x2c, 0x00, 0x27, 0x00, 0x27, 0x00,
+   0x25, 0xff, 0x25, 0x00, 0x27, 0x00, 0x24, 0x00, 0x28, 0x00, 0x30, 0x00,
+   0x20, 0x00};
+    }]
+
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::constructor {w _test args} {
+
+    set wroot $w
+    set test $_test
+
+    set gainValue 70
+    set mcState($this)   none
+
+    CreateSlot
+
+    #-------------
+
+    bind $wroot <Destroy> "delete object $this"
+
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::destructor {} {
+
+    if {[winfo exists $wroot]} {
+        bind $wroot <Destroy> ""
+        destroy $wroot
+    }
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::CreateSlot {} {
+    global env
+
+    # create main frame.
+    frame $wroot -relief groove -bd 1
+    
+    # create title
+    label $wroot.title \
+	-font [IsabelFontsC::GetFont small medium] \
+	-bd 0 \
+	-padx 0 \
+	-pady 0 \
+	-anchor w
+    
+    # create mute and capture buttons
+    frame $wroot.mute
+    
+    set _bg [$wroot.mute cget -bg]
+    
+    radiobutton $wroot.mute.capture \
+	-variable [scope mcState($this)] \
+	-value capturing \
+	-command [code $this UpdateMuteState] \
+	-font [IsabelFontsC::GetFont small medium] \
+	-width 14 \
+	-padx 1 -pady 0 \
+	-bd 0 \
+	-highlightthickness 0   \
+	-indicatoron 0 \
+	-image [scope unselectedImg] \
+	-selectimage [scope captureImg] \
+	-selectcolor $_bg \
+	-bg $_bg \
+	-activebackground $_bg 
+    
+    catch {
+	$wroot.mute.capture configure \
+	    -tristatevalue none \
+	    -tristateimage [scope noneImg]
+    }
+    
+    radiobutton $wroot.mute.mute \
+	-variable [scope mcState($this)] \
+	-value muted \
+	-command [code $this UpdateMuteState] \
+	-font [IsabelFontsC::GetFont small medium] \
+	-width 14 \
+	-padx 1 -pady 0 \
+	-bd 0 \
+	-highlightthickness 0   \
+	-indicatoron 0 \
+	-image [scope unselectedImg] \
+	-selectimage [scope muteImg] \
+	-selectcolor $_bg \
+	-bg $_bg \
+	-activebackground $_bg 
+
+    catch {
+	$wroot.mute.mute configure \
+	    -tristatevalue none \
+	    -tristateimage [scope noneImg]
+    }
+    
+    balloon add $wroot.mute.capture "Capture"
+    balloon add $wroot.mute.mute "Mute"
+    
+    # create vumeter hole
+    frame $wroot.cs \
+	    -width 10 -height 100 -bd 2 -relief flat 
+    
+    # create gain slider
+    scale $wroot.scale \
+	    -showvalue 0 \
+	    -from 99 -to 0 -orient vertical -width 9 \
+	    -borderwidth 1 -state disabled \
+	    -variable [scope gainValue]
+    
+    # Site config
+    CreateImage siteconfigimg $env(ISABEL_DIR)/lib/images/gif/gear.gif
+
+    button $wroot.config \
+ 	-image siteconfigimg \
+	-relief raised \
+	-padx 0 -pady 0
+
+    balloon add $wroot.config "Configure Site"
+
+    #---
+
+    grid $wroot.title -row 0 -column 0 -columnspan 2 -sticky nsew
+    grid $wroot.mute  -row 1 -column 0 -columnspan 2 -sticky nsew
+    grid $wroot.cs    -row 2 -column 0               -sticky s
+    grid $wroot.scale -row 2 -column 1               -sticky nsew
+
+    grid $wroot.mute.capture -row 0 -column 0
+    grid $wroot.mute.mute    -row 0 -column 1
+
+    grid $wroot.config -row 6 -column 0 -columnspan 2 -sticky nsew
+    
+    #---
+
+    # create localtone and sendtone if needed
+    swc::switchbutton $wroot.sendTone \
+	    -status 0 -swstate deactive -state disabled \
+	    -onimage  $micToneOnImg \
+	    -offimage $micToneOffImg
+    
+    swc::switchbutton $wroot.localTone \
+	    -status 0 -swstate deactive -state disabled \
+	    -onimage  $spkToneOnImg \
+	    -offimage $spkToneOffImg
+    
+    if {$test} {
+	SendToneVisible  1
+	LocalToneVisible 1
+    }
+
+    #---
+
+    grid columnconfigure $wroot 0 -weight 1
+    grid columnconfigure $wroot 1 -weight 2
+    
+    grid rowconfigure    $wroot 0 -weight 0
+    grid rowconfigure    $wroot 1 -weight 1
+    grid rowconfigure    $wroot 2 -weight 6
+    grid rowconfigure    $wroot 3 -weight 1
+    grid rowconfigure    $wroot 4 -weight 1
+    grid rowconfigure    $wroot 5 -weight 1
+    grid rowconfigure    $wroot 6 -weight 0
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::Identify {title} {
+
+    set title [string range $title 0 4]
+    
+    $wroot.title configure \
+	    -text $title 
+
+    Deactivate
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::Activate {} {
+
+    $wroot.title configure -foreground black
+
+    MuteActive
+
+#    set mcState($this) muted
+
+    $wroot.scale  configure -state normal
+
+    $wroot.config  configure -state normal
+
+    $wroot.sendTone  configure -state normal
+    $wroot.sendTone  activate
+    $wroot.localTone configure -state normal
+    $wroot.localTone activate
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::Deactivate {} {
+
+    $wroot.title configure -foreground #a3a3a3
+
+    set mcState($this) none
+
+    MuteDeactive
+
+    $wroot.scale configure -state disabled
+
+    $wroot.config configure -state disabled
+
+    $wroot.sendTone  deactivate
+    $wroot.sendTone  configure -state disabled
+    $wroot.localTone deactivate
+    $wroot.localTone configure -state disabled
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::UpdateMuteState {} {
+    
+    switch $mcState($this) {
+	none {
+	}
+	muted {
+	    eval $mutedCmd
+	}
+	capturing {
+	    eval $capturingCmd
+	}
+    }
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::MuteOn {} {
+    
+    set mcState($this) capturing
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::MuteOff {} {
+
+    set mcState($this) muted
+
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::MuteActive {} {
+    $wroot.mute.mute    configure -state normal
+    $wroot.mute.capture configure -state normal
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::MuteDeactive {} {
+    $wroot.mute.mute    configure -state disabled
+    $wroot.mute.capture configure -state disabled
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::MuteSetOnToOffCmd {cmd} {
+
+    set mutedCmd $cmd
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::MuteSetOffToOnCmd {cmd} {
+
+    set capturingCmd $cmd
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::SendToneOn {} {
+
+    balloon add $wroot.sendTone "Generating input tone"
+    $wroot.sendTone on
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::SendToneOff {} {
+
+    balloon add $wroot.sendTone "No input tone"
+    $wroot.sendTone off
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::SendToneActive {} {
+
+    $wroot.sendTone activate
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::SendToneDeactive {} {
+
+    $wroot.sendTone deactivate
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::SendToneSetOnToOffCmd {cmd} {
+
+    $wroot.sendTone configure -oncmd $cmd
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::SendToneSetOffToOnCmd {cmd} {
+
+    $wroot.sendTone configure -offcmd $cmd
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::SendToneVisible {bool} {
+
+    set test $bool
+
+    if {$bool} {
+	grid $wroot.sendTone  -row 3 -column 0 -columnspan 2 -sticky nsew
+    } else {
+	grid forget $wroot.sendTone
+    }
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::ConfigCmd {cmd} {
+
+    $wroot.config configure -command $cmd
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::LocalToneOn {} {
+
+    balloon add $wroot.localTone "Generating output tone"
+    $wroot.localTone on
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::LocalToneOff {} {
+
+    balloon add $wroot.localTone "No output tone"
+    $wroot.localTone off
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::LocalToneActive {} {
+
+    $wroot.localTone activate
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::LocalToneDeactive {} {
+
+    $wroot.localTone deactivate
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::LocalToneSetOnToOffCmd {cmd} {
+
+    $wroot.localTone configure -oncmd $cmd
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::LocalToneSetOffToOnCmd {cmd} {
+
+    $wroot.localTone configure -offcmd $cmd
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::LocalToneVisible {bool} {
+
+    set test $bool
+
+    if {$bool} {
+	grid $wroot.localTone -row 5 -column 0 -columnspan 2 -sticky nsew
+    } else {
+	grid forget $wroot.localTone
+    }
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::GetGain {} {
+    return [$wroot.scale get]
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::SetGain {value} {
+
+    set gainValue $value
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::GainActive {} {
+    $wroot.scale configure -state normal
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::GainDeactive {} {
+    $wroot.scale configure -state disabled
+}
+
+#----------------------------------------------------------------
+
+body ChannelGuiC::GainCmd {cmd} {
+
+    InitScale $wroot.scale $cmd
+}
+
+#----------------------------------------------------------------

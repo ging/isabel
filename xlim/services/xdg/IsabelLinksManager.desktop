@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Links Manager
+Comment=Graphic Interface to display and manage the links of an ISABEL session
+Exec=/usr/local/isabel/bin/isrv_LinksManager.sh
+Icon=/usr/local/isabel/lib/images/xlim/general/lmlogo.gif
+Terminal=false
+Type=Application
+StartupNotify=true

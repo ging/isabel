@@ -1,0 +1,19 @@
+Para añadir un nuevo codec hay que hacer lo siguiente:
+-Se crea un nuevo directorio para este codec:
+-Se añade el directorio a la lista de subdirectorios del fichero
+Isabel/audio/src/codecs/Makefile.am
+-Se añade una entrada a la lista AC_OUTPUT para este nuevo subdirectorio en el 
+fichero configure.in de la raiz del audio (Isabel/audio/configure.in)
+-Se añade al tag audio_LDADD una entrada para lincar la nueva libreria
+-Dentro del directorio del nuevo codec se copia uno de los Makefile.am de
+los otros codec y se cambia el nombre de la libreria y los tags y los
+fuentes que componen la nueva libreria.
+-Lo recomendable es poner todos los ficheros del codec y uno nuevo que se
+llame nuevo_codec.h|c con el interfaz que espera el audio. Se puede copiar
+del codec none.
+-Modificar el fichero Isabel/audio/include/codecs.h para añadir el include
+correspondiente y aumentar en uno MAX_CODECS (el numero de codecs
+registrados)
+-Modificar el fichero Isabel/audio/src/codecs.c para añadir una linea mas
+con el codec en concreto
+

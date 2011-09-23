@@ -1,0 +1,3 @@
+cftp_create_channel(24)
+cftp_bind(24,24,bote,7654)
+cftp_recv(24,/tmp/tmp,test)

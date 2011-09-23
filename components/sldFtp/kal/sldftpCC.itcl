@@ -1,0 +1,166 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# sldftpCC.itcl
+#
+# SldFtp component.
+#
+#########################################################################
+
+
+class SldFtpComponentClass {
+    inherit Component
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args}
+    public method Cmd {args}
+
+
+    constructor {} {   
+	Component::constructor SldFtp
+    } {
+    }
+
+    destructor {}
+
+    public method Eval {args} 
+
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Object that implements the component behaviour
+    private variable sldftpobj ""
+}
+
+
+#---------------------------------------------------------------
+
+body SldFtpComponentClass::destructor {} {
+
+    if {$sldftpobj != ""} {
+	delete object $sldftpobj
+	set sldftpobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body SldFtpComponentClass::Create {first} {
+
+    if {[catch {SldFtpSenderClass "#auto"} res]} {
+	ErrorTraceMsg "SldFtp: component can not be created.\n$res"
+	return -1
+    }
+    set sldftpobj $res
+
+    if {$first} {
+	$sldftpobj FirstSite
+    }
+
+    $sldftpobj SetCreated
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body SldFtpComponentClass::AddMySite {} {
+    
+}
+
+#---------------------------------------------------------------
+
+body SldFtpComponentClass::AddRemoteSite {site_id new} {
+    
+    $sldftpobj AddSite $site_id $new
+}
+
+#---------------------------------------------------------------
+
+body SldFtpComponentClass::DelMySite {} {
+    
+}
+
+#---------------------------------------------------------------
+
+body SldFtpComponentClass::DelRemoteSite {site_id} {
+    
+    $sldftpobj DelSite $site_id	
+}
+
+#---------------------------------------------------------------
+
+body SldFtpComponentClass::SetInteractionMode {imname nsec site_id_list args} {
+
+    set scenary [session Activity GetResource $imname SldFtp ""]
+    
+    set active [GetOptionListValue $scenary -active 0]
+    set maxbw  [GetOptionListValue $scenary -maxbw 500]
+    set videobwfactor [GetOptionListValue $scenary -videobwfactor 0.5]
+
+    if {$active == 0} {
+
+	$sldftpobj Abort
+	$sldftpobj SetVideoBWFactor $videobwfactor
+	$sldftpobj SetMaxBW $maxbw
+
+    } else {
+
+	$sldftpobj SetVideoBWFactor $videobwfactor
+	$sldftpobj SetMaxBW $maxbw
+
+    }
+}
+
+#---------------------------------------------------------------
+
+body SldFtpComponentClass::Cmd {args} {
+
+    if {$sldftpobj == ""} return
+    
+    if {![$sldftpobj Created]} return
+
+    eval $sldftpobj $args
+}
+
+#---------------------------------------------------------------
+
+body SldFtpComponentClass::Eval {args} {
+
+    eval $args
+}
+
+#---------------------------------------------------------------
+

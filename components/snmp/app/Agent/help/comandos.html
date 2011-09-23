@@ -1,0 +1,100 @@
+<!--
+ - ISABEL: A group collaboration tool for the Internet
+ - Copyright (C) 2009 Agora System S.A.
+ -
+ - This file is part of Isabel.
+ -
+ - Isabel is free software: you can redistribute it and/or modify
+ - it under the terms of the Affero GNU General Public License as published by
+ - the Free Software Foundation, either version 3 of the License, or
+ - (at your option) any later version.
+ -
+ - Isabel is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - Affero GNU General Public License for more details.
+ -
+ - You should have received a copy of the Affero GNU General Public License
+ - along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+ -
+-->
+<html>
+<head>
+   <title>4.- Comandos de Control</title>
+</head>
+
+<body>
+
+<center>
+<table border=0 width=585>
+<tr>
+    <th align=center>
+        <h2>
+        <img SRC="../images/monitorIcon.gif" height=32 width=32><b> <u>4.- Comandos
+        de Control</u></b></h2>
+        <img SRC="../images/linecl.gif" >
+    </th>
+</tr>
+<tr>
+    <td align=left>
+
+Son los comandos que permiten que el agente llegue
+a integrarse como un componente m&aacute;s de ISABEL. De todas formas si
+el agente se arranca de forma independiente, con el par&aacute;metro -<i>shell</i>,
+es capaz de recibir los comandos de control por la consola desde la que
+se ejecut&oacute;. El conjunto de comandos de control son:i<p>
+
+<ul>
+<li>
+</span></span><b>snmp_nop():</b>
+a este comando el programa responde con OK, si es que est&aacute; lanzado.
+Este comando lo necesita ISABEL para comprobar si el agente est&aacute;
+lanzado.
+
+<li>
+</span></span><b>snmp_bye()
+y snmp_quit():</b> hacen que el agente finalice su ejecuci&oacute;n.
+
+<li>
+</span></span><b>snmp_gui(valor):</b>
+permite lanzar y parar la interfaz gr&aacute;fica del agente en cualquier
+momento. Los posible valores son:
+    <ul>
+    <li>
+    </span></span><b>snmp_gui(0):</b>
+si estaba lanzada, la para. La pr&oacute;xima vez que se lance la interfaz
+habr&aacute;n desaparecido todas las ventanas de gr&aacute;ficos que tuvi&eacute;ramos
+abiertas, as&iacute; como las de ayuda o configuraci&oacute;n. Al relanzar
+s&oacute;lo estar&aacute; la ventana principal del agente.
+    <li>
+    </span></span><b>Snmp_gui(1):</b>
+lanza la interfaz gr&aacute;fica, si es que no estaba lanzada ya.
+   </ul>
+</ul>
+    </td>
+</tr>
+<tr>
+    <td>
+        <img src="../images/linecl.gif" width=100%>
+    </td>
+</tr>
+<tr>
+    <td align=center>
+        <a href="helpIndex.html"><h1>INDICE</h1></a>
+    </td>
+</tr>
+<tr>
+    <td>
+        <img src="../images/linecl.gif" width=100%>
+    </td>
+</tr>
+<tr>
+    <td align=center>
+        <p><a href="http://isabel.dit.upm.es">http://isabel.dit.upm.es</a></center>
+    </td>
+</tr>
+</table>
+</center>
+</body>
+</html>
+

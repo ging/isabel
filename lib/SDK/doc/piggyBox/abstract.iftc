@@ -1,0 +1,5 @@
+\begin{abstract}
+Primer intento de describir el interfaz del SDK.
+Como ejemplo voy escribiendo el esqueleto de un codec de GIF 
+a RAW\_CLUT. Se admiten todo tipo de críticas.
+\end{abstract}

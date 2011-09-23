@@ -1,0 +1,29 @@
+
+COMPILACION EN LINUX
+--------------------
+
+0) preparacion de la compilacion.
+   Sea ISABEL_SRC el directorio donde residen
+   las fuentes de isabel ($SOME_PATH/isabel).
+   Indicamos la situacion de las fuentes:
+       export VCODECS_DIR=$ISABEL_SRC/lib/vCodecs
+
+1) Entramos en el directorio de compilacion de linux:
+   cd $ISABEL_SRC/lib/vCodecs/Linux
+2) Compilo los vCodecs:
+   make
+3) Como root, genero el paquete (se genera un .rpm o .deb según
+   la distribución de Linux):
+   make pkg
+4) El paquete generado se copia en la cuenta, directorio
+   $HOME/Linux-$LINUX_DISTRIB-$KERNEL_VERSION/vCodecs
+   donde:
+   $HOME: es la cuenta del usuario que ha realizado el paquete
+   $LINUX_DISTRIB: distribución de Linux (SuSE, redhat, Ubuntu, etc.)
+   $KERNEL_VERSION: versión del kernel, obtenida con "uname -r"
+5) Como root, instalo los vCodecs:
+   rpm -i $INSTALL_DIR/vCodecs-SuSE-1.1-1.i586.rpm
+   donde $INSTALL_DIR es el directorio donde se ha COPIADO (ver punto anterior)
+   el paquete generado
+
+

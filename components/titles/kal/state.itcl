@@ -1,0 +1,205 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# state.itcl
+#
+# Description
+#
+#   Redefines the Titles daemon behaviour in order to maintain its state, such
+#   as when it dies, it is restarted again in the same state.
+#
+#########################################################################
+
+class TitlesStateC {
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    constructor {} {}
+    destructor {}
+    
+    public method Nop {} {}
+    
+    # Attend SMS messages
+    public method SetSmsState {args}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # 1 if the created object is working.
+    private common active 
+    
+    # titles daemon
+    private common titlesdobj
+    
+    # Titles state
+    # tstate is a list with the titles to display. 
+    # Each item list has this format: "$title,$tposx,$tposy,$tanchor"
+    private variable tstate ""
+
+    private method CreateTitlesDaemon {}
+    private method NoCCTitlesDaemon {}
+    
+    # Initialice some titles parameters: virtual display, color, font.
+    private method InitTitles {}
+    
+    # Apply the Titles state, i.e. it send all the neccessary commands to the daemon
+    # in order to set the Titles state.
+    private method ApplyTitlesState {}
+
+    #------------------------------------------------
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+}
+
+#---------------------------------------------------------------
+
+body TitlesStateC::constructor {} {
+    
+    set active    0
+    set titlesdobj  ""
+
+    CreateTitlesDaemon
+}
+
+#---------------------------------------------------------------
+
+body TitlesStateC::destructor {} {
+    
+    catch {delete object $titlesdobj}
+    set titlesdobj  ""
+
+    after cancel after 1000 after idle [code $this CreateTitlesDaemon]
+    after cancel after idle [code $this CreateTitlesDaemon]
+
+}
+
+#---------------------------------------------------------------
+
+body TitlesStateC::CreateTitlesDaemon {} {
+    
+    if {$titlesdobj != ""} return
+    
+    set no_cc_cb [code $this NoCCTitlesDaemon]
+    set titlesdobj [TitlesDaemonC "#auto" $no_cc_cb]
+    if {[catch {$titlesdobj Start} res]} {
+	catch {delete object $titlesdobj}
+	NoCCTitlesDaemon
+	ErrorTraceMsg "Titles: Daemon can not be created: $res"
+	return
+    }
+    
+    InitTitles
+    
+    ApplyTitlesState
+
+    set active 1
+}
+
+#---------------------------------------------------------------
+
+body TitlesStateC::NoCCTitlesDaemon {} {
+    
+    set active   0
+    set titlesdobj ""
+
+    # modillo is "a" to kill the Titles component.
+    # modillo is "b" to restart the daemon.
+    set modillo a
+    
+    switch $modillo {
+	a {
+	    network MasterRequest CM KillComponent [SiteManager::MySiteId] Titles
+	}
+	b {
+	    after 1000 after idle [code $this CreateTitlesDaemon]
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body TitlesStateC::InitTitles {} {
+    global env
+
+    # Set the virtual display size in order to calculate positions:
+    if {[info exists env(ISABEL_ENABLE_DVIRTUAL)] && $env(ISABEL_ENABLE_DVIRTUAL) == "1"} {
+	set vdwh [dvirtual GetVirtualDisplaySize]
+    } else {
+	set vdwh [dvirtual GetRealDisplaySize]
+    }
+    $titlesdobj RDO titles_virtual_display([lindex $vdwh 0],[lindex $vdwh 1])
+
+    # Select font:
+    set rf [session Activity GetResource Titles roottitles.font -*-*-*-*-*-*-24-*-*-*-*-*-*-*]
+    $titlesdobj RDO titles_load_font($rf)
+
+    # Select color:
+    set cf [session Activity GetResource Titles roottitles.color white]
+    $titlesdobj RDO titles_text_color($cf)
+    
+}
+
+#---------------------------------------------------------------
+
+body TitlesStateC::ApplyTitlesState {} {
+    
+    if {!$active} return
+
+    $titlesdobj RDO titles_erase_all()
+    foreach i $tstate {
+	$titlesdobj RDO titles_set_text($i)
+    }
+}
+
+#---------------------------------------------------------------
+
+body TitlesStateC::SetSmsState {args} {
+
+    set _tl   [GetOptionListValue $args -titles ""]
+    
+    set tstate $_tl
+    ApplyTitlesState
+}
+
+#---------------------------------------------------------------
+
+body TitlesStateC::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#---------------------------------------------------------------
+

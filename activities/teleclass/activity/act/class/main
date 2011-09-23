@@ -1,0 +1,46 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+# --------------------------------------------------------------------
+#                    ACTIVITY DEFINITION
+# --------------------------------------------------------------------
+
+TeleClass.whatis: service
+
+TeleClass.geometry:         -120-000 0 1 SE
+TeleClass.actioners:        Server Ctrl
+TeleClass.maxsites:         _ISERV_MAX_SITES
+TeleClass.virtualw:         _ISERV_MEDIA_DISPLAY_WIDTH
+TeleClass.virtualh:         _ISERV_MEDIA_DISPLAY_HEIGHT
+TeleClass.overrideredirect: 0
+TeleClass.logopos:          -row 0 -column 0
+TeleClass.logo:             ""
+
+TeleClass.imode:             chatmode * -scene {-conference TeleClass -sesion Session -presentation video}
+
+TeleClass.roles.Interactive:   Ctrl Chair Teacher Server Everybody Nobody
+TeleClass.roles.MediaServer:   Server Everybody Nobody Ctrl
+TeleClass.roles.FlashGateway:  FlashGateway
+TeleClass.roles.SipGateway:    SipGateway
+TeleClass.roles.GatewayClient: GatewayClient
+TeleClass.roles.MCU:           MCU
+TeleClass.roles.Watchpoint:    Watchpoint

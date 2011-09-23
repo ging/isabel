@@ -1,0 +1,295 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# cmds.itcl
+#
+# Commands to execute to set a interaction mode.
+#
+#########################################################################
+
+class TeleClass_CP_Cmds {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the object.
+    # $vobj is a reference to the video object. 
+    # $fobj is a reference to the from  object. 
+    constructor {vobj fobj} {}
+
+    public method Info {}
+
+    public method Chat {{teacher ""}}
+    public method Questions {{teacher ""}}
+    public method OneMain  {{teacher ""}}
+    public method BigOne  {{teacher ""}}
+    public method OneVga  {{teacher ""}}
+    public method AppSharing {{teacher ""} {selectiondisplayname ""}}
+    public method Vga  {{teacher ""}}
+    public method Notepad {{teacher ""}}
+    public method Whiteboard {{teacher ""}}
+
+    # public method Teacher {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Reference to the video and from objects. 
+    private variable videoobj
+    private variable fromobj
+
+    # Returns a site_id list, joining the teacher and the selections in the main sites object.
+    # The First element in the list is the teacher.
+    private method JoinFromVideo {teacher}
+
+    # If the teacher site is in the VIDEO main sites list, then this method
+    # moves the teacher site to the first place. 
+    private method SortVideoSites {teacher}
+
+    # Returns the scene information option for the recorder
+    private method SceneInfo {imname {speaker ""}} 
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::constructor {vobj fobj} {
+
+    set videoobj $vobj
+    set fromobj  $fobj
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::Info {} {
+
+    WriteTraceMsg "- TeleClass: Info."
+    WriteTraceMsg "              From = [$fromobj getSelection]"
+    WriteTraceMsg "  Videos Site ID's = [$videoobj GetSelected]"
+    WriteTraceMsg "    Videos userids = [$videoobj GetSelectedAndConnected]"
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::Chat {{teacher ""}} {
+
+    set sl [SortVideoSites $teacher]
+
+    network MasterRequest CM InteractionModeRequest \
+	chatmode \
+	$sl \
+	-audiosites $sl \
+	-scene [SceneInfo chatmode [lindex $sl 0]]
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::Questions {{teacher ""}} {
+
+    if {$teacher == ""} {
+	set teacher [$fromobj getSelection]
+    }
+
+    network MasterRequest CM InteractionModeRequest \
+	quesmode \
+	$teacher \
+	-ctrlsites    $teacher \
+	-speakersites $teacher \
+	-scene [SceneInfo quesmode $teacher] \
+	-audiosites $teacher
+
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::OneMain {{teacher ""}} {
+
+    if {$teacher == ""} {
+	set teacher [$fromobj getSelection]
+    }
+    set resetlist [JoinFromVideo $teacher]
+
+    network MasterRequest CM InteractionModeRequest \
+	onemainmode \
+	$resetlist \
+	-ctrlsites    $teacher \
+	-speakersites $resetlist \
+	-scene [SceneInfo onemode $teacher] \
+	-audiosites $teacher
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::BigOne {{teacher ""}} {
+
+    if {$teacher == ""} {
+	set teacher [$fromobj getSelection]
+    }
+
+    network MasterRequest CM InteractionModeRequest \
+	bigonemode \
+	$teacher \
+	-ctrlsites    $teacher \
+	-speakersites $teacher \
+	-scene [SceneInfo bigonemode $teacher] \
+	-audiosites $teacher
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::OneVga {{teacher ""}} {
+
+    if {$teacher == ""} {
+	set teacher [$fromobj getSelection]
+    }
+
+    network MasterRequest CM InteractionModeRequest \
+	onevgamode \
+	$teacher \
+	-ctrlsites    $teacher \
+	-speakersites $teacher \
+	-vgasite      $teacher \
+	-scene [SceneInfo onevgamode $teacher] \
+	-audiosites $teacher
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::AppSharing {{teacher ""} {selectiondisplayname ""}} {
+
+    if {$teacher == ""} {
+	set teacher [$fromobj getSelection]
+    }
+    set resetlist [JoinFromVideo $teacher]
+
+    network RDOLocalGroup local_isabel_comp_VNC \
+	[list SelectServerAndRequestInteractionMode \
+	     appsharingmode \
+	     $resetlist \
+	     -ctrlsites    $teacher \
+	     -speakersites $teacher \
+	     -presselectiondisplay $selectiondisplayname \
+             -audiosites $teacher \
+	     -scene [SceneInfo appsharingmode $teacher]]
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::Vga {{teacher ""}} {
+
+    if {$teacher == ""} {
+	set teacher [$fromobj getSelection]
+    }
+    set resetlist [JoinFromVideo $teacher]
+
+    network MasterRequest CM InteractionModeRequest \
+	vgamode \
+	$resetlist \
+	-ctrlsites    $teacher \
+	-speakersites $teacher \
+	-vgasite      $teacher \
+	-scene [SceneInfo vgamode $teacher] \
+	-audiosites $teacher
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::Notepad {{teacher ""}} {
+
+    if {$teacher == ""} {
+	set teacher [$fromobj getSelection]
+    }
+    set resetlist [JoinFromVideo $teacher]
+
+    network MasterRequest CM InteractionModeRequest \
+	notepadmode \
+	$resetlist \
+	-ctrlsites    $teacher \
+	-speakersites $teacher \
+	-scene [SceneInfo notepadmode $teacher] \
+	-audiosites $teacher
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::Whiteboard {{teacher ""}} {
+
+    if {$teacher == ""} {
+	set teacher [$fromobj getSelection]
+    }
+    set resetlist [JoinFromVideo $teacher]
+
+    network MasterRequest CM InteractionModeRequest \
+	whiteboardmode \
+	$resetlist \
+	-ctrlsites    $teacher \
+	-speakersites $teacher \
+	-scene [SceneInfo whiteboardmode $teacher] \
+	-audiosites $teacher
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::JoinFromVideo {teacher} {
+
+    set vl [$videoobj GetSelectedAndConnected]
+    set vl [ldelete $vl $teacher]
+    return [concat $teacher $vl]
+}
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::SortVideoSites {teacher} {
+
+    set vl [$videoobj GetSelectedAndConnected]
+
+    if {[lsearch -exact $vl $teacher] != -1} {
+	set vl [ldelete $vl $teacher]
+	return [concat $teacher $vl]
+    } else {
+	return $vl
+    }
+} 
+
+#------------------------------------------------------------
+
+body TeleClass_CP_Cmds::SceneInfo {imname {speaker ""}} {
+
+    if {$speaker == ""} {
+	set speaker [SiteManager::MySiteId] 
+    }
+    
+    set _name [SiteManager::GetSiteInfo $speaker name] 
+    
+    return [list \
+		-conference TeleClass \
+		-session  Session \
+		-presentation [session Activity GetResource $imname scene.name $imname] \
+		-site $speaker \
+		-participant ${_name} \
+	       ] \
+} 
+
+#------------------------------------------------------------

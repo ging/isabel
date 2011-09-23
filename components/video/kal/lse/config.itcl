@@ -1,0 +1,278 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# config.itcl
+#
+# Video configurator.
+#
+#########################################################################
+
+class LseConfigC {
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    # Set local multiply bandwidth factor.
+    public proc SetBWFactor {f}
+    
+    # Set local multiply grabsize factor.
+    public proc SetGrabSizeFactor {f}
+    
+    # Set local multiply qlty factor.
+    public proc SetQltyFactor {f}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # toplevel widget.
+    private common wroot ""
+    
+    # Multiply bandwidth factors.
+    private common bwfactor 1
+    private common bwscalevar 100
+    
+    # Multiply grab size factors.
+    private common grabsizefactor 1
+    private common grabsizescalevar 100
+    
+    # Multiply qlty factors.
+    private common qltyfactor 1
+    private common qltyscalevar 100
+    
+    # Create the user interface.
+    public proc GUI {_wroot}
+    
+    # Set local multiply bandwidth factor.
+    private proc SendSmsBWFactor {f100}
+    private proc UpdateBWFactorInfo {} 
+    
+    # Set local multiply grabsize factor.
+    private proc SendSmsGrabSizeFactor {f100}
+    private proc UpdateGrabSizeFactorInfo {} 
+    
+    # Set local multiply qlty factor.
+    private proc SendSmsQltyFactor {f100}
+    private proc UpdateQltyFactorInfo {} 
+}
+
+#---------------------------------------------------------------------------
+
+body LseConfigC::GUI {_wroot} {
+    
+    set wroot $_wroot
+    
+    frame $wroot
+    
+    label $wroot.l \
+	-text "Video LSE Configuration" \
+	-font [IsabelFontsC::GetFont large]
+    pack  $wroot.l -side top
+    
+    frame $wroot.g -bd 0
+    pack  $wroot.g -side top -expand 1 -fill both -padx 0 -pady 0 -ipadx 0 -ipady 0
+    
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+    
+    #--------------------------------
+    
+    label $wroot.g.lbwfactor -text "BW Factor:" -font $font
+    
+    scale $wroot.g.sbwfactor \
+	-from 5 -to 350 \
+	-highlightthickness 0 \
+	-resolution 5 \
+	-width 10 \
+	-orient horizontal \
+	-showvalue 0 \
+	-variable [scope bwscalevar] 
+    InitScaleValue $wroot.g.sbwfactor $bwscalevar [code SendSmsBWFactor]
+    
+    label $wroot.g.lbwfactorinfo -font $font
+    UpdateBWFactorInfo
+    
+    #--------------------------------
+    
+    label $wroot.g.lgrabsizefactor -text "Grab Size Factor:" -font $font
+    
+    scale $wroot.g.sgrabsizefactor \
+	-from 5 -to 350 \
+	-highlightthickness 0 \
+	-resolution 5 \
+	-width 10 \
+	-orient horizontal \
+	-showvalue 0 \
+	-variable [scope grabsizescalevar] 
+    InitScaleValue $wroot.g.sgrabsizefactor $grabsizescalevar [code SendSmsGrabSizeFactor]
+    
+    label $wroot.g.lgrabsizefactorinfo -font $font
+    UpdateGrabSizeFactorInfo
+    
+    #--------------------------------
+    
+    label $wroot.g.lqltyfactor -text "Qlty Factor:" -font $font
+    
+    scale $wroot.g.sqltyfactor \
+	-from 5 -to 350 \
+	-highlightthickness 0 \
+	-resolution 5 \
+	-width 10 \
+	-orient horizontal \
+	-showvalue 0 \
+	-variable [scope qltyscalevar] 
+    InitScaleValue $wroot.g.sqltyfactor $qltyscalevar [code SendSmsQltyFactor]
+    
+    label $wroot.g.lqltyfactorinfo -font $font
+    UpdateQltyFactorInfo
+    
+    #--------------------------------
+    
+    grid $wroot.g.lbwfactor     -row 0 -column 0 -sticky es  
+    grid $wroot.g.sbwfactor     -row 0 -column 1 -sticky we
+    grid $wroot.g.lbwfactorinfo -row 0 -column 2 -sticky sw
+    
+    grid $wroot.g.lfrfactor     -row 1 -column 0 -sticky es  
+    grid $wroot.g.sfrfactor     -row 1 -column 1 -sticky we
+    grid $wroot.g.lfrfactorinfo -row 1 -column 2 -sticky sw
+    
+    grid $wroot.g.lgrabsizefactor     -row 2 -column 0 -sticky es  
+    grid $wroot.g.sgrabsizefactor     -row 2 -column 1 -sticky we
+    grid $wroot.g.lgrabsizefactorinfo -row 2 -column 2 -sticky sw
+    
+    grid $wroot.g.lqltyfactor     -row 5 -column 0 -sticky es  
+    grid $wroot.g.sqltyfactor     -row 5 -column 1 -sticky we
+    grid $wroot.g.lqltyfactorinfo -row 5 -column 2 -sticky sw
+    
+    grid columnconfigure $wroot.g 1 -weight 1
+    
+    #--------------------------------
+    
+}
+
+#---------------------------------------------------------------------------
+#
+# Methods related with BW
+#
+#---------------------------------------------------------------------------
+
+body LseConfigC::SendSmsBWFactor {f100} {
+    
+    set bwfactor [expr $f100/100.0]
+    
+    sms setState Video_Lse_factors add \
+	-bw_factor $bwfactor
+}
+
+#---------------------------------------------------------------------------
+
+body LseConfigC::SetBWFactor {f} {
+    
+    set bwscalevar [expr round(100*$f)]
+    set bwfactor $f
+    UpdateBWFactorInfo
+}
+
+#---------------------------------------------------------------------------
+
+body LseConfigC::UpdateBWFactorInfo {} {
+    
+    if {$wroot == ""} return
+    if {![winfo exist $wroot.g.lbwfactorinfo]} return
+    
+    set n [format %.2f $bwfactor]
+    $wroot.g.lbwfactorinfo configure -text "(x$n)"
+}
+
+#---------------------------------------------------------------------------
+#
+# Methods related with Grab Size
+#
+#---------------------------------------------------------------------------
+
+body LseConfigC::SendSmsGrabSizeFactor {f100} {
+    
+    set grabsizefactor [expr $f100/100.0]
+    
+    sms setState Video_Lse_factors add \
+	-grabsize_factor $grabsizefactor
+}
+
+#---------------------------------------------------------------------------
+
+body LseConfigC::SetGrabSizeFactor {f} {
+    
+    set grabsizescalevar [expr round(100*$f)]
+    set grabsizefactor $f
+    UpdateGrabSizeFactorInfo
+}
+
+#---------------------------------------------------------------------------
+
+body LseConfigC::UpdateGrabSizeFactorInfo {} {
+    
+    if {$wroot == ""} return
+    if {![winfo exist $wroot.g.lgrabsizefactorinfo]} return
+    
+    set n [format %.2f $grabsizefactor]
+    $wroot.g.lgrabsizefactorinfo configure -text "(x$n)"
+}
+
+#---------------------------------------------------------------------------
+#
+# Methods related with Qlty
+#
+#---------------------------------------------------------------------------
+
+body LseConfigC::SendSmsQltyFactor {f100} {
+    
+    set qltyfactor [expr $f100/100.0]
+    
+    sms setState Video_Lse_factors add \
+	-image_qlty_factor $qltyfactor
+}
+
+#---------------------------------------------------------------------------
+
+body LseConfigC::SetQltyFactor {f} {
+    
+    set qltyscalevar [expr round(100*$f)]
+    set qltyfactor $f
+    UpdateQltyFactorInfo
+}
+
+#---------------------------------------------------------------------------
+
+body LseConfigC::UpdateQltyFactorInfo {} {
+    
+    if {$wroot == ""} return
+    if {![winfo exist $wroot.g.lqltyfactorinfo]} return
+    
+    set n [format %.2f $qltyfactor]
+    $wroot.g.lqltyfactorinfo configure -text "(x$n)"
+}
+
+#---------------------------------------------------------------------------

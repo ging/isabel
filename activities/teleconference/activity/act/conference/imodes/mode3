@@ -1,0 +1,50 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+mode3.whatis:      imode
+mode3.scene.name: video
+
+mode3.Audio:       -active 1 \
+                   -setmutes 1
+
+mode3.Video:       -active 1 -layout lmode3
+
+mode3.Titles:      -roottitleslayout tlmode3
+
+
+mode3.SldFtp:     -active 1 \
+                  -videobwfactor _ISERV_SLDFTP_VF_BW \
+                  -maxbw _ISERV_SLDFTP_FTP_BW
+
+#------------------------------------
+
+Video.layout.lmode3: \
+ {video 320x240+141+058 _ISERV_VID_MODE3_BW} \
+ {video 320x240+550+058 _ISERV_VID_MODE3_BW} \
+ {video 320x240+346+422 _ISERV_VID_MODE3_BW}
+
+#------------------------------------
+
+Titles.roottitles.layout.tlmode3: \
+ {333 345 CENTER} {717 345 CENTER} {512 697 CENTER} 
+
+#------------------------------------

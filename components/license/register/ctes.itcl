@@ -1,0 +1,104 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# ctes.itcl
+#
+# Description
+#
+#   Constants used in this program.
+#
+#########################################################################
+
+
+class CtesC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # file with texts and icons to used in the GUI.
+    public variable guicfg
+
+    # directory where license files are created.
+    public variable  dirdata
+
+    # file with the empty license data
+    public variable  licdata
+
+    # license request file
+    public variable reqfn
+
+    # file where the email and id request are stored.
+    public variable  idfn
+
+    # NO-compressed file with the license.
+    public variable  licpath
+
+    # file with the result of executing getURL to make a license request.
+    # This file will be:
+    #   - $idfn if there is no errors.
+    #   - a file with a error message (first line contains "error").
+    public variable  geturlid
+
+    # file with the result of executing getURL to download a license.
+    # This file will be:
+    #   - a compressed license file.
+    #   - a file with a error message (first line contains "error").
+    public variable  geturlisalic
+
+    # file with the agreement text.
+    public variable assaagree
+
+    # file to indicate that the agreement was done.
+    public variable agreedone
+
+    # path to the demo license.
+    public variable demolicpath
+
+    constructor {} {}
+}
+
+#--------------------------------------------------
+
+body CtesC::constructor {} {
+    global env
+
+    set guicfg       $env(ISABEL_DIR)/lib/defaults/reglicfg.txt
+    set dirdata      /etc/isabel/license
+    set licdata      $dirdata/tmp/data.license
+    set reqfn        $dirdata/tmp/request.isalic
+    set idfn         $dirdata/tmp/isalic.id
+    set licpath      $dirdata/tmp/license
+    set geturlid     $dirdata/tmp/geturl.id
+    set geturlisalic $dirdata/tmp/geturl.isalic
+    set assaagree    $env(ISABEL_DIR)/doc/ASSA-LICENSE.txt
+    set agreedone    $env(ISABEL_USER_DIR)/license
+    set demolicpath  $env(ISABEL_DIR)/lib/defaults/demo.license
+
+    catch {exec mkdir -p $dirdata/tmp}
+    catch {exec chmod ugo+rwx $dirdata/tmp}
+
+}
+
+#--------------------------------------------------

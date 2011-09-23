@@ -1,0 +1,74 @@
+#!/bin/sh
+set -e
+
+#
+# read_var prompt profile var_name
+#
+CHOWN=/bin/chown
+CHMOD=/bin/chmod
+
+pdir=/usr/local/$DPKG_MAINTSCRIPT_PACKAGE
+
+echo "postinst: $pdir"
+
+cd $pdir
+
+for i in \
+        bin/isabel_openvpn \
+	; do
+  $CHMOD 4755 $pdir/$i
+done
+
+for i in \
+	libthreadedicf.so \
+	libnonthreadedicf.so \
+	libthreadedicfrtp.so \
+	libnonthreadedicfrtp.so \
+	libthreadedicfvutils.so \
+	libnonthreadedicfvutils.so \
+	libicfsdk.so \
+	libvcodecs.so \
+	; do
+  /bin/rm -f /usr/lib/$i
+  /bin/rm -f /usr/lib/$i.*
+done
+
+# Install rgb.txt if it is missing:
+test -f /etc/X11/rgb.txt           || cp $pdir/lib/rgb.txt /etc/X11/rgb.txt             || true
+
+mkdir -p /usr/lib/X11 /usr/X11R6/lib /usr/X11R6/lib/X11 /usr/share/X11
+
+test -f /usr/lib/X11/rgb.txt       || ln -s /etc/X11/rgb.txt /usr/lib/X11/rgb.txt       || true
+test -f /usr/X11R6/lib/rgb.txt     || ln -s /etc/X11/rgb.txt /usr/X11R6/lib/rgb.txt     || true
+test -f /usr/X11R6/lib/X11/rgb.txt || ln -s /etc/X11/rgb.txt /usr/X11R6/lib/X11/rgb.txt || true
+test -f /usr/share/X11/rgb.txt     || ln -s /etc/X11/rgb.txt /usr/share/X11/rgb.txt     || true
+
+#
+# Update /etc/mailcap
+#
+/bin/ed /etc/mailcap > /dev/null 2>&1 <<EOF
+g@icto_launcher@d
+/ User Section Begins /
+a
+application/icto; /usr/local/bin/bin/icto_launcher %s
+.
+wq
+EOF
+
+oldisabeldir=$(find /usr/local -maxdepth 1 -name isabel -type d)
+if [ "$oldisabeldir" != "" ] ; then 
+    echo "Warning: There is an isabel directory of an old isabel version. Stopping configuration."
+    exit
+fi
+
+$pdir/bin/install_alternatives
+update-alternatives --set java /usr/lib/jvm/java-6-sun/jre/bin/java
+update-alternatives --set isabel $pdir/bin/isabel
+
+update-desktop-database || true
+
+__desktop_cache=$(/bin/ls -1rt /usr/share/applications/desktop.*.cache 2> /dev/null | /usr/bin/tail -1)
+test -f $__desktop_cache && /usr/share/gnome-menus/update-gnome-menus-cache ../applications > $__desktop_cache || true 
+
+killall -q gnome-panel || true 
+

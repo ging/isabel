@@ -1,0 +1,105 @@
+
+# siteId del sitio
+set siteId ""
+
+# variable con el valor del parametro que queremos publicar 
+# en el servidor SMS
+set var ""
+
+
+# Carga el valor inicial y otras inicializaciones
+Constructor {_siteId} {
+   set siteId $_siteId
+   InitValue
+}
+
+# Inicializa el valor de var
+private InitValue {} {
+
+   if {$mySiteId == $siteId} {
+      set valor_por_defecto ???
+      set var [Load file valor_por_defecto]
+      Programar el demonio
+      UpdateSmsVarNow
+   } else {
+      set var ""
+   }
+}
+
+# Creamos el GUI
+public MakeGUI {} {
+   Widget -variable var 
+          -command UpdateSmsVarNow o UpdateSmsVar
+}
+
+# Devuelve el valor de la variable.
+# Si la variable no contiene vlor porque nunca se uso, entonces:
+#   - se inicializa la variable
+#   - se programa el demonio
+#   - se publica en el servidor SMS
+public GetValue {} {
+
+   return $var
+}
+
+# Alguien desde fuera quiere cambiar el valor actual de la variable.
+public SetValue {v} {
+   if {$var != $v} {
+      set var $v
+      if {$mySiteId == $siteId} {
+         Programar el demonio
+         Save <file> $var
+      }
+      UpdateSmsVarNow
+   }
+}
+
+# Han tocado el GUI y quiero actualizar el SMS dentro de un rato
+private UpdateSmsVar {[v]} {
+   after cancel UpdateSmsVarNow
+   after 200 UpdateSmsVarNow
+}
+
+# Han tocado el GUI y quiero actualizar el SMS ahora
+private UpdateSmsVarNow {} {
+   after cancel UpdateSmsVarNow
+   sms forceState <KEY> <OPT> $var
+}
+
+# Apuntanse al SMS
+sms join <KEY> ProcessSMS
+
+
+# Procesar mensaje SMS recibido
+public ProcessSmsVar {v} {
+
+      # NOTA Evitar reenvio de mensaje SMS segun el widget.
+      # Es decir: Asegurarse que al cambiar la variable no se dispara
+      # el command del widget y se actica el proceso de actualizar 
+      # el valor en el servidor SMS.
+      set var $v
+
+      if {$mySiteId == $siteId} {
+         Programar el demonio
+         Save <file> $var
+      }
+}
+
+--------------
+
+Comportamiento de los widgets al cambiar el valor de la variable especificada en el parametro -variable
+=======================================================================================================
+
+* SCALE
+
+   scale .s -variable x -command pinta
+   pack .s
+
+   proc pinta {a} {
+     puts "--- $a ---"
+   }
+ 
+   La sentencia "set x 1" no llama a pinta.
+   La sentencia ".s set 33" si llama a pinta.
+
+

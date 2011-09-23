@@ -1,0 +1,155 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# defmacros
+#
+# Description
+#
+#  M4 macros used to generate service files.
+#
+#########################################################################
+
+#------------------
+# PUBLIC MACROS
+#------------------
+
+#
+# ExternalDefinition
+# 
+# If the given variable (first argument) is defined, then it is replaced
+# with its defined value.
+# If not defined, then it is replaced with the default value (second
+# argument).
+#
+# Example: ExternalDefinition(`KKK',33)
+#          if KKK is defined, then it is replaced with its defined
+#          value, else it is replaced with 33.
+#
+define(ExternalDefinition,`ifdef(`$1',$1,$2)')
+
+
+#
+# NoEmptyExternalDefinition
+# 
+# If the given variable (first argument) is defined and it is no empty,
+# then it is replaced with its defined value.
+# If not defined or its value is empty, then it is replaced with the default 
+# value (second argument).
+#
+# Example: NoEmptyExternalDefinition(`KKK',33)
+#          if KKK is defined and it is no "", then it is replaced with its defined
+#          value, else it is replaced with 33.
+#
+define(NoEmptyExternalDefinition,`ifdef(`$1',ifelse($1,,$2,$1),$2)')
+
+
+#
+# defKeys 
+#
+# Defines the selection key values and their order.
+#
+# Example: defKeyValues(`ISABEL_QUALITY',1M,2M,3M) 
+#
+define(defKeyValues,`ifdef(`$1',
+                           `ifelse(inList($@),1,
+                                   `define(_ISERV_`$1'_LIST_,`shift($@)')',
+                                   `errprint(Service parameter "`$1'":: invalid value "$1".) m4exit(1)')',
+                           `errprint(`Service parameter "$1" is not defined.') m4exit(1)'
+                          )')
+
+
+
+#
+# defParZ
+#
+# Compress definition of all the QoS constant values for each defined key.
+#
+# Example: defParZ(`ISABEL_QUALITY',`_ISERV_VIDEO_RATE',2,4,10)
+#
+define(defParZ,`defParZAux(`$1',`$2',1,shift(shift($@)))')
+
+
+#
+# defParV
+#
+# Verbose definition of all the QoS constant values for each defined key.
+#
+# Example: defParV(`ISABEL_QUALITY', `_ISERV_VIDEO_RATE', 
+#                         1M,              2,
+#                         2M,              4,
+#                         3M,             10)
+#
+define(`defParV',`ifelse(eval($#<4),1,,
+                         $1,$3,`define(`$2',`$4')',
+                         `defParV(`$1',`$2',shift(shift(shift(shift($@)))))')')
+
+#-------------------
+# PRIVATE MACROS
+#-------------------
+
+#
+# defParZAux
+#
+# Auxiliar define used by defParZ.
+# It append an extra third argument to store a progress index.
+# if the value stored in the position $3-th of the list associated to
+# $1 is equal to $1, then $2 is defined as the value of the argument
+# 3+$3. Else, $3 is incremented to look for in the next position.
+#
+# Example: defParZAux(`ISABEL_QUALITY',`_ISERV_VIDEO_RATE',3,a,b,c,d,e,f)
+#
+define(defParZAux,`ifelse(eval($3>$#-3),1,,
+                          $1,getList($3,_ISERV_$1_LIST_),`define(`$2',`getList($3,shift(shift(shift($@))))')',
+                         `defParZAux(`$1',`$2',incr($3),shift(shift(shift($@))))')')
+
+
+#
+# getList
+#
+# Returns a value for a list of arguments.
+#
+# The first argument is the position of the value to get.
+# The other arguments are the list to explore.
+#
+# Example: getList(3,a,b,c,d,e,f) -> c
+#
+define(getList,`ifelse($1,1,`$2',
+                       `getList(decr($1),shift(shift($@)))')')
+
+
+#
+# inList
+#
+# Returns 1 if the first argument is contained in the given list,
+# else returns 0.
+#
+#
+# Example: inList(hola, uno, adios, hola, otro) -> 1 
+#
+define(inList,`ifelse($1,$2,1,
+                      eval($#==2),1,0,
+                      `inList($1,shift(shift($@)))')')
+
+
+#----------------------------------------------------------------------

@@ -1,0 +1,208 @@
+#!/bin/sh
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#
+# Frontend for sane scanimage
+#
+# (C) 1999, Santiago Pavon
+#
+# April 29, 1999
+#
+
+if [ -z "$SANE_CONFIG_DIR" ] ; then
+   SANE_CONFIG_DIR=/etc
+   export SANE_CONFIG_DIR
+fi
+
+#-------------------------------------------------------
+# OPTIONS:
+#-------------------------------------------------------
+
+device=hp
+mode=Gray
+resolution=75
+brightness=0
+contrast=0
+halftonetype=Fine
+speed=Extra
+smoothing=Off
+x=0
+y=0
+width=210
+height=296
+
+rotate=0
+fileout=/tmp/image.gif
+
+help()
+{
+   echo "Usage:"
+   echo "   isabel_scanner options"
+   echo " "
+   echo "Options:"
+   echo " "
+   echo "-void <string>             Unused option."
+   echo "-mode <mode>               Select the scan mode."
+   echo "                           Valid values: Lineart, Halftone, Grayscale and Color."
+   echo "                           Default: Halftone"
+   echo "-resolution <#>            Sets the resolution in dpi of the scanned image."
+   echo "                           Valid values: 12..1600dpi"
+   echo "                           Default: 300"
+   echo "-brightness <#>            Controls the brightness of the acquired image."
+   echo "                           Valid values: -127..127"
+   echo "                           Default: 0"
+   echo "-contrast <#>              Controls the contrast of the acquired image."
+   echo "                           Valid values: -127..127"
+   echo "                           Default: 0"
+   echo "-x <#>                     Top-left x position of scan area."
+   echo "                           Valid values: 0..215 (mm)"
+   echo "                           Default: 0"
+   echo "-y <#>                     Top-left y position of scan area."
+   echo "                           Valid values:0..355 (mm)"
+   echo "                           Default: 0"
+   echo "-width <#>                 Width of scan-area."
+   echo "                           Valid values: 0..215 (mm)"
+   echo "                           Default: 215"
+   echo "-height <#>                Height of scan-area." 
+   echo "                           Valid values: 0..355 (mm)"
+   echo "                           Default: 355"
+   echo "-rotate                    Rotate 90 degrees the image." 
+   echo "-fileout <filename>        Output gif file." 
+   echo "                           Default: /tmp/image.gif"
+}
+
+
+while [ $# -gt 0 ]
+do 
+   case $1 in
+      -h)
+         help
+         exit 0
+         ;;
+      -void)
+         shift ; shift
+         ;;
+      -mode) 
+         mode=$2 
+         shift ; shift
+         ;;
+      -resolution)
+         resolution=$2
+         shift ; shift
+         ;;
+      -brightness)
+         brightness=$2
+         shift ; shift
+         ;;
+      -contrast)
+         contrast=$2
+         shift ; shift
+         ;;
+      -x)
+         x=$2
+         shift ; shift
+         ;;
+      -y)
+         y=$2
+         shift ; shift
+         ;;
+      -width)
+         width=$2
+         shift ; shift
+         ;;
+      -height)
+         height=$2
+         shift ; shift
+         ;;
+      -rotate)
+         rotate=1
+         shift
+         ;;
+      -fileout)
+         fileout=$2
+         shift ; shift
+         ;;
+      *)
+         echo "Unknown option: $1"
+         exit 1
+   esac
+done
+
+cmd="scanimage -d $device \
+               --mode $mode \
+               --brightness $brightness \
+               --resolution $resolution \
+               --contrast $contrast \
+               --speed $speed \
+               --smoothing $smoothing \
+               -l $x \
+               -t $y \
+               -x $width \
+               -y $height"
+
+
+case $mode in
+   Color)
+      if [ "$rotate" = "1" ]
+      then
+         cmd="$cmd | \
+              isabel_ppmquant 100 | \
+              isabel_pnmrotate -90 | \
+              isabel_ppmtogif > $fileout"
+      else
+         cmd="$cmd | \
+              isabel_ppmquant 100 | \
+              isabel_ppmtogif > $fileout"
+      fi
+      ;;
+   Grayscale)
+      if [ "$rotate" = "1" ]
+      then
+         cmd="$cmd | \
+              isabel_pnmrotate -90 | \
+              isabel_ppmtogif > $fileout"
+      else
+         cmd="$cmd | \
+              isabel_ppmtogif > $fileout"
+      fi
+      ;;
+   Lineart|Halftone)
+      if [ "$rotate" = "1" ]
+      then
+         cmd="$cmd | \
+              isabel_bwrotate | \
+              isabel_fastpbm > $fileout"
+      else
+         cmd="$cmd | \
+              isabel_fastpbm > $fileout"
+      fi
+      ;;
+   *)
+      echo "Invalid mode: $mode"
+      exit 1
+esac
+
+eval $cmd
+
+
+

@@ -1,0 +1,125 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# CBManager.itcl
+#
+# Defines the callbacks handler class.
+#
+# CBManagerC interface:
+#
+#  - Add
+#  - Del
+#  - Set
+#  - AddUnique
+#  - List 
+#  - Exec
+#
+#########################################################################
+
+
+class CBManagerC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Adds a callback to the list
+    public method Add {cb}
+
+    # Deletes a callback from the list
+    public method Del {cb}
+
+    # Set the callback list (overrides the current list!)
+    public method Set {cbs}
+
+    # Adds a callback to the list if it didnt exist
+    public method AddUnique {cb}
+
+    # Traces the callbacks list
+    public method List {}
+
+    # Executes the callbacks with the arguments "args"
+    public method Exec {args}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    #### List of the callbacks. 
+
+    private variable CBs ""
+}
+
+#------------------------------------------------------------------
+
+body CBManagerC::Add {cb} {
+    lappend CBs $cb
+}
+
+#------------------------------------------------------------------
+
+body CBManagerC::Del {cb} {
+
+    set CBs [ldelete $CBs $cb]
+}
+
+#------------------------------------------------------------------
+
+body CBManagerC::Set {cbs} {
+
+    set CBs $cbs
+}
+
+#------------------------------------------------------------------
+
+body CBManagerC::AddUnique {cb} {
+
+    set pos [lsearch -exact $CBs $cb]
+    if {$pos == -1} {
+	lappend CBs $cb
+    }
+}
+
+#------------------------------------------------------------------
+
+body CBManagerC::List {} {
+
+    WriteTraceMsg "- List of callbacks : "
+    foreach cb $CBs {
+	puts $cb
+    }
+}
+    
+#------------------------------------------------------------------
+
+body CBManagerC::Exec {{args ""}} {
+
+    foreach cb $CBs {
+	if {[catch {uplevel #0 $cb $args} res]} {
+	    ErrorTraceMsg "- CB manager error:\n \"$cb $args\" produces:\n $res"
+	}
+    }
+}
+
+#------------------------------------------------------------------

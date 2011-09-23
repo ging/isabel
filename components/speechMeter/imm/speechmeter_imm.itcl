@@ -1,0 +1,93 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# speechmeter_imm.itcl
+#
+# Speechmeter: interaction mode manager.
+#
+#########################################################################
+
+
+class SpeechMeter_IMM_Class {
+
+    public proc SetInteractionMode {imname nsec site_id_list _args}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private proc GetOptionListValue {list optname {default ""}}
+
+}
+
+#---------------------------------------------------------------
+
+body SpeechMeter_IMM_Class::SetInteractionMode {imname nsec site_id_list _args} {
+
+    set scenary [session Activity GetResource $imname SpeechMeter ""]
+    set active  [GetOptionListValue $scenary -active 0]
+    
+    if {$active == 0} {
+	sms forceState SpeechMeter add -visible 0 
+    } else {
+
+	# Moderator:
+	set chairmansite [GetOptionListValue $_args -chairmansite none]
+	if {$chairmansite != "none"} {
+	    set chair  [lindex $chairmansite 0]
+	} else {
+	    set chair  [lindex $site_id_list 0]
+	}
+
+	# layout and visible:
+	set layoutname [GetOptionListValue $scenary -layout ""]
+	if {$layoutname == ""} {
+	    set layout "+100+100 0 1"
+	} else {
+	    set layout [session Activity GetResource SpeechMeter layout.$layoutname "+100+100 0 1"]
+	}
+
+	sms forceState SpeechMeter add \
+	    -visible 1 \
+	    -layout $layout \
+	    -time intime \
+	    -chair $chair
+    }
+
+}
+
+#---------------------------------------------------------------
+
+body SpeechMeter_IMM_Class::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+
+#---------------------------------------------------------------

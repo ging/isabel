@@ -1,0 +1,199 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+class ErrorMsgC {
+
+    private common counter 0
+
+    private common title "Information Message"
+
+    private variable fgcolor #000077
+    
+    private variable geometry 500x230+250+260
+
+    private variable wname 
+
+    private variable timeout
+
+    # $args can contain:
+    #   Options: -grab
+    #            -timeout <miliseconds>
+    #            -image   <filename>
+    #            -logo    <filename>
+    #   Messages to display
+    constructor {quit_close  args} {}
+    destructor {}
+}
+
+#-------------------------------------------
+
+body ErrorMsgC::constructor {quit_close args} {
+
+    set wname .errormsg$counter
+    incr counter
+
+    toplevel  $wname
+
+    wm geometry $wname $geometry
+    wm title    $wname $title
+
+    #- options -------------------------------------------
+
+    set grabopt 0
+    if {[lsearch -exact $args -grab] != -1} {
+	set grabopt 1
+	set args [ldelete $args -grab]
+    }
+
+    set timeout -1
+    set pos [lsearch -exact $args -timeout]
+    if {$pos != -1} {
+	set timeout [lindex $args [expr $pos+1]]
+	set args [lreplace $args $pos [expr $pos+1]]
+    }
+
+    set logo ""
+    set pos [lsearch -exact $args -logo]
+    if {$pos != -1} {
+	set logo [lindex $args [expr $pos+1]]
+	set args [lreplace $args $pos [expr $pos+1]]
+    }
+
+    set image ""
+    set pos [lsearch -exact $args -image]
+    if {$pos != -1} {
+	set image [lindex $args [expr $pos+1]]
+	set args [lreplace $args $pos [expr $pos+1]]
+    }
+
+
+    #- title ---------------------------------------------
+    
+    frame $wname.title
+    pack  $wname.title -side top -fill x -padx 10
+    
+    frame $wname.title.line -background $fgcolor -height 3
+    pack  $wname.title.line -side bottom -fill x 
+    
+    label $wname.title.isabel \
+	    -text "ISABEL MESSAGE" \
+	    -foreground $fgcolor \
+	    -font -*-helvetica-bold-o-*-*-25-*-*-*-*-*-*-* \
+	    -anchor w
+    pack  $wname.title.isabel -side left -fill x
+    
+    if {$logo == ""} {
+        set logo gif/dit.gif
+	CreateImage emc_logo $logo
+	label $wname.title.dit -image emc_logo
+    } else {
+	CreateImage emc_logo$counter $logo
+	label $wname.title.dit -image emc_logo$counter
+	incr counter
+    }
+    pack  $wname.title.dit -side right
+    
+    #- Quit/Close-----------------------------------------
+    
+    if {$quit_close == "quit"} {
+	button $wname.quit -text Quit \
+		-bd 4 \
+		-command exit \
+		-foreground       $fgcolor \
+		-activeforeground $fgcolor
+        bind $wname.quit <Return> exit
+    } else {
+	button $wname.quit -text Close \
+		-bd 4 \
+		-command "after idle delete object $this" \
+		-foreground       $fgcolor \
+		-activeforeground $fgcolor
+        bind $wname.quit <Return> "after idle delete object $this"
+    }
+    pack $wname.quit -side bottom -pady 7
+
+    frame $wname.line -background $fgcolor -height 3
+    pack  $wname.line -side bottom -fill x -padx 10
+    
+    #-----------------------------------------------------
+
+    if {$image == ""} {
+        set image gif/tiburon_icon.gif
+    }
+    CreateImage emc_tiburon $image
+
+    label $wname.tiburon -image emc_tiburon
+    pack  $wname.tiburon  -side left
+    
+    
+    text $wname.msg \
+	    -relief flat \
+	    -foreground $fgcolor 
+    pack $wname.msg -side right \
+	    -expand 1 \
+	    -fill both \
+	    -pady 10
+    
+    foreach i $args {
+	$wname.msg insert end "$i\n"
+    }
+    $wname.msg configure -state disabled
+
+    #-----------------------------------------------------
+
+    bind $wname <Destroy> "delete object $this"
+
+    #-----------------------------------------------------
+
+
+    if {$timeout != -1} {
+	after idle after $timeout $wname.quit invoke
+    }
+
+    if {$quit_close == "quit" || $grabopt == 1} {
+	catch {
+	    if {![winfo viewable $wname]} {
+		tkwait visibility $wname
+	    }
+	    grab  $wname
+	    tkwait window $wname
+	}    
+    }
+}
+
+#-----------------------------------------------------
+
+body ErrorMsgC::destructor {} {
+
+    catch {bind $wname <Destroy> ""}
+    if {[winfo exists $wname]} {
+        bind $wname <Destroy> ""
+        destroy $wname
+    }
+
+    after cancel after $timeout $wname.quit invoke
+    after cancel $wname.quit invoke
+    after cancel delete object $this
+}
+
+#-----------------------------------------------------

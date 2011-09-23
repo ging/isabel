@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Clean up
+Comment=Clean up last Isabel execution
+Exec=/usr/local/isabel/bin/isrv_CleanUp.sh
+Icon=/usr/local/isabel/lib/images/gif/medic.gif
+Terminal=false
+Type=Application
+StartupNotify=true

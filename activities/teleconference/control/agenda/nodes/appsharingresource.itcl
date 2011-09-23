@@ -1,0 +1,842 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#-----------------------------------------
+
+class AppSharingResourceTCC {
+    inherit ResourceTCC
+
+    #-- Node attributes
+
+    # NeReDa o ShDisplay
+    public variable distribution
+
+    # Access site
+    public variable accessSite
+
+    # Server.
+    public variable server
+
+    #-- Building the tree
+
+    constructor {_agendaobj _rId _server _distribution _accessSite} {
+    	ResourceTCC::constructor $_agendaobj $_rId} {}
+
+    destructor {}
+    
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+
+    public method getTitle {}
+
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+    
+    public method getNodes {}
+
+    #-- Online  
+
+    public method online {}
+
+    #-- Selection
+
+    # Returns the icon associated to the selected resource
+    public method getResourceIcon {} 
+
+    # Methods called when a resource is selected or unselected.
+    public method select {}
+    public method unselect {}
+
+    # Return 1 if the node is selected, otherwise returns 0.
+    public method isSelected {}
+
+    #-- Node edition
+
+    # Auxiliar variables used to show the fullname of the isabel site.
+    # Used by new and edit
+    public common aux_siteid
+    public common aux_fullname
+
+    public method edit {}
+
+    # Method used to validate the values modified when this node is edited.
+    # $tl is the object created to edit the values.
+    private method validateEdit {tl}
+
+    # Method used to update the nod3e values with the edited values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the values.
+    private method updateEdit {tl}
+
+    #-- Node creation
+
+    # Auxiliar variable used in the edit and new frames to select 
+    # server or hint.
+    private common usehint 0
+
+    # Auxiliar variable used in the edit and new frames to select 
+    # NeReDa or ShDisplay.
+    private common usenereda 0
+ 
+    # Create a new empty node, and opens an edition window to edit its values.
+    # If the node is created successfully, then this method returns a reference
+    # to the new created node; else it returns "".
+    # $agendaobj is a reference to the AgendaTCC object which will contain the created node.
+    public proc new {agendaobj}
+
+    # Method used to validate the values of the new node.
+    # $tl is the object created to edit the new values.
+    private proc validateNew {tl}
+
+    # Method used to create the new node with the validated values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the new values.
+    private proc updateNew {tl agendaobj}
+
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::constructor {_agendaobj _rId _server _distribution _accessSite} {
+
+    CheckClass  $_server ServerTCC ServerHintTCC
+    CheckUnique $_server
+    set server  $_server
+    $server setParent $this
+
+    CheckStrings $_distribution NeReDa ShDisplay
+    set distribution $_distribution
+
+    if {$distribution == "NeReDa"} {
+	CheckClass  $_accessSite SiteTCC
+	
+	set accessSite $_accessSite
+	
+	set _sr [$accessSite cget -sitereferences]
+	$accessSite configure -sitereferences [expr $_sr + 1]
+    } else {
+	set accessSite ""
+    }
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::destructor {} {
+
+    if {[isSelected]} {
+        unselect
+    }
+
+    if {$accessSite != ""} {
+	set _sr [$accessSite cget -sitereferences]
+	$accessSite configure -sitereferences [expr $_sr - 1]
+    }
+
+    delete object $server
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::parse {agendaobj str} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class AppSharingResource
+
+    set _rid [getOptionListValue $str -id]
+
+    WriteTraceMsg "ica: parsing application sharing resource \"$_rid\""
+
+    set _strserver [getOptionListValue $str -server]
+    switch [lindex $_strserver 0] {
+        Server {
+            set server [ServerTCC::parse $agendaobj $_strserver]
+        }
+        ServerHint {
+            set server  [ServerHintTCC::parse $agendaobj $_strserver]
+        }
+        default {
+            error "ERROR: AppSharingResource wait a Server or ServerHint value."
+        }
+    }
+
+    set distribution [getOptionListValue $str -distribution]
+
+    if {$distribution == "NeReDa"} {
+	
+	set _siteid [getOptionListValue $str -access]
+	
+	set _siteobj [SiteTCC::getSite $_siteid]
+	if {$_siteobj == ""} {
+	    set emsg "ERROR:: There are no sites with the siteId \"$_siteid\"."
+	    puts stderr $emsg
+	    error $emsg 
+	}
+	
+        set accesssite $_siteobj
+    } else {
+	set accesssite  ""
+    }
+    
+    set me [AppSharingResourceTCC "::#auto" $agendaobj $_rid $server $distribution $accesssite] 
+    
+    $server setParent $me
+    
+    return $me
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::prettyPrinter {{offset 0}} {
+
+    set _spc1 [NodeTCC::spaces $offset]
+    
+    if {$accessSite != ""} {
+	return "${_spc1}[list [list AppSharingResource \
+             -id $rid \
+             -server [$server prettyPrinter] \
+             -distribution $distribution \
+             -access [$accessSite getSiteId]]]"
+    } else {
+	return "${_spc1}[list [list AppSharingResource \
+            -id $rid \
+            -server [$server prettyPrinter] \
+            -distribution $distribution]]"
+    }
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::getTitle {} {
+
+    if {$distribution == "NeReDa"} {
+	set _dast "distributed as RFB from [$accessSite getSiteId]"
+    } else {
+	set _dast "distributed as Video from speaker"
+    }
+    if {$resourcereferences != 0} {
+
+	return "[$server getTitle] $_dast ($rid) \[$resourcereferences\]"
+    } else {
+	return "[$server getTitle] $_dast ($rid)"
+    }
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::getMyNode {} {
+
+    if {[isSelected]} {
+  	   set tags "selected"
+    } else {
+     	set tags ""
+    }
+
+    #--
+
+    lappend _icons icaiconvnc     
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_mv_icons  [$_menubarobj cget -show_mv_icons]
+    if {$_show_mv_icons} {
+	if { ! [$parent firstResource $this]} {
+	    lappend _icons icafocusup
+	}
+	if { ! [$parent lastResource $this]} {
+	    lappend _icons icafocusdown         
+	}
+    }
+    
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    if {$resourcereferences == 0} {
+	set _show_delete_icon  [$_menubarobj cget -show_delete_icon]
+	if {$_show_delete_icon} {
+	    lappend _icons icadelete         
+	}
+    }
+    
+    if {! [online]} {
+     	lappend _icons icaoffline
+    }
+    
+    #--
+
+    list \
+	[getMyUid] \
+	[getTitle] \
+	"resource leaf $tags" \
+	"$_icons"
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::getNodes {} {
+
+return ""
+   
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::online {} {
+  
+    if {$accessSite != ""} {
+	$accessSite online
+    } else {
+	return 1
+    }
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::getResourceIcon {} {
+    
+    return icaim-appsh
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::select {} {
+    
+    [$agendaobj getSelection] setSelectedAppSharingResource $this
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::unselect {} {
+    
+    [$agendaobj getSelection] setSelectedAppSharingResource ""
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::isSelected {} {
+    
+    if {[[$agendaobj getSelection] getSelectedAppSharingResource] == $this} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::edit {} {
+
+    set tl [BaseFrameTCC #auto -title [getTitle]]
+    
+    $tl setValidationCmd [code $this validateEdit $tl]
+    
+    $tl setUpdateCmd     [code $this updateEdit $tl]
+    
+    set c [$tl getContent]
+
+    #--
+
+    iwidgets::entryfield $c.rid \
+	-labeltext "Resource Id:" \
+	-labelpos nw
+    pack $c.rid -padx 14 -pady 4 -fill x -anchor w
+    $c.rid component entry insert 0 $rid
+
+    #--
+    
+    frame $c.sep0
+    pack  $c.sep0 -expand 1
+
+    #--
+
+    if {[$server isa ServerTCC]} {
+	set usehint 0
+    } else {
+	set usehint 1
+    }
+
+    #--
+
+    radiobutton $c.useserver \
+	-text "Server name and password:" \
+	-variable [scope usehint] \
+	-value 0
+    pack $c.useserver -padx 14 -pady 4 -anchor w
+    
+    iwidgets::entryfield $c.name \
+	-labeltext "     Server Name:" \
+	-labelpos w
+    pack $c.name -padx 14 -pady 4 -fill x
+    
+    iwidgets::entryfield $c.passwd \
+	-labeltext "     Server Password:" \
+	-labelpos w
+    pack $c.passwd -padx 14 -pady 4 -fill x
+
+    #
+
+    radiobutton $c.usehint \
+	-text "Server hint:" \
+	-variable [scope usehint] \
+	-value 1
+    pack $c.usehint -padx 14 -pady 4 -anchor w
+    
+    iwidgets::entryfield $c.hint \
+	-labeltext "     Server Hint:" \
+	-labelpos w
+    pack $c.hint -padx 14 -pady 4 -fill x
+
+    #--
+
+    if {$usehint} {
+
+	set _serverhint   [$server cget -hint]
+	
+	$c.hint component entry insert 0 $_serverhint
+
+    } else {
+	set _servername   [$server cget -name]
+	set _serverpasswd [$server cget -password]
+	
+	$c.name   component entry insert 0 $_servername
+	$c.passwd component entry insert 0 $_serverpasswd
+    }
+
+    #--
+    
+    frame $c.sep1
+    pack  $c.sep1 -expand 1
+
+    #--
+
+    if {$distribution == "NeReDa"} {
+	set usenereda 1
+    } else {
+	set usenereda 0
+    }
+
+    #--
+
+    label $c.distrl \
+	-text "Distribution method:" \
+	-anchor w
+    pack $c.distrl -padx 14 -pady 4 -fill x
+
+    radiobutton $c.nereda \
+	-text "As a VNC flow (NeReDa)." \
+	-variable [scope usenereda] \
+	-value 1
+    pack $c.nereda -padx 14 -pady 4 -anchor w
+    
+    #
+
+    frame $c.f
+    pack $c.f -padx 28 -pady 4 -fill both
+    
+    trace vdelete AppSharingResourceTCC::aux_siteid w \
+	"SiteTCC::traceInfo AppSharingResourceTCC::aux_fullname"
+    set aux_fullname ""
+    set aux_siteid   ""
+    trace variable AppSharingResourceTCC::aux_siteid w \
+	"SiteTCC::traceInfo AppSharingResourceTCC::aux_fullname"
+    
+    ::iwidgets::combobox $c.f.site \
+	-labeltext "Isabel Access Site Nickname:" \
+	-validate "SiteTCC::ValidateSiteIdCB %c" \
+	-labelpos w \
+	-textvariable AppSharingResourceTCC::aux_siteid
+    pack $c.f.site -side left -anchor n
+    if {$accessSite != ""} {
+	$c.f.site component entry insert 0 [$accessSite getSiteId]
+    }
+
+    foreach sid [array names SiteTCC::everysite] { 
+	$c.f.site insert list end $sid
+    }
+    foreach sid [SiteManager::GetSites] { 
+	if { ! [info exists SiteTCC::everysite($sid)]} {
+	    $c.f.site insert list end $sid
+	}
+    }
+    
+    label $c.f.sitedata \
+	-textvariable AppSharingResourceTCC::aux_fullname \
+	-font [IsabelFontsC::GetFont medium medium]
+    pack $c.f.sitedata -side left -anchor n
+    
+    #
+    
+    radiobutton $c.shdisp \
+	-text "As a Video flow (ShDisplay)." \
+	-variable [scope usenereda] \
+	-value 0
+    pack $c.shdisp -padx 14 -pady 4 -anchor w
+    
+    #--
+
+    frame $c.sep2
+    pack  $c.sep2 -expand 1
+
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::validateEdit {tl} {
+    
+    set c [$tl getContent]
+
+    # No empty rid
+    set newrid [string trim [$c.rid get]]
+    if {$newrid == ""} {
+	return "Resource Id can not be empty"
+    }
+    
+    # No duplicated rid
+    if {[info exists everyresource($newrid)]} {
+	if {$everyresource($newrid) != $this} {
+	    return "Resource Id \"$newrid\" has been already defined."
+	}
+    }
+
+    if {$usehint} {
+
+	# No empty server hint
+	set newhint [string trim [$c.hint get]]
+	if {$newhint == ""} {
+	    return "Server Hint can not be empty"
+	}
+    } else {
+
+	# No empty server name
+	set newname [string trim [$c.name get]]
+	if {$newname == ""} {
+	    return "Server Name can not be empty"
+	}
+    } 
+
+    if {$usenereda} {
+	
+	# No empty isabel access site
+	if {[string trim [$c.f.site get]] == ""} {
+	    return "Isabel site nickname can not be empty"
+	}
+    }
+    
+    return ""
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::updateEdit {tl} {
+
+    set c [$tl getContent]
+    
+    #--
+
+    unset everyresource($rid)    
+    set rid [string trim [$c.rid get]]
+    set everyresource($rid) $this
+
+    #--
+
+    delete object $server
+
+    if {$usehint} {
+	set _newhint [string trim [$c.hint get]]
+	set server [ServerHintTCC "::#auto" $agendaobj $_newhint]
+    } else {
+	set _newname   [string trim [$c.name get]]
+	set _newpasswd [string trim [$c.passwd get]]
+	set server [ServerTCC "::#auto" $agendaobj $_newname $_newpasswd]
+    }
+    $server setParent $this
+
+    #--
+
+    if {$accessSite != ""} {
+	set _sr [$accessSite cget -sitereferences]
+	$accessSite configure -sitereferences [expr $_sr - 1]
+    }
+
+    #--
+
+    if {$usenereda} {
+	set distribution NeReDa
+	
+	set _newsiteid [string trim [$c.f.site get]]
+	
+	# Create a new site if necessary
+	if {[SiteTCC::getSite $_newsiteid] == ""} {
+	    set _confobj [$agendaobj getConference]
+	    $_confobj createUnknownSite $_newsiteid
+	}
+
+	set accessSite [SiteTCC::getSite $_newsiteid] 
+
+	set _sr [$accessSite cget -sitereferences]
+	$accessSite configure -sitereferences [expr $_sr + 1]
+
+    } else {
+	set distribution ShDisplay
+	
+	set accessSite ""
+    }
+
+    #--
+    
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::new {agendaobj} {
+    
+    set tl [BaseFrameTCC #auto -title "New NeReDa Resource"]
+    
+    $tl setValidationCmd [code validateNew $tl]
+    
+    $tl setUpdateCmd     [code updateNew $tl $agendaobj]
+    
+    set c [$tl getContent]
+
+    #--
+
+    iwidgets::entryfield $c.rid \
+	-labeltext "Resource Id:" \
+	-labelpos nw
+    pack $c.rid -padx 14 -pady 4 -fill x -anchor w
+
+    #--
+    
+    frame $c.sep0
+    pack  $c.sep0 -expand 1
+
+    #--
+    
+    set usehint 0
+    
+    radiobutton $c.useserver \
+	-text "Server name and password:" \
+	-variable [scope usehint] \
+	-value 0
+    pack $c.useserver -padx 14 -pady 4 -anchor w
+    
+    iwidgets::entryfield $c.name \
+	-labeltext "     Server Name:" \
+	-labelpos w
+    pack $c.name -padx 14 -pady 4 -fill x
+    
+    iwidgets::entryfield $c.passwd \
+	-labeltext "     Server Password:" \
+	-labelpos w
+    pack $c.passwd -padx 14 -pady 4 -fill x
+
+    #
+
+    radiobutton $c.usehint \
+	-text "Server hint:" \
+	-variable [scope usehint] \
+	-value 1
+    pack $c.usehint -padx 14 -pady 4  -anchor w
+    
+    iwidgets::entryfield $c.hint \
+	-labeltext "     Server Hint:" \
+	-labelpos w
+    pack $c.hint -padx 14 -pady 4 -fill x
+
+    #--
+
+    frame $c.sep1
+    pack  $c.sep1 -expand 1
+
+    #--
+
+    set usenereda 1
+
+    #--
+
+    label $c.distrl \
+	-text "Distribution method:" \
+	-anchor sw
+    pack $c.distrl -padx 14 -pady 4 -fill x -anchor w
+
+    radiobutton $c.nereda \
+	-text "As a VNC flow (NeReDa)." \
+	-variable [scope usenereda] \
+	-value 1
+    pack $c.nereda -padx 14 -pady 4 -anchor w
+    
+    #
+
+    frame $c.f
+    pack $c.f -padx 28 -pady 4 -fill both 
+
+    trace vdelete AppSharingResourceTCC::aux_siteid w \
+	"SiteTCC::traceInfo AppSharingResourceTCC::aux_fullname"
+    set aux_fullname ""
+    set aux_siteid   ""
+    trace variable AppSharingResourceTCC::aux_siteid w \
+	"SiteTCC::traceInfo AppSharingResourceTCC::aux_fullname"
+
+    ::iwidgets::combobox $c.f.site \
+	-labeltext "Isabel Access Site Nickname:" \
+	-labelpos w \
+	-validate "SiteTCC::ValidateSiteIdCB %c" \
+	-textvariable AppSharingResourceTCC::aux_siteid
+    pack $c.f.site -side left 
+
+    foreach sid [array names SiteTCC::everysite] { 
+	$c.f.site insert list end $sid
+    }
+    foreach sid [SiteManager::GetSites] { 
+	if { ! [info exists SiteTCC::everysite($sid)]} {
+	    $c.f.site insert list end $sid
+	}
+    }
+    
+    label $c.f.sitedata \
+	-textvariable AppSharingResourceTCC::aux_fullname \
+	-font [IsabelFontsC::GetFont medium medium]
+    pack $c.f.sitedata -side left
+
+    # 
+
+    radiobutton $c.shdisp \
+	-text "As a Video flow (ShDisplay)." \
+	-variable [scope usenereda] \
+	-value 0
+    pack $c.shdisp -padx 14 -pady 4 -anchor w
+    
+    #--
+
+    frame $c.sep2
+    pack  $c.sep2 -expand 1
+
+    #--
+
+    set res [$tl waitFor]
+    
+    return $res
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::validateNew {tl} {
+
+    set c [$tl getContent]
+
+    # No empty rid
+    set newrid [string trim [$c.rid get]]
+    if {$newrid == ""} {
+	return "Resource Id can not be empty"
+    }
+    
+    # No duplicated rid
+    if {[info exists everyresource($newrid)]} {
+	return "Resource Id \"$newrid\" has been already defined."
+    }
+
+    if {$usehint == "0"} {
+	
+	# No empty server name
+	set newname [string trim [$c.name get]]
+	if {$newname == ""} {
+	    return "Server Name can not be empty"
+	}
+	
+    } else {
+	
+	# No empty server hint
+	set newhint [string trim [$c.hint get]]
+	if {$newhint == ""} {
+	    return "Server Hint can not be empty"
+	}
+	
+    }
+
+ 
+    if {$usenereda} {
+	# No empty isabel site
+	if {[string trim [$c.f.site get]] == ""} {
+	    return "Isabel site nickname can not be empty"
+	}
+    }
+
+    return ""
+}
+
+#-----------------------------------------
+
+body AppSharingResourceTCC::updateNew {tl agendaobj} {
+
+    set c [$tl getContent]
+
+    #--
+
+    set _rid [string trim [$c.rid get]]
+
+    #--
+
+    if {$usehint} {
+	set _hint [string trim [$c.hint get]]
+	set _server [list ServerHint $_hint]
+    } else {
+	set _name   [string trim [$c.name get]]
+	set _passwd [string trim [$c.passwd get]]
+	set _server [list Server $_name $_passwd]
+    }
+
+    if {$usenereda} {
+	set _distribution NeReDa
+	set _siteid [string trim [$c.f.site get]]
+
+	# Create a new site if necessary
+	if {[SiteTCC::getSite $_siteid] == ""} {
+	    set confobj [$agendaobj getConference]
+	    $confobj createUnknownSite $_siteid
+	}
+
+
+    } else {
+	set _distribution ShDisplay
+	set _siteid ""
+    }
+
+
+    set _str [list AppSharingResource \
+		  -id $_rid \
+		  -server $_server \
+		  -distribution $_distribution \
+		  -access $_siteid \
+		 ]
+
+    set child [AppSharingResourceTCC::parse $agendaobj $_str]
+
+    return $child
+}
+
+#-----------------------------------------

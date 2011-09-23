@@ -1,0 +1,487 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# compManager.itcl
+#
+# Defines the ComponentManager class.
+#
+#########################################################################
+
+class ComponentManager {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Sends a StartComponent request to the master.
+    public proc StartComponent {site_id compName} 
+
+    # Site $site_id autostarts components.
+    public proc StartAllComponents {site_id} 
+
+    # Send a KillComponent request to the master.
+    public proc KillComponent {site_id compName} 
+
+    # Master notifies us that components must be reconfigured as specified in 
+    # the $imname interaction mode.
+    # $nsec is the secuence number.
+    # $site_id_list is a list of site_ids.
+    # $args is a list of option-value pairs (ex: -opt1 v1 -opt v2 ...)
+    public proc InteractionModeNotify {imname nsec site_id_list args} 
+
+    # Sets a callback to be executed when a component is started.
+    # $op must be a CBManagerC method name. 
+    # When the callbacks are executed, $site_id and component name are added as arguments.
+    public proc StartComponentCB {op cb}
+
+    # Sets a callback to be executed when a component start is confirmed.
+    # $op must be a CBManagerC method name. 
+    # When the callbacks are executed, $site_id and component name are added as arguments.
+    public proc StartComponentSuccessCB {op cb}
+
+    # Sets a callback to be executed when a component is killed.
+    # $op must be a CBManagerC method name. 
+    # When the callbacks are executed, $site_id and component name are added as arguments.
+    public proc KillComponentCB {op cb} 
+
+
+    # Execute the given operation of the given component.
+    # The operation should be documented in the component API. 
+    # $args is the operation to execute, followed by its arguments
+    public proc Cmd {compName args}
+
+    #-------------------
+
+
+    public proc UpdateComponentStates {site_id comp_states}
+
+
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Array with references to the created component objects.
+    # Array index is the component name
+    private common compobj
+
+    # Objects to manage callbacks.
+    private common startcompCB ""
+    private common startsuccCB ""
+    private common killcompCB  ""
+
+    # Component is waiting.
+    private proc ComponentIsWaiting {compName siteid first instance} 
+
+    # Component is running.
+    private proc ComponentIsRunning {siteid compName instance} 
+
+    # Component is stopped.
+    private proc ComponentIsStopped {siteid compName} 
+
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::StartComponent {site_id compName} {
+   network MasterRequest CM StartComponent $site_id $compName
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::ComponentIsWaiting {compName siteid first instance} {
+    global ISABEL_DIR
+
+    set n [SiteManager::GetSiteInfo $siteid name]
+    set c "$compName"
+    DebugTraceMsg "- User $n creates component $c." 1
+
+    set starterror 0
+    if {[SiteManager::MySiteId] == $siteid} {
+	if {[info exists compobj($c)]} {
+	    if {$compobj($c) != ""} {
+		if {[catch {delete object $compobj($c)} emsg]} {
+		    set compobj($c) ""
+		    ErrorTraceMsg "site \"$siteid\" can't destroy current $compName component.\n$emsg"
+		    set starterror 1
+		}
+	    }
+	}
+	
+	set compobj($c) [ComponentStubC "#auto" ${compName}]
+	
+	$compobj($c) Start $first
+    } 
+
+    GlobalState::SetState $siteid $compName Waiting $first $instance
+
+    # Evaluates callback
+    if {$startcompCB != ""} {
+	$startcompCB Exec $siteid $compName
+    }
+
+    if {$starterror} {
+	KillComponent $siteid $compName
+    }   
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::KillComponent {site_id compName} {
+   network MasterRequest CM KillComponent $site_id $compName
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::ComponentIsStopped {siteid compName} {
+
+    # If either the component or the site does not exist, then return
+    if {![GlobalState::ComponentExists $compName] || ![SiteManager::SiteConnected $siteid] } {
+	return
+    }
+
+    DebugTraceMsg "- Component $compName of site $siteid was Stopped." 1
+
+    set me [SiteManager::MyChId]
+
+    if {$me != ""} {
+	set _my_site_id [SiteManager::MySiteId] 
+	
+	# I created the component successfully
+	if {[lsearch -exact [GlobalState::GetSitesByState $compName Running] $_my_site_id] != -1} {
+	    
+	    if {$_my_site_id == $siteid} {
+		if {[catch {$compobj($compName) DelMySite} emsg]} { 
+		    ErrorTraceMsg "Trying to disconnect my site ($siteid) of $compName, I get:\n$emsg"
+		}
+		if {[catch {$compobj($compName) ExitComponent} emsg]} { 
+		    ErrorTraceMsg "Trying to quit component $compName, I get:\n$emsg"
+		}
+		
+		if {[catch {after 1000 delete object \"[code $compobj($compName)]\"} emsg]} {
+		    ErrorTraceMsg "site \"$siteid\" can't destroy current $compName component.\n$emsg"
+		}
+		set compobj($compName) ""
+	    } else {
+		if {[catch {$compobj($compName) DelRemoteSite $siteid} emsg]} { 
+		    ErrorTraceMsg "Trying to disconnect site \"$siteid\" of $compName, I get:\n$emsg"
+		}
+	    }
+	    
+	} else { 
+	    # I have not finished the creation of the component, i.e. 
+	    # I have not received the "StartComponentSuccessNotify $c $me" message.
+	    if {[lsearch -exact [GlobalState::GetSitesByState $compName Waiting] $_my_site_id] != -1} {
+		
+		if {$_my_site_id == $siteid} {
+		    if {[catch {delete object $compobj($compName)} emsg]} {
+			ErrorTraceMsg "site \"$siteid\" can't destroy current $compName component.\n$emsg"
+		    }
+		    set compobj($compName) ""
+		}
+	    }
+	}
+    }
+    
+
+    GlobalState::SetState $siteid $compName Stopped 0 0
+	
+    # Evaluates callback
+    if {$killcompCB != ""} {
+	$killcompCB Exec $siteid $compName
+    }
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::StartAllComponents {site_id} {
+
+    foreach cname [session Activity GetComponents] {
+	network MasterRequest CM StartComponent $site_id $cname
+    }
+}
+
+#---------------------------------------------------------------
+
+body ComponentManager::ComponentIsRunning {siteid compName instance} {
+
+    # Site $siteid is not alive.
+    if {![SiteManager::SiteConnected $siteid]} {
+	return 
+    }
+
+    # Component $compName of site $siteid is already running.
+    if {[lsearch -exact [GlobalState::GetComponentsByState $siteid "Running"] $compName] != -1} {
+	return 
+    }
+
+    DebugTraceMsg "- Component $compName of site $siteid created successfully." 1
+    
+    GlobalState::SetState $siteid $compName Running "" $instance
+
+    set me [SiteManager::MySiteId]
+
+    if {$me == $siteid} {
+	
+	# If I am the new site then I am informed about the already existing sites.
+	
+	foreach p [GlobalState::GetSitesByState $compName Running] {
+
+	    if {$p != $me} {
+		if {[catch {$compobj($compName) AddRemoteSite $p 0} emsg]} {
+		    ErrorTraceMsg "Informing that site \"$siteid\" is a new site of $compName.\n$emsg This can produce problems with this component."
+		}
+	    }
+	}
+
+	if {[catch {$compobj($compName) AddMySite} emsg]} {
+	    ErrorTraceMsg "Informing that my site ($siteid) is a new site of $compName.\n$emsg This can produce problems with this component."
+	}
+
+
+    } else {
+	if {[SiteManager::MyChId] != ""} {
+	    
+	    # If I am a running site
+	    if {[lsearch -exact [GlobalState::GetSitesByState $compName Running] $me] != -1 } {
+		if {[catch {$compobj($compName) AddRemoteSite $siteid 1} emsg]} {
+		    ErrorTraceMsg "Informing that site \"$siteid\" is a new site of $compName.\n$emsg This can produce problems with this component."
+		}
+	    }
+	}
+    }
+    
+    if {![SiteManager::SiteConnected $siteid]} {
+	return 
+    }
+    if {[lsearch -exact [GlobalState::GetComponentsByState $siteid "Waiting Running"] $compName] == -1} {
+	return 
+    }
+
+    # Evaluates callback
+    if {$startsuccCB != ""} {
+	$startsuccCB Exec $siteid $compName
+    }
+}
+
+#------------------------------------------------------------------
+
+body ComponentManager::InteractionModeNotify {imname nsec site_id_list args} {
+
+    set allcomp [session Activity GetComponents]
+
+    set order [session Activity GetResource $imname order ""]
+
+    foreach c $order {
+	if {[lsearch -exact $allcomp $c] == -1} {
+	    set order [ldelete $order $c]
+	}
+    }
+
+    foreach c $allcomp {
+	set done($c) 0
+    }
+
+    set myuserid [SiteManager::MyChId]
+
+    if {$myuserid == ""} return
+    
+    set _my_site_id [SiteManager::MySiteId] 
+
+    foreach c $order {
+
+	if {[GlobalState::GetState $_my_site_id $c] == "Running"} { 
+	    if {[catch {eval ComponentStubC::SendCmd $c SetInteractionMode $imname $nsec \$site_id_list $args} res]} {
+		ErrorTraceMsg "Setting $imname interaction mode for $c component:\n$res"
+	    }
+	}
+	set done($c) 1
+    }
+    
+    foreach c $allcomp {
+	if {!$done($c)} {
+	    if {[GlobalState::GetState $_my_site_id $c] == "Running"} { 
+		if {[catch {eval ComponentStubC::SendCmd $c SetInteractionMode $imname $nsec \$site_id_list $args} res]} {
+		    ErrorTraceMsg "Setting $imname interaction mode for $c component:\n$res"
+		}
+	    }
+	}
+    }
+}
+
+#------------------------------------------------------------------
+
+body ComponentManager::StartComponentCB {op cb} {
+
+    if {$startcompCB == ""} {
+	set startcompCB [CBManagerC "#auto"]
+    }
+    $startcompCB $op $cb
+}
+
+#------------------------------------------------------------------
+
+body ComponentManager::StartComponentSuccessCB {op cb} {
+
+    if {$startsuccCB == ""} {
+	set startsuccCB [CBManagerC "#auto"]
+    }
+    $startsuccCB $op $cb
+}
+
+#------------------------------------------------------------------
+
+body ComponentManager::KillComponentCB {op cb} {
+
+    if {$killcompCB == ""} {
+	set killcompCB [CBManagerC "#auto"]
+    }
+    $killcompCB $op $cb
+}
+
+#------------------------------------------------------------------
+
+body ComponentManager::Cmd {compName args} {
+    
+    if {[info exists compobj($compName)]} {
+	if {$compobj($compName) != ""} {
+	    eval ComponentStubC::SendCmd $compName $args
+	}
+    }
+}
+
+#------------------------------------------------------------------
+
+body ComponentManager::UpdateComponentStates {site_id comp_states} {
+
+    set _chid [SiteManager::GetSiteInfo $site_id chid] 
+
+    set _all_components [session Activity GetComponents]
+
+
+    # Set the state of the components specified in the method argument.
+    foreach _cs $comp_states {
+
+	set _name     [lindex $_cs 0]
+	set _state    [lindex $_cs 1]
+	set _first    [lindex $_cs 2]
+	set _instance [lindex $_cs 3]
+
+
+	set _pos [lsearch -exact $_all_components $_name]
+	if {$_pos == -1} {
+	    ErrorTraceMsg "PROTOCOL ERROR: Ignoring state of component \"$_name\"."
+	    continue
+	}
+	set _all_components [ldelete $_all_components $_name]
+
+
+	set _old_state    [GlobalState::GetState    $site_id $_name]
+	set _old_instance [GlobalState::GetInstance $site_id $_name]
+
+	switch $_state {
+	    Disabled {
+		if {$_old_state != "Disabled"} {
+		    ErrorTraceMsg "PROTOCOL ERROR: Component $_name can not change its state to Disabled."
+		}	
+	    }
+	    Stopped {
+		switch $_old_state {
+		    Disabled {
+			ErrorTraceMsg "PROTOCOL ERROR: ($_name) Disabled components can not change its state."
+		    }
+		    Waiting -
+		    Running {
+			ComponentIsStopped $site_id $_name
+		    }
+		}
+	    }
+	    Waiting {
+		switch $_old_state {
+		    Disabled {
+			ErrorTraceMsg "PROTOCOL ERROR: ($_name) Disabled components can not change its state."
+		    }
+		    Stopped {
+			ComponentIsWaiting $_name $site_id $_first $_instance
+		    }
+		    Waiting {
+			if {$_instance != $_old_instance} {
+			    ComponentIsStopped $_chid $_name
+			    ComponentIsWaiting $_name $site_id $_first $_instance
+			}
+		    }
+		    Running {
+			ComponentIsStopped $site_id $_name
+			ComponentIsWaiting $_name $site_id $_first $_instance
+		    }
+		}
+	    }
+	    Running {
+		switch $_old_state {
+		    Disabled {
+			ErrorTraceMsg "PROTOCOL ERROR: ($_name) Disabled components can not change its state."
+		    }
+		    Stopped {
+			ComponentIsRunning $site_id $_name $_instance
+		    }
+		    Waiting {
+			if {$_instance != $_old_instance} {
+			    ComponentIsStopped $site_id $_name
+			    ComponentIsRunning $site_id $_name $_instance
+			} else {
+			    ComponentIsRunning $site_id $_name $_instance
+			}
+		    }
+		    Running {
+			if {$_instance != $_old_instance} {
+			    ComponentIsStopped $site_id $_name
+			    ComponentIsRunning $site_id $_name $_instance
+			}
+		    }
+		}
+	    }
+	    default {
+		ErrorTraceMsg "PROTOCOL ERROR: ($_name) Invalid state."
+		continue
+	    }
+	}
+    }
+
+    # Stop components no specified in the method argument.
+    foreach _name $_all_components {
+
+	set _old_state [GlobalState::GetState $site_id $_name]
+
+	switch $_old_state {
+	    Waiting -
+	    Running {
+		ComponentIsStopped $site_id $_name
+	    }
+	}
+    }
+
+}
+
+#------------------------------------------------------------------
+

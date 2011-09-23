@@ -1,0 +1,125 @@
+<!--
+ - ISABEL: A group collaboration tool for the Internet
+ - Copyright (C) 2009 Agora System S.A.
+ -
+ - This file is part of Isabel.
+ -
+ - Isabel is free software: you can redistribute it and/or modify
+ - it under the terms of the Affero GNU General Public License as published by
+ - the Free Software Foundation, either version 3 of the License, or
+ - (at your option) any later version.
+ -
+ - Isabel is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - Affero GNU General Public License for more details.
+ -
+ - You should have received a copy of the Affero GNU General Public License
+ - along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+ -
+-->
+<html>
+<head>
+   <title>2.- Arranque del Agente</title>
+</head>
+
+<body>
+
+<center>
+<table border=0 width=585>
+<tr>
+    <th align=center>
+    <h2>
+    <img SRC="../images/monitorIcon.gif" height=32 width=32><b> <u>2.- Arranque
+    del Agente</u></b></h2>
+    <img SRC="../images/linecl.gif" >
+    </th>
+</tr>
+<tr>
+        <td align=left>
+Con todo lo anterior ya estamos en
+condiciones de ejecutar el agente y comenzar a servir datos a los gestores SNMP.
+La forma de ejecutar un archivo .jar con Java es:</p>
+
+<p>
+<tt>
+> java -jar Isabel-Agent.jar [par&aacute;metros del programa]
+</tt>
+</p>
+
+El conjunto de par&aacute;metros que pueden
+pasarse al agente de ISABEL en el arranque son:</p>
+
+<ul>
+<li>
+</span></span><b>-SNMPPort [port]</b>: para indicar el puerto en el que el
+agente escucha las posibles peticiones que lleguen desde gestores
+SNMP. Por defecto arranca en el puerto 161, pero para que esto
+sea posible debemos ejecutar como <i>root</i>, pues es un puerto
+por debajo del 1024.</p>
+
+<li>
+</span></span><b>-dataPort [port]</b>: indica el puerto en el que se
+escucha para recibir los mensajes del resto de componentes de
+ISABEL con informaci&oacute;n de estad&iacute;sticas. Por defecto toma el
+valor 51000. Este puerto debe coincidir con el que pongamos en
+los m&oacute;dulos de ISABEL en la opci&oacute;n <tt>-statsPort</tt>.</p>
+
+<li>
+</span></span><b>-ctrlPort [port]</b>:<b> </b>puerto de atenci&oacute;n a comandos de
+control que vienen de ISABEL. El valor por defecto es el 5000.</p>
+
+<li>
+<span></span><b>-shell</b>: indica al agente que los comandos de control no
+los va a recibir por un puerto UDP, sino por la consola desde la
+que fue arrancado.</p>
+
+<li>
+</span></span><b>-printStats</b>: indica al agente que debe arrancar su
+interfaz gr&aacute;fica. Esto s&oacute;lo ser&aacute; necesario cuando queramos
+hacer una monitorizaci&oacute;n local, sin ayuda de un gestor SNMP.
+Siempre que no sea necesario el uso de la interfaz gr&aacute;fica, es
+aconsejable no lanzarla, ya que hace uso de muchos recursos del
+sistema.</p>
+
+<li>
+</span></span><b>-help</b>: saca una lista de todos estos par&aacute;metros de
+ejecuci&oacute;n.</p>
+
+</ul>
+<br>
+Un ejemplo
+t&iacute;pico de ejecuci&oacute;n del agente es:</p>
+
+<p>
+<tt>
+> java -jar Isabel-Agent.jar -SNMPPort 4000 -shell -printStats
+</tt>
+</p>
+
+</td>
+</tr>
+<tr>
+    <td>
+        <img src="../images/linecl.gif" width=100%>
+    </td>
+</tr>
+<tr>
+    <td align=center>
+        <a href="helpIndex.html"><h1>INDICE</h1></a>
+    </td>
+</tr>
+<tr>
+    <td>
+        <img src="../images/linecl.gif" width=100%>
+    </td>
+</tr>
+<tr>
+    <td align=center>
+        <p><a href="http://isabel.dit.upm.es">http://isabel.dit.upm.es</a></center>
+    </td>
+</tr>
+</table>
+</center>
+</body>
+</html>

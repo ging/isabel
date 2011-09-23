@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=About Isabel
+Comment=Shows installed Isabel versions
+Exec=/usr/local/isabel/bin/isrv_AboutIsabel.sh
+Icon=/usr/local/isabel/lib/images/gif/isabelcscw24.gif
+Terminal=false
+Type=Application
+StartupNotify=true

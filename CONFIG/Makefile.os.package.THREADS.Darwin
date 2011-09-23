@@ -1,0 +1,20 @@
+#
+# THREADS configuration for Linux
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.library       -- root of subsystem libraries
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+THREADS.topdir       :=# value not useful
+THREADS.include      :=# value not useful
+THREADS.include.files:=# value not useful
+THREADS.library      :=# value not useful
+THREADS.library.libs :=-lpthread
+
+
+CONFIG.generic.define+=
+CONFIG.generic.include+=$(THREADS.include)

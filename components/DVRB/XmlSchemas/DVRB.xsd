@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+ - ISABEL: A group collaboration tool for the Internet
+ - Copyright (C) 2009 Agora System S.A.
+ -
+ - This file is part of Isabel.
+ -
+ - Isabel is free software: you can redistribute it and/or modify
+ - it under the terms of the Affero GNU General Public License as published by
+ - the Free Software Foundation, either version 3 of the License, or
+ - (at your option) any later version.
+ -
+ - Isabel is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - Affero GNU General Public License for more details.
+ -
+ - You should have received a copy of the Affero GNU General Public License
+ - along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+ -
+-->
+<xs:schema id="dvrb" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+  <xs:element name="dvrb" msdata:IsDataSet="true" msdata:Locale="en-US">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="file">
+          <xs:complexType>
+            <xs:attribute name="interval" type="xs:string" />
+            <xs:attribute name="name" type="xs:string" />
+            <xs:attribute name="path" type="xs:string" />
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="encoding">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="audio" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="acodec" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:attribute name="name" type="xs:string" />
+                        <xs:attribute name="fcc" type="xs:string" />
+                        <xs:attribute name="bitrate" type="xs:string" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="bits" type="xs:string" />
+                  <xs:attribute name="freq" type="xs:string" />
+                  <xs:attribute name="channels" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="video" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="vcodec" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:attribute name="name" type="xs:string" />
+                        <xs:attribute name="fcc" type="xs:string" />
+                        <xs:attribute name="quality" type="xs:string" />
+                        <xs:attribute name="bitrate" type="xs:string" />
+                        <xs:attribute name="peak" type="xs:string" />
+                        <xs:attribute name="type" type="xs:string" />
+                        <xs:attribute name="keyframe" type="xs:string" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="width" type="xs:string" />
+                  <xs:attribute name="height" type="xs:string" />
+                  <xs:attribute name="fps" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="input">
+          <xs:complexType>
+            <xs:attribute name="name" type="xs:string" />
+            <xs:attribute name="type" type="xs:string" />
+            <xs:attribute name="port" type="xs:string" />
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="output">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="live" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="mgroup" type="xs:string" />
+                  <xs:attribute name="port" type="xs:string" />
+                  <xs:attribute name="allow_unicast" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="vod" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="path" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="metadata">
+          <xs:complexType>
+            <xs:attribute name="title" type="xs:string" />
+            <xs:attribute name="subject" type="xs:string" />
+            <xs:attribute name="description" type="xs:string" />
+            <xs:attribute name="source" type="xs:string" />
+            <xs:attribute name="language" type="xs:string" />
+            <xs:attribute name="relation" type="xs:string" />
+            <xs:attribute name="coverage" type="xs:string" />
+            <xs:attribute name="creator" type="xs:string" />
+            <xs:attribute name="publisher" type="xs:string" />
+            <xs:attribute name="contributor" type="xs:string" />
+            <xs:attribute name="rights" type="xs:string" />
+            <xs:attribute name="date" type="xs:string" />
+            <xs:attribute name="type" type="xs:string" />
+            <xs:attribute name="format" type="xs:string" />
+            <xs:attribute name="id" type="xs:string" />
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

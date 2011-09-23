@@ -1,0 +1,296 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+class FFMpegStreamingMgrC {
+
+    # MCU sends audio to this port. 
+    # The ffmpeg application receives audio in this port.
+    public proc GetAudioPort {} {
+	return 52100	
+    }
+    
+    # MCU sends audio to ffmpeg with this payload type. 
+    public proc GetAudioPT {} {
+	return 112
+	# return 103
+    }
+
+    constructor {} {}
+    
+    destructor {}
+    
+    # Methods to start and stop the isabel_ffmpeg application.
+    # $url - streaming
+    # $recfile - recording
+    public method StartFFMpeg {url recfile frate _halfsize}
+    public method StopFFMpeg {}
+
+    # Callback to execute when ffmpeg dies.
+    public method QuitFFMpegCB {}
+    private method RestartFFMpeg {}
+
+    # ExternalC object created to launch ffmpeg program.
+    private variable ffmpegExtObj
+    
+    # Temporal SDP filename
+    private variable sdpFilename
+
+    # Target URL
+    private variable targetURL
+
+    # Recording filename
+    private variable recording_filename
+
+    # Framerate
+    private variable framerate
+
+    # Grab Size: half or normal
+    private variable halfSize
+
+    # Create the SDP file used by FFMpeg
+    private method CreateSDPFile {title}
+}
+
+
+#------------------------------------------------------------
+
+body FFMpegStreamingMgrC::constructor {} {
+
+    set ffmpegExtObj ""
+    set sdpFilename ""
+}
+
+#------------------------------------------------------------
+
+body FFMpegStreamingMgrC::destructor {} {
+
+    catch {delete object $ffmpegExtObj}
+    set ffmpegExtObj ""
+
+    if {[file exists $sdpFilename]} {
+	file delete $sdpFilename
+    }
+    set sdpFilename ""
+
+}
+
+#------------------------------------------------------------
+
+body FFMpegStreamingMgrC::StartFFMpeg {url recfile frate _halfsize} {
+    global env
+
+    if {$ffmpegExtObj != ""} {
+	return
+    }
+
+    set targetURL $url
+    set recording_filename $recfile
+    set framerate $frate
+    set halfSize  $_halfsize
+
+    WriteTraceMsg "Streaming: Starting isabel_fmpeg application."
+    WriteTraceMsg "Streaming to URL =  $targetURL"
+    WriteTraceMsg "Recording to file = $recording_filename"
+    WriteTraceMsg "Options: Framerate = $framerate fps / Grab Half Size = $halfSize"
+
+    if {$targetURL == ""} {
+	if {$recording_filename == ""} {
+	    #=== NOTHING TO DO
+	} else {
+	    #=== RECORDING
+	    CreateSDPFile IsabelRecording
+	}
+    } else {
+	if {$recording_filename == ""} {
+	    #=== STREAMING
+	    CreateSDPFile IsabelStreamingAndRecording
+	} else {
+	    #=== STREAMING AND RECORDING
+	    CreateSDPFile IsabelStreaming
+	}
+    }
+    
+    if {$sdpFilename == ""} {
+	ErrorTraceMsg "Streaming: I can not create the SDP file to start ffmpeg. Aborting."
+	return
+    }
+    
+    RestartFFMpeg
+}
+
+#------------------------------------------------------------
+
+body FFMpegStreamingMgrC::RestartFFMpeg {} {
+    global env
+
+    if {$ffmpegExtObj != ""} return
+
+    set _FFMPEG_PATH $env(ISABEL_DIR)/bin/isabel_ffmpeg
+
+    # Video capture data
+
+    set _CAPTURE_FRAME_RATE $framerate
+    
+    set _size [dvirtual GetVirtualDisplaySize]
+    set _wsize [lindex $_size 0]
+    set _hsize [lindex $_size 1]
+
+    set _CAPTURE_FRAME_SIZE ${_wsize}x${_hsize}
+
+    set _CAPTURE_DISPLAY $env(ADISPLAY)
+
+    # Output params
+    set _AUDIO_OUT_CODEC libmp3lame
+    set _AUDIO_OUT_CODECRATE 48000
+    set _AUDIO_OUT_CHANNELS 1
+    set _AUDIO_OUT_BITRATE 128k
+    
+    if {$halfSize} {
+	set _VIDEO_OUT_FRAMESIZE [expr $_wsize/2]x[expr $_hsize/2]
+    } else {
+	set _VIDEO_OUT_FRAMESIZE ${_wsize}x${_hsize}
+    }
+    set _VIDEO_BITRATE 1000k
+    set _BITRATE_TOLERANCE 1300k
+    set _MAX_BITRATE 1300k
+    set _BUF_SIZE 1000k
+    set _ASPECT_RATIO 4:3
+    
+    set _input_opts_video "-f x11grab -r $_CAPTURE_FRAME_RATE -s $_CAPTURE_FRAME_SIZE -i $_CAPTURE_DISPLAY"
+    set _input_opts_audio "-f sdp -i $sdpFilename"
+    set _input_opts_map_sync "-map 0:0:1 -map 1:0"
+
+    set _output_opts "-acodec $_AUDIO_OUT_CODEC -ar $_AUDIO_OUT_CODECRATE -ac $_AUDIO_OUT_CHANNELS -ab $_AUDIO_OUT_BITRATE \
+                      -s $_VIDEO_OUT_FRAMESIZE -vcodec mpeg4 -b $_VIDEO_BITRATE -keyint_min 25 \
+                      -bt $_BITRATE_TOLERANCE -maxrate $_MAX_BITRATE -bufsize $_BUF_SIZE \
+                      -aspect $_ASPECT_RATIO"
+    set _output_opts_f_str "-f mpegts $_output_opts"
+    set _output_opts_f_rec "-f avi    $_output_opts"
+
+    set _verbose_opt "-v 0"
+
+    if {$targetURL == ""} {
+	if {$recording_filename == ""} {
+
+	    #=== NOTHING TO DO
+	    
+	} else {
+	    
+	    #=== RECORDING
+	    set _cmd "$_FFMPEG_PATH $_verbose_opt $_input_opts_video $_input_opts_audio $_input_opts_map_sync $_output_opts_f_str pipe:1 | \
+                      $_FFMPEG_PATH $_verbose_opt -f mpegts -i pipe:0 -acodec copy -vcodec copy -f avi -y $env(HOME)/$recording_filename"
+	}
+    } else {
+	if {$recording_filename == ""} {
+
+	    #=== STREAMING
+	    set _cmd "$_FFMPEG_PATH $_verbose_opt $_input_opts_video $_input_opts_audio $_input_opts_map_sync $_output_opts_f_str $targetURL"
+	    
+	} else {
+	    
+	    #=== STREAMING AND RECORDING
+	    set _cmd "$_FFMPEG_PATH $_verbose_opt $_input_opts_video $_input_opts_audio $_input_opts_map_sync $_output_opts_f_str pipe:1 | \
+                      $_FFMPEG_PATH $_verbose_opt -f mpegts -i pipe:0 -acodec copy -vcodec copy -f mpegts $targetURL -acodec copy -vcodec copy -f avi -y $env(HOME)/$recording_filename"
+
+	}
+    }
+
+    WriteTraceMsg "FFMPEG CMD = $_cmd"
+
+    catch "exec killall -s TERM -q isabel_ffmpeg"
+
+    set _quitcb [code $this QuitFFMpegCB]
+    set ffmpegExtObj [ExternalC #auto ffmpeg $_cmd $_quitcb]
+
+    if {[catch {$ffmpegExtObj Start pid} errmsg]} {
+	ErrorTraceMsg "Trying to launch \"FFMpeg\", I get:\n$errmsg"
+	catch {delete object $ffmpegExtObj} 
+	set ffmpegExtObj ""
+    }
+}
+
+#------------------------------------------------------------
+
+body FFMpegStreamingMgrC::CreateSDPFile {title} {
+    global env
+
+    set _secs [clock seconds]
+
+    set sdpFilename $env(ISABEL_TMP_DIR)/ffmpeg-${_secs}.sdp
+
+    if {[catch { 
+	set fd [open $sdpFilename w]
+
+	set _AUDIO_IN_CODEC_PT       [GetAudioPT]
+	set _AUDIO_IN_CODEC_NAME     PCMU
+
+	set _AUDIO_IN_CODEC_RATE     16000
+	set _AUDIO_IN_CODEC_RATE     48000
+
+	set _AUDIO_IN_CODEC_CHANNELS 1
+	set _AUDIO_IN_CODEC_CHANNELS 1
+
+	puts $fd "v=0"
+	puts $fd "s=$title"
+	puts $fd "o=- 0 0 IN IP4 127.0.0.1"
+	puts $fd "c=IN IP4 127.0.0.1"
+	puts $fd "t=0 0"
+	puts $fd "m=audio [GetAudioPort] RTP/AVP $_AUDIO_IN_CODEC_PT"
+	puts $fd "a=rtpmap:$_AUDIO_IN_CODEC_PT $_AUDIO_IN_CODEC_NAME/$_AUDIO_IN_CODEC_RATE/$_AUDIO_IN_CODEC_CHANNELS"
+
+	close $fd
+    } emsg]} {
+	ErrorTraceMsg "FFMpeg SDP ($sdpFilename): $emsg"
+	set sdpFilename ""
+    }
+}
+
+#------------------------------------------------------------
+
+body FFMpegStreamingMgrC::QuitFFMpegCB {} {
+
+    set ffmpegExtObj ""
+
+    RestartFFMpeg
+}
+
+#------------------------------------------------------------
+
+body FFMpegStreamingMgrC::StopFFMpeg {} {
+
+    if {$ffmpegExtObj == ""} return
+
+    WriteTraceMsg "Streaming: Stopping isabel_fmpeg application."
+
+    catch {delete object $ffmpegExtObj} 
+    set ffmpegExtObj ""
+
+    if {[file exists $sdpFilename]} {
+	file delete $sdpFilename
+    }
+    set sdpFilename ""
+}
+
+#------------------------------------------------------------
+
+

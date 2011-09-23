@@ -1,0 +1,75 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# Description
+#
+#   Information about a iOS client.
+#
+#
+#########################################################################
+
+class IOSClientInfoC {
+
+    constructor {_siteId _chId _host _audioPort _videoPort _participantId} {}
+    destructor  {} 
+
+    # SiteId used by this client in the Isabel session.
+    public variable siteId
+
+    # ChId used by this client in the Isabel session.
+    public variable chId
+
+    # Host of the iOS client
+    public variable host
+    
+    # Port where I must send the audio flow
+    public variable portAudio
+    
+    # Port where I must send the video flow
+    public variable portVideo
+    
+    # Participant ID assigned to this client by the MCU
+    public variable participantId
+}
+
+
+#---------------------------------------------------------
+
+body IOSClientInfoC::constructor {_siteId _chId _host _audioPort _videoPort _participantId} {
+
+    set siteId        $_siteId
+    set chId          $_chId
+    set host          $_host
+    set audioPort     $_audioPort
+    set videoPort     $_videoPort
+    set participantId $_participantId
+}
+
+#---------------------------------------------------------
+
+body IOSClientInfoC::destructor {} {
+
+}
+
+#---------------------------------------------------------

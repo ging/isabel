@@ -1,0 +1,167 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# from.itcl
+#
+# TeleClass : Object to select the main site for an interaction mode.
+#
+#########################################################################
+
+#===============================================================
+#
+# PARTNERS LIST
+#
+#===============================================================
+
+class TeleClass_CP_From {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {w} {}
+    
+    destructor {}
+
+    # add a site.
+    public method add {site_id}    
+
+    # remove a site.
+    public method rem {site_id}    
+
+    # Gets the chid of the optionmenu selection
+    # Returns 0 if the selected site is not connected.
+    public method getSelection {} 
+
+    # Select $site_id in the optionmenu widget.
+    public method setSelection {site_id}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget to create.
+    private variable topw
+
+    # list of site_id of the connected sites.
+    private variable connected
+
+    # list of the site_ids of the declared sites.
+    private variable declared ""
+
+    # declare a future site.
+    private method declare {site_id} 
+}
+
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_From::constructor {w} {
+
+    set topw $w
+    
+    ::iwidgets::optionmenu $topw
+    
+    balloon add $topw "Teacher"
+
+    set connected ""
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_From::destructor {} {
+
+    if {[winfo exists $topw]} {
+	destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_From::declare {site_id} {
+    
+    if {[lsearch -exact $declared $site_id] == -1} {
+	lappend declared $site_id
+
+	set cmd [$topw cget -command]
+	$topw configure -command ""
+	$topw insert end $site_id
+	$topw configure -command $cmd
+
+	$topw disable end 
+    }
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_From::add {site_id} {
+    
+    if {[lsearch -exact $connected $site_id] != -1} return
+    
+    declare $site_id
+    
+    $topw enable [lsearch -exact [$topw get 0 end] $site_id]
+    
+    lappend connected $site_id
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_From::rem {site_id} {
+
+    # if {[SiteManager::MyChId] == $userid} return
+    
+    if {[lsearch -exact $connected $site_id] == -1} return
+
+    $topw disable [lsearch -exact [$topw get 0 end] $site_id]
+    
+    set connected [ldelete $connected $site_id]
+
+    if {[$topw get] == $site_id} {
+	$topw select 0
+    }
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_From::getSelection {} {
+
+    return [$topw get]
+}
+
+#---------------------------------------------------------------
+
+body TeleClass_CP_From::setSelection {site_id} {
+
+    declare $site_id
+    set cmd [$topw cget -command]
+    $topw configure -command ""
+    if {[catch {$topw select $site_id} merr]} {
+	ErrorTraceMsg "TeleClass: Selecting an undeclared site: \"$site_id\. I get: $merr"
+    }
+    $topw configure -command $cmd
+}
+
+#---------------------------------------------------------------
+

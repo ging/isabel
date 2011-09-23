@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+if [ -f /usr/local/isabel/bin/isabel_cleanup ] ; then
+   /usr/local/isabel/bin/isabel_cleanup -nodesktop || true
+fi
+
+if [ -f /usr/local/isabel/bin/stop_services ] ; then
+   /usr/local/isabel/bin/stop_services || true
+fi
+
+
+if [ -d /etc/alternatives/isabeldir ] ; then
+   __currentisabeldir=$(stat -c %N /etc/alternatives/isabeldir | sed "s/[\`\']//g" | awk '{print $3}')
+   if [ "$__currentisabeldir" = "/usr/local/isabel500" ] ; then
+      update-alternatives --auto isabel 
+   fi
+   update-alternatives --remove isabel /usr/local/isabel500/bin/isabel
+fi
+
+update-desktop-database || true
+
+killall -q gnome-panel || true 

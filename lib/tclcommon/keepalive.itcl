@@ -1,0 +1,201 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# keepalive.itcl
+#
+# The KeepAlive service.
+#
+# Any process can be registered here, giving a timeout and a
+# callback to execute if the timeout expires.
+# The registered entries must be periodically refreshed
+# to reset the timeout.
+# If some timeout expires, the callback is executed,
+# and the entry removed from the ping center.
+#
+# Interface:
+#
+#  - Add
+#  - Del
+#  - Ping
+#  - Dump
+#
+################################################################
+
+
+class KeepAliveC {
+    
+    # List of registered pings
+    private variable pings ""
+
+    # When the last ping of $id was received.
+    private variable time
+
+    # Callback to execute if timeout expires.
+    private variable cb 
+
+    # Timeout for $id
+    private variable timeout
+
+    # Check every $resolution seconds
+    private variable resolution 10
+
+    # GUI object. 
+    # Table with the guiCB passed as arguments in the method Add.
+    # Each value is accessed as $guiCB($id).
+    # These callbacks are invoked adding two parameters: the ping id, and the delay.
+    private variable guiCB
+
+    constructor {} {}
+    destructor {}
+
+    # Create a new task to ping
+    # Parameters:
+    #   - $id: identifies the remote process which will send us ping messages.
+    #   - $_cb: callback to execute when timeout expires, i.e. the connection is lost.
+    #   - $_timeout: (seconds) time to wait for to assume that the connection is lost.
+    #   - $_guiCB: This callback is invoked when a ping message is received, and the
+    #              Check method is (periodically) invoked.
+    #              We invoke the command "$guiCB $id $delay".
+    public method Add {id _cb _timeout {_guiCB ""}} 
+
+    # Delete task $id
+    public method Del {id} 
+
+    # Reset timeout.
+    public method Ping {id}
+
+    # Dump internal values.
+    public method Dump {}	
+
+    # Check timeouts
+    private method Check {}
+
+    # Returns the ping delay of the given $id in seconds.
+    private method Delay {id}
+    
+}
+
+#-----------------------------------------------------------------
+
+body KeepAliveC::constructor {} {
+
+    after ${resolution}000 [code $this Check]
+}
+
+#-----------------------------------------------------------------
+
+body KeepAliveC::destructor {} {
+    after cancel [code $this Check]
+}
+
+#-----------------------------------------------------------------
+
+body KeepAliveC::Add {id _cb _timeout {_guiCB ""}} {
+    
+    lappend pings $id
+    set time($id)    0
+    set cb($id)      $_cb
+    set timeout($id) $_timeout
+    set guiCB($id)  $_guiCB
+
+}
+
+#-----------------------------------------------------------------
+
+body KeepAliveC::Del {id} {
+    
+    set pings [ldelete $pings $id]
+    catch {
+	unset time($id)    
+	unset cb($id)      
+	unset timeout($id)  
+	unset guiCB($id)
+    }
+}
+
+#-----------------------------------------------------------------
+
+body KeepAliveC::Ping {id} {
+
+    if {[lsearch -exact $pings $id] == -1} return
+    incr time($id) [expr -2 * $resolution] 
+    if {$time($id) < 0} {
+	set time($id) 0
+    }
+
+    if {$guiCB($id) != ""} {
+	if {[catch "$guiCB($id) $id [Delay $id]" emsg]} {
+	    ErrorTraceMsg "Error in the Keepalive guiCB: $emsg"
+	}
+    }
+}
+
+#-----------------------------------------------------------------
+
+body KeepAliveC::Dump {} {
+    
+    WriteTraceMsg "- Ping dump:"
+    foreach id $pings {
+	WriteTraceMsg "    $id: $time($id) $timeout($id) $cb($id) $guiCB($id)"
+    }
+}
+
+#-----------------------------------------------------------------
+
+body KeepAliveC::Check {} {
+    
+    foreach id $pings {
+	if {$time($id) > $timeout($id)} {
+	    if {[catch {uplevel #0 $cb($id)} emsg]} {
+		ErrorTraceMsg "KeepAlive: $emsg"
+	    }
+	    Del $id
+	} else {
+
+	    if {$guiCB($id) != ""} {
+		if {[catch "$guiCB($id) $id [Delay $id]" emsg]} {
+		    ErrorTraceMsg "Error in the Keepalive guiCB: $emsg"
+		}
+	    }
+
+	    incr time($id) $resolution 
+	    
+	}
+    }
+
+    after ${resolution}000 [code $this Check]
+}
+
+#-----------------------------------------------------------------
+
+body KeepAliveC::Delay {id} {
+
+    if {[lsearch -exact $pings $id] == -1} {
+	return 0
+    }
+
+    expr $time($id)
+}
+
+#-----------------------------------------------------------------

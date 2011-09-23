@@ -1,0 +1,19 @@
+-----------------------------
+
+- libreria: XERL 
+
+- Descripción: permite escribir los ficheros de error que se manejan en el XLIM. Son ficheros xml muy sencillos. Ver javadoc.
+
+- Paquete: xerl
+
+- Clases:  
+	* XERL
+	* XERLException
+
+- Ficheros en el repositorio: 
+	* Directorio: lib
+	* Ficheros: 
+		· lib/xerl/java/XERL.java
+		· lib/xerl/java/XERLException.java
+
+-----------------------------

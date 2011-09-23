@@ -1,0 +1,23 @@
+/*
+ * silence.xbm -- empty (off)  led for vumeter
+ *
+
+ * $ww$ : edit with ts= 4
+
+ * $id$ : dit.upm.es -- @(#)silence.xbm	5.1
+
+ * $au$ : mpetit@dit.upm.es
+
+ */
+
+
+
+
+const char silence_idString[]= "$id$ : dit.upm.es -- @(#)silence.xbm	5.1";
+
+
+
+#define silence_width 16
+#define silence_height 6
+static const char silence_bits[] = {
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};

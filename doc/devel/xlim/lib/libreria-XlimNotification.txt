@@ -1,0 +1,18 @@
+-----------------------------
+
+- libreria: XlimNotification
+
+- Descripción: Clase para escribir logs en un fichero de logs (por defecto .xlim/logs/notif.xlim) con un formato concreto (dia, hora, servicio que escribe el log..). ver javadoc
+
+- Paquete: isabel.lib.xlim
+
+- Clases:  
+	* XlimNotification
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimlib
+	* Ficheros: 
+		· xlimlib/isabel/lib/xlim/Xlimnotification.java
+
+- Temas pendientes:
+-----------------------------

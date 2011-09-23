@@ -1,0 +1,281 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+class WhiteboardComponentClass {
+    inherit Component
+    
+    
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args}
+    public method Cmd {args}
+
+    constructor {} {   
+	Component::constructor Whiteboard
+    } {}
+}
+
+#---------------------------------------------------------------
+
+body WhiteboardComponentClass::Create {first} {
+
+    DebugTraceMsg "- Whiteboard: CreateWhiteboard ($first)." 3
+
+    if {[CreateWhiteboardDaemon] == -1} {
+        return -1
+    }
+
+    if {$first} {
+	set n_pag [session Activity GetResource Whiteboard initpagenum 1]
+	StartAsCoordinator $n_pag
+    }
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body WhiteboardComponentClass::AddMySite {} {
+
+}
+
+#---------------------------------------------------------------
+
+body WhiteboardComponentClass::AddRemoteSite {site_id new} {
+    
+    set _chid [SiteManager::GetSiteInfo $site_id chid]
+
+    set n [SiteManager::GetSiteInfo $site_id name]
+    DebugTraceMsg "- Whiteboard: AddWhiteboard $n added to Whiteboard." 3
+    
+    WhiteboardAddPartner $_chid
+    WhiteboardSync $_chid
+}
+
+#---------------------------------------------------------------
+
+body WhiteboardComponentClass::DelMySite {} {
+
+    DebugTraceMsg "- Whiteboard: myself leaving Whiteboard." 3
+
+}
+
+#---------------------------------------------------------------
+
+body WhiteboardComponentClass::DelRemoteSite {site_id} {
+
+    set _chid [SiteManager::GetSiteInfo $site_id chid]
+
+    DebugTraceMsg "- Whiteboard: $site_id leaving Whiteboard." 3
+    
+    WhiteboardRemovePartner $_chid
+}
+
+#---------------------------------------------------------------
+
+body WhiteboardComponentClass::SetInteractionMode {imname nsec site_id_list args} {
+
+    set scenary [session Activity GetResource $imname Whiteboard ""]
+    set active   [GetOptionListValue $scenary -active 0]
+    
+    if {$active == 0} {
+        pizarra_unmap
+    } else {
+	pizarra_map
+    }
+}
+
+#---------------------------------------------------------------
+
+body WhiteboardComponentClass::Cmd {args} {
+
+eval $args
+}
+
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+
+
+process Wb_paintIdCompare {id1 id2} {
+    return [string compare $id1 $id2]
+}
+
+process Wb_getMembers {applid} {
+    return [SiteManager::GetUsers]
+}
+
+
+#===============================================================
+#
+# Commands received from daemon
+#
+#===============================================================
+
+
+process Wb_quit {applid} {
+
+    network MasterRequest CM KillComponent [SiteManager::MySiteId] Whiteboard
+}
+
+
+
+#---------------------------------------------------------------
+# Wb_ask_for_resource: 
+#---------------------------------------------------------------
+process Wb_ask_for_resource {applid resource {default ""}} {
+    session Activity GetResource Whiteboard $resource $default
+}
+
+#===============================================================
+#
+# SCANNER COMMUNICATION
+#
+#===============================================================
+
+process Wb_scanner {applid path pag} {
+    NewScanFile $path \
+        "done_scanner $pag"  \
+        "error_scanner $pag"
+}
+
+#===============================================================
+#
+# FTP COMMUNICATION
+#
+#===============================================================
+
+#---------------------------------------------------------------
+# Wb_send_pag_read_master: send a file to synchronize (Read Master)
+#---------------------------------------------------------------
+process Wb_send_pag_read_master {applid path name dst userid timeout pag} {
+
+    foreach _siteid [SiteManager::GetSites] {
+	if {$userid == [SiteManager::GetSiteInfo $_siteid chid]} { 
+	    
+	    network RDOLocalGroup local_isabel_client \
+		[list \
+		     COMP Ftp Eval \
+		     FtpSendFile $path $name ISABEL_TMP_DIR $dst $_siteid local_isabel_comp_Whiteboard $timeout \
+		     "Cmd ack_ftp_read_master $name $pag" \
+		     "Cmd timeout_ftp_read_master $pag" \
+		     "Cmd done_ftp_read_master $name $_siteid $pag" \
+		     "Cmd timeout_ftp_read_master $pag $_siteid" \
+		     [session Activity GetResource Whiteboard Ftp.bw 128] \
+		    ]
+	    return
+	}
+    }
+}
+
+#---------------------------------------------------------------
+# Wb_read_file_all: send a file to the group (Open file...)
+#---------------------------------------------------------------
+process Wb_read_file_all {applid path name dst actual_page userid timeout} {
+
+    foreach _siteid [SiteManager::GetSites] {
+	if {$userid == [SiteManager::GetSiteInfo $_siteid chid]} { 
+	    
+	    network RDOLocalGroup local_isabel_client \
+		[list \
+		     COMP Ftp Eval \
+		     FtpSendFile $path $name ISABEL_TMP_DIR $dst $_siteid local_isabel_comp_Whiteboard $timeout \
+		     "Cmd ack_ftp_open_file $name $actual_page"  \
+		     "Cmd nack_ftp_open_file $actual_page" \
+		     "Cmd done_ftp_open_file" \
+		     "Cmd timeout_ftp_open_file $actual_page $_siteid]" \
+		     [session Activity GetResource Whiteboard Ftp.bw 128] \
+		    ]
+	    return
+	}
+    }
+}
+
+#---------------------------------------------------------------
+# Wb_send_photo_all: send a photo to the group (Import ppm, gif...)
+#---------------------------------------------------------------
+process Wb_send_photo_all {applid path file dst actual_page posx posy userid timeout} {
+
+    foreach _siteid [SiteManager::GetSites] {
+	if {$userid == [SiteManager::GetSiteInfo $_siteid chid]} { 
+	    
+	    network RDOLocalGroup local_isabel_client \
+		[list \
+		     COMP Ftp Eval \
+		     FtpSendFile $path $file ISABEL_TMP_DIR $dst $_siteid local_isabel_comp_Whiteboard $timeout \
+		     "Cmd ack_ftp_image $file $actual_page $posx $posy" \
+		     "Cmd nack_ftp_open_file $actual_page" \
+		     "Cmd done_ftp_open_file" \
+		     "Cmd timeout_ftp_open_file $actual_page $_siteid]" \
+		     [session Activity GetResource Whiteboard Ftp.bw 128] \
+		    ]
+	    return
+	}
+    }
+}
+
+
+#---------------------------------------------------------------
+#  Change Coordinator
+#---------------------------------------------------------------
+process WhiteboardChangeCoordinator {applid} {
+    changeCoordinator 
+}
+
+process WhiteboardAskSynchronism {applid} {
+    askSynchronism 
+}
+
+#---------------------------------------------------------------
+# CreateWhiteboardDaemon 
+#
+# Start daemon.
+#---------------------------------------------------------------
+
+process CreateWhiteboardDaemon {} {
+
+    DebugTraceMsg "- Creating Whiteboard daemon." 1
+
+    if {[catch {ISABEL_CPizarra} errmsg]} {
+        ErrorTraceMsg "- Whiteboard can't be started:\n$errmsg"
+        return -1
+    }
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+
+
+
+
+

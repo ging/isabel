@@ -1,0 +1,87 @@
+------
+NETSIM
+------
+
+Netsim es un simulador de red. Recibe datos UDP en un puerto, 
+introduce perturbaciones y envia los datos a otro puerto.
+
+* ARRANQUE:
+  --------
+Las opciones basicas para arrancarlo son:
+   ./netsim -inPort <inPortNumber> -outHost <outHostName>
+            -outPort <outPortNumber> 
+
+donde:
+     <inPortNumber> es el puerto donde espera recibir los datos UDP
+     <outHostName>  es la maquina donde enviara los datos de salida.
+     <outPortNumber> es el puerto donde enviara los datos de salida.
+
+El arranque descrito no introduce ninguna perturbacion, simplemente
+recibe los datos y los vuelve a reenviar. 
+
+Para introducir perturbaciones se utiliza la opcion -sim. Las 
+perturbaciones definidas hasta el momento son:
+	* Null:     ninguna, sirve de ejemplo basico por si alguien
+                    quisiera crear una nueva perturbacion:
+
+                    ./netsim -inPort <inPortNumber> -outHost <outHostName>
+                             -outPort <outPortNumber> -sim "nullTask"
+
+	* LostPkts: tira paquetes con cierta probabilidad dada en
+                    tanto por ciento.
+
+                    ./netsim -inPort <inPortNumber> -outHost <outHostName>
+                             -outPort <outPortNumber> 
+                             -sim "lostPkts -prob <lostProb>"
+
+	* Jitter:   introduce rafagas de longitud variable en el
+                    rango dado por [minBurstSize, maxBurstSize] con
+                    cierta probabilidad dada en tanto por ciento. Es
+                    decir, con cierta probabilidad rellena una cola
+                    de paquetes de tamaño aleatorio pero dentro del
+                    rango [minBurstSize, maxBurstSize], cuando la cola
+                    esta llena, los envia. Si la probabilidad es
+                    muy alta siempre se estaran enviando rafagas, si
+                    la probalidad es pequeña solo se enviaran 
+                    rafagas de vez en cuando.
+
+                    ./netsim -inPort <inPortNumber> -outHost <outHostName>
+                             -outPort <outPortNumber> 
+                             -sim "jitter -minBurst <minBurstSize> 
+                                          -maxBurst <maxBurstSize>
+                                          -prob <burstProb>"
+
+Estas perturbaciones se pueden concatenar y se aplicaran en el
+mismo orden en el que se han definido en la linea de comandos.
+
+Por ejemplo, para aplicar primero perdida de paquetes con probabilidad
+de un 10% y despues un jitter que genere rafagas de tamaño variable
+en el rango [20,50] con probabilidad 30%:
+
+     ./netsim -inPort <inPortNumber> -outHost <outHostName>
+              -outPort <outPortNumber> 
+              -sim "lostPkts -prob 10"
+              -sim "jitter -minBurst 20 -maxBurst 50 -prob 30"
+
+--------------
+EJEMPLO DE USO
+--------------
+   AUDIO SIN IROUTER:
+       - Arrancar el componente de audio en maquina1 y maquina2.
+         En el audio de maquina1 hacer un bind a otra maquina (donde
+         va a correr el simulador) , por ejemplo maquina3, 
+         y al puerto que utiliza isabel, por ejemplo 18188. 
+         (maquina3 podria ser maquina1 o maquina2).
+
+       - Arrancar el netsim con las perturbaciones que se deseen, por
+         ejemplo, perdida de paquetes y jitter. El puerto de salida
+         debe ser el puerto donde el audio espera los paquetes, es
+         decir el 18187.
+
+          ./netsim -inPort 18188 -outHost maquina2 -outPort 18187
+                   -sim "lostPkts -prob 10"
+                   -sim "jitter -minBurst 20 -maxBurst 50 -prob 30"
+
+   CON IROUTER:
+       - Complicado, pero se puede. Preguntame!
+

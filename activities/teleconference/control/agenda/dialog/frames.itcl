@@ -1,0 +1,248 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# frames.itcl
+#
+# Description
+#
+#   Base class that all frame classes inherit from.
+#
+#########################################################################
+
+class BaseFrameTCC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    public variable title ""
+
+    # Create a empty window where a content frame will be included. 
+    # $hierarchy: the hierarchy widget 
+    constructor {args} {}
+
+    destructor {}
+
+    # Get the content frame where the content must be placed.
+    public method getContent {}
+
+    # Set a validation command to execute when the button OK is pressed.
+    # If the validation is successful, this command will return "".
+    # The command will return a message (describing the problem)
+    # when the validation will be unsuccessful.
+    public method setValidationCmd {cmd}
+
+    # Set the update command to execute when the button OK is pressed.
+    # This method updates the node values with the edited values.
+    # It is called when the OK button is pressed.
+    # This method returns the edited node.
+    public method setUpdateCmd {cmd}
+
+    # Wait for the OK or Cancel buttons.
+    # Returns the value returned by setUpdateCmd if the dialog ended with Ok,
+    # and return "" in others cases.
+    public method waitFor {}
+
+    #-------------------
+    # PROTECTED INTERFACE
+    #-------------------
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Method executed when the OK button is pressed.
+    private method okCB {}
+
+    # Method executed when the CANCEL button is pressed.
+    private method cancelCB {}
+
+    private variable wroot .tccedittp
+
+    # The validation command
+    private variable validationCmd ""
+
+    # The update command
+    private variable updateCmd ""
+
+    # Variable used by waitFor to wait for the window finish.
+    private variable lock ""
+}
+
+#--------------------------------------------------
+
+body BaseFrameTCC::constructor {args} {
+    
+    eval configure $args    
+
+    if {[winfo exists $wroot]} {
+	set lock ""
+	destroy $wroot
+    }
+
+    toplevel $wroot
+
+    wm geometry $wroot 700x550+100+100
+    wm title $wroot "TeleConference Edition"
+
+    frame $wroot.f -bd 2 -relief raised
+    pack  $wroot.f -expand 1 -fill both \
+	    -padx 5 -pady 5 \
+	    -ipadx 15 -ipady 15 
+
+
+    CreateImage isalogo gif/isabel-b.gif
+    label $wroot.f.logo -image isalogo -padx 20
+
+    label $wroot.f.title -text $title -padx 20
+
+    frame $wroot.f.sep0 -bg #111155
+
+    frame $wroot.f.main 
+    
+    frame $wroot.f.sep1 -bg #111155
+
+    button $wroot.f.done -text Done \
+	-command [code $this okCB]
+
+    button $wroot.f.cancel -text Cancel \
+	-command [code $this cancelCB]
+
+    grid $wroot.f.logo    -row 0 -column 0               -sticky w -padx 15 -pady 5
+    grid $wroot.f.title   -row 0 -column 1 -columnspan 2 -sticky w -padx 15 -pady 5
+    grid $wroot.f.sep0    -row 1 -column 0 -columnspan 3 -sticky nswe -padx 5 -ipady 1 -pady 0
+    grid $wroot.f.main    -row 2 -column 0 -columnspan 3 -sticky nswe -padx 15 -pady 5
+    grid $wroot.f.sep1    -row 3 -column 0 -columnspan 3 -sticky nswe -padx 5 -ipady 1 -pady 0
+    grid $wroot.f.cancel -row 4 -column 1 -sticky nse -padx 5 -pady 5
+    grid $wroot.f.done   -row 4 -column 2 -sticky nsw -padx 5 -pady 5
+
+    grid propagate $wroot.f.main false
+
+    grid rowconfigure    $wroot.f 2 -weight 1
+    grid columnconfigure $wroot.f 1 -weight 1
+
+    grid rowconfigure    $wroot.f.main 0 -weight 1
+    grid columnconfigure $wroot.f.main 0 -weight 1
+
+    #-------------
+
+    frame $wroot.destroy
+    bind $wroot.destroy  <Destroy> "delete object $this"
+
+}
+
+#--------------------------------------------------
+
+body BaseFrameTCC::destructor {} {
+    
+    set lock $lock
+    
+    catch {bind $wroot.destroy <Destroy> ""}
+    if {[winfo exist $wroot]} {
+	destroy $wroot
+	set wroot ""
+    }
+    
+}
+    
+#--------------------------------------------------
+
+body BaseFrameTCC::getContent {} {
+
+    return $wroot.f.main 
+}
+
+#--------------------------------------------------
+
+body BaseFrameTCC::setValidationCmd {cmd} {
+    
+    set validationCmd $cmd
+}
+
+#--------------------------------------------------
+
+body BaseFrameTCC::setUpdateCmd {cmd} {
+    
+    set updateCmd $cmd
+}
+
+#--------------------------------------------------
+
+body BaseFrameTCC::okCB {} {
+
+    if {$validationCmd != ""} {
+	if {[catch {uplevel #0 $validationCmd} res]} {
+	    error $res
+	}
+	
+	if {$res != ""} {
+	    
+	    tk_messageBox \
+		-title $title \
+		-message $res \
+		-type ok \
+		-icon error \
+		-parent $wroot
+	    return
+	}
+	
+    }
+
+    set res ""
+    if {$updateCmd != ""} {
+	if {[catch {uplevel #0 $updateCmd} res]} {
+
+	    set lock ""
+	    destroy $wroot
+	    error $res
+	}
+    }
+    
+    set lock $res
+
+    destroy $wroot
+}
+
+#--------------------------------------------------
+
+body BaseFrameTCC::cancelCB {} {
+    
+    puts cancel
+
+    set lock ""
+
+    destroy $wroot
+}
+
+#--------------------------------------------------
+
+body BaseFrameTCC::waitFor {} {
+
+    tkwait variable [scope lock]
+
+    return $lock
+}
+
+#--------------------------------------------------
+

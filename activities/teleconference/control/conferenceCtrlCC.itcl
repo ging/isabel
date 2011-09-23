@@ -1,0 +1,152 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# conferenceCtrlCC.itcl
+#
+# Tele-Conference controller component.
+#
+#########################################################################
+
+
+class ConferenceCtrlComponentClass {
+    inherit Component
+    
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec useridlist args}
+    public method ShowHideApplToplevel {{hmode withdraw}}
+    public method Cmd {args}
+
+    constructor {} {   
+	Component::constructor ConferenceCtrl
+    } {
+    }
+
+    destructor {}
+
+    # Am I a control Site?
+    private variable amIControlSite 0
+}
+
+#---------------------------------------------------------------
+
+body ConferenceCtrlComponentClass::constructor {} {
+    global env
+    
+    set _roles [SiteManager::GetMyRoles]
+    if {[lsearch -exact $_roles Ctrl] != -1} {
+	set amIControlSite 1
+    }
+}
+
+#---------------------------------------------------------------
+
+body ConferenceCtrlComponentClass::destructor {} {
+
+    if {$amIControlSite} {
+	catch {delete object tcctrlwin}
+    }
+}
+
+#---------------------------------------------------------------
+
+body ConferenceCtrlComponentClass::Create {first} {
+
+    WriteTraceMsg "- ConferenceCtrl: Creating new ConferenceCtrl component" $name
+
+    if {$amIControlSite} {
+	if {[catch {TeleConferenceControlC ::tcctrlwin} errmsg]} {
+	    ErrorTraceMsg "- ERROR: $name component can not be created.\n$errmsg"
+	    return -1
+	}
+    }
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body ConferenceCtrlComponentClass::AddMySite {} {
+
+    if {$amIControlSite} {
+	tcctrlwin AddSite [SiteManager::MySiteId]
+    }
+}
+
+#---------------------------------------------------------------
+
+body ConferenceCtrlComponentClass::AddRemoteSite {site_id new} {
+
+    if {$amIControlSite} {
+	tcctrlwin AddSite $site_id
+    }
+}
+
+#---------------------------------------------------------------
+
+body ConferenceCtrlComponentClass::DelMySite {} {
+
+    if {$amIControlSite} {
+	tcctrlwin DelSite [SiteManager::MySiteId]
+    }
+}
+
+#---------------------------------------------------------------
+
+body ConferenceCtrlComponentClass::DelRemoteSite {site_id} {
+
+    if {$amIControlSite} {
+	tcctrlwin DelSite $site_id
+    }
+}
+
+#---------------------------------------------------------------
+
+body ConferenceCtrlComponentClass::SetInteractionMode {imname nsec useridlist args} {
+
+}
+
+#---------------------------------------------------------------
+
+body ConferenceCtrlComponentClass::ShowHideApplToplevel {{hmode withdraw}} {
+    
+    if {$amIControlSite} {
+	::tcctrlwin ShowHideGUI
+    }
+}
+
+#---------------------------------------------------------------
+
+body ConferenceCtrlComponentClass::Cmd {args} {
+    
+    if {$amIControlSite} {
+	eval ::tcctrlwin $args
+    }
+}
+
+#---------------------------------------------------------------
+

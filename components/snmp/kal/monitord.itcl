@@ -1,0 +1,105 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# snmpagentd.itcl
+#
+# Description
+#
+#  Class to access to the Monitor daemon.
+#
+#########################################################################
+
+class DMonitorC {
+    inherit DaemonC
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {no_cc_cb} {
+	DaemonC::constructor SNMPAgent 30000 snmp_quit() \
+		snmp_nop() 1 $no_cc_cb isabel_SNMPAgent
+    } {}
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    private method Invoke {}
+
+    # kill the Monitor daemon.
+    private method CleanUp {}
+
+    private variable pid 0
+}
+
+#------------------------------------------------------------
+
+body DMonitorC::constructor {no_cc_cb} {
+}
+
+#------------------------------------------------------------
+
+body DMonitorC::destructor {} {
+
+    RDO snmp_quit()
+    CleanUp
+}
+
+#------------------------------------------------------------
+
+body DMonitorC::Invoke {} {
+    global env
+
+    # kill old daemon.
+    CleanUp
+
+    set jar $env(ISABEL_DIR)/libexec/isabel_SNMPAgent.jar
+    set cport 51601
+    set cmd "$env(ISAJAVA) -jar $jar -ctrlPort $cport -SNMPPort 4000 -noexitbutton"
+
+    if {[catch {eval exec $cmd &} pid]} {
+	ErrorTraceMsg "Monitor: I can't invoke Monitor daemon.\n$pid"
+	return -1
+    }
+
+    catch {exec echo $pid > $env(ISABEL_TMP_DIR)/Monitor.pid}
+
+    DaemonC::Invoke
+}
+
+#------------------------------------------------------------
+
+body DMonitorC::CleanUp {} {
+
+    if {$pid != 0} {
+	after 100 after idle catch \\\"exec kill    $pid >& /dev/null\\\"
+	after 100 after idle catch \\\"exec kill -9 $pid >& /dev/null\\\"
+	set pid 0
+    }
+}
+
+#------------------------------------------------------------

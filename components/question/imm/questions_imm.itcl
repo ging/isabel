@@ -1,0 +1,168 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# questions_imm.itcl
+#
+# Questions: interaction mode manager.
+#
+#########################################################################
+
+
+class Questions_IMM_Class {
+
+    public proc SetInteractionMode {imname nsec site_id_list _args}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private proc GetOptionListValue {list optname {default ""}}
+
+}
+
+#---------------------------------------------------------------
+
+body Questions_IMM_Class::SetInteractionMode {imname nsec site_id_list _args} {
+
+    set scenary [session Activity GetResource $imname Questions ""]
+    set active  [GetOptionListValue $scenary -active 0]
+    
+    if {$active == 0} {
+	#catch {$questionsobj Iconify 1}
+	
+	sms forceState Questions set -active 0
+	
+    } else {
+	set layoutname        [GetOptionListValue $scenary -layout]
+	set resetlayouts      [GetOptionListValue $scenary -resetlayout]
+	set olayoutnames      [GetOptionListValue $scenary -otherlayout]
+	set resetolayoutnames [GetOptionListValue $scenary -resetotherlayout]
+	
+	set othermapped [GetOptionListValue $scenary -othermap]
+	if {$othermapped == ""} {
+	    set othermapped [session Activity GetResource Video othermap 1]
+	}
+	
+	set resetothermapped [GetOptionListValue $scenary -resetothermap]
+	if {$resetothermapped == ""} {
+	    set resetothermapped $othermapped 
+	}
+	
+	set ctrllayout [GetOptionListValue $scenary -ctrllayout]
+	set setaudio   [GetOptionListValue $scenary -setaudio 1]
+	
+	# Speakers:
+	set spksites [GetOptionListValue $_args -speakersites none]
+	if {$spksites != "none"} {
+	    #regsub -all { +0} $spksites   {} spks
+	    set spks $spksites
+	} else {
+	    #regsub -all { +0} $useridlist {} spks
+	    set spks $site_id_list
+	}
+	
+	# Moderator:
+	set chairmansite [GetOptionListValue $_args -chairmansite none]
+	if {$chairmansite != "none"} {
+	    set modsiteid  [lindex $chairmansite 0]
+	} else {
+	    set ctrlsites [GetOptionListValue $_args -ctrlsites none]
+	    if {$ctrlsites == "*"} {
+		set modsiteid  [lindex $site_id_list 0]
+	    } elseif {$ctrlsites != "none"} {
+		set modsiteid  [lindex $ctrlsites 0]
+	    } else {
+		set modsiteid  [lindex $site_id_list 0]
+	    }
+	}
+	
+	# Initial questioner:
+	if {$modsiteid == ""} {
+	    set quesiteid ""
+	} elseif {[lsearch -exact $spks $modsiteid] == -1} {
+	    set quesiteid $modsiteid
+	} else {
+	    set quesiteid ""
+	}
+	
+	# Control sites:
+	set ctrlsites [GetOptionListValue $_args -ctrlsites none]
+	if {$ctrlsites == "none"} {
+	    set ctrlsites [GetOptionListValue $_args -chairmansite none]
+	    if {$ctrlsites == "none"} {
+		set ctrlsites [lindex $site_id_list 0]
+	    }
+	}
+	
+	# Reset sitelist
+	set resetsiteidlist $site_id_list
+
+	# Forcing audio sites
+	set _audiosites [GetOptionListValue $_args -audiosites ""]
+
+	# Enable Speaker as questioner, i.e., the video of a speaker site must be removed form its positon in the display, and
+	# it must be positioned in the place of the questioner. 
+	# This must be done when the site is selected in the question control window.
+	set speakercanask [GetOptionListValue $scenary -speakercanask 0]
+	
+	
+	# Send the state
+	sms forceState Questions_panel add \
+	    -layout  $ctrllayout 
+	
+	sms forceState Questions add \
+            -nsec   $nsec \
+	    -active 1 \
+	    -video_main_layout        $layoutname \
+	    -video_other_layout       $olayoutnames \
+	    -video_other_map          $othermapped \
+	    -video_reset_main_layout  $resetlayouts \
+	    -video_reset_other_layout $resetolayoutnames \
+	    -video_reset_other_map    $resetothermapped \
+	    -audio_set                $setaudio \
+	    -chair                    $modsiteid \
+	    -speakers                 $spks \
+	    -controllers              $ctrlsites \
+	    -reset_sites              $resetsiteidlist \
+	    -audio_sites              $_audiosites \
+	    -speaker_can_ask          $speakercanask \
+	    -question_from            $quesiteid \
+            -reset_mode               1
+    }
+}
+
+#---------------------------------------------------------------
+
+body Questions_IMM_Class::GetOptionListValue {list optname {default ""}} {
+    
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+
+#---------------------------------------------------------------

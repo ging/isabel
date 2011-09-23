@@ -1,0 +1,198 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# devices.itcl
+#
+# Audio capture: device and control selector.
+#
+#########################################################################
+
+class AudioCDeviceConfigC {
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    constructor {_siteId w} {}
+    destructor {}
+
+    # Build the gui.
+    public method MakeGui {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # SiteId of the site
+    private variable siteId
+
+    # root widget
+    private variable wroot ""
+}
+
+#---------------------------------------------------------------------------
+
+body AudioCDeviceConfigC::constructor {_siteId w} {
+
+    set siteId $_siteId
+    set wroot $w
+}
+
+#---------------------------------------------------------------------------
+
+body AudioCDeviceConfigC::destructor {} {
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioCDeviceConfigC::MakeGui {} {
+    
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    frame $wroot  -relief sunken -bd 1
+    
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+
+    #-------------
+
+    label $wroot.lplay \
+	-relief flat \
+	-justify left \
+	-font $font \
+	-text "Test playback device:"
+
+    #--
+
+    button  $wroot.startp \
+	-text "Start" \
+	-font $font \
+	-pady 1 \
+	-padx 1 
+
+    if {$siteId == [SiteManager::MySiteId]} {
+	$wroot.startp configure \
+	    -command  TestAudioOutputC::Start
+    } else {
+	$wroot.startp configure \
+	    -command  "network SiteRequest $siteId COMP Audio TestAudioOutputC::Start"
+    }
+
+    balloon add $wroot.startp "Start Playback Test"
+
+    #--
+    
+    button  $wroot.stopp \
+	-text "Stop" \
+	-font $font \
+	-pady 1 \
+	-padx 1 
+
+    if {$siteId == [SiteManager::MySiteId]} {
+	$wroot.stopp configure \
+	    -command  TestAudioOutputC::Stop
+    } else {
+	$wroot.stopp configure \
+	    -command  "network SiteRequest $siteId COMP Audio TestAudioOutputC::Stop"
+    }
+
+    balloon add $wroot.stopp "Stop Playback Test"
+    
+    #-------------
+    
+    label $wroot.lcapture \
+	-relief flat \
+	-justify left \
+	-font $font \
+	-text "Test capture device:"
+
+    #--
+
+    button  $wroot.startc \
+	-text "Start" \
+	-font $font \
+	-pady 1 \
+	-padx 1 
+
+    if {$siteId == [SiteManager::MySiteId]} {
+	$wroot.startc configure \
+	    -command  TestAudioInputC::Start
+    } else {
+	$wroot.startc configure \
+	    -command  "network SiteRequest $siteId COMP Audio TestAudioInputC::Start"
+    }
+
+    balloon add $wroot.startc "Start Capture Test"
+
+    #--
+
+    button  $wroot.stopc \
+	-text "Stop" \
+	-font $font \
+	-pady 1 \
+	-padx 1 
+
+    if {$siteId == [SiteManager::MySiteId]} {
+	$wroot.stopc configure \
+	    -command  TestAudioInputC::Stop
+    } else {
+	$wroot.stopc configure \
+	    -command  "network SiteRequest $siteId COMP Audio TestAudioInputC::Stop"
+    }
+
+    balloon add $wroot.stopc "Stop Capture Test"
+
+    #-------------
+    set _mySiteId [SiteManager::MySiteId]
+    if { ! [AudioConfigC::ControlSite] && $siteId != $_mySiteId} {
+	$wroot.startp  configure -state disabled
+	$wroot.stopp   configure -state disabled
+	$wroot.startc  configure -state disabled
+	$wroot.stopc   configure -state disabled
+    }
+
+    #-------------
+
+    grid $wroot.lplay    -row 1 -column 0 -pady 4 -ipadx 6
+    grid $wroot.startp   -row 1 -column 1 -ipadx 6  -padx 6
+    grid $wroot.stopp    -row 1 -column 2 -ipadx 6  -padx 6
+
+    grid $wroot.lcapture -row 2 -column 0 -pady 4 -ipadx 6
+    grid $wroot.startc   -row 2 -column 1 -ipadx 6  -padx 6
+    grid $wroot.stopc    -row 2 -column 2 -ipadx 6  -padx 6
+
+    grid rowconfigure    $wroot 0 -weight 1
+    grid rowconfigure    $wroot 1 -weight 1
+    grid rowconfigure    $wroot 2 -weight 1
+    grid rowconfigure    $wroot 3 -weight 1
+    
+}
+
+#---------------------------------------------------------------------------
+
+

@@ -1,0 +1,254 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# fagree.itcl
+#
+# Description
+#
+#   Frames for the agree state.
+#
+#########################################################################
+
+
+class AgreeFrameC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+
+    # Change the value of the "agree" variable.
+    public method SetInstallState {}
+
+    # Agrees the license file.
+    public method IAgree {}
+
+    # Returns the main frame widget name.
+    public    method GetMainFrame {}
+
+    # Returns the buttons frame widget name.
+    public    method GetButtonsFrame {}
+
+    # Configures the object.
+    public method Configure {args} {}
+
+    # Auxililar method used to create a scrolledhtml widget.
+    public method SHtml {w html}
+
+    # Auxililar method used to create a scrolledtext widget.
+    public method SText {w text}
+
+    # Auxililar method used to create a text widget.
+    public method Text {w text args}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # This variable must be activated by the user to
+    # enable the install button.
+    private common agree
+
+
+    # internal counter to create unique widget names for wmain and wbuttons.
+    private common counter 0
+
+    # widget name of the main and buttons frames to create
+    private variable wmain
+    private variable wbuttons
+
+    # Creates the main frame.
+    private method MakeMainFrame {}
+
+    # Creates the buttons frame.
+    private method MakeButtonsFrame {}
+}
+
+#--------------------------------------------------
+
+body AgreeFrameC::constructor {} {
+
+
+    incr counter
+    set c $counter
+
+    set wmain    [LicenseWindowC::GetMainSite].mf$c
+    set wbuttons [LicenseWindowC::GetButtonsSite].bf$c
+
+    MakeMainFrame
+    MakeButtonsFrame
+
+    set agree disabled
+}
+
+#--------------------------------------------------
+
+body AgreeFrameC::MakeMainFrame {} {
+    global env
+
+    frame $wmain
+
+    CreateImage agreeimg [RegLicConfigC::Get agree.image gif/tiburon_icon.gif]
+    label $wmain.img -image agreeimg
+
+    label $wmain.title -text [RegLicConfigC::Get agree.title]
+
+    set lictext [exec cat [CTESOBJ cget -assaagree]]
+
+    scrollbar $wmain.scroll -command "$wmain.msg yview" -orient vertical
+
+    text $wmain.msg \
+	    -yscrollcommand "$wmain.scroll set"
+    $wmain.msg insert end $lictext
+    $wmain.msg configure -state disabled
+
+    
+    checkbutton $wmain.cb -text [RegLicConfigC::Get agree.agree.check] \
+	    -variable [scope agree] \
+	    -onvalue normal \
+	    -offvalue disabled \
+	    -command [code $this SetInstallState]
+
+    #-------
+
+    grid $wmain.img  -row 0 -column 0 -rowspan 3 -padx 15 -sticky nswe
+
+    grid $wmain.title -row 0 -column 1 -columnspan 2 -pady 8
+
+    grid $wmain.scroll -row 1 -column 2  -pady 8 -sticky ns
+    grid $wmain.msg    -row 1 -column 1  -pady 8 -sticky nswe
+
+    grid $wmain.cb -row 2 -column 1 -sticky w
+ 
+    grid rowconfigure    $wmain 1 -weight 1
+
+    grid columnconfigure $wmain 1 -weight 1
+
+}
+
+#--------------------------------------------------
+
+body AgreeFrameC::GetMainFrame {} {
+
+    return $wmain
+}
+
+#--------------------------------------------------
+
+body AgreeFrameC::MakeButtonsFrame {} {
+
+    frame $wbuttons
+
+    button $wbuttons.cancel -text [RegLicConfigC::Get agree.cancel.button] \
+	    -command "exit 1"
+
+    button $wbuttons.agree -text [RegLicConfigC::Get agree.agree.button] \
+	    -state $agree \
+	    -command [code $this IAgree]
+
+    pack $wbuttons.agree -side right
+    pack $wbuttons.cancel  -side right
+}
+
+#--------------------------------------------------
+
+body AgreeFrameC::GetButtonsFrame {} {
+
+    return $wbuttons
+}
+
+
+#--------------------------------------------------
+
+body AgreeFrameC::SHtml {w html} {
+
+    iwidgets::scrolledhtml $w \
+	-relief flat \
+	-width 1 \
+	-height 1 \
+	-vscrollmode dynamic \
+	-hscrollmode none \
+	-wrap word \
+	-spacing1 1 \
+	-spacing2 1 \
+	-spacing3 5
+    $w render $html
+    $w configure -state disabled
+}
+
+#--------------------------------------------------
+
+body AgreeFrameC::SText {w text} {
+
+    iwidgets::scrolledtext $w \
+	-relief flat \
+	-width 1 \
+	-height 1 \
+	-vscrollmode dynamic \
+	-hscrollmode none \
+	-wrap word \
+	-spacing1 1 \
+	-spacing2 1 \
+	-spacing3 5
+    $w component text insert end $text
+    $w configure -state disabled
+}
+
+#--------------------------------------------------
+
+body AgreeFrameC::Text {w text args} {
+
+    text $w \
+	-relief flat \
+	-width 1 \
+	-height 1 \
+	-wrap word \
+	-spacing1 1 \
+	-spacing2 1 \
+	-spacing3 5
+    $w insert end $text
+    $w configure -state disabled
+
+    eval $w configure $args
+}
+
+#--------------------------------------------------
+
+body AgreeFrameC::IAgree {} {
+    global env
+
+    catch "exec touch [CTESOBJ cget -agreedone]"
+    exit 
+}
+
+#--------------------------------------------------
+
+body AgreeFrameC::SetInstallState {} {
+
+    $wbuttons.agree configure -state $agree
+
+}
+
+#--------------------------------------------------

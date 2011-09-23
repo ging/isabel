@@ -1,0 +1,151 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# mcuCC.itcl
+#
+# MCU component.
+#
+#########################################################################
+
+class MCUComponentClass {
+    inherit Component
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Inherited Component methods
+    
+    public method Create {first}
+
+    public method AddRemoteSite {site_id new}
+    public method AddMySite {}
+    public method DelRemoteSite {site_id}
+    public method DelMySite {}
+    public method ExitComponent {} {}
+    public method SetInteractionMode {imname nsec site_id_list args} {}
+    
+    public method Cmd {args}
+
+    constructor {} {   
+	Component::constructor MCU
+    } {
+    }
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Object that implements the component behaviour
+    private variable mcuobj ""
+
+    # Restart the MCU component
+    private method RestartMCU {}
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentClass::destructor {} {
+
+    if {$mcuobj != ""} {
+	delete object $mcuobj
+	set mcuobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentClass::Create {first} {
+
+    if {[catch {MCUComponentC "#auto"} res]} {
+	ErrorTraceMsg "MCU component can not be created.\n$res"
+	return -1
+    }
+    set mcuobj $res
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentClass::AddRemoteSite {site_id new} {
+
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentClass::AddMySite {} {
+
+    # PARCHE TEMPORAL PARA PROBAR
+    # network RDOLocalSync local_isabel_comp_MCU 1 "Cmd NewIOSClient KKK 7 138.4.4.209 1234 0" 1
+
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentClass::DelRemoteSite {site_id} {
+
+    $mcuobj DelIOSClient $site_id
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentClass::DelMySite {} {
+
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentClass::Cmd {args} {
+
+    if {$mcuobj == ""} return
+
+    eval $mcuobj $args
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentClass::RestartMCU {} {
+
+    set me [SiteManager::MySiteId]
+    
+    network MasterRequest CM RestartComponent $me MCU 3000
+}
+
+#---------------------------------------------------------------
+
+######################################################################
+#
+#  Send a command to the object that implement the MCU behaviour.
+#
+######################################################################
+
+process MCUCmd {args} {
+
+    eval component Cmd $args
+}
+
+#---------------------------------------------------------

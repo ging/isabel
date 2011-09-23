@@ -1,0 +1,322 @@
+ifeq ($(PROJECT_ROOT_DIR),)
+#PROJECT_ROOT_DIR  =DoSetYour_PROJECT_ROOT_DIR_environmentVariable
+$(error ERROR: Set your PROJECT_ROOT_DIR environment variable)
+endif
+
+ifeq ($(findstring ___$(PROJECT_ROOT_DIR),___$(shell pwd)),)
+$(error ERROR: I'm not below PROJECT_ROOT_DIR. Check this variable.)
+endif
+
+#
+# calculate TARGET.OS for conditional compilation and
+# other housekeeping functions
+#
+# NOTE: TARGET.DIR will be fooled if a source directory is
+#       reached thru a link
+#
+TARGET.OS  :=$(shell uname)
+TARGET.MACH:=$(shell uname -m)
+TARGET.DIR :=$(shell echo `pwd` | (cd $(PROJECT_ROOT_DIR);sed s@`pwd`@@))
+
+#### BEGIN Linux Section ######
+#
+
+# set Linux distribution, redhat, SuSE, debian, etc.
+# each one has a diferente way to say the release
+ifeq ($(TARGET.OS),Linux)
+
+# guess Linux distro
+LINUX.DISTRIB.FILE=$(shell ls /etc/lsb-release)
+ifeq ($(LINUX.DISTRIB.FILE),)
+LINUX.DISTRIB.FILE=$(shell ls /etc/SuSE-release)
+endif
+ifeq ($(LINUX.DISTRIB.FILE),)
+LINUX.DISTRIB.FILE=$(shell ls /etc/redhat-release)
+endif
+ifeq ($(LINUX.DISTRIB.FILE),)
+LINUX.DISTRIB.FILE=$(shell ls /etc/debian_version)
+endif
+ifeq ($(LINUX.DISTRIB.FILE),)
+$(error ERROR: cannot guess Linux distro, please edit Makefile.head)
+endif
+
+# set distribution version, depending on release, 0.0 if unknown
+LINUX.DISTRIB.VERSION=0.0
+
+ifeq ($(LINUX.DISTRIB.FILE),/etc/lsb-release)
+LINUX.DISTRIB.ID=Ubuntu
+LINUX.DISTRIB.VERSION=$(shell /usr/bin/awk -F = '/DISTRIB_RELEASE/ {print $$2}' /etc/lsb-release)
+LINUX.DISTRIB.CODENAME=$(shell /usr/bin/awk -F = '/DISTRIB_CODENAME/ {print $$2}' /etc/lsb-release)
+endif
+ifeq ($(LINUX.DISTRIB.FILE),/etc/SuSE-release)
+LINUX.DISTRIB.ID=SuSE
+$(error ERROR: Please, check if VERSION and CODENAME are meaningful)
+endif
+ifeq ($(LINUX.DISTRIB.FILE),/etc/redhat-release)
+LINUX.DISTRIB.ID=redhat
+$(error ERROR: Please, check if VERSION and CODENAME are meaningful)
+endif
+ifeq ($(LINUX.DISTRIB.FILE),/etc/debian_version)
+LINUX.DISTRIB.ID=debian
+$(error ERROR: Please, check if VERSION and CODENAME are meaningful)
+endif
+
+LINUX.DISTRIB.VERSION.MAJOR:=$(shell echo $(LINUX.DISTRIB.VERSION) | sed "s/\..*//")
+LINUX.DISTRIB.VERSION.MINOR:=$(shell echo $(LINUX.DISTRIB.VERSION) | sed "s/.*\.//")
+
+LINUX.KERNEL:=$(shell uname -r)
+LINUX.KERNEL.VERSION:=$(shell echo $(LINUX.KERNEL) | sed "s/-.*//")
+LINUX.KERNEL.VERSION.MAJOR:=$(shell echo $(LINUX.KERNEL.VERSION) | sed "s/\..*//")
+LINUX.KERNEL.VERSION.MINOR1:=$(shell echo $(LINUX.KERNEL.VERSION) | sed "s/[0-9]\.//" | sed "s/\..*//")
+LINUX.KERNEL.VERSION.MINOR2:=$(shell echo $(LINUX.KERNEL.VERSION) | sed "s/[0-9]\.//"  | sed "s/[0-9]\.//" | sed "s/\..*//")
+endif
+
+#
+#### END Linux Section ######
+
+ifeq ($(TARGET.OS),Linux)
+CONFIG.generic.define+= -DHAVE_X11 -DHAVE_OPENGL
+ifeq ($(shell test -f /usr/include/libv4lconvert.h; echo $$?),0)
+HAVE_LIBV4L=yes
+else
+HAVE_LIBV4L=no
+endif
+ifeq ($(HAVE_LIBV4L),yes)
+CONFIG.generic.define+= -DHAVE_LIBV4L
+endif
+ifeq ($(shell test -f /usr/include/linux/videodev.h; echo $$?),0)
+HAVE_V4L1=yes
+CONFIG.generic.define+= -DHAVE_V4L1
+else
+HAVE_V4L1=no
+endif
+endif
+ifeq ($(TARGET.OS),Darwin)
+CONFIG.generic.define+= -DHAVE_X11 -DHAVE_OPENGL
+endif
+ifeq ($(TARGET.OS),Win32)
+CONFIG.generic.define+= -DHAVE_OPENGL
+endif
+ifeq ($(TARGET.OS),SunOS)
+CONFIG.generic.define+= -DHAVE_X11 -DHAVE_OPENGL
+endif
+
+
+ISABEL_CONFIG_DIR=$(PROJECT_ROOT_DIR)/CONFIG
+
+
+#
+# include user, os and compiler
+#
+include $(PROJECT_ROOT_DIR)/Makefile.user
+include $(ISABEL_CONFIG_DIR)/Makefile.os
+include $(ISABEL_CONFIG_DIR)/Makefile.compiler
+
+
+#
+# calculate target directories
+#
+__OBJDIR.PREFIX:=$(CONFIG.TMPDIR)$(PROJECT_ROOT_DIR)/objects-$(TARGET.OS)
+__OBJDIR.SUFFIX:=$(TARGET.DIR)
+
+__OBJDIR.ugly:=$(__OBJDIR.PREFIX)/$(__OBJDIR.SUFFIX)
+OBJDIR:=$(shell echo $(__OBJDIR.ugly)|sed 's@^\(./\)*@@;s@/./@/@;s@//@/@;s@/$$@@')
+
+OBJS_ROOT_DIR:=$(CONFIG.TMPDIR)$(PROJECT_ROOT_DIR)/objects-$(TARGET.OS)
+DISTRIB_DIR:=$(CONFIG.TMPDIR)$(PROJECT_ROOT_DIR)/distrib-$(TARGET.OS)
+
+#
+# include packages
+#
+include $(ISABEL_CONFIG_DIR)/Makefile.package
+
+
+# 
+# other variables
+#
+COMPONENTS  :=$(PROJECT_ROOT_DIR)/components
+UTILS       :=$(PROJECT_ROOT_DIR)/utils
+
+# Useful Kernel variables
+
+KERNEL_COMMON       :=$(COMPONENTS)/kernel/app/common
+KERNEL_INTERACTIVE  :=$(COMPONENTS)/kernel/app/interactive
+KERNEL_CAL          :=$(COMPONENTS)/kernel/app/cal
+#KERNEL_MCU          :=$(COMPONENTS)/kernel/app/mcu
+KERNEL_MASTER       :=$(COMPONENTS)/kernel/app/master
+
+#
+# Adjust compiler definitions
+#
+ifeq ($(CONFIG.CXX),)
+error
+else
+CXX      := $(CONFIG.CXX)
+CXX.name := $(CONFIG.CXX.name)
+LD       := $(CONFIG.LD)
+LD.SHARED:= $(CONFIG.LD.SHARED)
+LD.STATIC:= $(CONFIG.LD.STATIC)
+endif
+
+
+#
+# Flags to the C compiler are built from a number of sources,
+# some are generic and some are system dependant and some
+# are system dependant thru previously defined macros.
+#
+#	CXXFLAGS -- C++ compiler flags
+#
+# built from
+#
+#	CXXFLAGS.generic      -- generic defines & includes
+#	CXXFLAGS.architecture -- architecture related
+#	CXXFLAGS.optimization -- optimization related
+#	CXXFLAGS.debug        -- debugging    related
+#	CXXFLAGS.diagnostic   -- diagnostic   related
+#
+# each of these are splitted in
+#
+#	*.define   -- preprocessor definitions
+#	*.include  -- include directories
+#	*.option   -- compiler options
+#
+ifeq ($(USER.ENABLE_INSURE),y)
+USER.ENABLE_DEBUG=y
+endif
+ifeq ($(USER.ENABLE_DEBUG),y)
+CXXFLAGS=\
+	$(CXXFLAGS.generic)         \
+	$(CXXFLAGS.architecture)    \
+	$(CXXFLAGS.debug)           \
+	$(CXXFLAGS.diagnostic)
+else
+CXXFLAGS=\
+	$(CXXFLAGS.generic)         \
+	$(CXXFLAGS.architecture)    \
+	$(CXXFLAGS.optimization)    \
+	$(CXXFLAGS.diagnostic)
+endif
+
+
+CXXFLAGS.generic=\
+	$(CXXFLAGS.generic.define)   \
+	$(CXXFLAGS.generic.include)  \
+	$(CXXFLAGS.generic.option)
+CXXFLAGS.architecture=\
+	$(CONFIG.CXXFLAGS.architecture.define)   \
+	$(CONFIG.CXXFLAGS.architecture.include)  \
+	$(CONFIG.CXXFLAGS.architecture.option)
+CXXFLAGS.optimization=\
+	$(CONFIG.CXXFLAGS.optimization.define)   \
+	$(CONFIG.CXXFLAGS.optimization.include)  \
+	$(CONFIG.CXXFLAGS.optimization.option)
+CXXFLAGS.debug=\
+	$(CONFIG.CXXFLAGS.debug.define)   \
+	$(CONFIG.CXXFLAGS.debug.include)  \
+	$(CONFIG.CXXFLAGS.debug.option)
+CXXFLAGS.diagnostic=\
+	$(CONFIG.CXXFLAGS.diagnostic.define)   \
+	$(CONFIG.CXXFLAGS.diagnostic.include)  \
+	$(CONFIG.CXXFLAGS.diagnostic.option)
+
+
+#
+# Now follows the definition of CXXFLAGS.generic. Prepocessor definitions
+# are set to standard things across ICF and SDK. Include directories
+# are set to ICF, SDK, STD, THREADS and X11. Compiler options must
+# be empty since this section of CXXFLAGS is supposed to be platform
+# independent; it's only defined for orthogonality reasons.
+#
+CXXFLAGS.generic.define = $(CONFIG.generic.define)
+CXXFLAGS.generic.include= $(CONFIG.generic.include)
+CXXFLAGS.generic.option =# must be empty
+
+
+#
+# A couple of macros are now defined from already calculated
+# values. Useful for makedepend (below).
+#
+CXXFLAGS.define:=\
+	$(CXXFLAGS.generic.define)              \
+	$(CONFIG.CXXFLAGS.architecture.define)  \
+	$(CONFIG.CXXFLAGS.optimization.define)  \
+	$(CONFIG.CXXFLAGS.debug.define)         \
+	$(CONFIG.CXXFLAGS.diagnostic.define)
+CXXFLAGS.include:=\
+	$(CXXFLAGS.generic.include)             \
+	$(CONFIG.CXXFLAGS.architecture.include) \
+	$(CONFIG.CXXFLAGS.optimization.include) \
+	$(CONFIG.CXXFLAGS.debug.include)        \
+	$(CONFIG.CXXFLAGS.diagnostic.include)
+
+
+MKDEPFLAGS:=\
+	$(CXXFLAGS.define)                  \
+	$(CXXFLAGS.include)
+
+ifeq ($(USER.ENABLE_DEBUG),y)
+STRIP:=touch
+else
+STRIP:=strip
+endif
+
+
+target::
+	@mkdir -p $(OBJDIR)
+target:: __subdirs.pre __target __subdirs.post
+
+distrib:: 
+	  @mkdir -p $(DISTRIB_DIR)
+
+distrib:: __subdirsDist.pre __subdirsDist.post
+
+rmDist::
+	@rm -rf $(DISTRIB_DIR)
+
+clean:: __subdirsClean.pre __subdirsClean.post
+
+cleanall:: __subdirsCleanAll.pre __subdirsCleanAll.post
+
+anew:: __subdirsANew.pre __subdirsANew.post
+
+$(OBJDIR)/%.o: %.c
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+$(OBJDIR)/%.o: %.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+$(OBJDIR)/%.o: %.cc
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+$(OBJDIR)/%.o: %.C
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+$(OBJDIR)/%.o: %.cxx
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+$(OBJDIR)/%: %
+	@echo Done $@
+
+dist:
+	@echo   
+
+	 
+
+$(PROJECT_ROOT_DIR)/Makefile.user: $(PROJECT_ROOT_DIR)/Makefile.head $(PROJECT_ROOT_DIR)/Makefile.tail
+	@[ ! -f $@ ] || mv $@ $@.bak
+	@echo >$@  "#"
+	@echo >>$@ "# This file is for developers convenience."
+	@echo >>$@ "# You can edit it to taylor Makefile behaviour to your own"
+	@echo >>$@ "# needs."
+	@echo >>$@ "#"
+	@echo >>$@ "# Options are:"
+	@echo >>$@ "#"
+	@echo >>$@ "#     USER.ENABLE_DEBUG    =y|n"
+	@echo >>$@ "#     USER.ENABLE_INSURE   =y|n"
+	@echo >>$@ "#"
+	@echo >>$@ "# ENABLE_DEBUG=y when ICF debug messages are wanted"
+	@echo >>$@ "#"
+	@echo >>$@ "# ENABLE_INSURE=y when 'insure' must instrument code"
+	@echo >>$@ "#               (this option implies ENABLE_DEBUG=y)"
+	@echo >>$@ "#"
+	@[ ! -f $@.bak ] || <$@.bak>>$@ grep '^USER\.'
+	@[   -f $@.bak ] || echo >>$@ "USER.ENABLE_DEBUG    :=n"
+	@[   -f $@.bak ] || echo >>$@ "USER.ENABLE_INSURE   :=n"
+	@[ ! -f $@.bak ] || rm $@.bak
+

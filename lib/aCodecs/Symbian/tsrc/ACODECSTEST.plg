@@ -1,0 +1,73 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: ACODECSTEST - Win32 Uni Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP32C.tmp" with contents
+[
+/nologo /Zp4 /MDd /W4 /Zi /Od /X /I "\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC" /I "\REPOSI~1\ISABEL\LIB\ACODECS\INCLUDE" /I "\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\INC" /I "\Symbian\8.0a\S60_2nd_FP2\EPOC32\INCLUDE" /D "__SYMBIAN32__" /D "__VC32__" /D "__WINS__" /D "__DLL__" /D "_DEBUG" /D "_UNICODE" /FR"\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB/" /Fo"\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB/" /Fd"\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\Z\SYSTEM\APPS\ACODECSTEST\ACODECSTEST.PDB" /GF /c 
+"C:\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\Acodecstest.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP32C.tmp" 
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP32D.bat" with contents
+[
+@echo off
+echo Doing first-stage link by name
+nmake -nologo -f "\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST.SUP.MAKE" PRELINKUDEB
+if errorlevel 1 nmake -nologo -f "\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST.SUP.MAKE" STOPLINKUDEB
+]
+Creating command line "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP32D.bat"
+Compiling...
+Acodecstest.cpp
+C:\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\Acodecstest.cpp(66) : warning C4101: 'ch' : unreferenced local variable
+C:\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\Acodecstest.cpp(72) : warning C4189: 'codec' : local variable is initialized but not referenced
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP32E.tmp" with contents
+[
+"\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\EDLL.LIB" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\euser.lib" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\apparc.lib" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\eikcore.lib" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\cone.lib" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\acodecs.lib" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\openfix.lib" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.exp" /nologo /entry:"_E32Dll" /subsystem:windows /dll /incremental:yes /pdb:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\Z\SYSTEM\APPS\ACODECSTEST\ACODECSTEST.pdb" /debug /machine:IX86 /nodefaultlib /include:"?_E32Dll@@YGHPAXI0@Z" /out:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\Z\SYSTEM\APPS\ACODECSTEST\ACODECSTEST.APP" /implib:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB/ACODECSTEST.lib" /WARN:3 
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\Acodecstest.obj
+\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\Acodecstest.uid.obj
+]
+Creating command line "link.exe @C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP32E.tmp"
+
+Doing first-stage link by name
+ link.exe @C:\DOCUME~1\isabel\CONFIG~1\Temp\nma02556.
+LINK : warning LNK4044: opción '/WARN:3' no reconocida; omitida
+   Creando biblioteca \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.lib y objeto \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.exp
+EDLL.LIB(UP_DLL.obj) : warning LNK4210: la sección .CRT existe; podría haber terminadores o inicializadores estáticos no controlados
+EDLL.LIB(UP_DLL.obj) : warning LNK4099: no se encontró PDB 'edll.pdb' con '\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\EDLL.LIB' o en 'C:\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\edll.pdb'; se vinculará el objeto sin tener en cuenta información de depuración
+ del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.APP"
+ del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.exp"
+ dumpbin /exports /out:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.inf" "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.lib"
+Microsoft (R) COFF/PE Dumper Version 7.10.3077
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.lib"
+ perl -S makedef.pl -Inffile "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.inf" -1 ?NewApplication@@YAPAVCApaApplication@@XZ "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\ACODECSTEST.def"
+ del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.inf"
+ lib.exe  /nologo /machine:i386 /nodefaultlib /name:"ACODECSTEST.APP" /def:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\ACODECSTEST.def" /out:"\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.lib"
+   Creando biblioteca \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.lib y objeto \Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.exp
+ del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.lib"
+First-stage link successful
+<h3>Output Window</h3>
+Linking...
+LINK : warning LNK4005: no objects used from library \Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\openfix.lib
+EDLL.LIB(UP_DLL.obj) : warning LNK4099: PDB "edll.pdb" was not found with "\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\EDLL.LIB" or at "C:\Symbian\8.0a\S60_2nd_FP2\EPOC32\RELEASE\WINS\UDEB\Z\SYSTEM\APPS\ACODECSTEST\edll.pdb"; linking object as if no debug info
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP333.bat" with contents
+[
+@echo off
+nmake -nologo -f "\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST.SUP.MAKE" POSTBUILDUDEB
+]
+Creating command line "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP333.bat"
+
+ if exist "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.exp" del "\Symbian\8.0a\S60_2nd_FP2\EPOC32\BUILD\REPOSI~1\ISABEL\LIB\ACODECS\SYMBIAN\TSRC\ACODECSTEST\WINS\UDEB\ACODECSTEST.exp"
+
+
+
+<h3>Results</h3>
+ACODECSTEST.APP - 0 error(s), 7 warning(s)
+</pre>
+</body>
+</html>

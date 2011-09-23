@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aCodecs", "aCodecs.vcproj", "{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug -dynamic|Win32 = Debug -dynamic|Win32
+		Debug -static|Win32 = Debug -static|Win32
+		Debug_RTL_dll|Win32 = Debug_RTL_dll|Win32
+		Debug_WM5_PPC_ARM|Win32 = Debug_WM5_PPC_ARM|Win32
+		Debug|Win32 = Debug|Win32
+		Release -dynamic|Win32 = Release -dynamic|Win32
+		Release -static|Win32 = Release -static|Win32
+		Release_Dynamic_SSE|Win32 = Release_Dynamic_SSE|Win32
+		Release_Dynamic|Win32 = Release_Dynamic|Win32
+		Release_RTL_dll|Win32 = Release_RTL_dll|Win32
+		Release_SSE|Win32 = Release_SSE|Win32
+		Release_SSE2|Win32 = Release_SSE2|Win32
+		Release_WM5_PPC_ARM|Win32 = Release_WM5_PPC_ARM|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug -dynamic|Win32.ActiveCfg = Debug -dynamic|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug -dynamic|Win32.Build.0 = Debug -dynamic|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug -static|Win32.ActiveCfg = Debug -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug -static|Win32.Build.0 = Debug -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug_RTL_dll|Win32.ActiveCfg = Debug -dynamic|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug_RTL_dll|Win32.Build.0 = Debug -dynamic|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug_WM5_PPC_ARM|Win32.ActiveCfg = Debug -dynamic|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug_WM5_PPC_ARM|Win32.Build.0 = Debug -dynamic|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug|Win32.ActiveCfg = Debug -dynamic|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug|Win32.Build.0 = Debug -dynamic|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release -dynamic|Win32.ActiveCfg = Release -dynamic|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release -dynamic|Win32.Build.0 = Release -dynamic|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release -static|Win32.ActiveCfg = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release -static|Win32.Build.0 = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_Dynamic_SSE|Win32.ActiveCfg = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_Dynamic_SSE|Win32.Build.0 = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_Dynamic|Win32.ActiveCfg = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_Dynamic|Win32.Build.0 = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_RTL_dll|Win32.ActiveCfg = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_RTL_dll|Win32.Build.0 = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_SSE|Win32.ActiveCfg = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_SSE|Win32.Build.0 = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_SSE2|Win32.ActiveCfg = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_SSE2|Win32.Build.0 = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_WM5_PPC_ARM|Win32.ActiveCfg = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release_WM5_PPC_ARM|Win32.Build.0 = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release|Win32.ActiveCfg = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release|Win32.Build.0 = Release -static|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

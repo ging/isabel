@@ -1,0 +1,475 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# info.itcl
+#
+# Classs LseLayoutInfoC maintains information about the current
+# geometry, grab size, and bandwidth of the LSE video channels.
+#
+#########################################################################
+
+class LseLayoutInfoC {
+    
+    # Global bandwidth factor
+    private common bwfactor 1
+    
+    # Global grabsize factor
+    private common grabsizefactor 1
+    
+    # Global quality factor 
+    private common qltyfactor 1
+    
+    # $codec($chid): $chid codec
+    private common codec
+    
+    # $grabsize($chid): $chid grab sizes
+    private common grabsize
+    
+    # $name($chid): $chid channel name
+    private common name
+    
+    # $geometry($chid): $chid channel geometry.
+    private common geometry
+    
+    # $bw($chid): $chid channel bw.
+    private common bw
+    
+    # $qlty($chid): $chid channel quality.
+    private common qlty
+    
+    # $mapped($chid): 1 if the $chid channel is mapped.
+    private common mapped
+    
+    #---------------------    
+    
+    # Toplevel window
+    private common wroot ""
+    
+    # I am waiting for "Draw" to start
+    private common drawPending 0
+    
+    #---------------------    
+    
+    # Cleanup
+    public proc Cleanup {}
+    
+    # Declare/Remove channels.
+    public proc AddChannel {chid}
+    public proc DelChannel {chid}
+    
+    # Channel $chid has ben mapped/unmaped.
+    public proc Map {chid} 
+    public proc Unmap {chid} 
+    
+    # Geometry of $chid has been set to $geometry.
+    public proc Geometry {chid _geometry}
+    
+    # Codec of $chid has been set to $c.
+    public proc Codec {chid c}
+    
+    # Bandwidth of $chid has been set to $_bw.
+    public proc BW {chid _bw}
+    
+    # Grab size of $chid channel has been sets to $gs.
+    public proc GrabSize {chid gs}
+    
+    # Sets the quality of the chid channel.
+    public proc Qlty {chid q}
+    
+    # Sets global grabsize factor.
+    public proc GrabSizeFactor {gsf}
+    
+    # Sets global bandwidth factor.
+    public proc BWFactor {bwf}
+    
+    # Sets the quality factor.
+    public proc QltyFactor {qf}
+    
+    
+    # Dump information
+    public proc Dump {}
+    
+    # Update GUI when idle
+    public proc UpdateGUI {}
+    
+    # Update GUI now
+    private proc UpdateGUINow {}
+    
+    # Create the information frame for the LSE channels.
+    public proc GUI {_wroot}
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::Cleanup {} {
+    
+    foreach chid [array names name] {
+	unset name($chid)
+	unset geometry($chid)
+	unset bw($chid)
+	unset grabsize($chid)
+	unset codec($chid)
+	unset qlty($chid)
+	unset mapped($chid)
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::AddChannel {chid} {
+    
+    set name($chid)      LSE
+    
+    set geometry($chid)  ""
+    set bw($chid)        ""
+    set grabsize($chid)  ""
+    set codec($chid)     ""
+    set qlty($chid)      ""
+    set mapped($chid)    0
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::DelChannel {chid} {
+    
+    unset name($chid)
+    unset geometry($chid)
+    unset bw($chid)
+    unset grabsize($chid)
+    unset codec($chid)
+    unset qlty($chid)
+    unset mapped($chid)
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::Map {chid} {
+    
+    set mapped($chid) 1
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::Unmap {chid} {
+    
+    set geometry($chid)  ""
+    set bw($chid)        ""
+    set grabsize($chid)  ""
+    set codec($chid)     ""
+    set qlty($chid)      ""
+    
+    set mapped($chid) 0
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::Geometry {chid _geometry} {
+    
+    if {$chid == "*" } {
+	foreach chid [array names name] {
+	    set geometry($chid) $_geometry
+	}
+    } else {
+	set geometry($chid) $_geometry
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::BW {chid _bw} {
+    
+    if {$chid == "*" } {
+	foreach chid [array names name] {
+	    set bw($chid) $_bw
+	}
+    } else {
+	set bw($chid) $_bw
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::GrabSize {chid gs} {
+    
+    if {$chid == "*" } {
+	foreach chid [array names name] {
+	    set grabsize($chid) $gs
+	}
+    } else {
+	set grabsize($chid) $gs
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::Codec {chid c} {
+    
+    if {$chid == "*" } {
+	foreach chid [array names name] {
+	    set codec($chid) $c
+	}
+    } else {
+	set codec($chid) $c
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::Qlty {chid q} {
+    
+    if {$chid == "*" } {
+	foreach chid [array names name] {
+	    set qlty($chid) $q
+	}
+    } else {
+	set qlty($chid) $q
+    }
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::GrabSizeFactor {gsf} {
+    
+    set grabsizefactor $gsf
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::BWFactor {bwf} {
+    
+    set bwfactor $bwf
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::QltyFactor {qf} {
+    
+    set qltyfactor $qf
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::Dump {} {
+    
+    WriteTraceMsg "Lse Layout Information"
+    
+    foreach chid [array names name] {
+	WriteTraceMsg "  $name($chid) = $grabsize($chid) $geometry($chid) $bw($chid) $codec($chid) $qlty($chid)" 
+    }
+    
+    WriteTraceMsg "  Bandwidth factor = $bwfactor"
+    WriteTraceMsg "  Grab size factor = $grabsizefactor"
+    WriteTraceMsg "  Quality factor   = $qltyfactor"
+    
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::UpdateGUI {} {
+    
+    if {$wroot == ""} return
+    
+    if {![winfo exists $wroot]} return
+    
+    if {$drawPending == 0} {
+	set drawPending 1
+	after idle [code UpdateGUINow]
+    }
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::UpdateGUINow {} {
+    
+    set drawPending 0
+    
+    foreach w [grid slaves $wroot.f2] {
+	grid forget $w
+	destroy $w
+    }
+    
+    grid columnconfigure $wroot.f2 0 -weight 1
+    grid columnconfigure $wroot.f2 1 -weight 1
+    grid columnconfigure $wroot.f2 2 -weight 1
+    grid columnconfigure $wroot.f2 3 -weight 1
+    grid columnconfigure $wroot.f2 4 -weight 1
+    grid columnconfigure $wroot.f2 5 -weight 1
+    
+    set _font [IsabelFontsC::GetFont small medium]
+    
+    label $wroot.f2.acro0  -text Site      -relief groove -bd 1 -font $_font
+    label $wroot.f2.codec0 -text Codec     -relief groove -bd 1 -font $_font
+    label $wroot.f2.geom0  -text Geom      -relief groove -bd 1 -font $_font
+    label $wroot.f2.fbw0   -text BW        -relief groove -bd 1 -font $_font
+    label $wroot.f2.gsize0 -text GrabSize  -relief groove -bd 1 -font $_font
+    label $wroot.f2.qf0    -text Qlty      -relief groove -bd 1 -font $_font
+    
+    grid  $wroot.f2.acro0  -row 0 -column 0 -sticky we
+    grid  $wroot.f2.codec0 -row 0 -column 1 -sticky we
+    grid  $wroot.f2.geom0  -row 0 -column 2 -sticky we
+    grid  $wroot.f2.fbw0   -row 0 -column 3 -sticky we
+    grid  $wroot.f2.gsize0 -row 0 -column 4 -sticky we
+    grid  $wroot.f2.qf0    -row 0 -column 5 -sticky we
+    
+    set row 0
+    set indnames [lsort [array names name]]
+    foreach u $indnames {
+	incr row
+	
+	label $wroot.f2.acro$row \
+	    -text $name($u) \
+	    -foreground black \
+	    -relief groove \
+	    -bd 1 \
+	    -font $_font
+	
+	
+	if {$mapped($u)} {
+	    set _t $codec($u)
+	} else {
+	    set _t ""
+	}
+	label $wroot.f2.codec$row \
+	    -text $_t \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -font $_font
+	
+	if {$mapped($u)} {
+	    set _t $geometry($u)
+	} else {
+	    set _t ""
+	}
+	label $wroot.f2.geom$row \
+	    -text $_t \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -anchor e \
+	    -font $_font
+	
+	if {$bw($u) == ""  || ! $mapped($u)} {
+	    set fbw ""
+	} else {
+	    set fbw [format %.2f [expr $bwfactor*$bw($u)]]
+	}
+	label $wroot.f2.fbw$row  \
+	    -text $fbw \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -anchor e \
+	    -font $_font
+	
+	if {$grabsize($u) == ""  || ! $mapped($u)} {
+	    set gs ""
+	} else {
+	    regexp {^0*([0-9]+)x0*([0-9]+)} $grabsize($u) all w h
+	    set w16 [expr round($w*$grabsizefactor/16)]
+	    set h16 [expr round($h*$grabsizefactor/16)]
+	    set w [expr $w16*16]
+	    set h [expr $h16*16]
+	    set gs "${w}x${h}"
+	}
+	label $wroot.f2.gsize$row \
+	    -text $gs \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -anchor e \
+	    -font $_font
+	
+	
+	if {$qlty($u) == ""  || ! $mapped($u)} {
+	    set fq ""
+	} else {
+	    set fq [format %.2f [expr $qltyfactor*$qlty($u)]]
+	    if {$fq < 1}   {set fq 1}
+	    if {$fq > 100} {set fq 100}
+	}
+	label $wroot.f2.qf$row \
+	    -text $fq \
+	    -foreground "#000088" \
+	    -relief groove \
+	    -bd 1 \
+	    -anchor e \
+	    -font $_font
+	
+	grid  $wroot.f2.acro$row  -row $row -column 0 -sticky we
+	grid  $wroot.f2.codec$row -row $row -column 1 -sticky we
+	grid  $wroot.f2.geom$row  -row $row -column 2 -sticky we
+	grid  $wroot.f2.fbw$row   -row $row -column 3 -sticky we
+	grid  $wroot.f2.gsize$row -row $row -column 4 -sticky we
+	grid  $wroot.f2.qf$row    -row $row -column 5 -sticky we
+    }
+}
+
+#-----------------------------------------------------------------------
+
+body  LseLayoutInfoC::GUI {_wroot} {
+    
+    set wroot $_wroot
+    
+    frame $wroot
+    
+    label $wroot.title \
+	-text "Video LSE Layouts" \
+	-font [IsabelFontsC::GetFont large]
+    
+    pack $wroot.title
+    
+    frame $wroot.f2
+    pack  $wroot.f2 -expand 1 -fill both
+    
+    UpdateGUI
+}
+
+#-----------------------------------------------------------------------

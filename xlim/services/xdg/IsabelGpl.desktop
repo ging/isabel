@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=AGPL License
+Comment=Shows the AGPL license
+Exec=/usr/local/isabel/bin/isrv_GplLicense.sh
+Icon=/usr/local/isabel/lib/images/gif/gpl.gif
+Terminal=false
+Type=Application
+StartupNotify=true

@@ -1,0 +1,194 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+################################################################
+#
+#   Description
+#
+#      X utils
+#
+################################################################
+
+
+class XUtilsTaskC {
+    
+    # 1 if the created object is working.
+    private common active 
+    
+    # xutils daemon
+    private variable xutilsobj
+
+    constructor {} {}
+    
+    destructor {}
+
+    # Looks for in the specified display the window which name has
+    # $prefixname as prefix name, and return its window identifier.
+    # It tries to locate this window during $timeout seconds (maybe the
+    # windows is being created), returnning an error if the window 
+    # is not found after that period.
+    public method GetWinIdByPrefixName {displayname prefixname {timeout 0}}
+
+    # Map the window $windowid of the specified display
+    public method MapWin {display windowid}
+
+    # Unmap the window $windowid of the specified display
+    public method UnmapWin {display windowid}
+
+    # Apply $geometry to the specified window.    
+    public method SetGeometry {display windowid geometry}
+
+    private method CreateXUtilsDaemon {}
+    private method NoCCXUtilsDaemon {}
+}
+
+#---------------------------------------------------------------
+
+body XUtilsTaskC::constructor {} {
+    
+    set active($this)     0
+    set xutilsobj($this) ""
+    
+    CreateXUtilsDaemon
+    
+}
+
+#---------------------------------------------------------------
+
+body XUtilsTaskC::destructor {} {
+    
+    delete object $xutilsobj($this)
+    unset xutilsobj($this)
+    unset active($this)
+}
+
+#---------------------------------------------------------------
+
+body XUtilsTaskC::GetWinIdByPrefixName {displayname prefixname {timeout 0}} {
+
+    set dd [$xutilsobj($this) RPC xutils_open_display($displayname)]
+    if {$dd == "ERROR\n"} {
+	error "I can not open display $displayname."
+    }
+    set dd [expr $dd]
+    
+    while 1 {
+	set wid [$xutilsobj($this) RPC xutils_get_winid($dd,TITLE,$prefixname,PREFIX,ALL)]
+	if {$wid == "ERROR\n"} {
+	    if {$timeout > 0} {
+		incr timeout -1
+		after 1000
+		continue
+	    } else {
+		$xutilsobj($this) RDO xutils_close_display($dd)
+		error "window $prefixname not found in $displayname."
+	    }
+	} else {
+
+	    regsub -all {,} [concat $wid] { } wid
+	    
+	    set min [lindex $wid 0]
+	    foreach i $wid {
+		if {$i < $min} {
+		    set min $i
+		}
+	    }
+
+	    $xutilsobj($this) RDO xutils_close_display($dd)
+	    return $min
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body XUtilsTaskC::MapWin {display windowid} {
+
+    set dd [$xutilsobj($this) RPC xutils_open_display($display)]
+    if {$dd == "ERROR\n"} {
+	error "I can not open display $display."
+    }
+    set dd [expr $dd]
+
+    $xutilsobj($this) RDO xutils_map_window($dd,$windowid)
+
+    $xutilsobj($this) RDO xutils_close_display($dd)
+}
+
+#---------------------------------------------------------------
+
+body XUtilsTaskC::UnmapWin {display windowid} {
+
+    set dd [$xutilsobj($this) RPC xutils_open_display($display)]
+    if {$dd == "ERROR\n"} {
+	error "I can not open display $display."
+    }
+    set dd [expr $dd]
+
+    $xutilsobj($this) RDO xutils_unmap_window($dd,$windowid)
+
+    $xutilsobj($this) RDO xutils_close_display($dd)
+}
+
+#---------------------------------------------------------------
+
+body XUtilsTaskC::SetGeometry {display windowid geometry} {
+
+    set dd [$xutilsobj($this) RPC xutils_open_display($display)]
+    if {$dd == "ERROR\n"} {
+	error "I can not open display $display."
+    }
+    set dd [expr $dd]
+
+    $xutilsobj($this) RDO xutils_set_geometry($dd,$windowid,$geometry)
+
+    $xutilsobj($this) RDO xutils_close_display($dd)
+}
+
+#---------------------------------------------------------------
+
+body XUtilsTaskC::CreateXUtilsDaemon {} {
+
+    if {$xutilsobj($this) != ""} return
+    
+    set no_cc_cb [code $this NoCCXUtilsDaemon]
+    set xutilsobj($this) [DXUtilsC #auto $no_cc_cb]
+    if {[catch {$xutilsobj($this) Start} res]} {
+	delete object $xutilsobj($this)
+	NoCCXUtilsDaemon
+	ErrorTraceMsg "X Utils: XUtils Daemon can not be created: $res"
+	return
+    }
+    
+    set active($this) 1
+}
+
+#---------------------------------------------------------------
+
+body XUtilsTaskC::NoCCXUtilsDaemon {} {
+
+    set active($this) 0
+    set xutilsobj($this) ""
+    after 1000 after idle [code $this CreateXUtilsDaemon]
+}
+
+#---------------------------------------------------------------
+

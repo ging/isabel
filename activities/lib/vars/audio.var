@@ -1,0 +1,73 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+ 
+#--------------------------------------------------- 
+# ISABEL_AUDIO_BYPASS_1
+# ISABEL_AUDIO_BYPASS_2
+# ISABEL_AUDIO_BYPASS_3
+#
+# Definition of Audio master-slaves relationshipes.
+# Format: 
+#      master_site_id slave1_site_id slave1_site_id slave1_site_id ...
+#--------------------------------------------------- 
+
+ifdef(`ISABEL_AUDIO_BYPASS',,
+`
+#?VAR ISABEL_AUDIO_BYPASS \
+      -descr {Audio master-slaves bypass} \
+      -scope global \
+      -type string \
+      -default ""
+'
+)
+
+ifdef(`ISABEL_AUDIO_BYPASS_1',,
+`
+#?VAR ISABEL_AUDIO_BYPASS_1 \
+      -descr {Audio master-slaves bypass 1} \
+      -scope global \
+      -type string \
+      -default ""
+'
+)
+
+ifdef(`ISABEL_AUDIO_BYPASS_2',,
+`
+#?VAR ISABEL_AUDIO_BYPASS_2 \
+      -descr {Audio master-slaves bypass 2} \
+      -scope global \
+      -type string \
+      -default ""
+'
+)
+
+ifdef(`ISABEL_AUDIO_BYPASS_3',,
+`
+#?VAR ISABEL_AUDIO_BYPASS_3 \
+      -descr {Audio master-slaves bypass 3} \
+      -scope global \
+      -type string \
+      -default ""
+'
+)
+
+

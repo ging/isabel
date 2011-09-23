@@ -1,0 +1,40 @@
+/* XPM */
+static char *l_red[] = {
+/* width height num_colors chars_per_pixel */
+"    25    25        8            1",
+/* colors */
+". c #000000",
+"# c #b22222",
+"a c #ff0000",
+"b c #ff6347",
+"c c #ffd700",
+"d c #fffacd",
+"e c #ffa500",
+"f c #bfbfbf",
+/* pixels */
+"fffffffffffffffffffffffff",
+"fffffffffffffffffffffffff",
+"fffffffffffffffffffffffff",
+"fffffffffaaaaaaffffffffff",
+"fffffffababaaa#a#ffffffff",
+"ffffffabbbbbbaa#a#fffffff",
+"fffffabbbeebbbaa#a#ffffff",
+"ffffaaabecceb#aa####fffff",
+"ffffaabbecdebbaaa###fffff",
+"fffa#abbbeebbbaa#####ffff",
+"fff#aaabbbbbba##a###.ffff",
+"fff#a#aab#abaaaa#####ffff",
+"fff##aa#aaaa#a#####.#ffff",
+"fff#####aaaa#a####.##ffff",
+"fff###aa##a#a######.#ffff",
+"ffff##############.#fffff",
+"ffff###########.##.#fffff",
+"fffff#.######.###.#ffffff",
+"ffffff##.##.###.#.fffffff",
+"fffffff##.##.#.#.ffffffff",
+"fffffffff#.#.#.ffffffffff",
+"fffffffffffffffffffffffff",
+"fffffffffffffffffffffffff",
+"fffffffffffffffffffffffff",
+"fffffffffffffffffffffffff"
+};

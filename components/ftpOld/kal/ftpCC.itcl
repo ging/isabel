@@ -1,0 +1,129 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# ftpCC.itcl
+#
+# FTP component.
+#
+#########################################################################
+
+class FtpComponentClass {
+    inherit Component
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args} {}
+    public method Cmd {args}
+
+    constructor {} {   
+	Component::constructor Ftp
+    } {
+    }
+
+    destructor {}
+
+    public method Eval {args} 
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Object that implements the component behaviour
+    private variable fcdobj ""
+}
+
+#---------------------------------------------------------------
+
+body FtpComponentClass::destructor {} {
+
+    if {$fcdobj != ""} {
+	delete object $fcdobj
+	set fcdobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body FtpComponentClass::Create {first} {
+
+    set no_cc_cb "network MasterRequest CM KillComponent [SiteManager::MySiteId] $name"
+    set fcdobj [DFtpC "#auto" 30000 $no_cc_cb]
+
+    if {[catch {$fcdobj Start} res]} {
+	ErrorTraceMsg "FTP: Ftp Daemon can not be created."
+	return -1
+    }
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body FtpComponentClass::AddRemoteSite {site_id new} {
+
+}
+
+#---------------------------------------------------------------
+
+body FtpComponentClass::AddMySite {} {
+
+}
+
+#---------------------------------------------------------------
+
+body FtpComponentClass::DelMySite {} {
+    
+}
+
+#---------------------------------------------------------------
+
+body FtpComponentClass::DelRemoteSite {site_id} {
+
+}
+
+#---------------------------------------------------------------
+
+body FtpComponentClass::Cmd {args} {
+
+    if {$fcdobj == ""} return
+    
+    eval $fcdobj $args
+}
+
+#---------------------------------------------------------------
+
+body FtpComponentClass::Eval {args} {
+
+    eval $args
+}
+
+#---------------------------------------------------------------

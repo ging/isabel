@@ -1,0 +1,189 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# info.itcl
+#
+# Display Video Layout Information.
+#
+#########################################################################
+
+class VideoLayoutInfoC {
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    # Change user interface visibility.
+    public proc Show {}
+    public proc Hide {}
+    public proc ToggleShowHide {}
+    
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # toplevel widget.
+    private common wroot .video_info_tl
+    
+    #----  Control
+
+    # If I am a control site, I have more options in the window.
+    # $ctrlsite - 1 if I am a control site, otherwise 0.
+    private common ctrlsite ""
+
+    # Am I a control site
+    private proc ControlSite {}
+
+    #----
+    
+    # Create the user interface.
+    private proc GUI {}
+}
+
+#---------------------------------------------------------------------------
+
+body VideoLayoutInfoC::GUI {} {
+    
+    if {[winfo exist $wroot]} { 
+	return
+    }
+    
+    toplevel $wroot -screen [session Environ cget -ctrl_display]
+    
+    wm title $wroot "Video Info"
+    
+    wm geometry $wroot 440x340
+    
+    #--------------------------------
+    
+    button $wroot.close -text Dismiss -command VideoLayoutInfoC::Hide
+    
+    pack $wroot.close -side bottom -pady 8
+    
+    #--------------------------------
+    
+    set wtab $wroot.tab 
+    ::iwidgets::tabnotebook $wtab -tabpos n 
+    pack  $wtab -side top -expand 1 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+    
+    #-- Camera:
+    set child1w [$wtab add -label "Camera" -font [IsabelFontsC::GetFont medium medium]]
+    $wtab view "Camera"
+    if {[ControlSite]} {
+	CameraConfigC::GUI $child1w.cameraconfig
+	pack  $child1w.cameraconfig -side top -expand 0 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+    }
+    CameraLayoutInfoC::GUI $child1w.camerainfo
+    pack  $child1w.camerainfo -side top -expand 1 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+    
+    
+    #-- Vga:
+    set _vgaenabled [session Activity GetResource Video vga.enabled 0]
+    if {$_vgaenabled == 1} {
+	set child2w [$wtab add -label "VGA"    -font [IsabelFontsC::GetFont medium medium]]
+	if {[ControlSite]} {
+	    VgaConfigC::GUI $child2w.vgaconfig
+	    pack  $child2w.vgaconfig    -side top -expand 0 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+	}
+	VgaLayoutInfoC::GUI $child2w.vgainfo
+	pack  $child2w.vgainfo    -side top -expand 1 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+    }
+
+    #-- Lse:
+    set _lseenabled [session Activity GetResource Video lse.enabled 0]
+    if {$_lseenabled == 1} {
+	set child2w [$wtab add -label "LSE"    -font [IsabelFontsC::GetFont medium medium]]
+	if {[ControlSite]} {
+	    LseConfigC::GUI $child2w.lseconfig
+	    pack  $child2w.lseconfig    -side top -expand 0 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+	}
+	LseLayoutInfoC::GUI $child2w.lseinfo
+	pack  $child2w.lseinfo    -side top -expand 1 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VideoLayoutInfoC::ControlSite {} {
+    
+    if {$ctrlsite != ""} {
+	return $ctrlsite
+    }
+    
+    set ctrlsiteroles [session Activity GetResource Video ctrlsites ""]
+    if {$ctrlsiteroles == ""} {
+	set ctrlsite 1
+    } else {
+	set ctrlsite 0
+	set myroles [SiteManager::GetMyRoles]
+	foreach r $ctrlsiteroles {
+	    if {[lsearch -exact $myroles $r] != -1} {
+		set ctrlsite 1
+		break
+	    }
+	}
+    }
+
+    return $ctrlsite
+}
+
+
+#---------------------------------------------------------------------------
+
+body VideoLayoutInfoC::Show {} {
+    
+    if {![winfo exist $wroot]} { 
+	GUI
+    } else {
+	wm deiconify $wroot
+    }
+    after idle raise $wroot
+}
+
+#---------------------------------------------------------------------------
+
+body VideoLayoutInfoC::Hide {} {
+    
+    if {[winfo exist $wroot]} { 
+	wm withdraw $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VideoLayoutInfoC::ToggleShowHide {} {
+    
+    if {![winfo exist $wroot]} { 
+	Show
+    } else {
+	if {[wm state $wroot] != "normal"} {
+	    Show
+	} else {
+	    Hide
+	}
+    }
+}
+
+#---------------------------------------------------------------------------

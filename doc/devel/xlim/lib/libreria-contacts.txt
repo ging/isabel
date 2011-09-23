@@ -1,0 +1,17 @@
+-----------------------------
+
+- libreria: Contacts 
+
+- Descripción: permite manejar la agenda de contactos. ver javadoc
+
+- Paquete: isabel.lib.xlim
+
+- Clases:  
+	* Contacts
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimlib
+	* Ficheros: 
+		· xlimlib/isabel/lib/xlim/Contacts.java
+
+-----------------------------

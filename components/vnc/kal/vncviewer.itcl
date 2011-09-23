@@ -1,0 +1,206 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+class VNCViewerTaskC {
+    
+    # vnc viewer daemon
+    private variable vncViewerObj
+
+    # Constructor
+    # $_serverdisp: server display that I must show.
+    # $_serverroot: The root server (The server at the root of the Nereda or ShDispl tree)
+    # $_passwd: password
+    # $_vlayout: virtual layout where the vnc viewer must be placed
+    # $_shmmode: 1 if I must copy images to shared memory, else 0.
+    # $_options: vncviewer options
+    constructor {_serverdisp _serverroot _passwd _vlayout _shmmode {_options ""}} {}
+    
+    destructor {}
+
+    # Server display that I must show.
+    private variable serverdisplay
+
+    # The root server
+    private variable serverroot
+
+    # Server password needed to connect to the server.
+    private variable passwd
+
+    # VNC password file: contains the encripted passwd.
+    private variable passwdfile
+
+    # Real geometry
+    private variable rgeometry
+
+    # Shared memory mode
+    private variable shmmode
+
+    # Extra options
+    private variable options
+
+    # When a viewer is created, I create a info window with this message:
+    #    Waiting for Application Sharing Server
+    # This window is destroyed after 3 seconds.
+    # Then this variable keep the after code returned by the after command 
+    # which is going to destroy the info window.
+    private variable aftercdg_kill_waiting_msg ""
+
+    # Info window object
+    private variable infowinobj
+
+    # Destroy the info window
+    private method DestroyInfoWinObj {}
+
+    # Start the vnc viewer (vncShmCapture) program.
+    private method CreateVncViewerDaemon {}
+
+    # Generate the vnc password file
+    private method GenPasswdFile {}
+}
+
+#---------------------------------------------------------------
+
+body VNCViewerTaskC::constructor {_serverdisp _serverroot _passwd _vlayout _shmmode {_options ""}} {
+    global env
+    
+    set serverdisplay $_serverdisp
+    set serverroot    $_serverroot
+
+    set passwd $_passwd
+    GenPasswdFile
+
+    if {$_vlayout != ""} {
+	set dvirtualobj [DVirtualC "#auto" $env(ADISPLAY)]
+	set rgeometry [$dvirtualobj V2R_Layout $_vlayout]
+	delete object $dvirtualobj
+    } else {
+	set rgeometry +100+100
+    }
+
+    set shmmode $_shmmode
+
+    set options $_options
+
+    set vncViewerObj ""
+
+    set infowinobj ""
+
+    CreateVncViewerDaemon
+}
+
+#---------------------------------------------------------------
+
+body VNCViewerTaskC::destructor {} {
+    
+    after cancel [code $this CreateVncViewerDaemon]
+
+    if {$vncViewerObj != ""} {
+	catch {delete object $vncViewerObj}
+    }
+
+    file delete $passwdfile
+
+    after cancel $aftercdg_kill_waiting_msg
+    if {$infowinobj != ""} {
+	catch {delete object $infowinobj}
+    }
+}
+
+#---------------------------------------------------------------
+
+body VNCViewerTaskC::CreateVncViewerDaemon {} {
+    global ISABEL_DIR env 
+
+    set quit_cb [code $this CreateVncViewerDaemon]
+
+    after cancel $aftercdg_kill_waiting_msg
+  
+    if {[session Activity GetResource VNC showinfowin 1] != "0" } {
+	if {$infowinobj == ""} {
+	    set infowinobj [ErrorMsgC "::#auto" close -logo gif/vnc2.gif \
+				{Waiting for Application Sharing Server} \
+				"Server = $serverroot"
+			   ]
+	} 
+    }
+    set aftercdg_kill_waiting_msg [after 3000 [code $this DestroyInfoWinObj]]
+    
+    WriteTraceMsg "VNC viewer: trying connection to server $serverdisplay."
+    
+    set passwdopt ""
+    if {$passwdfile != ""} {
+	set passwdopt "-passwd $passwdfile"
+    }
+
+    if {$shmmode == "1"} {
+	set shmopts "-shmCapture -idShMemory 1250 -sizeShMemory 12582912"
+    } else {
+	set shmopts ""
+    }
+
+    set cmd "vncShmCapture $shmopts $passwdopt -title \"Application Sharing\" -display $env(ADISPLAY) -geometry $rgeometry -encodings tight -compresslevel 9 $options $serverdisplay"
+
+    set vncViewerObj [ExternalC "#auto" vncviewer $cmd $quit_cb]
+    
+    if {[catch {$vncViewerObj Start pid} res]} {
+	catch {delete object $vncViewerObj}
+	set vncViewerObj ""
+	ErrorTraceMsg "VNC Viewer: vncShmCapture can not be started. $res"
+	error $res
+    }
+}
+
+#---------------------------------------------------------------
+
+body VNCViewerTaskC::GenPasswdFile {} {
+    global env
+
+    if {$passwd == ""} {
+
+	set passwdfile ""
+
+    } else {
+	
+	set passwdfile $env(ISABEL_TMP_DIR)/vncpasswd.[clock clicks]
+	
+	if {[catch {exec isabel_vncpasswdgen $passwd $passwdfile} emsg]} {
+	    set res "I can't generate password file: $emsg" 
+	    ErrorTraceMsg "VNC can't not be created. vncpasswdgen produces: $emsg."
+	    error $res
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body VNCViewerTaskC::DestroyInfoWinObj {} {
+
+    catch {delete object $infowinobj}
+    set infowinobj ""
+}
+
+#---------------------------------------------------------------
+
+
+
+

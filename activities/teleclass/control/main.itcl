@@ -1,0 +1,298 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# main.tcl
+#
+# Controller's control window.
+#
+#########################################################################
+
+
+class TeleClassControllerPannelC {
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    # Create the object.
+    constructor {} {}
+
+    # Update video and from object when sites connect or disconnect from the component.
+    public method AddMe {}
+    public method DelMe {}
+    public method AddRemoteSite {site_id new}
+    public method DelRemoteSite {site_id}
+
+    # Toggle the window visibility.
+    public method ShowHideGUI {}
+
+    # Set the state of the Video $ip site checkbutton to $bool
+    public method SetState {ip bool}
+
+    # Select $acro in the optionmenu widget
+    public method SetSelection {acro}
+
+    # Execute the given command.
+    # $cmd must be a method of the TeleClass_CP_Cmds object.
+    public method Execute {cmd args}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # widget where it is packed
+    private variable topw
+
+    # Local objects
+    private variable videoobj
+    private variable fromobj
+    private variable cmdsobj
+    private variable modesobj
+    
+    # Window geometry
+    private variable geometry ""
+    
+    destructor {}
+    
+    # Create the internal objects.
+    private method CreateObjects {}
+
+    # Processes SMS messages:
+    private method processClassCtrlState {args}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method getOptionListValue {list optname {default ""}}
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::constructor {} {
+    
+    set topw .teleclass_CtrlPanel
+    
+    CreateObjects
+
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::destructor {} {
+
+    catch {bind $topw.destroy <Destroy> ""}
+    if {[winfo exists $topw]} {
+	destroy $topw
+    }
+    delete object $cmdsobj
+
+    set videoobj ""
+    set fromobj  ""
+    set cmdsobj  ""
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::AddMe {} {
+
+    set _me [SiteManager::MySiteId]
+
+    $videoobj add $_me
+    $fromobj  add $_me
+
+    # If I am the unique site:
+    if {$_me == [SiteManager::GetSites]} {
+	$fromobj setSelection $_me
+    }
+
+    # SMS messages (related with me) which I want to receive:
+    sms joinKey ClassCtrl_site_$_me [code $this processClassCtrlState]
+   
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::DelMe {} {
+
+    set _me [SiteManager::MySiteId]
+
+    $videoobj rem $_me
+    $fromobj  rem $_me
+
+    # Do not receive SMS messages about that site:
+    sms leaveKey ClassCtrl_site_$_me
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::AddRemoteSite {site_id new} {
+
+    $videoobj add $site_id
+    $fromobj  add $site_id
+
+    # SMS messages which I want to receive:
+    sms joinKey ClassCtrl_site_$site_id [code $this processClassCtrlState]
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::DelRemoteSite {site_id} {
+
+    $videoobj rem $site_id
+    $fromobj  rem $site_id
+
+    # Do not receive SMS messages about that site:
+    sms leaveKey ClassCtrl_site_$site_id
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::CreateObjects {} {
+    
+    toplevel $topw -screen [session Environ cget -scripts_ctrl_display]
+
+    wm protocol $topw WM_DELETE_WINDOW "wm withdraw $topw"
+
+    set title "Control"
+    wm title    $topw $title
+    wm iconname $topw $title
+    
+    set geometry [session Activity GetResource CtrlPanel geometry +200+100]
+    wm geometry  $topw $geometry
+
+    #-------------------------------------------------
+
+
+    frame $topw.f1 -relief groove -borderwidth 3
+    frame $topw.f2 -relief groove -borderwidth 3
+    
+    set videoobj [TeleClass_CP_Video  "#auto" $topw.f1.video]
+    set fromobj  [TeleClass_CP_From   "#auto" $topw.f2.from]
+    set cmdsobj  [TeleClass_CP_Cmds   "#auto"               [code $videoobj] [code $fromobj]]
+    set modesobj [TeleClass_CP_Modes  "#auto" $topw.f2.modes [code $cmdsobj]]
+    
+
+    grid $topw.f1 -row 0 -column 0 -sticky nswe
+    grid $topw.f2 -row 0 -column 1 -sticky nswe
+
+    grid rowconfigure    $topw 0 -weight 1
+    grid columnconfigure $topw 0 -weight 1
+    grid columnconfigure $topw 1 -weight 0
+
+
+
+    grid $topw.f1.video -row 0 -column 0 -sticky nswe
+
+    grid rowconfigure    $topw.f1 0 -weight 1
+    grid columnconfigure $topw.f1 0 -weight 1
+
+
+
+    grid $topw.f2.from  -row 0 -column 0 
+    grid $topw.f2.modes -row 1 -column 0 -sticky nswe
+
+    grid rowconfigure    $topw.f2 0 -weight 0
+    grid rowconfigure    $topw.f2 1 -weight 1
+    grid columnconfigure $topw.f2 0 -weight 1
+
+    #-------------------------------------------------
+    
+    frame $topw.destroy
+    set killcmd "network MasterRequest CM KillComponent [SiteManager::MySiteId] ClassCtrl"
+    bind $topw.destroy <Destroy> "delete object $this ; $killcmd"
+
+    wm withdraw $topw
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::ShowHideGUI {} {
+    
+    switch [wm state $topw] {
+	normal    { 
+	    set geometry [wm geometry $topw]
+	    wm withdraw $topw 
+	}
+	withdrawn -
+	iconic    { 
+	    wm deiconify $topw
+	    if {[winfo width $topw] < 10} {
+		set geometry [session Activity GetResource CtrlPanel geometry +200+100]
+	    }
+	    if {[wm geometry $topw] != $geometry} {
+		wm geometry  $topw $geometry
+	    }
+	    after 100 raise  $topw
+	} 
+    }
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::SetState {ip bool} {
+
+    $videoobj SetState $ip $bool
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::SetSelection {acro} {
+
+    $fromobj setSelection $acro
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::Execute {cmd args} {
+
+    if {[catch {eval $cmdsobj $cmd $args} res]} {
+	ErrorTraceMsg "\"TeleClassControllerPannelC::Execute $cmd $args\" produces: $res"
+    }
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::processClassCtrlState {args} {
+
+    set _site_id [getOptionListValue $args -site_id ""]
+    
+    set _main    [getOptionListValue $args -main 1]
+
+    $videoobj SetState $_site_id $_main	
+}
+
+#---------------------------------------------------------------
+
+body TeleClassControllerPannelC::getOptionListValue {list optname {default ""}} {
+    
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#---------------------------------------------------------------

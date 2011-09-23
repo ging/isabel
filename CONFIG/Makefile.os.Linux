@@ -1,0 +1,12 @@
+#
+# Temporary directory, usually /usr/tmp or /var/tmp
+#
+CONFIG.TMPDIR   := /usr/tmp
+CONFIG.SHELL    := bash
+
+ifeq ($(USER.ENABLE_INSURE),y)
+CONFIG.COMPILER := insure
+else
+CONFIG.COMPILER := g++
+endif
+

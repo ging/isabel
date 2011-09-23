@@ -1,0 +1,172 @@
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# tones.itcl
+#
+# Audio Tones configuration.
+#
+#########################################################################
+
+class AudioTonesConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {w} {}
+
+    destructor {}
+
+    # Build the gui.
+    public method MakeGui {}
+
+    public method AreToneButtonsVisible {}
+
+    # Am I a tone site
+    public method ToneSite {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # root widget
+    private variable wroot ""
+
+    # If I am a tone site, I can generate tones.
+    # $tonesite - 1 if I am a tone site, otherwise 0.
+    private variable tonesite ""
+
+    private variable tonesVar 0
+
+    private method ShowToneButtons {}
+    
+}
+
+#---------------------------------------------------------------------------
+
+body AudioTonesConfigC::constructor {w} {
+
+    set wroot $w
+}
+
+#---------------------------------------------------------------------------
+
+body AudioTonesConfigC::destructor {} {
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioTonesConfigC::MakeGui {} {
+
+    if { ! [ToneSite]} return
+
+    #--
+    
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    frame $wroot  -relief sunken -bd 1
+    
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+
+    #--
+
+    checkbutton $wroot.b \
+	-text "Tones" \
+	-padx 0 -pady 0 \
+	-highlightthickness 0 \
+	-onvalue  1 \
+	-offvalue 0 \
+	-variable [scope tonesVar] \
+	-command  [code $this ShowToneButtons]
+
+    if {[catch "$wroot.b cget -tristatevalue"]} {
+	$wroot.b configure -selectcolor green
+    }
+    
+    set bg [$wroot.b cget -background]
+    $wroot.b conf -activebackground $bg
+    
+    balloon add $wroot.b "Shown Tone buttons"
+    
+    label $wroot.help \
+	-relief flat \
+	-justify left \
+	-font $font \
+	-text "Show buttons in Audio Mixer:\n - to send 700 Hz test tone to detect packet losses.\n - to test local audio output."
+    
+    #--
+    
+    grid $wroot.b    -row 0 -column 0 -pady 1 -ipadx 6 -sticky nw
+    grid $wroot.help -row 0 -column 1 -pady 1 -ipadx 6 -sticky nw
+    
+    grid columnconfigure $wroot 1 -weight 1
+    grid rowconfigure    $wroot 0 -weight 1
+}
+
+#---------------------------------------------------------------------------
+
+body AudioTonesConfigC::ShowToneButtons {} {
+    
+    component Cmd ShowToneButtons $tonesVar
+}
+
+#---------------------------------------------------------------------------
+
+body AudioTonesConfigC::AreToneButtonsVisible {} {
+    
+    return $tonesVar
+}
+
+#---------------------------------------------------------------------------
+
+body AudioTonesConfigC::ToneSite {} {
+
+    if {$tonesite != ""} {
+	return $tonesite
+    }
+
+    set tonesiteroles [session Activity GetResource Audio tonesites ""]
+    if {$tonesiteroles == ""} {
+	set tonesite 1
+    } else {
+	set tonesite 0
+	set myroles [SiteManager::GetMyRoles]
+	foreach r $tonesiteroles {
+	    if {[lsearch -exact $myroles $r] != -1} {
+		set tonesite 1
+		break
+	    }
+	}
+    }
+
+    return $tonesite
+}
+
+#---------------------------------------------------------------------------
+

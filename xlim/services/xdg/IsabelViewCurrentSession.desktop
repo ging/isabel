@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=View Current Session
+Comment=View current session
+Exec=/usr/local/isabel/bin/isrv_CurrentSession.sh
+Icon=/usr/local/isabel/lib/images/gif/eye.gif
+Terminal=false
+Type=Application
+StartupNotify=true

@@ -1,0 +1,438 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# Description
+#
+#   MCU component
+#
+#
+#########################################################################
+
+class MCUComponentC {
+
+    constructor {} {}
+    destructor  {} 
+
+    #------------------
+    # MCU
+    #------------------
+
+    # Object that implement the mcu daemon task.
+    private variable mcudtobj    ""
+
+    private method ConfigureMCU {}
+
+    #------------------
+    # COMMON
+    #------------------
+
+    # MCU participants: 
+
+    # - MCU Audio participant Id
+    private variable audioParticipant   ""
+    
+    # - MCU Irouter participant Id
+    private variable irouterParticipant ""
+    
+    #------------------
+    # LSE
+    #------------------
+
+    # Set the host and port where the LSE server is running.
+    # The mcu will be configured to send all the audio flows to this server.
+    public method SetLseServer {_host _port}
+
+    private method ConfigureLseMCU {}
+
+    # LSE server: host and port
+    private variable lsehost ""
+    private variable lseport ""
+
+    # - MCU LSE server participant Id
+    private variable lseParticipant     ""
+    
+    #-------------------
+    # Streaming & Recording
+    #------------------
+    
+    public method StartStreamingAndRecording {url recfile frate halfsize}
+    public method StopStreaming {}
+    
+    private method ConfigureStreamingMCU {}
+
+    # Streaming state:
+    #   "started" if the streaming is running.
+    #   "starting" if the streaming is starting.
+    #   "stopped"  if the streaming is stopped
+    private variable streamingState stopped
+    
+    # Object that launch the ffmpeg used to do streaming & recording
+    private variable ffmpegobj ""
+
+    # - MCU ffmpeg (for streaming and recording) participant Id
+    private variable ffmpegParticipant  ""
+  
+
+    #-------------------
+    # iOS Clients
+    #------------------
+
+    # $iosClientInfo($siteId) - Object with informations about a iOS client
+    private variable iosClientInfo
+
+    # iOS clients send me this message to configure the MCU to send them the audio and video flows.
+    #
+    # $_siteId is the siteId used by the iOS client in the Isabel session.
+    # $_chId is the chId used by the iOS client in the Isabel session.
+    #
+    # $_host is the host I must send the audio and video flows for this client.
+    # $_audioPort and $_videoPort are the audio and video ports where I must send the flows.
+    # $_audioPort or $_videoPort can be "" to indicate that I must not send the flow.
+    public method NewIOSClient {_siteId _chId _host _audioPort _videoPort}   
+
+    # Called to finish sending flows to the client.
+    public method DelIOSClient {_siteId}   
+}
+
+#---------------------------------------------------------
+
+body MCUComponentC::constructor {} {
+    global env
+
+    set _using_mcu 1
+    set _streaming 1
+    
+    if {[info exists env(ISABEL_STREAMING_DISABLED)] && $env(ISABEL_STREAMING_DISABLED) == "1"} {
+	set _using_mcu 0
+	set _streaming 0
+    }
+
+    if {[info exists env(ISABEL_LSE_SERVER_HOST)] && $env(ISABEL_LSE_SERVER_HOST) != ""} {
+	set _using_mcu 1
+    }
+    
+    if {$_using_mcu} {
+	if {[catch {
+	    set mcudtobj [McuDaemonTaskC "#auto"]
+	    $mcudtobj AddListener [code $this ConfigureMCU]
+	    $mcudtobj Start
+	} _err]} {
+	    set mcudtobj ""
+	    set _emsg "MCU: daemon task creation aborted. $_err"
+	    ErrorTraceMsg $_emsg
+	    error $_emsg
+	}
+    }
+
+    if {$_streaming} {
+	if {[catch {FFMpegStreamingMgrC "#auto"} ffmpegobj]} {
+	    set _emsg "FFMpeg Streaming: creation aborted."
+	    ErrorTraceMsg $_emsg
+	    error $_emsg
+	}
+	
+	after 2000 after idle StreamingManagerC::AutoStart
+    }
+}
+
+#---------------------------------------------------------
+
+body MCUComponentC::destructor {} {
+
+    if {$mcudtobj != ""} {
+	delete object $mcudtobj
+	set mcudtobj ""
+    }
+
+    if {$ffmpegobj != ""} {
+	delete object $ffmpegobj
+	set fmpegobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentC::ConfigureMCU {} {
+    global env
+
+    WriteTraceMsg "Mcu: Configuring MCU."
+
+    $mcudtobj RDO "create_session(0)"
+    
+    # Audio participant
+    set _res [$mcudtobj RPC "new_participant(0,127.0.0.2,51026)"]
+    regexp {OK: *(\d+)} $_res _all audioParticipant
+
+    # Irouter participant: 1
+    set _res [$mcudtobj RPC "new_participant(0,127.0.0.1,51001)"]
+    regexp {OK: *(\d+)} $_res _all irouterParticipant
+    
+    # Known payload types:
+    #  gsm-8KHz  -> 3
+    #  gsm-16KHz  -> 107
+    #  gsm-32KHz  -> 115
+    #  amr-8KHz  -> 116
+    #  amr-16KHz  -> 117
+    #  amr-32KHz  -> 121
+    #  mp3-8KHz  -> 14
+    #  mp3-16KHz  -> 15
+    #  mp3-32KHz  -> 16
+    #  mp3-44.1KHz  -> 17
+    #  mp3-48KHz  -> 18
+    #  none-8KHz  -> 100
+    #  none-16KHz  -> 102
+    #  none-22.05KHz  -> 108
+    #  L16-44.1KHz  -> 11
+    #  none-48KHz  -> 119
+    #  g711-ulaw-8KHz  -> 0
+    #  g711-alaw-8KHz  -> 8
+    #  g711-ulaw-16KHz  -> 103
+    #  g711-ulaw-22.05KHz  -> 109
+    #  g711-ulaw-44.1KHz  -> 112
+    #  g722-8KHz  -> 9
+    #  g722-16KHz  -> 104
+    #  g726_24-8KHz  -> 101
+    #  g726_24-16KHz  -> 105
+    #  speex-8KHz  ->123
+    #  speex-16KHz  ->124
+    
+    foreach _pt {3 107 115 116 117 121 14 15 16 17 18 100 102 108 11 119 0 8 103 109 112 9 104 101 105 123 124} {
+	$mcudtobj RDO bind_rtp(0,$audioParticipant,$_pt,51025,51026,0)
+	$mcudtobj RDO bind_rtp(0,$irouterParticipant,$_pt,51002,51001,0)
+    }
+    
+    $mcudtobj RDO receive_audio_mode(0,$audioParticipant,SWITCH_MODE)  
+    $mcudtobj RDO receive_audio_mode(0,$irouterParticipant,SWITCH_MODE)
+    
+    $mcudtobj RDO receive_audio(0,$irouterParticipant,$audioParticipant)
+    $mcudtobj RDO receive_audio(0,$audioParticipant,$irouterParticipant)   
+    
+    #---
+
+    ConfigureLseMCU
+
+    if {$streamingState != "stopped"} {
+	ConfigureStreamingMCU
+    }
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentC::SetLseServer {_host _port} {
+
+    WriteTraceMsg "MCU : LSE : Configuring MCU to send audio to $_host $_port"
+
+    set lsehost $_host
+    set lseport $_port
+    
+    if {$mcudtobj != ""} {
+	$mcudtobj RDO "quit()"
+    }
+}
+
+#---------------------------------------------------------------
+
+body MCUComponentC::ConfigureLseMCU {} {
+    global env
+
+    if {$lsehost == ""} return
+
+    WriteTraceMsg "MCU: Configuring MCU to send audio to LSE servar at $lsehost"
+    
+    # The LSE server participant:
+    set _res [$mcudtobj RPC "new_participant(0,$lsehost,51027)"]
+    regexp {OK: *(\d+)} $_res _all lseParticipant
+
+    foreach _pt {3 107 115 116 117 121 14 15 16 17 18 100 102 108 11 119 0 8 103 109 112 9 104 101 105 123 124} {
+	$mcudtobj RDO bind_rtp(0,$lseParticipant,$_pt,$lseport,51027,0)
+    }
+
+    $mcudtobj RDO receive_audio_mode(0,$lseParticipant,SWITCH_MODE)
+    #$mcudtobj RDO receive_audio_mode(0,2,SWITCH_MODE,3)
+    
+    $mcudtobj RDO receive_audio(0,$lseParticipant,$audioParticipant)
+    $mcudtobj RDO receive_audio(0,$lseParticipant,$irouterParticipant)
+}
+
+#---------------------------------------------------------
+
+body MCUComponentC::StartStreamingAndRecording {url recfile frate halfsize} {
+
+    if {$mcudtobj == ""} return
+    if {$ffmpegobj == ""} return
+
+    if {$url != ""} {
+	WriteTraceMsg "Streaming: Received request to start the streaming to $url."
+    }
+    
+    if {$recfile != ""} {
+	WriteTraceMsg "Streaming: Received request to start recording the session to a file."	
+    }
+    
+    if {$streamingState != "stopped"} return
+
+    WriteTraceMsg "Streaming: Sending the session audio to the isabel_fmpeg application."
+
+    ConfigureStreamingMCU
+
+    $ffmpegobj StartFFMpeg $url $recfile $frate $halfsize
+
+}
+
+#---------------------------------------------------------
+
+body MCUComponentC::StopStreaming {} {
+
+    if {$mcudtobj == ""} return
+    if {$ffmpegobj == ""} return
+    
+    WriteTraceMsg "Streaming: Received request to start the streaming."
+    
+    if { $streamingState == "stopped"} return
+    
+    if {$ffmpegParticipant == ""}  return
+    
+    WriteTraceMsg "Streaming: Stopping sending the session audio to the isabel_fmpeg application."
+    
+    $mcudtobj RDO "remove_participant(0,$ffmpegParticipant)"
+    
+    set ffmpegParticipant ""
+    
+    set streamingState "stopped"
+    
+    StreamingManagerC::SetState stopped
+    
+    $ffmpegobj StopFFMpeg
+}
+
+#---------------------------------------------------------
+
+body MCUComponentC::ConfigureStreamingMCU {} {
+    global env
+
+    set streamingState "starting"
+
+    # Participant: Send the sum of all the audio channels to it."
+    set _res [$mcudtobj RPC "new_participant(0,127.0.0.3,52102)"]
+    regexp {OK: *(\d+)} $_res _all ffmpegParticipant
+
+    set _rtp_port [FFMpegStreamingMgrC::GetAudioPort]
+    set _out_pt [FFMpegStreamingMgrC::GetAudioPT]
+    set _out_ssrc 3
+
+    if 0 {
+	foreach _pt {3 107 115 116 117 121 14 15 16 17 18 100 102 108 11 119 0 8 103 109 112 9 104 101 105 123 124} {
+	    $mcudtobj RDO bind_rtp(0,$ffmpegParticipant,$_pt,$_rtp_port,52102,0)
+	}
+    } else {
+	    $mcudtobj RDO bind_rtp(0,$ffmpegParticipant,$_out_pt,$_rtp_port,52102,0)
+    }
+
+    $mcudtobj RDO receive_audio_mode(0,$ffmpegParticipant,MIX_MODE,$_out_pt,-50)
+    
+    
+    $mcudtobj RDO receive_audio(0,$ffmpegParticipant,$audioParticipant,$_out_ssrc)
+
+    $mcudtobj RDO receive_audio(0,$ffmpegParticipant,$irouterParticipant,$_out_ssrc)
+
+    set streamingState "started"
+
+    StreamingManagerC::SetState started
+}
+
+#---------------------------------------------------------
+
+body MCUComponentC::NewIOSClient {_siteId _chId _host _audioPort _videoPort} {
+
+    echo =======================================================================================
+    
+    WriteTraceMsg "Mcu: Configuring MCU for a new iOS client \"$_siteId\"."
+
+    #-----
+
+    # Delete old configurations
+    
+    DelIOSClient $_siteId
+    
+    #-----
+
+    # Audio PT
+    # I will use the none-8KHz, whose PT is 100.
+    set _audioPT 100
+
+    # participant Id
+    set _res [$mcudtobj RPC "new_participant(0,$_host,53135)"]
+    regexp {OK: *(\d+)} $_res _all _participantId
+
+    # Audio with PT=$_audioPT is send to the participants from the port 53135 to the port $_audioPort.
+    $mcudtobj RDO bind_rtp(0,$_participantId,$_audioPT,$_audioPort,53135,0)
+
+    # I send to the participant one flow with the mix of all the audio flows.
+    # I use PT=$_audioPT and SSRC=5 to send the flow.
+    $mcudtobj RDO receive_audio_mode(0,$_participantId,MIX_MODE,$_audioPT,-50)
+    
+    # The new client and audio will send flows between them.
+    $mcudtobj RDO receive_audio(0,$_participantId,$audioParticipant,5)
+    $mcudtobj RDO receive_audio(0,$audioParticipant,$_participantId,$_chId)
+
+    # The new client and irouter will send flows between them.
+    $mcudtobj RDO receive_audio(0,$_participantId,$irouterParticipant,5)
+    $mcudtobj RDO receive_audio(0,$irouterParticipant,$_participantId,$_chId)
+
+    # The new iOS client and the already connected iOS clients will send flows between them.
+    foreach _sid_sibling [array names iosClientInfo] {
+
+	set _partId_sibling [$iosClientInfo($_sid_sibling) cget -participantId]
+	set _chId_sibling   [$iosClientInfo($_sid_sibling) cget -chId]
+	
+	# The new client and this sibling client will send flows between them.
+	$mcudtobj RDO receive_audio(0,$_participantId,$_partId_sibling,$_chId_sibling)
+	$mcudtobj RDO receive_audio(0,$_partId_sibling,$_participantId,$_chId)
+    }
+
+    #-----
+
+    # Create a iOS Client Info object to store information about the new client.
+
+    set iosClientInfo($_siteId) [IOSClientInfoC "#auto" $_siteId $_chId $_host $_audioPort $_videoPort $_participantId]
+}
+
+#---------------------------------------------------------
+
+body MCUComponentC::DelIOSClient {_siteId} {
+
+    if { ! [info exists iosClientInfo($_siteId)]} {
+	return
+    }
+    
+    set _partId [$iosClientInfo($_siteId) cget -participantId]
+    $mcudtobj RDO remove_participant(0,$_partId)
+
+    delete object $iosClientInfo($_siteId)
+
+    unset iosClientInfo($_siteId)
+}
+
+#---------------------------------------------------------
+

@@ -1,0 +1,47 @@
+-----------------------------
+
+- Servicio: SessionLocker
+
+- Descripción: permite abrir/cerrar una determinada sesion (OPEN_SESSION del XEDL)
+
+- Fichero de parametros utilizado en el protocolo (PARAM): es el fichero que recibe el servidor del servicio y contiene los siguientes parametros:
+
+	* session: session que queremos abrir|cerrar
+	* passwd: password de la sesion que queremos abrir|cerrar
+	* open: true|false
+
+- Protocolo: 
+
+           CLIENTE                                           SERVIDOR
+
+                                   PARAMS
+               ------------------------------------------------->
+
+
+                                  ACK (XERL|nada)
+               <-------------------------------------------------
+
+
+- Ficheros generados: 
+	* slocker.log: fichero de logs.
+	* slocker_xlim_call.log: salida de la llamada a XLIM.
+
+- Paquete: isabel.xlim.services.sessionlocker
+
+- Clases:  
+	* SessionLocker
+
+- Librerias/clases utilizadas por el servicio:
+	* Servutilities: funciones varias
+	* XlimNotifications: para escribir en el fichero de logs del XLIM (.xlim/logs/notif.xlim)
+	* FileGarbageCollector: clase que se encarga de "llevar la cuenta" de los ficheros temporales que se crean durante el servicio y borrarlos cuando finaliza el servicio. Me entere demasiado tarde de la existencia de createTmpDir() y deleteOnExit() de la clase File O:).
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimservices
+	* Ficheros: 
+		· xlimservices/isabel/xlim/services/sessionlocker/SessionLocker.java
+
+- Casos especiales: ninguno.
+
+- Temas Pendientes: nunguno.
+-----------------------------

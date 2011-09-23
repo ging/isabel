@@ -1,0 +1,1096 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# localservers.itcl
+#
+# Create a frame with the gui to show and manage the defined local servers.
+# This frame will be packet inside the windows to select a VNC server.
+#
+#########################################################################
+
+
+class VNCLocalServersFrameC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Callback to execute when the ok button is pressed.
+    public variable ok_cb
+
+    # Callback to execute when the select button is pressed.
+    public variable select_cb
+
+    # Create the frame to manage local servers.
+    # Parameters:
+    #   mapOkButton_: 1 if the OK button must be mapped, else 0.
+    #   mapSelectButton_: 1 if the Select button must be mapped, else 0.
+    #   wroot_: name of the frame widget which we must create.
+    constructor {mapOkButton_ mapSelectButton_ wroot_} {}
+
+    destructor {}
+
+    # Get a list of my public servers.
+    # Each element in this list describe a vnc server, and it has this format:
+    #             {title server passwd descr}
+    # NOTE THAT IT IS A STATIC METHOD
+    public proc GetPublicServers {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # 1 if the OK button must be mapped, else 0.
+    private variable mapOkButton
+
+    # 1 if the Select button must be mapped, else 0.
+    private variable mapSelectButton
+
+    # toplevel widget.
+    private variable wroot
+
+    # Information about each VNCLocalServerInfoC object is presented (its index or position)
+    # in the gui listbox widget.
+    # $lbindex($pos) is the object presented in the $pos position.
+    private variable lbindex
+
+    # Object that points to the object used to preview servers.
+    private variable previewerdaemon
+
+    # Create browser widgets
+    private method CreateGUI {}
+
+    # Callback executed when a VNC server is selected to be applied (OK button was pressed).
+    private method OkVNCServer {}
+
+    # Callback executed when a VNC server is selected as last used  (Select button was pressed).
+    private method SelectVNCServer {}
+
+    # Callback executed when a VNC server is previewws (Preview button was pressed).
+    private method PreviewVNCServer {}
+
+    # Stop preview
+    private method StopPreviewVNCServer {}
+
+
+    # Load vnc servers file.
+    # File format:
+    #    Lines with five values: title, servername, password, access and description.
+    #    These values are separated by spaces.
+    #    Lines ending with backslash are joined to the next line.
+    #    Empty lines are ignored.
+    #    Lines starting with | or # are ignored.
+    private method Load {}
+
+    # Save the current values into the vnc servers file
+    private method Save {}
+
+    # Reads a line from "fd". If the line ends with backslash,
+    # then a new line is read and joined with the previous one.
+    private proc MultiGets {fd line}
+
+    # Update the server description in the GUI
+    private method UpdateDescr {}
+
+    # Update the state of the edit and delete buttons of the GUI
+    private method UpdateAccess {}
+
+    #---
+
+    # Auxiliar variable used by the checkbutton to store the visibility
+    private common aux_visibility
+ 
+    # Opens a window to add a new VNC server
+    private method AddServerDialog {}
+
+    # Callback executed when the OK button is pressed in the window that adds new a server.
+    private method AddServerDialog_OK_CB {}
+
+    # Callback executed when the Cancel button is pressed in the window that adds new a server.
+    private method AddServerDialog_Cancel_CB {}
+
+    #---
+
+    # Opens a window to delete VNC server
+    private method DelServerDialog {}
+
+    #---
+
+    # Opens a window to edit a VNC server declaration
+    private method EditServerDialog {}
+
+    # Callback executed when the OK button is pressed in the window that edits a server.
+    private method EditServerDialog_OK_CB {}
+
+    # Callback executed when the Cancel button is pressed in the window that edits a server.
+    private method EditServerDialog_Cancel_CB {}
+
+    #---
+
+    # Reorganize the server list.
+    private method MoveUp {}
+    private method MoveDown {}
+
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::constructor {mapOkButton_ mapSelectButton_ wroot_} {
+
+    set mapOkButton $mapOkButton_
+    set mapSelectButton $mapSelectButton_
+
+    set wroot $wroot_
+
+    set previewerdaemon ""
+
+    CreateGUI
+
+    Load
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::destructor {} {
+
+    foreach pos [array names lbindex] {
+	delete object $lbindex($pos)
+    }
+
+    catch {delete object $previewerdaemon}
+
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::GetPublicServers {} {
+    global env
+
+    set libfile $env(ISABEL_DIR)/lib/vncservers.cfg
+
+    set file $env(ISABEL_CONFIG_DIR)/vncservers.cfg
+
+    if {![file exists $file]} {
+	WarningTraceMsg "VNC servers file \"$file\" not found."    
+	set file $libfile
+    } elseif {![file isfile $file]} {
+	WarningTraceMsg "VNC servers file \"$file\" is not a regular file."
+	set file $libfile
+    } elseif {![file readable $file]} {
+	WarningTraceMsg "VNC servers file \"$file\" is not readable."
+	set file $libfile
+    } elseif {[file size $file] == 0} {
+	WarningTraceMsg "VNC servers file \"$file\" is empty."
+	set file $libfile
+    } 
+
+    if {[catch {set fdbd [open $file r]} emsg]} {
+	WarningTraceMsg "VNC servers file error: $emsg"
+	return ""
+    }
+
+    # the result
+    set ls ""
+
+    #-- Flash gateway: Preassigned server and password
+    set _preassigned_server "" 
+    if {[info exists env(FLASH_VNC_SERVER)]} {
+	set _preassigned_server $env(FLASH_VNC_SERVER)
+    }
+    set _preassigned_password "" 
+    if {[info exists env(FLASH_VNC_PASSWORD)]} {
+	set _preassigned_password $env(FLASH_VNC_PASSWORD)
+    }
+
+
+    # Reads file
+    while {[MultiGets $fdbd line] >= 0} {
+	# removes coments and empty lines.
+	if {[set c0 [string index $line 0]] == "!" || $c0 == "#" ||
+	    [string trim $line] == ""} {
+	    continue
+	}
+	
+
+	set visibility  [lindex $line 5]
+	if {$visibility != "public"} {
+	    set visibility private
+	}
+	if {$visibility != "private"} {
+	    set title  [lindex $line 0]
+	    set server [lindex $line 1]
+	    set passwd [lindex $line 2]
+	    set descr  [lindex $line 4]
+	    
+	    # Do not load the preassigned server
+	    if {$server == $_preassigned_server &&
+		$passwd == $_preassigned_password} {
+		continue
+	    }
+
+	    lappend ls [list $title $server $passwd $descr]
+	}
+    }
+    close $fdbd
+
+    # Load preassigned server
+    if {$_preassigned_server != "" &&
+	$_preassigned_password != ""} {
+
+	set title      "Preassigned"
+	set server     $_preassigned_server
+	set passwd     $_preassigned_password
+	set descr      "Preassigned VNC server"
+	
+	lappend ls [list $title $server $passwd $descr]
+    }
+
+    return [lsort $ls]
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::CreateGUI {} {
+
+    frame $wroot \
+        -bd 3 
+    
+    #----
+
+    CreateImage vnclogo gif/vnc.gif
+
+    label $wroot.img -image vnclogo
+
+    #----
+
+    iwidgets::scrolledlistbox $wroot.list \
+	-vscrollmode dynamic \
+	-hscrollmode none \
+	-selectmode single \
+	-exportselection 0 \
+	-selectioncommand "
+	    [code $this UpdateDescr] 
+	    [code $this UpdateAccess] 
+	"
+    
+    text $wroot.msg \
+	-relief groove \
+	-width 1 \
+	-height 1 \
+        -padx 5 \
+        -pady 5 \
+	-wrap word \
+	-spacing1 1 \
+	-spacing2 1 \
+	-spacing3 5
+    $wroot.msg configure -state disabled
+
+    $wroot.msg tag add redtext end
+    $wroot.msg tag configure redtext -foreground red
+
+    $wroot.msg tag add blacktext end
+    $wroot.msg tag configure blacktext -foreground black
+
+    $wroot.msg tag add bluetext end
+    $wroot.msg tag configure bluetext -foreground blue
+
+    button $wroot.add \
+	-text "Add" \
+	-width 8 \
+	-command [code $this AddServerDialog]
+
+
+    button $wroot.edit \
+	-text "Edit" \
+	-width 8 \
+	-command [code $this EditServerDialog]
+
+
+    button $wroot.del \
+	-text "Delete" \
+	-width 8 \
+	-command [code $this DelServerDialog]
+
+
+    CreateImage vncserverup gif/up.gif
+    button $wroot.up  -image vncserverup \
+	-command [code $this MoveUp]
+
+
+    CreateImage vncserverdown gif/down.gif
+    button $wroot.down  -image vncserverdown \
+	-command [code $this MoveDown]
+
+
+    button $wroot.update  -text "Update" \
+	-command [code $this Load]
+
+    button $wroot.preview  \
+	-text "Preview" \
+	-width 9 \
+	-command [code $this PreviewVNCServer]
+
+    button $wroot.ok  \
+	-text "OK" \
+	-bd 8 \
+	-width 9 \
+	-command [code $this OkVNCServer]
+
+    button $wroot.lselect  \
+	-text "Select" \
+	-bd 8 \
+	-width 9 \
+	-command [code $this SelectVNCServer]
+
+    button $wroot.stop  \
+	-text "Stop Preview" \
+	-width 9 \
+	-command [code $this StopPreviewVNCServer]
+
+
+    grid $wroot.img     -row 0 -column 0 -columnspan 2  -padx 10 -pady 10 -sticky n
+    grid $wroot.list    -row 0 -column 2 -rowspan 8     -padx 10 -pady 10 -sticky nswe
+    grid $wroot.msg     -row 0 -column 3 -rowspan 3     -padx 10 -pady 10 -sticky nswe
+    grid $wroot.add     -row 2 -column 0 -columnspan 2  -padx 20          
+    grid $wroot.edit    -row 3 -column 0 -columnspan 2  -padx 20          
+    grid $wroot.del     -row 4 -column 0 -columnspan 2  -padx 20 -pady 10 
+    grid $wroot.up      -row 5 -column 0                -padx 5           -sticky e
+    grid $wroot.down    -row 5 -column 1                -padx 5           -sticky w
+    grid $wroot.update  -row 6 -column 0 -columnspan 2  -padx 20 -pady 10 
+
+
+    grid $wroot.preview -row 4 -column 3 -padx 20 -pady 4 
+    grid $wroot.stop    -row 5 -column 3 -padx 20 -pady 4 
+
+    if {$mapOkButton} {
+	grid $wroot.ok      -row 6 -column 3 -padx 20 -pady 8 
+    }
+    if {$mapSelectButton} {
+	grid $wroot.lselect      -row 7 -column 3 -padx 20 -pady 8 
+    }
+
+    grid rowconfigure    $wroot 0 -weight 0
+    grid rowconfigure    $wroot 1 -weight 4
+    grid rowconfigure    $wroot 2 -weight 1
+    grid rowconfigure    $wroot 3 -weight 1 
+    grid rowconfigure    $wroot 4 -weight 1 
+    grid rowconfigure    $wroot 5 -weight 1
+    grid rowconfigure    $wroot 6 -weight 1
+    grid rowconfigure    $wroot 7 -weight 1
+
+    grid columnconfigure $wroot 0 -weight 0
+    grid columnconfigure $wroot 1 -weight 0
+    grid columnconfigure $wroot 2 -weight 2
+    grid columnconfigure $wroot 3 -weight 1
+
+    #------------
+
+    bind $wroot <Destroy> +[code $this StopPreviewVNCServer]
+    bind $wroot <Unmap>   +[code $this StopPreviewVNCServer]
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::PreviewVNCServer {} {
+
+    set pos [$wroot.list curselection]
+
+    if {$pos != ""} {
+	set server [$lbindex($pos) cget -server]
+	set passwd [$lbindex($pos) cget -passwd]
+
+	if {$previewerdaemon != ""} {
+	    catch {delete object $previewerdaemon}
+	    set previewerdaemon ""
+	}
+
+	if {[catch {VNCViewerTaskC "#auto" $server $server $passwd "" 0 -viewonly} res]} {
+	    ErrorTraceMsg "VNC: previewer can not be created."
+	    ErrorMsgC "#auto" close -timeout 15000 \
+		"VNC previewer ERROR:" ""  "VNC previewer can not be created." $res
+	    error $res
+	}
+	set previewerdaemon $res
+    }
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::StopPreviewVNCServer {} {
+
+    catch {delete object $previewerdaemon}
+    set previewerdaemon ""
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::OkVNCServer {} {
+
+    StopPreviewVNCServer
+
+    set pos [$wroot.list curselection]
+
+    if {$pos != ""} {
+	set server [$lbindex($pos) cget -server]
+	set passwd [$lbindex($pos) cget -passwd]
+
+	set currentsender [VNCCmd GetCurrentSpeaker]
+	set distnet [VNCDistNetC::GetNet]
+
+	set _my_site_id [SiteManager::MySiteId]
+	
+	# Execute the ok_cb callback
+	if {$ok_cb != ""} {
+	    set _cmd $ok_cb
+	    lappend _cmd $distnet $_my_site_id $server $passwd
+	    if {[catch "$_cmd" _res]} {
+		ErrorTraceMsg "VNC: Executing a OK_CB ($_cmd), I get: $_res"
+	    }
+	}
+    }
+
+    wm withdraw [winfo toplevel $wroot]
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::SelectVNCServer {} {
+
+    StopPreviewVNCServer
+
+    set pos [$wroot.list curselection]
+
+    if {$pos != ""} {
+	set server [$lbindex($pos) cget -server]
+	set passwd [$lbindex($pos) cget -passwd]
+
+	set currentsender [VNCCmd GetCurrentSpeaker]
+	set distnet [VNCDistNetC::GetNet]
+
+	set _my_site_id [SiteManager::MySiteId]
+
+	# Execute the select_cb callback
+	if {$select_cb != ""} {
+	    set _cmd $select_cb
+	    lappend _cmd $distnet $_my_site_id $server $passwd 
+	    if {[catch $_cmd _res]} {
+		ErrorTraceMsg "VNC: Executing a SELECT_CB ($_cmd), I get: $_res"
+	    }
+	}
+    }
+
+    wm withdraw [winfo toplevel $wroot]
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::Load {} {
+    global env
+
+    set libfile $env(ISABEL_DIR)/lib/vncservers.cfg
+
+    set file $env(ISABEL_CONFIG_DIR)/vncservers.cfg
+
+    if {![file exists $file]} {
+	WarningTraceMsg "VNC servers file \"$file\" not found."    
+	set file $libfile
+    } elseif {![file isfile $file]} {
+	WarningTraceMsg "VNC servers file \"$file\" is not a regular file."
+	set file $libfile
+    } elseif {![file readable $file]} {
+	WarningTraceMsg "VNC servers file \"$file\" is not readable."
+	set file $libfile
+    } elseif {[file size $file] == 0} {
+	WarningTraceMsg "VNC servers file \"$file\" is empty."
+	set file $libfile
+    } 
+
+    if {[catch {set fdbd [open $file r]} emsg]} {
+	WarningTraceMsg "VNC servers file error: $emsg"
+	return
+    }
+
+
+    # Clean old values:
+    $wroot.list delete 0 end 
+    foreach pos [array names lbindex] {
+	delete object $lbindex($pos)
+	unset lbindex($pos)
+    }
+
+    #-- Flash gateway: Preassigned server and password
+    set _preassigned_server "" 
+    if {[info exists env(FLASH_VNC_SERVER)]} {
+	set _preassigned_server $env(FLASH_VNC_SERVER)
+    }
+    set _preassigned_password "" 
+    if {[info exists env(FLASH_VNC_PASSWORD)]} {
+	set _preassigned_password $env(FLASH_VNC_PASSWORD)
+    }
+
+    # Reads new values
+    set pos 0
+    while {[MultiGets $fdbd line] >= 0} {
+	# removes coments and empty lines.
+	if {[set c0 [string index $line 0]] == "!" || $c0 == "#" ||
+	    [string trim $line] == ""} {
+	    continue
+	}
+	
+	set title      [lindex $line 0]
+	set server     [lindex $line 1]
+	set passwd     [lindex $line 2]
+	set access     [lindex $line 3]
+	set descr      [lindex $line 4]
+	set visibility [lindex $line 5]
+	
+	# Do not load the preassigned server
+	if {$server == $_preassigned_server &&
+	    $passwd == $_preassigned_password} {
+	    continue
+	}
+
+	if {$visibility != "public"} {
+	    set visibility private
+	}
+
+	set lbindex($pos) [VNCLocalServerInfoC "\#auto" $title $server $passwd $access $descr $visibility]
+	incr pos
+
+	$wroot.list insert end $title
+    }
+    close $fdbd
+    
+    
+    # Load preassigned server
+    if {$_preassigned_server != "" &&
+	$_preassigned_password != ""} {
+
+	set title      "Preassigned"
+	set server     $_preassigned_server
+	set passwd     $_preassigned_password
+	set access     [SiteManager::MySiteId]
+	set descr      "Preassigned VNC server"
+	set visibility public
+	
+	set lbindex($pos) [VNCLocalServerInfoC "\#auto" $title $server $passwd $access $descr $visibility]
+	
+	$wroot.list insert end $title
+    }
+
+    #--
+
+    $wroot.list selection set 0 0
+    $wroot.list activate 0
+    UpdateDescr
+    UpdateAccess
+
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::Save {} {
+    global env
+
+    set file $env(ISABEL_CONFIG_DIR)/vncservers.cfg
+
+    if {[catch {set fdbd [open $file w]} emsg]} {
+	WarningTraceMsg "VNC servers file error: $emsg"
+	return
+    }
+
+    for {set pos 0} {$pos < [$wroot.list size]} {incr pos} {
+
+	set title      [$lbindex($pos) cget -title]
+	set server     [$lbindex($pos) cget -server]
+	set passwd     [$lbindex($pos) cget -passwd]
+	set access     [$lbindex($pos) cget -access]
+	set descr      [$lbindex($pos) cget -descr]
+	set visibility [$lbindex($pos) cget -visibility]
+
+	puts $fdbd [list $title $server $passwd $access $descr $visibility]
+
+    }
+
+    close $fdbd
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::MultiGets {fd line} {
+    upvar $line l
+
+    set l ""
+    while 1 {
+	set res [gets $fd aux]
+	if {$res < 0} {
+	    return $res
+	}
+	set len [string length $aux]
+	if {$len > 0} {
+	    set c [string index $aux [expr $len-1]]
+	    if {$c == "\\"} {
+		set l "$l[string range $aux 0 [expr $len-2]] "
+	    } else {
+		set l "$l$aux"
+		return $res
+	    }
+	} else {
+	    return $res
+	}
+    }
+
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::UpdateDescr {} {
+
+    $wroot.msg configure -state normal
+
+    $wroot.msg delete 1.0 end
+
+    set pos [$wroot.list curselection]
+    if {$pos != ""} {
+
+	set title      [$lbindex($pos) cget -title]
+	set server     [$lbindex($pos) cget -server]
+	set passwd     [$lbindex($pos) cget -passwd]
+	set access     [$lbindex($pos) cget -access]
+	set descr      [$lbindex($pos) cget -descr]
+	set visibility [$lbindex($pos) cget -visibility]
+
+	$wroot.msg insert 1.0 "$title\n" blacktext "$server\n" bluetext "$descr\n" "" "$visibility" redtext
+    } 
+
+    $wroot.msg configure -state disabled
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::UpdateAccess {} {
+
+    $wroot.edit configure -state normal
+    $wroot.del  configure -state normal
+
+    set pos [$wroot.list curselection]
+    
+    if {$pos != ""} {
+
+	set access [$lbindex($pos) cget -access]
+	
+	if {$access == "r"} {
+	    $wroot.edit configure -state disabled
+	    $wroot.del  configure -state disabled 
+	}
+    }
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::AddServerDialog {} {
+
+    if {![winfo exists $wroot.topadd]} {
+	
+	iwidgets::dialogshell $wroot.topadd \
+	    -modality application \
+	    -title "Add new server" \
+	    -master $wroot
+	
+	$wroot.topadd add OK \
+	    -text "OK" \
+	    -command [code $this AddServerDialog_OK_CB]
+	
+	$wroot.topadd add Cancel \
+	    -text "Cancel" \
+	    -command [code $this AddServerDialog_Cancel_CB]
+	
+	$wroot.topadd default OK
+	
+	set child [$wroot.topadd childsite]
+
+
+	label $child.head -text "Declare a new VNC server:"
+	
+	iwidgets::entryfield $child.title \
+	    -labeltext "Title:" \
+	    -labelpos nw
+
+	iwidgets::entryfield $child.server \
+	    -labeltext "Server:" \
+	    -labelpos nw
+
+	iwidgets::entryfield $child.passwd \
+	    -labeltext "Password:" \
+	    -labelpos nw \
+	    -show * 
+
+	iwidgets::entryfield $child.descr \
+	    -labeltext "Description:" \
+	    -labelpos nw 
+
+	checkbutton $child.visibility \
+	    -text "Public access enabled" \
+	    -onvalue public \
+	    -offvalue private \
+	    -variable [scope aux_visibility]
+
+	grid $child.head       -row 0 -column 0
+	grid $child.title      -row 1 -column 0 -padx 10 -sticky we
+	grid $child.server     -row 2 -column 0 -padx 10 -sticky we
+	grid $child.passwd     -row 3 -column 0 -padx 10 -sticky we
+	grid $child.descr      -row 4 -column 0 -padx 10 -sticky we
+	grid $child.visibility -row 5 -column 0 -padx 10 -sticky we
+
+	grid columnconfigure $child 0 -weight 1
+
+	grid rowconfigure $child 0 -weight 1
+	grid rowconfigure $child 1 -weight 10
+	grid rowconfigure $child 2 -weight 10
+	grid rowconfigure $child 3 -weight 10
+	grid rowconfigure $child 4 -weight 10
+	grid rowconfigure $child 5 -weight 10
+
+	wm geometry $wroot.topadd +550+450
+
+    }
+
+    set child [$wroot.topadd childsite]
+
+    $child.title  clear
+    $child.server clear
+    $child.passwd clear
+    $child.descr  clear
+    set aux_visibility public
+
+    $wroot.topadd activate
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::AddServerDialog_OK_CB {} {
+
+    $wroot.topadd deactivate
+
+    set pos [$wroot.list curselection]
+    
+    if {$pos == ""} {
+	set pos 0
+    } 
+
+    # Make a hole in the position $pos of the array lbindex.
+    for {set i [$wroot.list size]} {$i > $pos} {incr i -1} {
+	set lbindex($i) $lbindex([expr $i-1])
+    }
+
+    set child [$wroot.topadd childsite]
+
+    set title  [$child.title  get]
+    set server [$child.server get]
+    set passwd [$child.passwd get]
+    set descr  [$child.descr  get]
+	
+    set lbindex($pos) [VNCLocalServerInfoC "\#auto" $title $server $passwd w $descr $aux_visibility]
+
+    $wroot.list insert    $pos $title
+    $wroot.list selection clear 0 end
+    $wroot.list selection set $pos $pos
+    $wroot.list activate  $pos
+
+    UpdateDescr
+    UpdateAccess
+
+    Save
+
+    # Update SMS state to update remote sites:
+    set myservers [GetPublicServers]
+    set mysite_id [SiteManager::MySiteId]
+    sms setState Vnc_servers_${mysite_id} add \
+	-site_id $mysite_id \
+	-servers $myservers
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::AddServerDialog_Cancel_CB {} {
+
+    $wroot.topadd deactivate
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::DelServerDialog {} {
+
+
+    set pos [$wroot.list curselection]
+    
+    if {$pos == ""} return
+
+    if {![winfo exists $wroot.topdel]} {
+	
+	CreateImage dataquestion gif/question.gif
+	iwidgets::messagedialog $wroot.topdel \
+	    -title "Delete server" \
+	    -modality application \
+	    -image dataquestion
+	#bitmap questhead 
+	
+	$wroot.topdel hide Help
+	$wroot.topdel buttonconfigure OK -text "Yes"
+	$wroot.topdel buttonconfigure Cancel -text "No"
+
+	wm geometry $wroot.topdel +550+400
+	
+    }
+
+    set title  [$lbindex($pos) cget -title]
+
+    $wroot.topdel configure -text "Do you want to delete \"$title\" server?"\
+    
+    if {[$wroot.topdel activate]} {
+	
+	delete object $lbindex($pos)
+
+	# Removes the hole in the position $pos of the array lbindex.
+	set lastpos [expr [$wroot.list size]-1]
+	for {set i $pos} {$i < $lastpos} {incr i} {
+	    set lbindex($i) $lbindex([expr $i+1])
+	}
+	unset lbindex($lastpos)
+
+	$wroot.list delete $pos $pos
+
+	$wroot.list selection clear 0 end 
+	$wroot.list selection set $pos $pos
+	$wroot.list activate $pos
+
+	UpdateDescr
+	UpdateAccess
+
+	Save
+
+	# Update SMS state to update the remote sites:
+	set myservers [GetPublicServers]
+	set mysite_id [SiteManager::MySiteId]
+	sms setState Vnc_servers_${mysite_id} add \
+	    -site_id $mysite_id \
+	    -servers $myservers
+    }
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::EditServerDialog {} {
+
+    set pos [$wroot.list curselection]
+    
+    if {$pos == ""} return
+
+    if {![winfo exists $wroot.topedit]} {
+	
+	iwidgets::dialogshell $wroot.topedit \
+	    -modality application \
+	    -title "Edit server" \
+	    -master $wroot
+	
+	$wroot.topedit add OK \
+	    -text "OK" \
+	    -command [code $this EditServerDialog_OK_CB]
+	
+	$wroot.topedit add Cancel \
+	    -text "Cancel" \
+	    -command [code $this EditServerDialog_Cancel_CB]
+	
+	$wroot.topedit default OK
+	
+	set child [$wroot.topedit childsite]
+
+
+	label $child.head -text "Edit VNC server:"
+	
+	iwidgets::entryfield $child.title \
+	    -labeltext "title:" \
+	    -labelpos nw
+
+	iwidgets::entryfield $child.server \
+	    -labeltext "Server:" \
+	    -labelpos nw
+
+	iwidgets::entryfield $child.passwd \
+	    -labeltext "Password:" \
+	    -labelpos nw \
+	    -show * 
+
+
+	iwidgets::entryfield $child.descr \
+	    -labeltext "Description:" \
+	    -labelpos nw 
+
+	checkbutton $child.visibility \
+	    -text "Public access enabled" \
+	    -onvalue public \
+	    -offvalue private \
+	    -variable [scope aux_visibility]
+
+	grid $child.head       -row 0 -column 0
+	grid $child.title      -row 1 -column 0 -padx 10 -sticky we
+	grid $child.server     -row 2 -column 0 -padx 10 -sticky we
+	grid $child.passwd     -row 3 -column 0 -padx 10 -sticky we
+	grid $child.descr      -row 4 -column 0 -padx 10 -sticky we
+	grid $child.visibility -row 5 -column 0 -padx 10 -sticky we
+
+	grid columnconfigure $child 0 -weight 1
+
+	grid rowconfigure $child 0 -weight 1
+	grid rowconfigure $child 1 -weight 10
+	grid rowconfigure $child 2 -weight 10
+	grid rowconfigure $child 3 -weight 10
+	grid rowconfigure $child 4 -weight 10
+	grid rowconfigure $child 5 -weight 10
+
+	wm geometry $wroot.topedit +550+400
+
+    }
+
+    set child [$wroot.topedit childsite]
+
+    set title      [$lbindex($pos) cget -title]
+    set server     [$lbindex($pos) cget -server]
+    set passwd     [$lbindex($pos) cget -passwd]
+    set descr      [$lbindex($pos) cget -descr]
+    set visibility [$lbindex($pos) cget -visibility]
+    
+    $child.title  clear
+    $child.title  insert 0 $title
+    
+    $child.server clear
+    $child.server insert 0 $server
+
+    $child.passwd clear
+    $child.passwd insert 0 $passwd
+
+    $child.descr  clear
+    $child.descr  insert 0 $descr
+
+    set aux_visibility $visibility
+
+    $wroot.topedit activate
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::EditServerDialog_OK_CB {} {
+
+    $wroot.topedit deactivate
+
+    set pos [$wroot.list curselection]
+    
+    if {$pos == ""} return
+
+    set child [$wroot.topedit childsite]
+
+    set title  [$child.title  get]
+    set server [$child.server get]
+    set passwd [$child.passwd get]
+    set descr  [$child.descr  get]
+
+    $lbindex($pos) configure -title  $title
+    $lbindex($pos) configure -server $server
+    $lbindex($pos) configure -passwd $passwd
+    $lbindex($pos) configure -descr  $descr
+    $lbindex($pos) configure -visibility  $aux_visibility
+
+    $wroot.list delete    $pos $pos
+    $wroot.list insert    $pos $title
+    $wroot.list selection set $pos $pos
+    $wroot.list activate  $pos
+    
+    UpdateDescr
+    UpdateAccess
+
+    Save
+
+    # Update remote sites:
+    set myservers [GetPublicServers]
+    set mysite_id [SiteManager::MySiteId]
+    sms setState Vnc_servers_${mysite_id} add \
+	-site_id $mysite_id \
+	-servers $myservers
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::EditServerDialog_Cancel_CB {} {
+
+    $wroot.topedit deactivate
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::MoveUp {} {
+
+    set pos [$wroot.list curselection]
+    
+    if {$pos == ""} return
+    if {$pos == 0} return
+
+    set title  [$lbindex($pos) cget -title]
+
+    set aux $lbindex($pos)
+    set lbindex($pos) $lbindex([expr $pos-1])
+    set lbindex([expr $pos-1]) $aux
+    
+    $wroot.list delete $pos $pos
+    $wroot.list insert [expr $pos-1] $title
+
+    $wroot.list selection clear 0 end 
+    $wroot.list selection set [expr $pos-1] [expr $pos-1]
+
+    Save
+}
+
+#------------------------------------------------------------------------
+
+body VNCLocalServersFrameC::MoveDown {} {
+
+    set pos [$wroot.list curselection]
+    
+    if {$pos == ""} return
+
+    if {[expr $pos+1] == [$wroot.list size]} return
+
+    set title  [$lbindex($pos) cget -title]
+
+    set aux $lbindex($pos)
+    set lbindex($pos) $lbindex([expr $pos+1])
+    set lbindex([expr $pos+1]) $aux
+
+    $wroot.list delete $pos $pos
+    $wroot.list insert [expr $pos+1] $title
+
+    $wroot.list selection clear 0 end 
+    $wroot.list selection set [expr $pos+1] [expr $pos+1]
+
+    Save
+}

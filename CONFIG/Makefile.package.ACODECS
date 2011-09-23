@@ -1,0 +1,29 @@
+#
+# ACODECS configuration file for Linux
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.baselib       -- root of subsystem libraries
+#	*.library       -- root of subsystem libraries (-L)
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+ACODECS.topdir       :=$(PROJECT_ROOT_DIR)/lib/aCodecs
+ACODECS.include      :=$(ACODECS.topdir)/include
+ACODECS.include.files:=\
+	$(wildcard $(ACODECS.include)/aCodecs/*.hh)    \
+	$(wildcard $(ACODECS.include)/aCodecs/*.h)
+
+ACODECS.baselib.ugly:=$(OBJS_ROOT_DIR)/lib/aCodecs/src
+ACODECS.baselib:=$(shell echo $(ACODECS.baselib.ugly)|sed 's@^\(./\)*@@;s@/./@/@')
+
+ACODECS.library      :=-L$(ACODECS.baselib)
+ACODECS.library.libs :=-lacodecs
+
+MKDEPVERSION+= -include $(ACODECS.topdir)/version
+
+CONFIG.generic.include+= -I$(ACODECS.include)
+
+LINK.ACODECS:=$(ACODECS.library) $(ACODECS.library.libs)

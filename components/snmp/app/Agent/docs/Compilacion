@@ -1,0 +1,39 @@
+Requitos: jdk-1.2.2 o posterior
+
+Instrucciones para
+  o compilar el agente SNMP,
+  o crear el ejecutable .jar
+  o ejecutar el agente
+
+Compilacion:
+
+	0.- Pasos previos:
+
+		Colocarnos en el directorio con las fuentes del agente:
+
+			cd Isabel/Apps/SNMP/Agent
+
+		Exportar la CLAASSPATH:
+
+			export CLASSPATH=./
+
+	1.- Compilación de la libreria sck.
+		
+		javac sck/*.java
+
+	2.- Compilacion de la libreria graph.
+
+		javac graph/*.java
+
+	3.- Compilación del agente
+
+		javac *.java	
+
+Creación del archivo .jar:
+
+	4.- jar cmf manifest.txt ISABEL-AGENT.jar ./*.class ./sck/*.class ./graph/*.class ./images/*.gif ./images/*.jpg ./help/*.html
+
+Ejecución del agente de ISABEL:
+
+	5.- Para ejecutar: java -jar ISABEL-AGENT.jar [parameters]
+

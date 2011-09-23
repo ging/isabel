@@ -1,0 +1,30 @@
+#
+# ICF & SDK top directories are common for all OS
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.baselib       -- root of subsystem libraries
+#	*.library       -- root of subsystem libraries (-L)
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+SDK.topdir       :=$(PROJECT_ROOT_DIR)/lib/SDK
+SDK.include      :=$(SDK.topdir)/include
+SDK.include.files:=\
+	$(wildcard $(SDK.include)/Isabel_SDK/*.hh)    \
+	$(wildcard $(SDK.include)/Isabel_SDK/*.h)
+
+SDK.baselib.ugly:=$(OBJS_ROOT_DIR)/lib/SDK/src
+SDK.baselib:=$(shell echo $(SDK.baselib.ugly)|sed 's@^\(./\)*@@;s@/./@/@')
+
+SDK.library      :=-L$(SDK.baselib)
+SDK.library.libs :=-licfsdk
+
+MKDEPVERSION+= -include $(SDK.topdir)/version
+
+CONFIG.generic.define+=
+CONFIG.generic.include+= -I$(SDK.include)
+
+LINK.SDK:=$(SDK.library) $(SDK.library.libs)

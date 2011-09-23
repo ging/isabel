@@ -1,0 +1,975 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# agenda.itcl
+#
+# Tele-conferences Agenga Control window.
+#
+#########################################################################
+
+
+
+class AgendaTCC {
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    # Reference to the TeleConferenceControlC object
+    public variable tcobj
+    
+    # Create a new AgendaTCC object.
+    # $_wroot is the path of the container frame.
+    # $_tcobj is a reference to the TeleConferenceControlC object
+    constructor {_wroot _tcobj} {} {}
+    
+    destructor {}
+    
+    # Load a new conference description.
+    # $conf is a ConferenceTCC object
+    public method setConference {conf}
+    
+    # Returns the current ConferenceTCC object
+    public method getConference {}
+    
+    # Returns the selection object
+    public method getSelection {}
+    
+    # Returns the carrousel object
+    public method getCarrousel {}
+    
+    # Returns the connections object
+    public method getConnections {}
+    
+    # Returns the hierarchy 
+    public method getWidget {}
+    
+    # Update the widget when idle.
+    # Many call to this method produce only one call to refreshNow.
+    # The variable refreshPending is set to 1 when this method is called;
+    # and it is set to 0 when (after idle) the method refreshNow is 
+    # executed.
+    public method refresh {}
+    
+    # Expands the tree
+    public method expand {}
+    
+    # Collapse the tree
+    public method collapse {}
+    
+    #-- Loading/Saving
+    
+    # Open the file browser window to load or save agenda files
+    public method LoadFileBrowser {}
+    public method SaveFileBrowser {}
+    
+    # Load a empty conference.
+    # if $empty is not 0, the conference loaded include a minimal session node.
+    public method LoadEmptyConference {{empty 0}}
+    
+    #-- Site connections and disconnections
+    
+    # Callback to update the ConnectionsTCC object.
+    # $operation must be "add" or "del".
+    public method refreshConnections {operation site_id}
+
+    #-------------------
+    # PROTECTED INTERFACE
+    #-------------------
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # The widget root
+    private variable wroot
+    
+    # This is a ConferenceTCC object. 
+    # It is the root of the tree describing a conference program.
+    private variable confObj
+    
+    # Object to manipulate the selected sites and people.
+    private variable selectionObj
+    
+    # The carrousel manager object.
+    private variable carrouselObj
+    
+    # The object with the sites connection information.
+    private variable connectionsObj
+    
+    # Conference file
+    private variable conffile
+    
+    # Build the gui.
+    private method makeGUI {}
+    
+    # Refresh Now.
+    # See the comment of the refresh method.
+    private method refreshNow {}
+    
+    # Refresh the hierarchy widget
+    private method refreshTree {}
+    
+    # This variable is used to know when the refresh method 
+    # has been called. Then it is set to 1.
+    # After idle, the method refreshNow is executed and this
+    # variable is set to 0.
+    private variable refreshPending 0
+    
+    # This variable is used to indicate that a refreshNow operation 
+    # is in course, so we do not start a new refreshNow. 
+    # We will wait for the current refreshNow to finish to start a new one.
+    private variable refreshInCourse 0
+    
+    # Select/Deselect a node.
+    # $tags: tags of the target node.
+    private method selectNode {tags}
+    
+    # Method called by the .hierarchy widget to create the tree.
+    # $uid: unique identifier of a node. This method returns a list 
+    # describing the children of this node.
+    private method getNodes {uid}
+    
+    # Method called when any of the icons of a node is activated    
+    # $tags: tags of the target node.
+    # $icon: icon name
+    private method iconCmd {tags icon}
+    
+    # Configure the tags of the hiearchy nodes.
+    private method configureTags {}
+    
+    # Configure the itemMenu depending of the class of the node which 
+    # pops up the menu.
+    private method configureItemMenu {}
+    
+    #-- Loading/Saving
+
+    # Enables the file browser used to select the agenda file.
+    private method EnableFileBrowser {}
+    
+    # Load or save the $conffile file.
+    # Action is one of {load save}
+    private method DoneAgendaFile {action}
+    
+    # Load the $conffile file.
+    private method ReadFile  {}
+    
+    # Save the conference agenda in the $conffile file.
+    private method WriteFile {}
+    
+}
+
+
+#-----------------------------------------
+
+body AgendaTCC::constructor {_wroot _tcobj} {
+    global ISABEL_WORKDIR
+    
+    set wroot $_wroot
+    set tcobj $_tcobj
+    
+    set confObj ""
+    
+    #set conffile $env(ISABEL_WORKDIR)/[session Activity GetResource CtrlPanel script script.isa]
+    set conffile $ISABEL_WORKDIR/agenda.ica
+
+    if {[file readable $conffile]} {
+       if {[ReadFile]} {
+        	LoadEmptyConference
+       }
+    } else {
+    	LoadEmptyConference        
+    } 
+
+    #----
+
+    set carrouselObj [CarrouselTCC "::#auto" $tcobj]
+    set connectionsObj [ConnectionsTCC "::#auto"]
+
+    #----
+
+    makeGUI
+
+    #----
+
+    ::iwidgets::fileselectiondialog $wroot.fsd -directory $ISABEL_WORKDIR 
+
+    set _filter [[[$wroot.fsd component fsb] component filter] component entry] 
+    $_filter insert end .ica
+}
+
+#-----------------------------------------
+
+body AgendaTCC::destructor {} {
+
+    catch {bind $wroot.destroy <Destroy> ""}
+    if {[winfo exist $wroot]} {
+	destroy $wroot
+	set wroot ""
+    }
+
+    if {$confObj != ""} {
+	delete object $confObj
+	set confObj ""
+    }
+
+    if {$carrouselObj != ""} {
+	delete object $carrouselObj
+	set carrouselObj ""
+    }
+
+    if {$connectionsObj != ""} {
+  	delete object $connectionsObj
+  	set connectionsObj ""
+      }
+
+    after cancel [code $this refreshNow]
+    after cancel [code $this refresh]
+}
+
+#-----------------------------------------
+
+body AgendaTCC::setConference {conf} {
+
+    if {$confObj != ""} {
+	delete object $confObj
+    }
+    
+    set confObj $conf
+
+    refresh
+}
+
+#-----------------------------------------
+
+body AgendaTCC::getConference {} {
+
+    return $confObj
+}
+
+#-----------------------------------------
+
+body AgendaTCC::getSelection {} {
+
+    return $selectionObj
+}
+
+#-----------------------------------------
+
+body AgendaTCC::getCarrousel {} {
+
+    return $carrouselObj
+}
+
+#-----------------------------------------
+
+body AgendaTCC::getConnections {} {
+
+    return $connectionsObj
+}
+
+#-----------------------------------------
+
+body AgendaTCC::getWidget {} {
+
+    return $wroot.h
+}
+
+#-----------------------------------------
+
+body AgendaTCC::makeGUI {} {
+
+    # Icons
+    CreateImage icaempty   gif/ica/empty.gif
+    CreateImage icanode    gif/ica/node.gif
+    CreateImage icaopened  gif/ica/opened.gif
+    CreateImage icaclosed  gif/ica/closed.gif
+
+    CreateImage icamenu    gif/ica/menu.gif
+    CreateImage icasave    gif/ica/generate.gif
+
+    CreateImage icaplay   gif/ica/play.gif
+    CreateImage icastop   gif/ica/stop.gif
+
+    CreateImage icaoffline   gif/ica/offline.gif
+
+    CreateImage icamainsite     gif/ica/main.gif
+    CreateImage icanomainsite   gif/ica/no-main.gif
+
+    CreateImage icactrlsite     gif/ica/ctrl.gif
+    CreateImage icanoctrlsite   gif/ica/no-ctrl.gif
+
+    CreateImage icaedit   gif/ica/edit.gif
+
+    CreateImage icaiconvnc       gif/ica/iconvnc.gif 
+    CreateImage icaicondoc       gif/ica/icondoc.gif 
+    CreateImage icaiconvid       gif/ica/iconvid.gif 
+    CreateImage icaiconwallpaper gif/ica/iconwallpaper.gif 
+
+    CreateImage icachair       gif/ica/chair.gif 
+    CreateImage icaauthor      gif/ica/author.gif 
+    CreateImage icaparticipant gif/ica/participant.gif 
+    CreateImage icasite        gif/ica/site.gif 
+    CreateImage icasession     gif/ica/session.gif 
+
+
+    CreateImage icadelete           gif/ica/delete.gif 
+    CreateImage icamvselectionright gif/ica/mvright.gif 
+    CreateImage icamvselectionleft  gif/ica/mvleft.gif 
+    
+    CreateImage icafocusup     gif/ica/fup.gif 
+    CreateImage icafocusdown   gif/ica/fdown.gif 
+
+    CreateImage icareplace   gif/ica/update.gif 
+
+    
+    #--
+    
+    frame $wroot -relief flat -borderwidth 0
+    
+    #-- Selection
+    
+    set selectionObj [SelectionTCC "::#auto" $this $wroot.sel]
+    pack $wroot.sel -side top -fill x
+    
+    #-- Filename
+
+    label $wroot.filename \
+	-textvariable [scope conffile] \
+	-font [IsabelFontsC::GetFont medium medium] \
+	-anchor w
+    pack  $wroot.filename -side bottom -fill x
+    
+    #-- Hierarchy
+    
+    iwidgets::hierarchy $wroot.h \
+	-alwaysquery 1 \
+	-expanded 1 \
+	-selectcommand [code $this selectNode %n] \
+	-querycommand  [code $this getNodes %n] \
+	-iconcommand   [code $this iconCmd %n %i] \
+	-visibleitems 90x45 \
+	-nodeicon icaempty \
+	-closedicon icaclosed \
+	-openicon icaopened \
+	-hscrollmode dynamic \
+	-vscrollmode dynamic
+
+    configureTags
+
+    pack  $wroot.h -expand yes -fill both
+
+    #-------------
+    
+    set im [$wroot.h component itemMenu]
+    bind $im <Map> +[code $this configureItemMenu]
+    
+    #-------------
+
+    set _text [$wroot.h component list]
+
+    bind $_text <Button-4> {+%W yview scroll -1 units}
+    bind $_text <Button-5> {+%W yview scroll  1 units}
+
+    #-------------
+
+    frame $wroot.destroy
+    bind $wroot.destroy <Destroy> "delete object $this"
+
+}
+
+#-----------------------------------------
+
+body AgendaTCC::configureTags {} {
+
+    $wroot.h component list tag configure conferencenode   -font -adobe-*-bold-r-*-*-20-*-*-*-*-*-*-*
+
+    $wroot.h component list tag configure sessionsnode     -font -adobe-*-bold-r-*-*-20-*-*-*-*-*-*-*
+
+    $wroot.h component list tag configure session -font "-adobe-*-bold-r-*-*-18-*-*-*-*-*-*-*" 
+
+    $wroot.h component list tag configure chair -font "-adobe-*-medium-r-*-*-17-*-*-*-*-*-*-*"
+
+    $wroot.h component list tag configure script      -font "-adobe-*-bold-r-*-*-18-*-*-*-*-*-*-*" 
+
+    $wroot.h component list tag configure scriptitem  -font "-adobe-*-medium-r-*-*-17-*-*-*-*-*-*-*" 
+    $wroot.h component list tag configure content  -font -adobe-*-bold-r-*-*-18-*-*-*-*-*-*-*
+
+    $wroot.h component list tag configure resourcesnode    -font -adobe-*-bold-r-*-*-20-*-*-*-*-*-*-*
+
+    $wroot.h component list tag configure resource -font "-adobe-*-medium-r-*-*-14-*-*-*-*-*-*-*"
+
+    $wroot.h component list tag configure participantsnode -font -adobe-*-bold-r-*-*-20-*-*-*-*-*-*-*
+
+    $wroot.h component list tag configure participant -font "-adobe-*-medium-r-*-*-17-*-*-*-*-*-*-*"
+
+    $wroot.h component list tag configure sitesnode        -font -adobe-*-bold-r-*-*-20-*-*-*-*-*-*-*
+
+    $wroot.h component list tag configure site             -font -adobe-*-medium-r-*-*-15-*-*-*-*-*-*-*
+    
+    
+    $wroot.h component list tag configure selected            -foreground red
+    $wroot.h component list tag configure scriptitem_selected -background "#b5dbb5"
+
+    $wroot.h component list tag configure scriptitemplaying  -background "#85bb85"
+}
+
+#-----------------------------------------
+
+body AgendaTCC::selectNode {tags} {
+
+    set uid [lindex $tags [lsearch -regexp $tags {x[0-9]+x}]]
+    set node [NodeTCC::getObjectUid $uid]
+    
+    if {[$node isSelectable]} {    
+	   if {[$node isSelected]} {
+	      $node unselect
+	   } else {
+	      $node select
+	   }
+
+	if { ! [$node isa ScriptItemTCC]} {
+	    ScriptItemTCC::cleanSelection
+	}
+	refresh
+    }
+}
+
+#-----------------------------------------
+
+body AgendaTCC::getNodes {uid} {
+
+    set _res ""
+
+    if {$uid == ""} {
+	if {$confObj == ""} {
+	    set _res ""
+	} else {
+	    #list [$confObj getMyNode]
+	    set _res [$confObj getNodes]
+	}
+    } else {
+	set node [NodeTCC::getObjectUid $uid]
+	set _res [$node getNodes]
+    }
+    
+    return $_res
+}
+
+#-----------------------------------------
+
+body AgendaTCC::iconCmd {tags icon} {
+
+    set uid [lindex $tags [lsearch -regexp $tags {x[0-9]+x}]]
+    set node [NodeTCC::getObjectUid $uid]
+
+    if {[lsearch -exact "icaiconvnc icaiconvid icaiconwallpaper icachair icaauthor icaparticipant icasite icasession" $icon] != -1} {
+	$node edit
+	return
+    }
+
+    if {$icon == "icamenu"} {
+
+	set _menu $wroot.h.menu
+	if {! [winfo exists $_menu]} {
+	    menu $wroot.h.menu -tearoff 0
+	}
+	$node configureItemMenu $_menu
+
+	set _x [winfo pointerx $wroot]
+	set _y [winfo pointery $wroot]
+
+	tk_popup $_menu $_x $_y
+
+	return
+    }
+
+    if {[$node isa ScriptItemListTCC]} {
+	if {$icon == "icasave"} {
+	    $node save
+	} elseif {$icon == "icaplay"} {
+	    $node play
+	} elseif {$icon == "icastop"} {
+	    $node stop
+	}
+	return
+    }
+
+
+    if {[$node isa ScriptItemTCC]} {
+	switch $icon {
+	    #icaedit {
+	    #	$node edit
+	    #}
+	    icafocusup {
+		$node moveUp
+		refresh
+	    }
+	    icafocusdown {
+		$node moveDown
+		refresh
+	    }
+	    icadelete {
+		$node deleteNode
+		refresh
+	    }
+	    icaim-one -
+	    icaim-1n -
+	    icaim-mode2 -
+	    icaim-mode3 -
+	    icaim-mode4 -
+	    icaim-mode9 -
+	    icaim-all -
+	    icaim-ques -
+	    icaim-panel -
+	    icaim-appsh -
+	    icaim-viddem -
+	    icaim-camdoc -
+	    icaim-wb -
+	    icaim-idle {
+		if {[$node isSelected]} {
+		    $node unselect
+		} else {
+		    $node select
+		}
+		refresh	
+	    }
+	    default {
+		puts "Unknown icon: $icon"
+	    }
+	}
+	return
+
+    }
+    
+    set _menubarobj [$tcobj cget -menubarobj]    
+
+
+    switch $icon {
+	icaedit {
+	    $node edit
+	    #$selectionObj refreshDetails
+	    refresh
+	}
+	icamainsite -
+	icanomainsite {
+	    $node toggleMainSite
+	    refresh
+	}
+	icactrlsite -
+	icanoctrlsite {
+	    $node toggleCtrlSite
+	    refresh
+	}
+	icafocusup {
+	    $node moveUp
+	    refresh
+	}
+	icafocusdown {
+	    $node moveDown
+	    refresh
+	}
+	icadelete {
+	    $node deleteNode
+	    refresh
+	}
+	default {
+	    puts "Unknown icon: $icon"
+	}
+}
+}
+
+#-----------------------------------------
+
+body AgendaTCC::configureItemMenu {} {
+
+    set tags [$wroot.h current]
+    set uid [lindex $tags [lsearch -regexp $tags {x[0-9]+x}]]
+    set node [NodeTCC::getObjectUid $uid]
+    
+    
+    $node configureItemMenu
+}
+
+#-----------------------------------------
+
+body AgendaTCC::refresh {} {
+    
+    if {$refreshPending} {
+	return
+    }
+    set refreshPending 1
+
+    after 1 after idle [code $this refreshNow]
+}
+
+#-----------------------------------------
+
+body AgendaTCC::refreshNow {} {
+
+    if {$refreshInCourse} {
+	return
+    }
+
+    set refreshPending 0
+    set refreshInCourse 1
+
+    refreshTree
+
+    $selectionObj refresh
+
+    set refreshInCourse 0
+
+    if {$refreshPending} {
+	after 1000 after idle [code $this refreshNow]
+    }
+}
+
+#-----------------------------------------
+
+body AgendaTCC::refreshTree {} {
+
+    set text [$wroot.h component list]
+    
+    set yview [lindex [$text yview] 0]
+    set xview [lindex [$text xview] 0]
+    
+    $wroot.h draw -now
+    
+    $text yview moveto $yview
+    $text xview moveto $xview
+}
+
+#-----------------------------------------
+
+body AgendaTCC::expand {} {
+    
+    $wroot.h configure -expanded 1
+    
+    set _qc [$wroot.h cget -querycommand]
+    $wroot.h configure -querycommand $_qc
+
+    configureTags
+}
+
+#-----------------------------------------
+
+body AgendaTCC::collapse {} {
+
+    $wroot.h configure -expanded 0
+
+    set _qc [$wroot.h cget -querycommand]
+    $wroot.h configure -querycommand $_qc
+
+    configureTags
+}
+
+#-----------------------------------------
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+#---------------------------------------------------------------
+
+#-----------------------------------------
+
+body AgendaTCC::LoadFileBrowser {} {
+
+    EnableFileBrowser
+    $wroot.fsd configure -title "Open file"
+    set ok [[$wroot.fsd component bbox] component OK]
+    $ok configure -command [code $this DoneAgendaFile load]
+}
+
+#-----------------------------------------
+
+body AgendaTCC::SaveFileBrowser {} {
+
+    EnableFileBrowser
+    $wroot.fsd configure -title "Save file"
+    set ok [[$wroot.fsd component bbox] component OK]
+
+    if {$conffile != "<none>"} {
+	set entry_ [[[$wroot.fsd component fsb] component selection] component entry] 
+	$entry_ delete 0 end
+	$entry_ insert 0 $conffile
+    }
+
+    $ok configure -command [code $this DoneAgendaFile save]
+}
+
+#-----------------------------------------
+
+body AgendaTCC::EnableFileBrowser {} {
+
+    $wroot.fsd deactivate
+    $wroot.fsd activate
+    $wroot.fsd filter
+}
+
+#-----------------------------------------
+
+body AgendaTCC::DoneAgendaFile {action} {
+
+    set conffile [$wroot.fsd get]
+
+    if {$action == "load"} {
+        if {[ReadFile]} {
+            puts "ERROR loading agenda file"	 
+            LoadEmptyConference
+        }
+    } else {
+        WriteFile
+    }
+
+    $wroot.fsd deactivate    
+
+}
+
+#-----------------------------------------
+
+body AgendaTCC::ReadFile {} {
+
+    if {$conffile == "<none>"} {
+        set emsg "Please, select the name of the file to load."
+
+        ErrorTraceMsg $emsg 
+
+        ErrorMsgC #auto close \
+        "Error:" \
+        "" \
+        "Invalid Filename." \
+        $emsg
+
+        return 1
+
+    }
+
+    if {$conffile == ""} {
+        set emsg "Please, select the name of the file to load."
+
+        ErrorTraceMsg $emsg 
+
+        ErrorMsgC #auto close \
+        "Error:" \
+        "" \
+        "Empty Filename." \
+        $emsg
+
+        return 1
+
+    }
+
+    if { ! [file readable $conffile]} {
+        set emsg "File \"$conffile\" is not readable."
+
+        ErrorTraceMsg $emsg 
+
+        ErrorMsgC #auto close \
+        "Error:" \
+        "" \
+        $emsg
+
+        return 1
+    }
+
+    if {$confObj != ""} {
+        delete object $confObj
+        set confObj ""
+        refresh
+    }
+
+    puts "Loading: $conffile"
+
+    if {[catch {open $conffile r} _fd]} {
+        set emsg "I can not open file \"$conffile\""
+
+        ErrorTraceMsg $emsg 
+
+        ErrorMsgC #auto close \
+        "Error:" \
+        "" \
+        $emsg
+
+        return 1
+    }
+
+
+    if {[catch {ConferenceTCC::parse $this [read $_fd]} _conf]} {
+        close $_fd
+
+        set emsg "File \"$conffile\" is not valid: $_conf"
+
+        ErrorTraceMsg $emsg 
+
+        ErrorMsgC #auto close \
+        "Error:" \
+        "" \
+        $emsg
+
+        return 1
+    }
+
+
+    close $_fd
+
+    setConference $_conf
+
+    PresentationTCC::move_resources_08_to_global_resources $this
+
+    return 0
+}
+
+#-----------------------------------------
+
+body AgendaTCC::WriteFile {} {
+
+    if {$conffile == "<none>"} {
+	set emsg "Please, introduce the name of the file to save."
+	
+	ErrorTraceMsg $emsg 
+	
+	ErrorMsgC #auto close \
+	    "Error:" \
+	    "" \
+	    "Invalid Filename." \
+	    $emsg
+
+	return 1
+
+    }
+
+    if {$conffile == ""} {
+	set emsg "Please, introduce the name of the file to save."
+	
+	ErrorTraceMsg $emsg 
+	
+	ErrorMsgC #auto close \
+	    "Error:" \
+	    "" \
+	    "Empty Filename." \
+	    $emsg
+
+	return 1
+
+    }
+
+    if {[catch {set fd [open $conffile w]} emsg]} {
+	ErrorTraceMsg "- I can't save conference agenda file: $emsg"
+
+	ErrorMsgC #auto close \
+	    "Error:" \
+	    "" \
+	    $emsg
+
+	return
+    }
+
+    puts $fd [$confObj prettyPrinter]
+
+    close $fd
+}
+
+#-----------------------------------------
+
+body AgendaTCC::LoadEmptyConference {{empty 0}} {
+
+    if {$confObj != ""} {
+	delete object $confObj
+	set confObj ""
+	refresh
+    }
+
+    set conffile <none>
+
+    if {$empty} {
+	set _conf_str "Conference -version 1.0
+	                          -name {Conference Name} 
+                              -sites {}
+                              -people {}
+                              -resources {}
+                              -sessions {}"
+    } else {
+	set _conf_str "Conference -version 1.0
+	                          -name {Conference Name} 
+                              -sites { 
+                                  {Site -nickname Site_Nickname
+                                        -location Site_Location
+                                        -main 0 
+                                        -ctrl 0
+                                  } 
+                              } 
+                              -people { 
+                                  {Person -acronym ChairAcronym 
+                                          -name {Chair Name} 
+                                          -position {} 
+                                          -organization {}
+                                          -site Site_Nickname
+                                  } 
+                                  {Person -acronym SpeakerAcronym 
+                                          -name {Speaker Name} 
+                                          -position {} 
+                                          -organization {} 
+                                          -site Site_Nickname
+                                  }
+                              } 
+                              -resources {} 
+                              -sessions {
+                                  {Session -name {Session Name} 
+                                           -chair ChairAcronym 
+                                           -presentations {
+                                               {Presentation -name {Presentation Name} 
+                                                             -speakers {SpeakerAcronym}
+                                               }
+                                            } 
+                                            -script {}
+                                  }
+                               }"
+    }
+    
+    set _conf [ConferenceTCC::parse $this $_conf_str]
+
+
+    setConference $_conf
+}
+
+#-----------------------------------------
+
+body AgendaTCC::refreshConnections {operation site_id} {
+
+    switch $operation {
+        add {
+            $connectionsObj siteConnection $site_id
+        }
+        del {
+            $connectionsObj siteDisconnection $site_id
+        }
+    }
+
+    refresh
+}
+
+#-----------------------------------------
+
+

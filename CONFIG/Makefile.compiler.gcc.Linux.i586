@@ -1,0 +1,22 @@
+CONFIG.CXXFLAGS.architecture.define :=-D__BUILD_FOR_INTEL_LINUX
+CONFIG.CXXFLAGS.architecture.include:=
+CONFIG.CXXFLAGS.architecture.option :=-fpic -fPIC -shared
+
+CONFIG.CXXFLAGS.optimization.define :=
+CONFIG.CXXFLAGS.optimization.include:=
+CONFIG.CXXFLAGS.optimization.option :=\
+	-Wall                         \
+	-O2                           \
+	-ffast-math                   \
+	-fstrength-reduce             \
+	-finline-functions            \
+	-funroll-loops                \
+	-fexpensive-optimizations
+
+CONFIG.CXXFLAGS.debug.define :=
+CONFIG.CXXFLAGS.debug.include:=
+CONFIG.CXXFLAGS.debug.option := -fno-inline-functions -ggdb
+
+CONFIG.CXXFLAGS.diagnostic.define :=
+CONFIG.CXXFLAGS.diagnostic.include:=
+CONFIG.CXXFLAGS.diagnostic.option := -Wall

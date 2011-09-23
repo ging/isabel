@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Contents
+Comment=Starts web browser with the Isabel help pages.
+Exec=/usr/local/isabel/bin/isrv_Contents.sh
+Icon=/usr/local/isabel/lib/images/gif/mundo.gif
+Terminal=false
+Type=Application
+StartupNotify=true

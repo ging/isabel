@@ -1,0 +1,124 @@
+#!/bin/sh
+set -e
+
+if [ -z "$DPKG_MAINTSCRIPT_PACKAGE" ] ; then echo "DPKG_MAINTSCRIPT_PACKAGE undefined" ; exit ; fi
+
+echo "Installing $DPKG_MAINTSCRIPT_PACKAGE alternatives: ..."
+
+__pdir=/usr/local/$DPKG_MAINTSCRIPT_PACKAGE
+
+if [ "$DPKG_MAINTSCRIPT_PACKAGE" = "isabel000" ] ; then
+    PKG_PRIORITY=99
+elif [ "$DPKG_MAINTSCRIPT_PACKAGE" = "isabel500" ] ; then
+    PKG_PRIORITY=13
+else
+    echo "Unknown package [$DPKG_MAINTSCRIPT_PACKAGE], aborting ..."
+fi
+
+mkdir -p /usr/local/bin
+mkdir -p /etc/isabel/vers
+mkdir -p /etc/xdg/menus/applications-merged
+
+
+export fullcmd="update-alternatives \
+                    --install /usr/local/bin/isabel \
+                              isabel \
+                              $__pdir/bin/isabel \
+                              $PKG_PRIORITY \
+                    --slave   /usr/local/isabel \
+                              isabeldir \
+                              $__pdir \
+                    --slave   /etc/isabel/vers/version.Isabel \
+                              version.Isabel \
+                              $__pdir/lib/version.Isabel \
+                    --slave   /usr/local/bin/xedl_launcher \
+                              xedl_launcher \
+                              $__pdir/bin/xedl_launcher \
+                    --slave   /usr/local/bin/icto_launcher \
+                              icto_launcher \
+                              $__pdir/bin/icto_launcher \
+                    --slave   /usr/local/bin/isabel_launch \
+                              isabel_launch \
+                              $__pdir/bin/isabel_launch \
+                    --slave   /usr/local/bin/fp \
+                              isabel_fp \
+                              $__pdir/bin/isabel_fp \
+                    --slave   /etc/xdg/menus/applications-merged/Isabel.menu \
+                              Isabel.menu \
+                              $__pdir/env/etc/xdg/menus/applications-merged/Isabel.menu"
+
+
+AddDesktopSlave()
+{
+   link=$1
+   envdir=/usr/share/applications/isabel
+   mkdir -p $envdir
+   
+   fullcmd="$fullcmd --slave $envdir/$link $link $__pdir/env/$envdir/$link"
+}
+AddDesktopSlave IsabelAbout.desktop                  
+AddDesktopSlave IsabelCleanup.desktop                
+AddDesktopSlave IsabelConnectTo.desktop              
+AddDesktopSlave IsabelContents.desktop               
+AddDesktopSlave IsabelEditLocalConfiguration.desktop 
+AddDesktopSlave IsabelGpl.desktop 
+AddDesktopSlave IsabelHomePage.desktop               
+AddDesktopSlave IsabelLocalTest.desktop              
+AddDesktopSlave IsabelLogs.desktop                   
+AddDesktopSlave IsabelSelectVersion.desktop     
+AddDesktopSlave IsabelStartSessionServer.desktop     
+AddDesktopSlave IsabelUpdate.desktop                 
+
+
+AddDesktopDirSlave()
+{
+   link=$1
+   envdir=/usr/share/desktop-directories/isabel
+   mkdir -p $envdir
+   
+   fullcmd="$fullcmd --slave $envdir/$link $link $__pdir/env/$envdir/$link"
+}
+AddDesktopDirSlave Isabel.directory     
+AddDesktopDirSlave IsabelHelp.directory 
+AddDesktopDirSlave IsabelUtls.directory 
+
+
+
+AddXdgAutoStartSlave()
+{
+   link=$1
+   envdir=/etc/xdg/autostart
+   mkdir -p $envdir
+   
+   fullcmd="$fullcmd --slave $envdir/$link xdg-$link $__pdir/env/$envdir/$link"
+}
+AddXdgAutoStartSlave xlim4isabel.desktop 
+
+
+
+AddKde3AutoStartSlave()
+{
+   link=$1
+   envdir=/opt/kde3/share/autostart
+   mkdir -p $envdir
+   
+   fullcmd="$fullcmd --slave $envdir/$link kde3-$link $__pdir/env/$envdir/$link"
+}
+AddKde3AutoStartSlave xlim4isabel.desktop 
+
+
+AddFirefoxSlave()
+{
+   link=$1
+   envdir=/etc/firefox/pref
+   mkdir -p $envdir
+   
+   fullcmd="$fullcmd --slave $envdir/$link firefox-$link $__pdir/env/$envdir/$link"
+}
+AddFirefoxSlave isabel.js 
+
+
+
+$fullcmd
+
+echo "Installing $DPKG_MAINTSCRIPT_PACKAGE alternatives: Done."

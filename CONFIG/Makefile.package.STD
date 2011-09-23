@@ -1,0 +1,6 @@
+#
+# std libraries are system dependant
+#
+include $(PROJECT_ROOT_DIR)/CONFIG/Makefile.os.package.STD.$(TARGET.OS)
+
+LINK.STD:=$(STD.library) $(STD.library.libs)

@@ -1,0 +1,104 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# titles.itcl
+#
+# Description
+#
+#   All the related root titles functions.
+#
+#########################################################################
+
+class TitlesC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+
+    destructor {}
+
+    public method AddMe {} {}
+    public method AddPartner {userid new} {}
+    public method DelMe {} {}
+    public method DelPartner {userid} {}
+
+    public method Nop {} {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # State daemon name
+    private variable stateobj ""
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+}
+
+#----------------------------------------------------------------
+
+body TitlesC::constructor {} {
+
+    if {[catch {TitlesStateC "#auto"} res]} {
+	ErrorTraceMsg "Titles: component can not be created.\n$res"
+	error "Titles: component can not be created.\n$res"
+    }
+    set stateobj $res
+
+    # SMS messages which I want to receive:
+    sms joinKey Titles [code $stateobj SetSmsState]
+    
+    # I send an empty state
+    # sms setState Titles add
+
+}
+
+#----------------------------------------------------------------
+
+body TitlesC::destructor {} {
+
+    if {$stateobj != ""} {
+	delete object $stateobj
+	set stateobj ""
+    }
+}
+
+#----------------------------------------------------------------
+
+body TitlesC::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#----------------------------------------------------------------

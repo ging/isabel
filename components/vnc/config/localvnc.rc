@@ -1,0 +1,40 @@
+#! /bin/sh
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+set -x
+
+#
+# Starts initial local Xvnc clients
+#
+
+unset LD_LIBRARY_PATH
+
+__DISTRIB_RELEASE=$(/usr/bin/awk -F = '/DISTRIB_RELEASE/ {print $2}' /etc/lsb-release)
+
+test -f $HOME/.Xresources && xrdb $HOME/.Xresources > /dev/null 2>&1
+xsetroot -solid darkblue > /dev/null 2>&1
+
+ln -fs $ISABEL_DIR/lib/jwmrc $HOME/.jwmrc
+
+jwm || exit
+
+

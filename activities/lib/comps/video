@@ -1,0 +1,63 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#--------------------------------------------------------------------
+# Component: Video
+#--------------------------------------------------------------------
+
+Video.whatis:        component    
+
+Video.otherlayout:   
+Video.othermap:      0
+
+Video.ctrlsites:     Ctrl
+
+Video.conftables:    video vga
+
+Video.vga.enabled:    0
+Video.lse.enabled:    0
+
+#Video.FEC.K:         6
+
+#--------------------------------------------------------------------
+
+# Multiplos de 16:
+#
+#    64x48  128x96  192x144  256x192  320x240  384x288 448x336  512x384
+#  575x432 640x480  704x528  768x576
+#
+
+#--------------------------------------------------------------------
+
+Video.conftable.video: \
+  {geometry=64x48   bw=0    {codec=MPEG-4 -qlty=0} grabsize=0       framerate=25} \
+  {geometry=640x480 bw=0    {codec=MPEG-4 -qlty=0} grabsize=640x480 framerate=25}
+
+#--------------------------------------------------------------------
+
+Video.conftable.vga: \
+  {geometry=64x48    bw=0    {codec=MPEG-4 -qlty=0} grabsize=0        framerate=25} \
+  {geometry=640x480  bw=0    {codec=MPEG-4 -qlty=0} grabsize=640x480  framerate=25} \
+  {geometry=800x600  bw=0    {codec=MPEG-4 -qlty=0} grabsize=1024x768 framerate=10} \
+  {geometry=1024x768 bw=0    {codec=MPEG-4 -qlty=0} grabsize=1024x768 framerate=10}
+
+#--------------------------------------------------------------------

@@ -1,0 +1,18 @@
+-----------------------------
+
+- libreria: FileGarbageCollector
+
+- Descripción: permite mantener una lista de los ficheros temporales que vamos creando en nuestro servicio para, al final, eliminarlos todoscon una llamada a un metodo. Ver javadoc
+
+- Paquete: isabel.lib.xlim
+
+- Clases:  
+	* FileGarbageCollector
+
+- Ficheros en el repositorio: 
+	* Directorio: xlimlib
+	* Ficheros: 
+		· xlimlib/isabel/lib/xlim/FileGarbageCollector.java
+
+- Temas pendientes: ninguno
+-----------------------------

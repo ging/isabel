@@ -1,0 +1,122 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+###############################################################
+#
+# mcud.itcl
+#      
+# Description:
+#
+#   Access to the mcu daemon.
+#
+################################################################
+
+
+class DMcuC {
+    inherit DaemonC
+
+    # Port used by the audio daemon to receive the audio packets sent by the mcu daemon.
+    private variable aPort 51025
+    
+    # Port used by the mcu daemon to receive the audio packets sent by the audio daemon.
+    private variable maPort 51026
+
+    # Port used by the mcu daemon to receive the audio packets sent by the irouter daemon.
+    private variable miPort 51001
+
+    # Port used by the irouter daemon to receive the audio packets sent by the mcu daemon.
+    private variable iPort 51002
+    
+
+    # Bind host and port:
+    # I must send all the audio packet to this host and port.
+    public variable bindHost ""
+    public variable bindPort ""
+    
+    constructor {no_cc_cb} {
+	DaemonC::constructor MCU 30000 quit() \
+	    nop() 1 $no_cc_cb isabel_mcu
+    } {
+    }
+    
+    destructor {}
+
+    private method Invoke {}
+
+    # kill the mcu daemons.
+    private method CleanUp {}
+
+    private variable pid 0
+}
+
+#------------------------------------------------------------
+
+body DMcuC::constructor {no_cc_cb} {
+
+}
+
+#------------------------------------------------------------
+
+body DMcuC::destructor {} {
+
+    CleanUp
+}
+
+#------------------------------------------------------------
+
+body DMcuC::Invoke {} {
+    global ISABEL_DIR env
+
+    if {$env(USER) == "ubuntu"} {
+	set notifyopt "-notify /dev/null"
+    } else {
+	set _logfn $env(ISABEL_SESSION_LOGS_DIR)/notify.Mcu
+	if { ! [file exists $_logfn]} {
+	    exec touch $_logfn
+	}
+	set notifyopt "-notify $_logfn"
+    }
+
+    set cport 51014
+
+    set cmd "isabel_mcu $notifyopt \
+             -cport $cport -nosl"
+
+    set pid [eval exec $cmd &]
+    
+    WriteTraceMsg "DMcuC::Invoke: \[$pid\] $cmd" Mcu
+    catch {exec echo $pid >> $env(ISABEL_TMP_DIR)/Mcu.pid}
+
+    DaemonC::Invoke
+}
+
+#------------------------------------------------------------
+
+body DMcuC::CleanUp {} {
+
+    if {$pid != 0} {
+	after 100 after idle catch \\\"exec kill    $pid >& /dev/null\\\"
+	after 100 after idle catch \\\"exec kill -9 $pid >& /dev/null\\\"
+	set pid 0
+    }
+}
+
+#------------------------------------------------------------

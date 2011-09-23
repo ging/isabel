@@ -1,0 +1,4 @@
+El codigo del codec g728 se puede encontrar en internet. Este es el que nos
+suministró el DIE. Está basado en el mismo de internet pero se le han tenido
+que hacer muchas modificaciones para que no hayan variables globales en el
+código permitiendo así instanciarlo varias veces en el programa principal.

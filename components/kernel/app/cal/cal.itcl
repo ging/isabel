@@ -1,0 +1,132 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# cal.itcl
+#
+# Component adaptation level to run isabel components.
+#
+#########################################################################
+
+
+#===============================================================
+# ISABEL Version and Release. 
+#===============================================================
+set ISABEL_Version $env(ISABEL_VERSION)
+set ISABEL_Release $env(ISABEL_RELEASE)
+
+
+#===============================================================
+#  EXIT CLEANUP
+#===============================================================
+
+
+#===============================================================
+# MAIN
+#===============================================================
+process CAL_Main {} {
+    global env argc argv ISABEL_Version ISABEL_Release ISABEL_ROLE		
+
+    # Removing the toplevel (.) window.
+    wm withdraw .
+
+    set component_name [lindex $argv 0]
+    set myuserid       [lindex $argv 1]
+    set mysiteid       [lindex $argv 2]
+    set first          [lindex $argv 3]
+
+    set tool           $env(ISABEL_ROLE)
+
+    LogsMessagesC::Initialice $component_name
+
+    WriteTraceMsg "Launching CAL Component: $component_name"
+
+    BalloonClass balloon	
+
+    SiteManager::SetMySiteAndChId $mysiteid $myuserid
+
+    # Create the session info object.
+    WriteTraceMsg "Site configuration file: NONE"
+    SessionInfo session
+
+    #  Shortcuts to some environemnt variables.
+    #   - ISABEL_DIR:         isabel directory.
+    #   - ISABEL_WORKDIR:     work directory.
+    #   - ISABEL_DEBUG:       debug mode.
+    #   - ISABEL_ITCL:        use the itcl interpreter
+    #   etc ...
+    global ISABEL_DIR ISABEL_WORKDIR ISABEL_DEBUG ISABEL_TCL
+    set ISABEL_DIR             [session Environ cget -install_dir]
+    set ISABEL_WORKDIR         [session Environ cget -workdir]
+    set ISABEL_DEBUG           [session Environ cget -debug_level]
+    set ISABEL_TCL             [session Environ cget -tcl]
+
+    WriteTraceMsg "Waiting for SeCo network"
+    NetworkC network 0 $component_name
+
+    ServicesC services
+
+    # SMS client
+    SmsManagerClient sms
+
+    # Get event values defined by the master site.    
+    network join_group isabel_master_event
+
+    WriteTraceMsg "Waiting for version number"
+    session WaitForVersion
+
+    WriteTraceMsg "Waiting for event data"
+    session WaitForEventData
+
+    WriteTraceMsg "Waiting for master environment"
+    session Environ WaitForMasterEnviron
+
+    # Wait for service definition
+    network join_group isabel_master_service
+    WriteTraceMsg "Waiting for service definition"
+    session Activity WaitForServiceDefinition
+
+    # Virtual display sizes caculator
+    DVirtualC dvirtual [session Environ cget -scenary_display]
+
+    # network join_group isacomp_$component_name
+    network join_local_group local_isabel_comp_$component_name
+
+    # Launching the component
+    WriteTraceMsg "Creating component object..."
+    ${component_name}ComponentClass component
+    WriteTraceMsg "Starting component..."
+    component Start $first
+    
+    # join to the snmp monitor group
+    network join_local_group isabel_snmp
+
+    WriteTraceMsg "Launching CAL: done."
+}
+
+#---------------------------------------------------------------
+
+after 1 CAL_Main
+
+#---------------------------------------------------------------
+

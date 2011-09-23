@@ -1,0 +1,97 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# titlesCC.itcl
+#
+# Description
+#
+#   Root titles component.
+#
+#########################################################################
+
+class TitlesComponentClass {
+    inherit Component
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {} {}
+    public method AddRemoteSite {site_id new} {}
+    public method DelMySite {} {}
+    public method DelRemoteSite {site_id} {}
+    public method SetInteractionMode {imname nsec site_id_list args}
+
+    constructor {} {   
+	Component::constructor Titles
+    } {
+    }
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Object that implements the component behaviour
+    private variable probj ""
+}
+
+#---------------------------------------------------------------
+
+body TitlesComponentClass::destructor {} {
+
+    if {$probj != ""} {
+	delete object $probj
+	set probj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body TitlesComponentClass::Create {first} {
+
+    WriteTraceMsg "- Titles: Creating new Titles component" Titles
+    
+    if {[catch {TitlesC "#auto"} res]} {
+	ErrorTraceMsg "Titles: component can not be created.\n$res"
+	return -1
+    }
+    set probj $res
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body TitlesComponentClass::SetInteractionMode {imname nsec site_id_list args} {
+
+    # Movido a IMM.
+}
+
+#---------------------------------------------------------------
+
+

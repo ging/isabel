@@ -1,0 +1,331 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vncCC.itcl
+#
+# Descripcion
+#
+#   VNC component.
+#
+#########################################################################
+
+class VNCComponentClass {
+    inherit Component
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {   
+	Component::constructor VNC
+    } {
+    }
+
+    destructor {}
+
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args}
+    public method Cmd {args}
+    public method ShDisplayCmd {args} {}
+
+    public method SelectServerAndRequestInteractionMode {imname site_id_list args}
+    public method SelectServerAndSetAsCurrent {}
+
+    # Execute "eval $args" in all the sites executing the VNC component.
+    public method Global {args}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Object that implements the component behaviour
+    private variable vncobj ""
+
+    # Object that implements the shdisplay subcomponent behaviour
+    private variable shdisplayobj ""
+
+    # Variables to store information about the last Interaction Mode
+    # in order to know if I am pressing the same button several times.
+    private variable lastSpeakerSite ""
+    private variable lastIMName ""
+
+    # Callback executed by the VNCServersLauncherC window.
+    # Parameters 1 to 3 define the interaction mode to apply.
+    # The last four parameters are added by the VNCServersLauncherC window. They 
+    # are the selection done by the VNCServersLauncherC window: the distribution 
+    # network, the access site, the vnc server and the password. They are used to 
+    # build a -vnccfg option to be added to $_im_args.
+    private method LauncherCB {_im_name _im_site_id_list _im_args _distNet _accessSite _server _passwd}
+
+    # Callback executed by the VNCServersSelectC window.
+    # Parameters are added by the VNCServersSelectC window, and represents
+    # selected server: the distribution network, the access site, the vnc server and 
+    # the password.
+    # They are used to change the VNC server to show during the VNC interaction mode.
+    private method SelectionCB {_distNet _accessSite _server _passwd}
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::destructor {} {
+
+    if {$vncobj != ""} {
+	delete object $vncobj
+	set vncobj ""
+    }
+
+    if {$shdisplayobj != ""} {
+	delete object $shdisplayobj
+	set shdisplayobj ""
+    }
+
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::Create {first} {
+
+    WriteTraceMsg "VNC: Creating component." VNC
+
+    # Create X utils task
+    XUtilsTaskC xutils     
+    
+    if {[catch {ShDisplayComponentC "#auto"} res]} {
+	ErrorTraceMsg "Shared Display: component can not be created.\n$res"
+	return -1
+    }
+    set shdisplayobj $res
+
+    if {[catch {VNCMainC "#auto" [code $shdisplayobj]} res]} {
+	ErrorTraceMsg "VNC: component can not be created.\n$res"
+	return -1
+    }
+    set vncobj $res
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::AddMySite {} {
+
+    $vncobj AddMySite
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::AddRemoteSite {site_id new} {
+
+    $vncobj AddRemoteSite $site_id $new
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::DelMySite {} {
+
+    $vncobj DelMySite
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::DelRemoteSite {site_id} {
+
+    $vncobj DelRemoteSite $site_id
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::Global {args} {
+    eval network MasterRequest NET SiteBroadcast COMP VNC Cmd $args
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::SetInteractionMode {imname nsec site_id_list args} {
+
+    set lastIMName      $imname
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::SelectServerAndRequestInteractionMode {imname site_id_list args} {
+
+    set scenary [session Activity GetResource $imname VNC]
+    
+    set active [GetOptionListValue $scenary -active 0]
+
+    # It is not a VNC based interaction mode.
+    if {$active == 0} return
+
+    # Speaker: who is going to make the presentation?
+    set _speakersites    [GetOptionListValue $args -speakersites "__none__"]
+    if {$_speakersites != "__none__"} {
+	set _speakersite [lindex $_speakersites 0]
+    } else {
+	set _speakersite [lindex $site_id_list 0]
+    }
+
+    # $vnccfg valid formats:
+    #
+    #  <dist_net> <access_site> 
+    #  <dist_net> <access_site> hint <hint>
+    #  <dist_net> <access_site> server <server> <password>
+    #
+    
+    # Get -vnccfg option:
+    set vnccfgopt [GetOptionListValue $args -vnccfg]
+    
+    if {$vnccfgopt != ""} {
+	# I am going to create a -vnccfg option, then this option should not be present in $args
+	return
+    }
+    
+    #
+    # No -vnccfg option is present. I will use the selection window to create it.
+    #
+    
+    # Display for the selection window
+    set _psdisplay [GetOptionListValue $args -presselectiondisplay]
+    if {$_psdisplay == ""} {
+	set _psdisplay [session Environ cget -ctrl_display]
+    }	    
+    
+    #
+    # I am going to use the selection window to select the server to view,
+    # or I am going to use the server defined in the SMS state.
+    #
+    if {$_speakersite == [$vncobj GetCurrentSpeaker] &&	
+	$lastIMName == $imname} {
+	# I am the same speakersite, and I am pressing the same button again.
+	VNCServersLauncherC::ToggleMap $_psdisplay [code $this LauncherCB $imname $site_id_list $args] 
+    } else {
+	set _distNet    [$vncobj GetCurrentDistNet]
+	set _accessSite [$vncobj GetCurrentAccessSite]
+	set _server     [$vncobj GetCurrentServer]
+	set _passwd     [$vncobj GetCurrentPasswd]
+	if {$_server == "" || ($_distNet == "NeReDa" && $_accessSite == "")} {
+	    VNCServersLauncherC::ToggleMap $_psdisplay [code $this LauncherCB $imname $site_id_list $args] 
+	} else {
+	    LauncherCB $imname $site_id_list $args $_distNet $_accessSite $_server $_passwd
+	    VNCServersLauncherC::Unmap
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::SelectServerAndSetAsCurrent {} {
+
+    VNCServersSelectorC::ToggleMap "" [code $this SelectionCB] 
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::LauncherCB {_im_name _im_site_id_list _im_args _distNet _accessSite _server _passwd} {
+
+    set _vnccfgopt [list $_distNet $_accessSite server $_server $_passwd]
+
+    lappend _im_args -vnccfg $_vnccfgopt
+	    
+    eval network MasterRequest CM InteractionModeRequest \
+	[list $_im_name] \
+	[list $_im_site_id_list] \
+	$_im_args
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::SelectionCB {_distNet _accessSite _server _passwd} {
+
+    sms forceState Vnc add \
+	-distribution_network $_distNet \
+	-access_site     $_accessSite \
+	-vnc_server      $_server \
+	-password        $_passwd
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::Cmd {args} {
+
+    if {$vncobj == ""} return
+
+    eval $vncobj $args
+}
+
+#---------------------------------------------------------------
+
+body VNCComponentClass::ShDisplayCmd {args} {
+
+    if {$shdisplayobj == ""} return
+
+    eval $shdisplayobj $args
+}
+
+#---------------------------------------------------------------
+
+######################################################################
+#
+#  Send a command to the object that implements the VNC behaviour.
+#
+######################################################################
+
+process VNCCmd {args} {
+    
+    eval component Cmd $args
+}
+
+#-----------------------------------------------------------------
+
+process VNCShDisplayCmd {args} {
+
+    eval component ShDisplayCmd $args
+}
+
+#-----------------------------------------------------------------
+
+process VNCGlobalCmd {args} {
+
+    eval network MasterRequest NET SiteBroadcast COMP VNC Cmd $args
+}
+
+
+#-----------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,159 @@
+/////////////////////////////////////////////////////////////////////////
+//
+// ISABEL: A group collaboration tool for the Internet
+// Copyright (C) 2009 Agora System S.A.
+// 
+// This file is part of Isabel.
+// 
+// Isabel is free software: you can redistribute it and/or modify
+// it under the terms of the Affero GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Isabel is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// Affero GNU General Public License for more details.
+// 
+// You should have received a copy of the Affero GNU General Public License
+// along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+//
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+//
+// $Id: XXXCodec.cxx_template_sample 20759 2010-07-05 10:30:36Z gabriel $
+//
+/////////////////////////////////////////////////////////////////////////
+
+#include "H263Codec.h"
+#include "H263/encoder/def.h"
+#include "H263/decoder/tmndec.h"
+#include <vCodecs/payloads.h>
+
+//function declaration
+
+int 
+H263_encode(void          *context,
+            unsigned char *inBuff,
+            int            inBuffLen, 
+            unsigned char *outBuff,
+            int            outBuffLen);
+
+int
+H263_delete_codec(void * context);
+
+int 
+H263_decode(void           *context,
+            unsigned char  *inBuff,
+            int             inBuffLen, 
+            unsigned char  *outBuff,
+            int             outBuffLen);
+
+int
+H263_delete_decoder(void * context);
+
+int 
+H263_get_codec_params(void * context,CodecArgs * params);
+
+int 
+H263_get_decoder_params(void * context,DecoderArgs * params);
+
+
+//---------------------------------------------
+// Local functions declaration
+//---------------------------------------------
+int 
+H263_encode(unsigned char *inBuff,
+            unsigned int   inBuffLen, 
+            unsigned char *outBuff,
+            unsigned int   outBuffLen);
+int 
+H263_decode(unsigned char *inBuff,
+            unsigned int   inBuffLen, 
+            unsigned char *outBuff,
+            unsigned int   outBuffLen);
+
+//---------------------------------------------
+// Functions
+//---------------------------------------------
+
+int
+H263_global_init(void)
+{	
+    return 0;
+}
+
+Codec *
+H263_new_codec(CodecArgs * params)
+{
+    Codec * H263Codec = new Codec;
+    
+    return H263Codec;
+}
+
+Decoder *
+H263_new_decoder(DecoderArgs * params)
+{
+
+    Decoder * H263Decoder = new Decoder;
+
+    return H263Decoder;
+}
+
+int 
+H263_encode(void          *context,
+            unsigned char *inBuff,
+            int   inBuffLen, 
+            unsigned char *outBuff,
+            int   outBuffLen)
+{
+    Codec * codec = static_cast<Codec *>(context);
+	
+    return 0;
+}
+
+int
+H263_delete_codec(void * context)
+{
+	int ret;
+    return (ret);
+}
+
+int 
+H263_decode(void           *context,
+            unsigned char  *inBuff,
+            int    inBuffLen, 
+            unsigned char  *outBuff,
+            int    outBuffLen)
+{
+
+  	int ret;
+   
+    return ret;
+}
+
+int
+H263_delete_decoder(void * context)
+{    
+    
+	return 0;
+}
+
+int 
+H263_get_codec_params(void * context,CodecArgs* params)
+{
+    Codec * codec = static_cast<Codec *>(context);
+    memcpy(params,&codec->params,sizeof(CodecArgs));
+    return true;
+}
+
+int 
+H263_get_decoder_params(void * context,DecoderArgs * params)
+{
+
+    Decoder * decoder = static_cast<Decoder *>(context);
+    memcpy(params,&decoder->params,sizeof(DecoderArgs));
+    return true;
+
+}
+

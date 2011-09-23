@@ -1,0 +1,16 @@
+AviReadHandler.cpp
+AviReadStream.cpp
+BaseError.cpp
+Cache.cpp
+FFReadHandler.cpp
+FFReadStream.cpp
+Locker.cpp
+ReadStream.cpp
+ReadStreamA.cpp
+ReadStreamV.cpp
+StreamInfo.cpp
+avm_output.cpp
+fcc_type.cpp
+readfile.cpp
+utils.cpp
+wave_type.cpp

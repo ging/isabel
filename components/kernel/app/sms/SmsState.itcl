@@ -1,0 +1,159 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#
+#
+# Objects of this class store the state (data and counters) associated to one SMS key.
+#
+# The state is an array with options and values.
+#
+class SmsState {
+    inherit SmsStateCounter
+
+    # $data($option) is the value associated to $option.
+    private variable data
+    
+    #
+    # Construye un nuevo objeto con los pares (opcion,valor) pasados
+    # como argumento en args.
+    #
+    # $_nsec y $_origin son los valores para los atributos nsec y origin.
+    #
+    # $args It  a list of pairs "$option $value".
+    #       Example: -one two -three four -five six ....
+    #       These values are saved in an array, using $option as index,
+    #       and $value as value.
+    #
+    public constructor {_nsec _origin args} {
+	SmsStateCounter::constructor $_nsec $_origin
+    } {
+	
+	set nsec $_nsec
+	set origin $_origin
+	array set data $args
+    }
+    
+    #
+    # Returns the value associated to $option
+    #
+    public method get {option} {
+	
+	if {[info exists data($option)]} { 
+	    return $data($option)
+	}
+	return ""
+    }
+    
+    #
+    # Add more "$option $value" pairs to the state.
+    # If the pair already exists, it is overwriten.
+    #
+    public method add {args} {
+	
+	array set data $args
+    }
+    
+    
+    #
+    # Deletes some options and theirs associated values.
+    # $args is a option list, note that it is only a option list without the values.
+    #
+    public method del {args} {
+	
+	foreach _opt $args {
+	    array unset data $_opt
+	}
+    }
+
+    
+    #
+    # Returns a list containing all the {$option $value} pairs stored in data.
+    #
+    public method list {} {
+	array get data
+    }
+    
+    
+    #
+    # Delete all the pairs in the state.
+    #
+    public method cleanup {} {
+	
+	array unset data
+    }
+
+    
+    #
+    # Returns 1 if all the options and values in $data() and $list are equal.
+    #
+    # $list is a list with the format: option value option value ...
+    #
+    public method equals {list} {
+	
+	array set _aux $list
+	
+        foreach _i [array names _aux] {
+	    if { ! [info exists data($_i)]} { return 0 }
+	    if {$_aux($_i) != $data($_i)} { return 0 }
+	}
+        foreach _i [array names data] {
+	    if { ! [info exists _aux($_i)]} { return 0 }
+	    if {$_aux($_i) != $data($_i)} { return 0 }
+	}
+	return 1
+    }
+
+
+    #
+    # Returns 1 if all the options and values in $list are included in $data().
+    #
+    # $list is a list with the format: option value option value ...
+    #
+    public method included {list} {
+	
+	array set _aux $list
+	
+        foreach _i [array names _aux] {
+	    if { ! [info exists data($_i)]} { return 0 }
+	    if {$_aux($_i) != $data($_i)} { return 0 }
+	}
+	return 1
+    }
+
+    #
+    # Returns 1 if all the options in $data() and $list are disjoint,
+    # i.e. there are no options in common.
+    #
+    # $list is a list with the format: option value option value ...
+    #
+    public method disjoint {list} {
+	
+	array set _aux $list
+	
+        foreach _i [array names _aux] {
+	    if {[info exists data($_i)]} { return 0 }
+	}
+	return 1
+    }
+
+}
+

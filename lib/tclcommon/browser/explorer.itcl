@@ -1,0 +1,498 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+################################################################
+#
+############## Description #####################################
+#
+#   File system explorer.
+#
+############## Summary of Data Structures ######################
+#
+#  Classes: 
+#
+#    - ExplorerC: the explorer.
+#
+############## Public variables and methods ####################
+#
+#   - GetCurrentDir {}
+#   - SetCurrentDir {path}
+#   - GetCurrentFile {}
+#   - SetCurrentFile {path}
+#   - GetDirFiles {}
+#   - GetAllFiles {}
+#   - Unselect {}
+#   - SetState {st}
+#   - Refresh {}
+#
+################################################################
+
+
+class ExplorerC {
+
+    # Font
+    private common font "-adobe-helvetica-medium-r-normal-*-11-80-100-100-p-56-iso8859-1"
+
+    # iconos
+    private common imgdir  ""
+    private common imgfile ""
+
+    # root directory
+    private variable rootdir
+
+    # Parent dir of $rootdir.
+    # It is [file dirname $rootdir]
+    private variable rootdirprefix
+
+    # root widget
+    private variable wroot
+
+    # the label, tree and list widget objects
+    private variable treeobj
+    private variable listobj
+    private variable labelobj
+
+    # This variable store the user given callback to execute when a double click 
+    # is done over a list element.
+    # The tree path and the list name are added as argument to the callback.
+    private variable doubleClickListCB
+
+    # Current path relative to $rootdirprefix
+    private variable current_dir
+
+    # Widget state: normal or disabled.
+    # It only affects to the SetCurrentDir and SetCurrentFile methods,
+    # and to the double click over files.
+    private variable state
+
+
+    constructor {w _rootdir dclCB width height args} {}
+
+    destructor {}
+
+    # Returns the current path.
+    # It is a relative path to root.
+    public method GetCurrentDir {} {}
+
+    # Sets the current path
+    # $path is a relative path to root.
+    public method SetCurrentDir {path} {}
+
+    # Returns the current File.
+    # It is a filename without any path.
+    public method GetCurrentFile {} {}
+
+    # Sets the current File
+    # $path is a relative path to the file.
+    public method SetCurrentFile {path} {}
+
+    # Returns all the path to the files in the list widget.
+    # Path are relative paths to the files.
+    public method GetDirFiles {} {}
+
+    # Returns a list with the paths to all the files in the current selected 
+    # directory and in its subdirectories.
+    # All list elements are relative filename paths.
+    public method GetAllFiles {} {}
+
+    # Remove the current selections.
+    public method Unselect {} {}
+
+    # Set the state to normal or disabled
+    public method SetState {st} {}
+
+    # Refresh the explorer contents.
+    public method Refresh {}
+
+    # Set a selection in the tree or list widgets
+    private method SetSelectionToList {name} {}
+    private method SetSelectionToTree {relpath} {}
+
+    # Method to execute when the $relpath branch is opened.
+    private method OpenTreeBranch {relpath} {}
+
+    # Explores from the root until $absdir
+    # and fills the tree widget.
+    private method ScanPath {absdir} {}
+
+    # Explores the directory $reldir until the specified depth
+    # and fills the tree widget.
+    private method ScanDir {reldir depth} {}
+
+    # Gets the files in $reldir and fill the list object.
+    private method GetDirContent {reldir} {}
+
+    # This object manages absolute directory path, except when accessing
+    # to the tree widgets, which manages relative paths to $rootdirprefix.
+    # The method RemoveRootPrefix is used to remove the $rootdirprefix prefix
+    # from an absolute path.
+    # The method AddRootPrefix is used to add the $rootdirprefix prefix 
+    # to a relative path
+    private method RemoveRootPrefix {abspath} {}
+    private method AddRootPrefix    {relpath} {}
+
+    # This method is executed when a double click is done over
+    # a list element.
+    # It executes the user specified callback adding as parameters 
+    # the tree path and the list name.
+    private method DoubleClickListCB {name} {}
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::constructor {w _rootdir dclCB width height args} {
+
+    if 0 {
+	set imgdir  [CreateImage browseridir  gif/bdir.gif]
+	set imgfile [CreateImage browserifile gif/bfile.gif]
+    } else {
+	set imgdir  ""
+	set imgfile ""
+    }
+
+    set doubleClickListCB $dclCB
+
+    set state normal
+
+    set wroot $w
+
+    #-------------
+
+    eval frame $wroot $args
+
+    #-------------
+
+    #label $wroot.l -bg white -text ...$_rootdir -anchor w -font $font -relief groove
+    label $wroot.l -text "..." -anchor w -font $font -relief groove
+#-bg white 
+    pack $wroot.l -fill x
+
+    #-------------
+
+    ::iwidgets::panedwindow $wroot.pw \
+	    -orient vertical \
+	    -height $height \
+	    -width  $width 
+
+	    #-background white
+
+    
+    #-------------
+    
+    $wroot.pw add tree -margin 3 -minimum 50
+    set wrt [$wroot.pw childsite tree].t
+    
+    set treeobj [TreeWidgetC #auto $wrt \
+	    [code $this SetSelectionToTree] \
+	    [code $this OpenTreeBranch] ]
+    pack $wrt -side top -expand 1 -fill both
+    
+    #-------------
+    
+    $wroot.pw add list -margin 3 -minimum 50
+    set wrl [$wroot.pw childsite list].l
+    
+    set listobj [ListWidgetC #auto $wrl \
+	    [code $this SetSelectionToList] \
+	    [code $this DoubleClickListCB] ]
+    pack $wrl -side left -expand 1 -fill both
+
+    #-------------
+
+    pack $wroot.pw -expand 1 -fill both
+
+    #-------------
+   
+    set rootdir       $_rootdir
+    set rootdirprefix [file dirname $_rootdir]
+    set current_dir   ""
+
+    $treeobj Add  /[file tail $rootdir] $imgdir ""
+    ScanDir       /[file tail $rootdir] 2
+    #GetDirContent /[file tail $rootdir]
+
+    #-----------------
+
+    frame $wroot.destroy
+    bind $wroot.destroy <Destroy> "delete object $this"
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::destructor {} {
+
+    catch {bind $wroot.destroy <Destroy> ""}
+    if {[winfo exists $wroot]} {
+        destroy $wroot
+    }
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::SetSelectionToList {name} {
+
+    $treeobj  SetSelection ""
+
+    $wroot.l configure -text ...$current_dir/$name
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::SetSelectionToTree {relpath} {
+
+    $listobj SetSelection ""
+    GetDirContent $relpath
+    set current_dir $relpath
+    $wroot.l configure -text ...$current_dir
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::OpenTreeBranch {relpath} {
+
+    ScanDir $relpath 2
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::ScanPath {absdir} {
+
+    set reldir [RemoveRootPrefix $absdir]
+
+    set dn [file dirname $absdir]
+    if {$dn != $rootdirprefix} {
+	ScanPath $dn
+    }
+    
+    catch {$treeobj Add $reldir $imgdir ""}
+    ScanDir $reldir 2
+    $treeobj Open $reldir 
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::ScanDir {reldir depth} {
+
+    if {$depth <= 0} return
+    
+    foreach i [glob -nocomplain -- $rootdirprefix/$reldir/*] {
+	if {[file isdirectory $i]} {
+	    set relsubdir [RemoveRootPrefix $i]
+	    catch {$treeobj Add $relsubdir $imgdir ""}
+	    ScanDir $relsubdir [expr $depth - 1]
+	}
+    }
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::GetDirContent {reldir} {
+
+    $listobj DelAll
+    foreach i [glob -nocomplain -- $rootdirprefix/$reldir/*] {
+	if {[file isfile $i]} {
+	    $listobj Add [file tail $i] $imgfile ""
+	}
+    }
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::RemoveRootPrefix {abspath} {
+
+    set l [string length $rootdirprefix]
+    set relpath /[string range $abspath $l end]
+    regsub -all /+ $relpath / relpath
+    return $relpath
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::AddRootPrefix {relpath} {
+
+    regsub -all /+ $rootdirprefix$relpath / res
+    return $res
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::DoubleClickListCB {name} {
+
+    if {$doubleClickListCB == ""} return
+    if {$name == ""} return
+
+    if {[catch {uplevel #0 $doubleClickListCB $current_dir $name} error]} {
+	error "ExplorerC error: $error"
+    }
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::Refresh {} {
+
+    set cf [GetCurrentFile]
+    set cd $current_dir
+
+    $treeobj DelAll
+    $listobj DelAll
+    $wroot.l configure -text "..."
+    
+    $treeobj Add  /[file tail $rootdir] $imgdir ""
+    ScanDir       /[file tail $rootdir] 2
+
+    if {$cd != ""} {
+	SetCurrentDir $cd
+    }
+
+    if {$cf != ""} {
+	if {![file isfile [AddRootPrefix $cf]]} {
+	    $listobj SetSelection ""
+	    SetSelectionToList    ""
+	} else {
+	    $listobj SetSelection [file tail $cf]
+	    SetSelectionToList    [file tail $cf]
+	}
+    }
+
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::GetCurrentDir {} {
+
+    return $current_dir
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::SetCurrentDir {path} {
+
+    set abspath [AddRootPrefix $path]
+
+    if {$path == "" || ![file isdirectory $abspath]} {
+ 	$treeobj SetSelection ""
+	SetSelectionToTree    ""
+    } else {
+	ScanPath $abspath
+	$treeobj SetSelection $path
+	SetSelectionToTree    $path
+    }
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::GetCurrentFile {} {
+
+    set ls [$listobj GetSelection]
+    if {$ls == ""} {
+	return ""
+    } else {
+	return  $current_dir/$ls
+    }
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::SetCurrentFile {path} {
+    
+    set abspath [AddRootPrefix $path]
+    
+    if {[file isfile $abspath]} {
+	SetCurrentDir [file dirname $path]   
+	$listobj SetSelection [file tail $path]
+	SetSelectionToList    [file tail $path]
+    } elseif {[file isdirectory $abspath]} {
+	SetCurrentDir [file dirname $path/.]   
+    } else {
+	Unselect
+    }
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::GetDirFiles {} {
+
+    set l ""
+    foreach i [$listobj GetAll] {
+	lappend l $current_dir/$i
+    }
+
+    return $l
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::SetState {st} {
+
+    set state $st
+    $treeobj SetState $st
+    $listobj SetState $st
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::Unselect {} {
+
+    $wroot.l configure -text "..."
+    $treeobj SetSelection ""
+    $listobj SetSelection ""
+    $listobj DelAll
+    set current_dir ""
+}
+
+#----------------------------------------------------------------
+
+body ExplorerC::GetAllFiles {} {
+
+    set ls [$listobj GetSelection]
+    if {$ls != ""} {
+	return $current_dir/$ls
+    } else {
+	set ts [$treeobj GetSelection]
+	if {$ts == ""} {
+	    return ""
+	} else {
+	    
+	    set res ""
+	    set pending [AddRootPrefix $ts]
+    
+	    while {$pending != ""} {
+
+		set d [lindex $pending 0]
+		set pending [lreplace $pending 0 0]
+
+		if {[file type $d] == "link"} continue
+
+		foreach i [glob -nocomplain $d/*] {
+		    if {[file isdirectory $i]} {
+			lappend pending $i
+		    } elseif {[file isfile $i]} {
+			lappend res [RemoveRootPrefix $i]
+		    }
+		}
+	    }
+	    return [lsort $res]
+	}
+    }
+}
+
+#----------------------------------------------------------------

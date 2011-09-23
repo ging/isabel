@@ -1,0 +1,482 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#-----------------------------------------
+
+class AuthorTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    public variable person
+    
+    #-- Building the tree
+
+    constructor {_agendaobj _person} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+    
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+    
+    public method getTitle {}
+
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+
+    # Returns a list with my son nodes.
+    # Used by the hierarchy widget.
+    public method getNodes {}
+    
+    #-- References
+
+    # Counter: How many existing objects are pointing to me
+    public variable authorreferences 0
+
+    public method getReferenceTitle {}
+
+    #-- Accessors
+
+    public method getPerson {}
+    public method getAcronym {}
+    public method getName {}
+    public method getPosition {}
+    public method getOrganization {}
+    public method getSite {}
+    public method getSiteId {}
+    public method getFullname {}
+    public method getMain {}
+
+    #-- Online  
+
+    public method online {}
+
+    #-- Node edition
+
+    public method edit {}
+
+    #-- Selection
+
+    # Return 1 if the node can be selected
+    public method isSelectable {}
+    
+    # Methods called when a node is selected or unselected.
+    public method select {} 
+    public method unselect {}
+
+    # Return 1 if the node is selected, otherwise returns 0.
+    public method isSelected {}
+    
+    #-- Scripts
+
+    public method createScriptItems {}
+
+    #-- Node deletion
+
+    # Delete this node
+    public method kill {}
+
+    # Delete this node
+    public method deleteNode {}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+
+    #-- Order
+
+    # Moves the node in the tree up.
+    public method moveUp {} {}
+
+    # Moves the node in the tree down.
+    public method moveDown {} {}
+}
+
+#-----------------------------------------
+
+body AuthorTCC::constructor {_agendaobj _person} {
+
+    CheckClass $_person PersonTCC
+    set person   $_person
+
+    set pr [$person cget -personreferences]
+    $person configure -personreferences [expr $pr + 1]
+}
+
+#-----------------------------------------
+
+body AuthorTCC::destructor {} {
+
+    if {[isSelected]} {
+        unselect
+    }
+
+    set pr [$person cget -personreferences]
+    $person configure -personreferences [expr $pr - 1]
+}
+
+#-----------------------------------------
+
+body AuthorTCC::parse {agendaobj str} {
+
+    set _acronym [lindex $str 0]
+    set _id     [getOptionListValue $str -id]
+
+    WriteTraceMsg "ica: parsing author \"$_acronym\""
+
+    set person [PersonTCC::getPerson $_acronym]
+    if {$person == ""} {
+	set emsg "ERROR:: There is nobody with the acronym \"$_acronym\"."
+	puts stderr $emsg
+	error $emsg 
+    }
+
+    set _me [AuthorTCC ::#auto $agendaobj $person]
+
+    if {$_id != ""} {
+	SessionListTCC::addObjTable $_id  $_me
+    }
+
+    return $_me
+}
+
+#-----------------------------------------
+
+body AuthorTCC::prettyPrinter {{offset 0}} {
+
+    if {$authorreferences == 0} {
+	return [list [$person cget -acronym]]
+    } else  {
+	return [list [$person cget -acronym] -id author/[getMyUid]]
+    }
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getTitle {} {
+
+    return "[$person getAcronym] ([$person getSiteId]) [$person getName]"
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getReferenceTitle {} {
+
+    if {$authorreferences != 0} {
+	return "\[$authorreferences\]"
+    } else {
+	return ""
+    }
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getMyNode {} {
+
+    if {[isSelected]} {
+	set tags "selected"
+    } else {
+	set tags ""
+    }
+
+    #--
+    
+    set _icons "icaauthor"
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+    
+    set _show_mv_icons  [$_menubarobj cget -show_mv_icons]
+    if {$_show_mv_icons} {
+	if { ! [$parent firstAuthor $this]} {
+	    lappend _icons icafocusup
+	}
+	if { ! [$parent lastAuthor $this]} {
+	    lappend _icons icafocusdown         
+	}
+    }
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+    
+    if {$authorreferences == 0} {
+	set _show_delete_icon  [$_menubarobj cget -show_delete_icon]
+	if {$_show_delete_icon} {
+	    lappend _icons icadelete         
+	}
+    }
+
+    if {! [$person online]} {
+	lappend _icons icaoffline
+    }
+
+    #--
+    
+    list \
+	[getMyUid] \
+	"[$person getTitle] [getReferenceTitle]" \
+	"participant leaf $tags" \
+	"$_icons"
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getNodes {} {
+
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getPerson {} {
+
+    return $person
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getAcronym {} {
+
+    $person cget -acronym
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getName {} {
+
+    $person cget -name
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getPosition {} {
+
+    $person cget -position
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getOrganization {} {
+
+    $person cget -organization
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getSite {} {
+
+    $person getSite
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getSiteId {} {
+
+    $person getSiteId 
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getFullname {} {
+
+    $person getFullname
+}
+
+#-----------------------------------------
+
+body AuthorTCC::getMain {} {
+
+    $person getMain
+}
+
+#-----------------------------------------
+
+body AuthorTCC::online {} {
+
+    $person online
+}
+
+#-----------------------------------------
+
+body AuthorTCC::edit {} {
+
+    $person edit
+}
+
+#-----------------------------------------
+
+body AuthorTCC::isSelectable {} {
+
+    return 1
+}
+
+#-----------------------------------------
+
+body AuthorTCC::select {} {
+
+    [$agendaobj getSelection] select $this
+}
+
+#-----------------------------------------
+
+body AuthorTCC::unselect {} {
+
+    [$agendaobj getSelection] unselect $this
+}
+
+
+#-----------------------------------------
+
+body AuthorTCC::isSelected {} {
+
+    [$agendaobj getSelection] isSelected $this
+}
+
+#-----------------------------------------
+
+body AuthorTCC::createScriptItems {} {
+
+    set _authors [getParent]
+    set _presentation [$_authors getParent]
+    set _presentations [$_presentation getParent]
+    set _session [$_presentations getParent]
+    set _script [$_session cget -script]
+    set _chair  [$_session cget -chair]
+
+    set _selobj [$agendaobj getSelection]
+    
+    if {$person != [$_chair getPerson]} {
+	$_script generateItem mode2 "$this $_chair" "" 
+    }
+    
+    $_script generateItem mode1 $this "" 
+    $_script generateItem mode1N $this "" 
+    
+    if {$person != [$_chair getPerson]} {
+	$_script generateItem quesmode "$this $_chair" "" 
+    } else {
+	$_script generateItem quesmode "$this" "" 
+    }
+    
+    if {[$_selobj getSelectedAppSharingResource] != ""} {
+	if {$person != [$_chair getPerson]} {
+	    $_script generateItem appsharingmode "$this $_chair" "" 
+	} else {
+	    $_script generateItem appsharingmode "$this" "" 
+	}
+    }
+    
+    if {[$_selobj getSelectedVideoResource] != ""} {
+	if {$person != [$_chair getPerson]} {
+	    $_script generateItem vgamode "$this $_chair" "" 
+	} else {
+	    $_script generateItem vgamode "$this" "" 
+	}
+    }
+}
+
+#-----------------------------------------
+
+body AuthorTCC::kill {} {
+
+    if {$authorreferences != 0} return
+
+    unselect
+
+    delete object $this
+}
+
+#-----------------------------------------
+
+body AuthorTCC::deleteNode {} {
+
+    $parent deleteAuthor $this
+}
+
+#-----------------------------------------
+
+body AuthorTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "Edit Participant" \
+	-command [code $this edit]
+    
+    $menu add separator
+
+    set _chair [[[[[getParent] getParent] getParent] getParent] cget -chair]
+
+    set _selobj [$agendaobj getSelection]
+
+    $menu add command -label "Select chair and me" \
+	-command "$_selobj unselectAll ; [code $this select] ; $_chair select" 
+
+    $menu add command -label "Create some Scripts" \
+	-command "[code $this createScriptItems]" 
+
+    if {[$parent isa AuthorListTCC]} {
+	$menu add separator
+	
+	if {$authorreferences == 0} {
+	    
+	    $menu add command -image icadelete \
+		-command [code $this deleteNode]
+	    
+	}
+
+	if { ! [$parent firstAuthor $this]} {
+	    $menu add command -image icafocusup \
+		-command [code $this moveUp]
+	}
+	
+	if { ! [$parent lastAuthor $this]} {
+	    $menu add command -image icafocusdown \
+		-command [code $this moveDown]
+	}
+    }
+
+    return $menu   
+}
+
+#-----------------------------------------
+
+body AuthorTCC::moveUp {} {
+
+    $parent moveAuthor $this -1
+}
+
+#-----------------------------------------
+
+body AuthorTCC::moveDown {} {
+
+    $parent moveAuthor $this 1
+}
+
+#-----------------------------------------
+

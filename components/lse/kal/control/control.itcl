@@ -1,0 +1,185 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#
+# The LSE service is started when I connect to this host:port using TCP. 
+#
+# Initially I must send this message:
+#
+#    avatar:<host1>,<port11> subtitles:<host1>,<port12>
+#
+# and I should receive this message:
+#
+#    audio:<host2>,<port2>
+#
+# Where:
+#
+#    * host1 is my host.
+#    * port11 is my receiving video port.
+#      The LSE server will send the video to host1:port11.
+#
+#    * host1 is my host again.
+#    * port12 is my receiving subtitles port.
+#      The LSE server will send the text with the sustitles to host1:port12.
+#
+#    * host2 is the host where the LSE server is running.
+#    * port2 is the port where I must send my audio flows.
+#      The LSE server will receive my audio flows at host2:port2.
+#
+#
+
+class LseCtrlC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # LSE service location:
+    private variable lseHost
+    private variable lsePort
+
+    # Socket connecting with the LSE service control.
+    private variable mysock ""
+
+    # Connect to the server.
+    private  method Connect {}
+
+    # Attend my socket
+    private  method AttendSock {}
+
+
+}
+
+#---------------------------------------------------------------
+
+body LseCtrlC::constructor {} {
+    global env
+
+    if { ! [info exists env(ISABEL_LSE_SERVER_HOST)]} return
+    if {$env(ISABEL_LSE_SERVER_HOST) == ""} return
+
+    set lseHost $env(ISABEL_LSE_SERVER_HOST)
+
+    if { ! [info exists env(ISABEL_LSE_SERVER_PORT)] || $env(ISABEL_LSE_SERVER_PORT) == ""} {
+	set lsePort 4000
+    } else {
+	set lsePort $env(ISABEL_LSE_SERVER_PORT)
+    }
+
+    after 3000 [code $this Connect]
+}
+
+#------------------------------------------------------------------
+
+body LseCtrlC::destructor {} {
+
+    if {$mysock != ""} {    
+	catch {fileevent $mysock readable ""}
+	close $mysock
+    }
+}
+
+#------------------------------------------------------------------
+
+body LseCtrlC::Connect {} {
+    global env
+
+    WriteTraceMsg "LSE-Control: Connecting with the LSE server."
+
+    if {[catch {set mysock [socket $lseHost $lsePort]}] != 0} {
+	set mysock ""
+	ErrorTraceMsg "LSE-Control: I can't connect with LSE Server located at $lseHost : $lsePort."
+	after 1000 [code $this Connect]
+	return
+    }   
+
+    fconfigure $mysock -buffering none -blocking 0 -translation binary
+    fileevent $mysock readable [code $this AttendSock]
+
+    set _myhost        [session Environ cget -hostname]
+    if {[info exists env(ISABEL_LSE_HOST)] && $env(ISABEL_LSE_HOST) != ""} {
+	set _myhost $env(ISABEL_LSE_HOST)
+    }
+
+    set _subtitlesport 53008
+    if {[info exists env(ISABEL_LSE_SUBTITLES_PORT)] && $env(ISABEL_LSE_SUBTITLES_PORT) != ""} {
+	set _subtitlesport $env(ISABEL_LSE_SUBTITLES_PORT)
+    }
+    
+    set _videoport 53132
+    if {[info exists env(ISABEL_LSE_VIDEO_PORT)] && $env(ISABEL_LSE_VIDEO_PORT) != ""} {
+	set _videoport $env(ISABEL_LSE_VIDEO_PORT)
+    }
+
+    set _req "avatar:$_myhost,$_videoport subtitles:$_myhost,$_subtitlesport"
+
+    WriteTraceMsg "LSE-Control: Protocol request: $_req" 
+    
+    puts $mysock $_req
+}
+
+#------------------------------------------------------------------
+
+body LseCtrlC::AttendSock {} {
+
+    if {[eof $mysock]} {
+	WriteTraceMsg "LSE-Control: Connection with LSE server was lost."
+	close $mysock
+	set mysock ""
+
+	network RDOLocalSync local_isabel_comp_MCU 1 \
+	    "Cmd SetLseServer \"\" \"\""
+
+	after 1000 [code $this Connect]
+	return
+    }
+
+    gets $mysock _msg
+
+    if {$_msg != ""} {
+
+	set _re {^\s*audio:(.+),(.+)\s*$}
+	if {[regexp -- $_re $_msg _all _audiohost _audioport] == 0} {
+	    ErrorTraceMsg "LSE-Control: I have received a invalid response from the LSE server: \"$_msg\"."
+	    return
+	}
+	
+	WriteTraceMsg "AUDIO at $_audiohost $_audioport"
+    
+	network RDOLocalSync local_isabel_comp_MCU 1 \
+	    "Cmd SetLseServer $_audiohost $_audioport"
+    }
+
+
+}
+
+#------------------------------------------------------------------
+
+
+

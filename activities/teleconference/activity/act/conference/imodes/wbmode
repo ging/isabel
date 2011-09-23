@@ -1,0 +1,64 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+wbmode.whatis:       imode
+wbmode.scene.name: application sharing
+
+
+wbmode.Audio:        -active 1 \
+                     -skip 1
+
+wbmode.Whiteboard:     -active 1
+
+
+wbmode.Questions:     -active 1 \
+                      -resetlayout lresetwb \
+                      -layout lwb \
+                      -ctrllayout "195x400+1+365 1 1" \
+                      -setaudio 1
+
+wbmode.SpeechMeter:     -active 1 \
+                        -layout lwb
+
+
+wbmode.Video:         -active 1 -skip 1
+
+
+wbmode.SldFtp:     -active 1 \
+                       -videobwfactor _ISERV_SLDFTP_VF_BW \
+                       -maxbw _ISERV_SLDFTP_FTP_BW
+
+#------------------------------------
+
+SpeechMeter.layout.lwb:     +202+650 0 1
+
+#------------------------------------
+
+Video.layout.lresetwb: \
+ {video 192x144+1+001 _ISERV_VID_WBQ_BW} \
+ {video 192x144+1+180 _ISERV_VID_WBQ_BW}
+
+Video.layout.lwb: \
+ {video 192x144+1+180 _ISERV_VID_WBQ_BW} \
+ {video 192x144+1+001 _ISERV_VID_WBQ_BW}
+
+#------------------------------------

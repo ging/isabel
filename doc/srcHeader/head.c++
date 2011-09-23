@@ -1,0 +1,11 @@
+
+/////////////////////////////////////////////////////////////////////////
+//
+// $Id: head.c++ 36 2001-06-08 15:14:07Z eva $
+//
+// (C) Copyright 1993-99. Dpto Ingenieria Sistemas Telematicos UPM Spain
+// Dec 31, 1999 Transfered to Agora Systems S.A.     
+// (C) Copyright 2000-2001. Agora Systems S.A.     
+//
+/////////////////////////////////////////////////////////////////////////
+

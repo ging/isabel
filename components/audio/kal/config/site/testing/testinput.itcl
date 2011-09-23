@@ -1,0 +1,185 @@
+
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+class TestAudioInputC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Starts testing
+    public proc Start {}
+
+    # Stops testing
+    public proc Stop {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # toplevel widget.
+    private common wroot .audio_test_input_tl
+    
+    # Create the user interface.
+    private proc GUI {}
+    
+    # Testing?
+    # 1 if I am testing now, else 0
+    private common testing 0
+
+    # Id of the "java IsabelRtpEcho" process.
+    private common j_pid ""
+
+    # UDP port used by the IsabelRtpEcho program
+    private common j_port ""
+
+    # BindId returned bu audio_bind
+    private common bindId ""
+
+    # Update the progress bar
+    private proc DoStep {cont}
+}
+
+#---------------------------------------------------------------------------
+
+body TestAudioInputC::GUI {} {
+
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    set display [session Environ cget -audio_ctrl_display]
+
+    toplevel $wroot -screen $display
+
+    wm protocol $wroot WM_DELETE_WINDOW "TestAudioInputC::Stop"
+
+    wm title $wroot "Testing Capture"
+
+    label $wroot.l \
+	-text "Testing Capture" \
+	-font [IsabelFontsC::GetFont large medium] \
+	-pady 0
+
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+    
+    #--------------------------------
+
+    iwidgets::feedback $wroot.fb \
+	-steps 100
+
+    #--------------------------------
+
+  label $wroot.help \
+	-relief flat \
+        -justify left \
+	-font $font \
+	-text "Speak to the microphone to test the selected capture device."
+
+   #--------------------------------
+    # Dismiss
+    #--------------------------------
+
+    button $wroot.stop \
+	-text Stop \
+	-pady 3 \
+	-command TestAudioInputC::Stop
+
+    #--------------------------------
+    # Packing
+    #--------------------------------
+    
+    pack $wroot.l    -padx 10 -pady 10 
+    pack $wroot.fb   -padx 10 -pady 10 -fill both -expand yes
+    pack $wroot.help -padx 10 -pady 10 -fill both -expand yes
+    pack $wroot.stop -padx 10 -pady 10 
+}
+
+#---------------------------------------------------------------------------
+
+body TestAudioInputC::Start {} {
+    global env
+    
+    if {$testing} return
+
+    TestAudioOutputC::Stop
+    
+    GUI
+    
+    set _f [open "| java -cp $env(ISABEL_DIR)/libexec/isabel_rtp_echo.jar IsabelRtpEcho" r]
+    set j_port [expr [read $_f]]
+    set j_pid [pid $_f]
+    
+    component Cmd StartCaptureDeviceTesting $j_port
+    
+    set testing 1
+    $wroot.fb reset
+    
+    wm deiconify $wroot
+    
+    DoStep 0
+}
+
+#---------------------------------------------------------------------------
+
+body TestAudioInputC::DoStep {cont} {
+
+    if {! $testing} return
+
+    set _incr 2
+    
+    $wroot.fb step $_incr
+    
+    incr cont $_incr
+    
+    if {$cont >= 100} {
+	Stop
+	return
+    }
+    
+    after 500 [code TestAudioInputC::DoStep $cont]
+}
+
+#---------------------------------------------------------------------------
+
+body TestAudioInputC::Stop {} {
+
+    set testing 0
+
+    if {$j_pid != ""} {
+	exec kill $j_pid
+	set j_pid ""
+    }
+
+    component Cmd StopCaptureDeviceTesting
+
+    if {[winfo exist $wroot]} { 
+	wm withdraw $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+

@@ -1,0 +1,461 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# interface.itcl
+#
+# User interface.
+#
+#########################################################################
+
+class UserInterfaceC {
+    inherit CommonInterfaceC
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {title} {
+	CommonInterfaceC::constructor $title} {}
+
+    destructor {}
+
+    # Create frames to display the user action buttons and the activity logo.
+    public method OpenUserActions {}
+    private method MoveDown {}
+    private method MoveDown2 {}
+
+    # Rebuild the user action buttons.
+    public method UpdateUserActionButtons {}
+
+    # Rebuild the  menu of menuitems.
+    public method UpdateMenuitemsMenu {}
+
+    # Open the menuitems menu.
+    public method OpenMenuitemsMenu {}
+
+    # Admin object access method.
+    public method Admin {args} 
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Insert the activity specified logo.
+    private method PackActLogo {}
+
+    # Execute an action command.
+    private method ExecuteActionCmd {action} 	
+
+    # Execute a menuitem action.
+    private method ExecuteMenuItemCmd {menuitem}
+
+}
+
+#----------------------------------------------------
+
+body UserInterfaceC::constructor {title} {
+
+    AtExit::Append "delete object $this"
+
+}
+
+#----------------------------------------------------
+
+body UserInterfaceC::destructor {} {
+
+    if {[winfo exists .isabel]} {
+	bind .isabel <Destroy> ""
+	destroy .isabel
+    }
+}
+
+#----------------------------------------------------
+
+body UserInterfaceC::OpenUserActions {} {
+    global registrator ISABEL_DIR ISABEL_DEBUG
+
+    toplevel .isabel
+
+    bind .isabel <Destroy> {
+	bind .isabel <Destroy> ""
+	WarningTraceMsg "User interface destroyed by user. Requesting ISABEL exit."
+	if {[session Environ cget -is_master] == "0"} {
+	    SiteManager::SiteDisconnection [SiteManager::MySiteId] 
+	} else {
+	    network MasterRequest UM MasterDisconnection
+	}
+	after 5000 AtExit::ExitMsg 1 {"Master timeout expired."} {"Isabel exited."} 
+    }
+
+    wm protocol .isabel WM_DELETE_WINDOW QuitSite
+
+    set title [customercfg GetValue actionWindowTitle [wm title .]]
+    wm title    .isabel $title
+    wm iconname .isabel $title
+
+    set an [session Activity GetName]
+
+    set _orr [session Activity GetResource $an overrideredirect 0]
+    if {$_orr} {
+	wm overrideredirect .isabel 1
+	
+	after idle [code $this MoveDown]
+    }
+
+    set ga [session Activity GetResource $an geometry +0+0]
+    set geometry  [lindex $ga 0]
+    set scalesize [lindex $ga 1]
+    if {$scalesize == ""} {
+	set scalesize 0
+    }
+    set scalepos  [lindex $ga 2]
+    if {$scalepos == ""} {
+	set scalepos 1
+    }
+    set anchor    [lindex $ga 3]
+    if {$anchor == ""} {
+	set anchor NW
+    }
+
+    set dvirtual [DVirtualC #auto [session Environ cget -ctrl_display]]
+    set geometry [$dvirtual V2R_Geometry $geometry $scalesize $scalepos 1 $anchor]
+    delete object $dvirtual
+
+    #----------------------
+    #
+    # frames to grid the logo and the user actions 
+    #
+
+    # if resource "pos" is not specified in the activity
+    frame .isabel.uv_unpos 
+#-bg white
+    pack  .isabel.uv_unpos -side left -padx 0 -pady 1 -fill both -expand 1
+
+    # if resource "pos" is specified in the activity
+    frame .isabel.uv       
+# -bg white
+    pack  .isabel.uv       -side left -padx 0 -pady 1 -fill both -expand 1
+
+    #----------------------------------------------
+
+    wm iconbitmap .isabel @$ISABEL_DIR/lib/images/xbm/tiburon.xbm
+    
+    #   update 
+    #    wm geometry .isabel $geometry
+
+    wm geometry .isabel $geometry
+
+    if {![winfo viewable .isabel]} { 
+	tkwait visibility .isabel
+    }
+	
+    wm geometry .isabel $geometry
+
+
+    #----------------------------------------------
+    #----------------------------------------------
+
+    # Create the Admin window
+    AdminC mus
+    
+}
+
+#--------------------------------------------------------------
+
+body UserInterfaceC::MoveDown {} {
+
+    toplevel .winunderauxam
+
+    label .winunderauxam.msg -text "Moving Actions window to bottom"
+    pack .winunderauxam.msg
+
+    lower .winunderauxam
+
+    after idle after 1 [code $this MoveDown2]
+    after idle after 1 destroy  .winunderauxam
+}
+
+#---------------------------------------------------------------
+
+body UserInterfaceC::MoveDown2 {} {
+    global ISABEL_DIR
+
+    set _id1 [expr [winfo id .winunderauxam]]
+    set _id2 [expr [winfo id .isabel]]
+
+    if {[catch "exec $ISABEL_DIR/bin/isabel_winunder -winOver $_id1 -winUnder $_id2" _err]} {
+	WarningTraceMsg "Subtitles: I can not move Actions window to bottom: $_err"
+    }
+}
+
+#----------------------------------------------------
+
+body UserInterfaceC::PackActLogo {} {
+
+    set actname [session Activity GetName]
+    set logo    [session Activity GetResource $actname logo gif/dit.gif]
+
+    if {$logo == ""} return
+    if {$logo == "\"\""} return
+    CreateImage isabel_logo $logo 1
+
+    set logopos [session Activity GetResource $actname logopos ""]
+
+    if {$logopos == ""} {
+	label .isabel.uv_unpos.logo -image isabel_logo
+	pack  .isabel.uv_unpos.logo -side left
+    } else {
+	label .isabel.uv.logo -image isabel_logo
+	if {[catch {eval grid .isabel.uv.logo $logopos} err]} {
+	    ErrorMsg "- Invalid activity resource \"logopos\": $err"
+	}
+    }
+}
+
+#----------------------------------------------------
+
+body UserInterfaceC::UpdateUserActionButtons {} {
+    global ISABEL_DIR 
+
+    eval destroy [grid slaves .isabel.uv]
+    eval destroy [pack slaves .isabel.uv_unpos]
+    
+    PackActLogo
+
+    foreach i [SiteManager::GetSiteInfo [SiteManager::MySiteId] actions] {
+
+	set  action  $i
+	set _title   [session Activity GetResource $i title]
+	set _title2  [session Activity GetResource $i title2]
+	set _icon    [session Activity GetResource $i icon]
+	set _icon2   [session Activity GetResource $i icon2]
+	set  balloon [session Activity GetResource $i balloon]
+	set  pos     [session Activity GetResource $i pos]
+
+
+	if {$pos == ""} {
+	    set bname .isabel.uv_unpos.b$action 
+	} else {
+	    set bname .isabel.uv.b$action 
+	}
+
+	button $bname \
+	    -bd 0 \
+	    -command [code $this ExecuteActionCmd $action]
+	    #-bg white
+
+	
+	balloon add $bname $balloon
+	
+	if {[string range $_title 0 0] == "@"} {
+	    set _icon [string range $_title 1 end]
+	    set _title ""
+	}
+	
+	if {[string range $_title2 0 0] == "@"} {
+	    set _icon2 [string range $_title2 1 end]
+	}
+	
+	if {$_icon != ""} {
+	    switch [file extension $_icon] {
+		.xbm { 
+		    $bname conf \
+			-bitmap $_icon
+		}
+		.gif { 
+		    CreateImage $_icon $_icon
+		    $bname conf \
+			-image  $_icon \
+			-relief flat
+		} 
+	    }
+
+	    if {$_icon2 != ""} {
+		CreateImage $_icon2 $_icon2
+		bind $bname <Enter> "+$bname conf -image $_icon2"
+		bind $bname <Leave> "+$bname conf -image $_icon"
+	    }
+
+	    if {$_title != ""} {
+		$bname conf \
+		    -compound top \
+		    -text $_title
+	    }
+	} else {
+	    $bname conf -text $_title
+	}
+
+	if {$pos == ""} {
+	    pack $bname -side left -expand 1
+	} else {
+	    if {[catch {eval grid $bname $pos} err]} {
+		ErrorMsg "- Invalid service resource \"$action.pos\": $err"
+	    }
+	}
+
+	if {[winfo exist .isabel.compuserb${action}m]} {
+	    destroy .isabel.compuserb${action}m
+	}
+	menu .isabel.compuserb${action}m -tearoff 0
+	bind $bname <3> \
+		"tk_popup .isabel.compuserb${action}m %X %Y 0"
+    }
+}
+
+#----------------------------------------------------
+
+body UserInterfaceC::UpdateMenuitemsMenu {} {
+
+    # Calculate all my menuitems:
+    set my_menuitems ""    
+    set me [SiteManager::MySiteId]
+    foreach role [SiteManager::GetSiteInfo $me roles] {
+	foreach mi [session Activity GetResource $role menuitems] {
+	    if {[lsearch -exact $my_menuitems $mi] == -1} {
+		lappend my_menuitems $mi
+	    } 
+	}
+    }
+
+    # the main menu
+    if {[winfo exist .isabel.menuitems]} {
+	destroy .isabel.menuitems
+    }
+    menu .isabel.menuitems -tearoff 0
+    
+    #
+    # Create the menus.
+    #
+    # Notes:
+    #
+    # wname is an array to store the widget name asigned to a path name.
+    # wname($pname): widget name of the given path name.
+    #
+    # wpcont: it is a counter used to generate widget names.
+    #
+    set wpcont 0
+    foreach mi $my_menuitems {
+	
+	set path [session Activity GetResource $mi path]
+	set lastmenu .isabel.menuitems
+	foreach i $path {
+	    
+	    if { ! [info exists wname($i)]} {
+		set wname($i) c$wpcont
+		incr wpcont
+	    }
+	    
+	    if { ! [winfo exists $lastmenu.$wname($i)]} {
+		$lastmenu add cascade -label $i -menu $lastmenu.$wname($i)
+		menu $lastmenu.$wname($i) -tearoff 0
+	    }
+
+	    set lastmenu $lastmenu.$wname($i)
+	}
+	
+	set _title  [session Activity GetResource $mi title]
+	set _icon   [session Activity GetResource $mi icon]
+	$lastmenu add command -command [code $this ExecuteMenuItemCmd $mi]
+
+	if {[string range $_title 0 0] == "@"} {
+	    set _icon [string range $_title 1 end]
+	    set _title ""
+	} 
+
+	if {$_icon != ""} {
+	    switch [file extension $_icon] {
+		.xbm { 
+		    set _f @$ISABEL_DIR/lib/images/xbm/$_icon
+		    $lastmenu entryconfigure last -compound left -bitmap $_f -label $_title
+		}
+		.gif { 
+		    CreateImage $_icon gif/$_icon
+		    $lastmenu entryconfigure last -compound left -image $_icon -label $_title
+		} 
+	    }
+	} else {
+	    $lastmenu entryconfigure last -label $_title 
+	}
+    }
+}
+
+#----------------------------------------------------
+
+body UserInterfaceC::OpenMenuitemsMenu {} {
+
+    set x [winfo pointerx .isabel]
+    set y [winfo pointery .isabel]
+
+    set end [.isabel.menuitems index end]
+
+    tk_popup .isabel.menuitems $x $y $end
+}
+
+
+#----------------------------------------------------
+
+body UserInterfaceC::ExecuteActionCmd {action} {
+
+    set _my_site_id [SiteManager::MySiteId]
+
+   set cmd [session Activity GetResource $action cmd]
+
+   regsub -all %U $cmd $_my_site_id cmd
+
+   set primitive [lindex $cmd 0]
+
+   if {[GlobalState::ComponentExists $primitive]} {
+       uplevel #0 ComponentStubC::SendCmd $cmd
+   } else {
+       uplevel #0 $cmd 
+   }
+}
+
+#----------------------------------------------------
+
+body UserInterfaceC::ExecuteMenuItemCmd {menuitem} {
+
+    set _my_site_id [SiteManager::MySiteId]
+
+   set cmd [session Activity GetResource $menuitem cmd]
+
+   regsub -all %U $cmd $_my_site_id cmd
+
+   set primitive [lindex $cmd 0]
+   
+   if {[GlobalState::ComponentExists $primitive]} {
+       uplevel #0 ComponentStubC::SendCmd $cmd
+   } else {
+       uplevel #0 $cmd 
+   }
+}
+
+#----------------------------------------------------
+
+body UserInterfaceC::Admin {args} {
+
+    eval mus $args
+}
+
+#----------------------------------------------------

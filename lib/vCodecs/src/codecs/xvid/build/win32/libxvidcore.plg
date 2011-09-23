@@ -1,0 +1,258 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: libxvidcore - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP10A.bat" with contents
+[
+@echo off
+nasm -f win32 -DPREFIX -I"\repositorio\isabel\lib\vCodecs\lib\codecs\xvid\src\image\x86_asm"\ -o .\Debug\colorspace_yuyv_mmx.obj ..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
+]
+Creating command line "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP10A.bat"
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP10B.tmp" with contents
+[
+/nologo /MTd /W3 /Gm /GX /ZI /Od /D "_WINDOWS" /D "ARCH_IS_32BIT" /D "ARCH_IS_IA32" /D "_DEBUG" /D "WIN32" /FR"Debug/" /Fp"Debug/libxvidcore.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"C:\repositorio\isabel\lib\vCodecs\lib\codecs\xvid\examples\xvid_decraw.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP10B.tmp" 
+Assembling ..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
+Creating temporary file "C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP10C.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /version:1.0 /subsystem:windows /dll /incremental:yes /pdb:"Debug/libxvidcore.pdb" /debug /machine:I386 /def:"..\generic\libxvidcore.def" /out:"libxvidcore.dll" /implib:"bin\xvidcore.dll.a" /pdbtype:sept 
+.\Debug\bitstream.obj
+.\Debug\cbp.obj
+.\Debug\mbcoding.obj
+.\Debug\fdct.obj
+.\Debug\idct.obj
+.\Debug\simple_idct.obj
+.\Debug\colorspace.obj
+.\Debug\font.obj
+.\Debug\image.obj
+.\Debug\interpolate8x8.obj
+.\Debug\postprocessing.obj
+.\Debug\qpel.obj
+.\Debug\reduced.obj
+.\Debug\estimation_bvop.obj
+.\Debug\estimation_common.obj
+.\Debug\estimation_gmc.obj
+.\Debug\estimation_pvop.obj
+.\Debug\estimation_rd_based.obj
+.\Debug\gmc.obj
+.\Debug\motion_comp.obj
+.\Debug\sad.obj
+.\Debug\vop_type_decision.obj
+.\Debug\mbprediction.obj
+.\Debug\quant_h263.obj
+.\Debug\quant_matrix.obj
+.\Debug\quant_mpeg.obj
+.\Debug\emms.obj
+.\Debug\mbtransquant.obj
+.\Debug\mem_align.obj
+.\Debug\mem_transfer.obj
+.\Debug\timer.obj
+.\Debug\plugin_2pass1.obj
+.\Debug\plugin_2pass2.obj
+.\Debug\plugin_dump.obj
+.\Debug\plugin_lumimasking.obj
+.\Debug\plugin_psnr.obj
+.\Debug\plugin_single.obj
+.\Debug\decoder.obj
+.\Debug\encoder.obj
+.\Debug\xvid.obj
+.\Debug\cbp_3dne.obj
+.\Debug\cbp_mmx.obj
+.\Debug\cbp_sse2.obj
+.\Debug\fdct_mmx_ffmpeg.obj
+.\Debug\fdct_mmx_skal.obj
+.\Debug\fdct_sse2_skal.obj
+.\Debug\idct_3dne.obj
+.\Debug\idct_mmx.obj
+.\Debug\idct_sse2_dmitry.obj
+.\Debug\simple_idct_mmx.obj
+.\Debug\colorspace_rgb_mmx.obj
+.\Debug\colorspace_yuv_mmx.obj
+.\Debug\colorspace_yuyv_mmx.obj
+.\Debug\interpolate8x8_3dn.obj
+.\Debug\interpolate8x8_3dne.obj
+.\Debug\interpolate8x8_mmx.obj
+.\Debug\interpolate8x8_xmm.obj
+.\Debug\qpel_mmx.obj
+.\Debug\reduced_mmx.obj
+.\Debug\sad_3dn.obj
+.\Debug\sad_3dne.obj
+.\Debug\sad_mmx.obj
+.\Debug\sad_sse2.obj
+.\Debug\sad_xmm.obj
+.\Debug\quantize_h263_3dne.obj
+.\Debug\quantize_h263_mmx.obj
+.\Debug\quantize_mpeg_mmx.obj
+.\Debug\quantize_mpeg_xmm.obj
+.\Debug\cpuid.obj
+.\Debug\interlacing_mmx.obj
+.\Debug\mem_transfer_3dne.obj
+.\Debug\mem_transfer_mmx.obj
+.\Debug\xvid_decraw.obj
+]
+Creating command line "link.exe @C:\DOCUME~1\isabel\CONFIG~1\Temp\RSP10C.tmp"
+<h3>Output Window</h3>
+Compiling...
+xvid_decraw.c
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(23) : error C2061: syntax error : identifier 'eFormat'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(24) : error C2059: syntax error : '}'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(29) : error C2059: syntax error : '}'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(34) : error C2061: syntax error : identifier 'eFormat'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(47) : error C2059: syntax error : '}'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(52) : error C2061: syntax error : identifier 'eFormat'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(63) : error C2059: syntax error : '}'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(70) : error C2143: syntax error : missing ')' before '*'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(70) : error C2143: syntax error : missing '{' before '*'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(70) : error C2059: syntax error : ')'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(73) : error C2143: syntax error : missing ')' before '*'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(73) : error C2143: syntax error : missing '{' before '*'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(73) : error C2059: syntax error : ')'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(76) : error C2143: syntax error : missing ')' before '*'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(76) : error C2143: syntax error : missing '{' before '*'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(77) : error C2059: syntax error : 'type'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(80) : error C2059: syntax error : ')'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(83) : error C2143: syntax error : missing ')' before '*'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(83) : error C2143: syntax error : missing '{' before '*'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(84) : error C2059: syntax error : 'type'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codec.h(87) : error C2059: syntax error : ')'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(19) : error C2061: syntax error : identifier 'Codec'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(20) : error C2059: syntax error : '}'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(28) : error C2061: syntax error : identifier 'Decoder'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(29) : error C2059: syntax error : '}'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(31) : error C2061: syntax error : identifier 'codecFactory'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(31) : error C2059: syntax error : ';'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(31) : error C2059: syntax error : '['
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(32) : error C2061: syntax error : identifier 'decoderFactory'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(32) : error C2059: syntax error : ';'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(32) : error C2059: syntax error : '['
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(42) : error C2061: syntax error : identifier 'GetCodecByPT'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(42) : error C2059: syntax error : ';'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(42) : error C2059: syntax error : 'type'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(45) : error C2061: syntax error : identifier 'GetDecoderByPT'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(45) : error C2059: syntax error : ';'
+c:\repositorio\isabel\lib\vcodecs\include\vcodecs\codecs.h(45) : error C2059: syntax error : 'type'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(67) : error C2065: 'XVID_CSP_I420' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(67) : error C2099: initializer is not a constant
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(85) : error C2143: syntax error : missing ')' before '*'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(85) : error C2081: 'xvid_dec_stats_t' : name in formal parameter list illegal
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(85) : error C2143: syntax error : missing '{' before '*'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(85) : error C2059: syntax error : ')'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(94) : error C2065: 'XVID_TYPE_IVOP' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(96) : error C2065: 'XVID_TYPE_PVOP' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(98) : error C2065: 'XVID_TYPE_BVOP' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(113) : error C2065: 'xvid_dec_stats_t' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(113) : error C2146: syntax error : missing ';' before identifier 'xvid_dec_stats'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(115) : error C2143: syntax error : missing ';' before 'type'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(117) : error C2143: syntax error : missing ';' before 'type'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(118) : error C2143: syntax error : missing ';' before 'type'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(120) : error C2143: syntax error : missing ';' before 'type'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(122) : error C2143: syntax error : missing ';' before 'type'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(124) : error C2275: 'FILE' : illegal use of this type as an expression
+        c:\archivos de programa\microsoft visual studio\vc98\include\stdio.h(156) : see declaration of 'FILE'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(124) : error C2065: 'in_file' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(125) : error C2143: syntax error : missing ';' before 'type'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(126) : error C2143: syntax error : missing ';' before 'type'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(135) : error C2065: 'i' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(138) : error C2065: 'use_assembler' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(149) : error C2065: 'XVID_CSP_RGB555' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(152) : error C2065: 'XVID_CSP_BGR' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(155) : error C2065: 'XVID_CSP_BGRA' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(158) : error C2065: 'XVID_CSP_YV12' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(191) : warning C4047: '=' : 'int ' differs in levels of indirection from 'struct _iobuf *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(195) : warning C4047: '=' : 'int ' differs in levels of indirection from 'struct _iobuf *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(196) : warning C4047: '==' : 'int ' differs in levels of indirection from 'void *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(221) : error C2065: 'status' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(234) : warning C4047: 'function' : 'struct _iobuf *' differs in levels of indirection from 'int '
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(234) : warning C4024: 'fread' : different types for formal and actual parameter 4
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(236) : error C2065: 'totaldectime' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(237) : error C2065: 'totalsize' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(238) : error C2065: 'filenr' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(260) : error C2223: left of '->_flag' must point to struct/union
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(265) : warning C4047: 'function' : 'struct _iobuf *' differs in levels of indirection from 'int '
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(265) : warning C4024: 'fread' : different types for formal and actual parameter 4
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(275) : warning C4013: 'dec_main' undefined; assuming extern returning int
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(279) : error C2224: left of '.type' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(279) : error C2065: 'XVID_TYPE_VOL' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(282) : error C2224: left of '.data' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(282) : error C2224: left of '.data' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(285) : error C2224: left of '.data' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(286) : error C2224: left of '.data' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(309) : error C2224: left of '.type' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(317) : warning C4244: '+=' : conversion from 'double ' to 'int ', possible loss of data
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(321) : error C2224: left of '.type' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(321) : error C2198: 'type2str' : too few actual parameters
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(327) : error C2065: 'filename' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(327) : warning C4047: 'function' : 'char *' differs in levels of indirection from 'int '
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(327) : warning C4024: 'sprintf' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(328) : warning C4047: 'function' : 'const char *' differs in levels of indirection from 'int '
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(328) : warning C4024: 'fopen' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(342) : warning C4047: 'function' : 'char *' differs in levels of indirection from 'int '
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(342) : warning C4024: 'sprintf' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(343) : warning C4047: 'function' : 'char *' differs in levels of indirection from 'int '
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(343) : warning C4024: 'write_image' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(368) : error C2224: left of '.type' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(375) : warning C4244: '+=' : conversion from 'double ' to 'int ', possible loss of data
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(379) : error C2224: left of '.type' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(379) : error C2198: 'type2str' : too few actual parameters
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(383) : warning C4047: 'function' : 'char *' differs in levels of indirection from 'int '
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(383) : warning C4024: 'sprintf' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(384) : warning C4047: 'function' : 'char *' differs in levels of indirection from 'int '
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(384) : warning C4024: 'write_image' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(540) : error C2065: 'width' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(540) : error C2065: 'height' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(542) : warning C4047: 'function' : 'int ' differs in levels of indirection from 'unsigned char *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(542) : warning C4024: 'fputc' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(544) : warning C4047: 'function' : 'int ' differs in levels of indirection from 'unsigned char *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(544) : warning C4024: 'fputc' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(545) : warning C4047: 'function' : 'int ' differs in levels of indirection from 'unsigned char *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(545) : warning C4024: 'fputc' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(547) : warning C4047: 'function' : 'int ' differs in levels of indirection from 'unsigned char *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(547) : warning C4024: 'fputc' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(548) : warning C4047: 'function' : 'int ' differs in levels of indirection from 'unsigned char *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(548) : warning C4024: 'fputc' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(549) : warning C4047: 'function' : 'int ' differs in levels of indirection from 'unsigned char *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(549) : warning C4024: 'fputc' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(551) : warning C4047: 'function' : 'int ' differs in levels of indirection from 'unsigned char *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(551) : warning C4024: 'fputc' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(552) : warning C4047: 'function' : 'int ' differs in levels of indirection from 'unsigned char *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(552) : warning C4024: 'fputc' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(553) : warning C4047: 'function' : 'int ' differs in levels of indirection from 'unsigned char *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(553) : warning C4024: 'fputc' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(554) : warning C4047: 'function' : 'int ' differs in levels of indirection from 'unsigned char *'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(554) : warning C4024: 'fputc' : different types for formal and actual parameter 1
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(628) : error C2065: 'xvid_gbl_init_t' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(628) : error C2146: syntax error : missing ';' before identifier 'xvid_gbl_init'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(628) : error C2065: 'xvid_gbl_init' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(629) : error C2065: 'xvid_dec_create_t' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(629) : error C2146: syntax error : missing ';' before identifier 'xvid_dec_create'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(629) : error C2065: 'xvid_dec_create' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(640) : error C2224: left of '.version' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(640) : error C2065: 'XVID_VERSION' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(647) : error C2224: left of '.cpu_flags' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(650) : error C2224: left of '.cpu_flags' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(650) : error C2065: 'XVID_CPU_FORCE' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(652) : warning C4013: 'xvid_global' undefined; assuming extern returning int
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(659) : error C2224: left of '.version' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(665) : error C2224: left of '.width' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(666) : error C2224: left of '.height' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(668) : warning C4013: 'xvid_decore' undefined; assuming extern returning int
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(668) : error C2065: 'XVID_DEC_CREATE' : undeclared identifier
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(670) : error C2224: left of '.handle' must have struct/union type
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(680) : error C2143: syntax error : missing ')' before '*'
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(680) : error C2081: 'xvid_dec_stats_t' : name in formal parameter list illegal
+c:\repositorio\isabel\lib\vcodecs\lib\codecs\xvid\examples\xvid_decraw.c(680) : fatal error C1003: error count exceeds 100; stopping compilation
+Error executing cl.exe.
+
+
+
+<h3>Results</h3>
+libxvidcore.dll - 102 error(s), 44 warning(s)
+</pre>
+</body>
+</html>

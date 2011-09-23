@@ -1,0 +1,467 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vga.tcl
+#
+# Vga component.
+#
+#########################################################################
+
+class VgaComponentC {
+
+    # Video Daemon Task Object
+    private variable vdtObj ""
+
+    # Vga Daemon Object
+    private variable vdObj ""
+
+    # Vga Layout Manager Object
+    private variable vgObj ""
+
+    # Vga Channel Objects vcObj($site_id)
+    private variable vcObj
+
+    constructor {_vdtObj} {}
+
+    destructor {}
+
+    public method AddMe {}
+    public method AddSite {_site_id new}
+    public method DelSite {_site_id}
+
+    private method ApplyLayout {}
+
+    private method BWFactor        {f}
+    private method FramerateFactor {f}
+    private method GrabSizeFactor  {f}
+    private method QltyFactor      {f}
+
+    public method SetCurrentCamera    {c}
+    public method GetCurrentCamera    {}
+    public method GetAvailableCameras {}
+
+    public method ResetCurrentCamera {}
+
+    public method SetNorm {c}
+
+    public method SetFlickerFreq {c}
+
+    public method VgaSetFlip   {c}
+    public method VgaSetMirror {c}
+
+    public method Nop {} {}
+
+    public method Info {}
+
+    public method ExecDaemonCmd {cmd {cb ""}}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+
+    # Send all the needed commands to configure the vga C daemon state.
+    # Used when the vga C daemon state is restarted.
+    public method ReapplyState {} 
+
+    #
+    # Each site a video ChId to send the camera flow, and a vga chId to send the vga captured image.
+    #
+    # The camera chId is the same as the userid, but the vga chId is a different value.
+    #
+    
+
+    # Given a site_id, this method returns the associated vga chId.
+    public proc SiteId2VgaChId {site_id}
+
+    # Given a vga chId, this method returns the associated site chid.
+    public proc VgaChId2SiteChId {_vgaid}
+
+    # Given a vga chId, this method returns the associated site_id.
+    public proc VgaChId2SiteId {_vgaid}
+
+    # Returns my vga chId.
+    public proc MyVgaId {}
+
+    # Processes SMS messages:
+    private method processVgaState {args}
+    private method processVgaFactorsState {args}
+
+
+    # The SMS state.
+    # These are the values received in a Video_Vga SMS message.
+    # These values must be applied when the SMS message is received, and when an 
+    # AddRemoteSite message is received.
+    # This is an array with these values:
+    #    sms_state(layout)
+    #    sms_state(site_id)
+    private variable sms_state 
+
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::constructor {_vdtObj} {
+
+    set sms_state(layout)       ""
+    set sms_state(site_id) ""
+
+    set vdtObj $_vdtObj
+
+    if {[catch {VgaDaemonC "#auto" [code $vdtObj]} vdObj]} {
+	ErrorTraceMsg "Video: Vga daemon creation aborted."
+	error "$vdObj"
+    }
+
+    set vgObj [VgaLayoutMgrC "#auto" [code $vdObj]]
+
+}
+
+
+#--------------------------------------------------------------
+
+body VgaComponentC::destructor {} {
+
+    VgaLayoutInfoC::Cleanup
+
+    if {$vdObj != ""} {	
+	delete object $vdObj 
+	set vdObj "" 
+    }
+
+    if {$vgObj != ""} {	
+	delete object $vgObj 
+	set vgObj "" 
+    }
+
+    foreach _i [array names vcObj] {
+	delete object $vcObj($_i)
+	set vcObj($_i) ""
+    }
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::AddMe {} {
+
+    set _me [SiteManager::MySiteId]
+
+    if {[catch {VgaLocalC #auto $_me [code $vdObj]} vcObj($_me)]} {
+	ErrorTraceMsg "Vga: local channel creation aborted."
+	delete object $vdObj
+	error "$vcObj($_me)"
+    }
+
+    $vgObj AddChannel $_me [code $vcObj($_me)]
+
+    # Send local vga
+    WriteTraceMsg "- Binding local vga." Vga
+    $vcObj($_me) Bind
+
+    # Global SMS messages which I want to receive:
+    sms joinKey Video_Vga         [code $this processVgaState]
+    sms joinKey Video_Vga_factors [code $this processVgaFactorsState]
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::AddSite {site_id new} {
+
+    WriteTraceMsg "- Adding VGA channel for $site_id" Vga
+
+    # Create the new remote channel
+    set _chid [SiteId2VgaChId $site_id]
+    if {[catch {VgaRemoteC #auto $site_id [code $vdObj]} res]} {
+	ErrorTraceMsg "Vga: remote channel creation produces: $res"
+	return -1
+    }
+
+    set vcObj($site_id) $res
+
+    WriteTraceMsg "- Create remote channel to receive vga from $site_id." Vga
+
+    $vgObj AddChannel $site_id [code $res]
+
+    ApplyLayout
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::DelSite {site_id} {
+    
+    set _me [SiteManager::MySiteId]
+    
+    if {$_me != $site_id} {
+
+	set _chid [SiteId2VgaChId $site_id]
+
+	if {[catch {$vdObj RDO video_delete_channel($_chid)} emsg]} {
+	    DebugTraceMsg "- Vga ERROR: $emsg" 2
+	}
+	
+	if {[catch {delete object $vcObj($site_id)} emsg]} {
+	    DebugTraceMsg "- Vga ERROR: $emsg" 2
+	}
+
+	if {[catch {unset  vcObj($site_id)} emsg]} {
+	    DebugTraceMsg "- Vga ERROR: $emsg" 2
+	}
+
+	if {[catch {$vgObj DelChannel $site_id} emsg]} {
+	    DebugTraceMsg "- Vga ERROR: $emsg"
+	}
+    }
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::ApplyLayout {} {
+
+    $vgObj ApplyLayout \
+	$sms_state(layout) \
+	$sms_state(site_id)
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::BWFactor {f} {
+
+    $vdObj SetBWFactor $f
+    VgaConfigC::SetBWFactor $f
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::FramerateFactor {f} {
+
+    $vdObj SetFramerateFactor $f
+    VgaConfigC::SetFramerateFactor $f
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::GrabSizeFactor {f} {
+
+    $vdObj SetGrabSizeFactor $f
+    VgaConfigC::SetGrabSizeFactor $f
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::QltyFactor {f} {
+
+    $vdObj SetQltyFactor $f
+    VgaConfigC::SetQltyFactor $f
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::SetCurrentCamera {c} {
+
+    $vdObj SetCurrentCamera $c
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::GetCurrentCamera {} {
+    $vdObj GetCurrentCamera
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::GetAvailableCameras {} {
+
+    $vdObj GetAvailableCameras
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::ResetCurrentCamera {} {
+
+    set _source [$vdObj GetCurrentCamera]
+    regsub "\\n" $_source "" _source
+    $vdObj SetCurrentCamera $_source
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::SetNorm {c} {
+
+    $vdObj SetNorm $c
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::SetFlickerFreq {c} {
+
+    $vdObj SetFlickerFreq $c
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::VgaSetFlip {c} {
+
+    $vdObj VgaSetFlip $c
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::VgaSetMirror {c} {
+
+    $vdObj VgaSetMirror $c
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::Info {} {
+
+    set res "Vga component state:\n"
+    append res [$vdObj Info]
+    append res [$vgObj Info]
+    foreach _sid [array names vcObj] {
+	append res [$vcObj($_sid) Info]
+    }
+    return $res
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::ExecDaemonCmd {cmd {cb ""}} {
+    $vdObj ExecDaemonCmd $cmd $cb
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::ReapplyState {} {
+
+    set _my_site_id [SiteManager::MySiteId]
+
+    # Reapply state of local channel:
+    $vcObj($_my_site_id) ReapplyState
+
+    # Reapply state of remote channels:
+    foreach _sid [array names vcObj] {
+	if {$_sid != $_my_site_id} {
+	    $vcObj($_sid) ReapplyState
+	}
+    }
+
+    # Update available cameras and their  parameters:
+    after idle VgaSourceC::Refresh
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::SiteId2VgaChId {site_id} {
+
+    set _chid [SiteManager::GetSiteInfo $site_id chid]
+    
+    if {$_chid == ""} {
+	return ""
+    } elseif {$_chid <= 0} {
+	return $_chid
+    } else {
+	expr $_chid + 10000
+    }
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::VgaChId2SiteChId {_vgaid} {
+    
+    if {$_vgaid == ""} {
+	return ""
+    } elseif {$_vgaid <= 0} {
+	return $_vgaid
+    } else {
+	expr $_vgaid - 10000
+    }
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::VgaChId2SiteId {_vgaid} {
+    
+    if {$_vgaid == ""} {
+	return ""
+    } elseif {$_vgaid <= 0} {
+	return ""
+    } else {
+	set _sitechid [expr $_vgaid - 10000]
+	foreach _siteid [SiteManager::GetSites] {
+	    if {$_sitechid == [SiteManager::GetSiteInfo $_siteid chid]} { 
+		return $_siteid
+	    }
+	}
+    }
+    return ""
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::MyVgaId {} {
+    
+    SiteId2VgaChId [SiteManager::MySiteId]
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::processVgaState {args} {
+
+    set sms_state(site_id) [GetOptionListValue $args -site ""]
+    set sms_state(layout)  [GetOptionListValue $args -layout   ""]
+    
+    ApplyLayout
+}
+
+#--------------------------------------------------------------
+
+body VgaComponentC::processVgaFactorsState {args} {
+
+    set _framerate_factor  [GetOptionListValue $args -framerate_factor   1]
+    set _bw_factor         [GetOptionListValue $args -bw_factor          1]
+    set _grabsize_factor   [GetOptionListValue $args -grabsize_factor    1]
+    set _image_qlty_factor [GetOptionListValue $args -image_qlty_factor  1]
+    
+    FramerateFactor $_framerate_factor
+    BWFactor        $_bw_factor
+    GrabSizeFactor  $_grabsize_factor 
+    QltyFactor      $_image_qlty_factor
+}
+
+#--------------------------------------------------------------
+

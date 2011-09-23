@@ -1,0 +1,252 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class NodeTCC {
+
+    # My parent node
+    public variable parent ""
+
+    # Reference to the Agenda Object
+    public variable agendaobj ""
+
+    # My unique node identifier.
+    # Format: "x###x"
+    public variable my_uid 
+
+    constructor {_agendaobj} {} {}
+
+    destructor {}
+    
+    # Cleanup - Destroy all the existing nodes. This method is called
+    # when the state of the agenda is inconsistent, so we will try to
+    # delete all the created objects
+    public proc cleanup {}
+    
+    # Set the parent node
+    public method setParent {_parent}
+
+    # Returns the parent node
+    public method getParent {}
+
+    public method getTitle {} {}
+
+    public method getNodes {} {}
+
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+
+    #-- Selection
+    
+    # Return 1 if the node can be selected
+    public method isSelectable {} {return 0}
+
+    # Methods called when a node is selected or unselected.
+    public method select {} {}
+    public method unselect {} {}
+
+    # Return 1 if the node is selected, otherwise returns 0.
+    public method isSelected {} {return 0}
+
+    #--
+
+    # Returns the icon associated to the selected resource
+    public method getResourceIcon {} {}
+
+    # Edit the content of this node.
+    public method edit {} {}
+
+    # Returns the uid of this object.
+    public method getMyUid {}
+
+    # Returns the object of the node associated with the given uid.
+    public proc getObjectUid {uid}
+
+    # Counter used to assign a unique uid to each node.
+    private common uid_cont 0
+
+    # Array with the object associated to each uid.
+    # Then, $objectUid($uid) is the object of the node with the given uid.
+    private common objectUid
+
+    # Parses the given string and create a conference subtree.
+    public proc parse {agendaobj str} {}
+
+    # Create a new empty child node.
+    public method newChild {} {}
+
+    #-- Node deletion
+
+    # Delete this node
+    public method kill {} {}
+
+    #-- Order
+
+    # Moves the node in the tree up.
+    public method moveUp {} {}
+
+    # Moves the node in the tree down.
+    public method moveDown {} {}
+ 
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+
+    #-- Auxiliar methods
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    protected proc getOptionListValue {list optname {default ""}}
+
+    # Returns a string with len spaces.
+    protected proc spaces {len}
+}
+
+#-----------------------------------------
+
+body NodeTCC::constructor {_agendaobj} {
+
+    incr uid_cont
+
+    set my_uid x${uid_cont}x
+
+    set objectUid($my_uid) $this
+
+    set agendaobj $_agendaobj
+}
+
+#-----------------------------------------
+
+body NodeTCC::destructor {} {
+
+    unset objectUid($my_uid)
+}
+
+#-----------------------------------------
+
+body NodeTCC::cleanup {} {
+
+    foreach _uid [array names objectUid] {
+        catch {delete object $objectUid($_uid)}
+    }
+}
+
+#-----------------------------------------
+
+body NodeTCC::getParent {} {
+
+    return $parent
+}
+
+#-----------------------------------------
+
+body NodeTCC::setParent {_parent} {
+
+    set parent $_parent
+}
+
+#-----------------------------------------
+
+body NodeTCC::edit {} {
+
+    set tl [BaseFrameTCC #auto -title [getTitle]]
+
+    set c [$tl getContent]
+
+    label $c.info -text "No editable node"
+
+    grid $c.info -row 0 -column 0
+}
+
+#-----------------------------------------
+
+body NodeTCC::getMyUid {} {
+
+    return $my_uid
+}
+
+#-----------------------------------------
+
+body NodeTCC::getObjectUid {uid} {
+
+    return $objectUid($uid)
+}
+
+#-----------------------------------------
+
+body NodeTCC::configureItemMenu {{menu ""}} {
+
+    if {$menu == ""} {
+	set w [$agendaobj getWidget]
+	set menu [$w component itemMenu]
+    }
+
+    $menu delete 0 end
+
+    return $menu
+}
+
+#-----------------------------------------
+
+body NodeTCC::kill {} {
+
+    delete object $this
+}
+
+#-----------------------------------------
+
+body NodeTCC::getOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+        return $default	
+        } else {
+            return [lindex $list [expr $pos+1]]
+        }
+    }
+    
+#-----------------------------------------
+
+body NodeTCC::spaces {len} {
+    
+    if {$len == 0} {
+	return ""
+    } elseif {$len == 1} {
+	return " "
+    } else {
+	set _aux [spaces [expr $len/2]]
+	if {$len % 2 == 0} {
+	    return "$_aux$_aux"
+	} else {
+	    return "$_aux$_aux "
+	}
+    }
+}
+
+#-----------------------------------------

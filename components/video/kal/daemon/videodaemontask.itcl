@@ -1,0 +1,322 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# videodaemontask.itcl
+#
+# Description
+#
+#   Task to start and access to the C video daemon.
+#
+#########################################################################
+
+class VideoDaemonTaskC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+    destructor {}
+
+    public method RDO {cmd}
+    public method RPC {cmd}
+    public method RCB {cmd cb}
+
+
+    # Objects that are warned when the daemon dies and
+    # it is restarted again.
+    # When the daemon is running again, this task executes 
+    # all the callbacks stored in the $listeners list.
+    public method AddListener    {cb}
+    public method RemoveListener {cb}
+    
+    # Activate or deactivate monitor statistics
+    public method MonitorStats {activate}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # 1 if the created object is working.
+    private variable active 0
+    
+    # video daemon object
+    private variable vdobj ""
+
+    # Listeners.
+    # This is a list of methods to call when the video daemon restart.
+    private variable listeners ""
+
+    #----
+
+    # Indicates if the monitor statistics are active or not
+    private variable doMonitorStats 0
+
+    #----
+
+    # Start the daemon.
+    private method CreateDaemon {}
+
+    # Executed when the daemon exits.
+    private method NoCCDaemon {}
+
+    # Executes all the callbacks stored in the $listeners list.
+    private method ExecListeners {}
+
+    #------------------------
+
+    private method CheckVideoDevicesReadPermission {}
+
+    # When the video daemon is launched, I check if there is a readable /dev/video* file. 
+    # If there are not any readable devicem then a warning window is presented.
+    # This window is destroyed after some seconds.
+    # This variable keep the after code returned by the after command. It is used to 
+    # destroy the info window.
+    private variable aftercdg_unreadable_win ""
+
+    # Window object that display the "Unreadable video devides" message.
+    private variable unreadablewinobj ""
+
+    # Destroy the Unreadable message window
+    private method DestroyUnreadableWinObj {}
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::constructor {} {
+    global env
+    
+    WriteTraceMsg "Video Daemon Task: constructing ..."
+
+    CheckVideoDevicesReadPermission
+    
+    set conf_files "video.conf v4l.conf v4l2.conf v4lu.conf"
+    foreach c $conf_files {
+	set cpath $env(ISABEL_CONFIG_DIR)/$c
+	if {[file exists $cpath]} {
+	    if { ! [file owned $cpath]} {
+		file delete $cpath
+	    }
+	}
+    }
+
+    CreateDaemon
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::destructor {} {
+    
+    set active 0
+
+    if {$vdobj != ""} {
+	delete object $vdobj
+	set vdobj ""
+    }
+
+    after cancel $aftercdg_unreadable_win
+    if {$unreadablewinobj != ""} {
+	catch {delete object $unreadablewinobj}
+    }
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::CreateDaemon {} {
+
+    if {$vdobj != ""} return
+
+    WriteTraceMsg "Video Daemon Task: Creating a new daemon ..."
+
+    set no_cc_cb [code $this NoCCDaemon]
+    set vdobj [DVideoC "#auto" $no_cc_cb]
+    WriteTraceMsg "Video Daemon Task: The new video daemon object was created. Connecting ..."
+    if {[catch {$vdobj Start} res]} {
+	WriteTraceMsg "Video Daemon Task: Unsuccessful connection to the new video daemon."
+	delete object $vdobj
+	NoCCDaemon
+	ErrorTraceMsg "Video Daemon Task: video daemon can not be created: $res"
+	return
+    }
+
+    WriteTraceMsg "Video Daemon Task: Successful connection to the new video daemon."
+    WriteTraceMsg "Video Daemon Task: Activating ..."
+    
+    set active 1
+
+    WriteTraceMsg "Video Daemon Task: Activation done."
+
+    #-------------------
+    
+    # Restore monitor statistics state:
+    $vdobj RDO video_do_stats($doMonitorStats)
+    
+    #-------------------
+    
+    WriteTraceMsg "Video Daemon Task: Begining calling listeners."
+    ExecListeners
+    WriteTraceMsg "Video Daemon Task: Done calling Listeners."
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::NoCCDaemon {} {
+    global env
+
+    set active 0
+    set vdobj  ""
+
+    if {[info exists env(ISABEL_AUTORESTART)]} {
+	
+	if {$env(ISABEL_AUTORESTART) != 0} {
+	    set restart 1
+	} else {
+	    set restart 0
+	}
+
+    } else {
+	set restart 1
+    }
+
+    if {$restart} {
+	after 1000 after idle [code $this CreateDaemon]
+    } else {
+	WarningTraceMsg "The video daemon is dead and it will no be restarted."
+    }
+
+}
+
+#--------------------------------------------------------------
+
+body VideoDaemonTaskC::CheckVideoDevicesReadPermission {} {
+
+    if {[catch {glob /dev/video*} video_devices]} {
+
+	after cancel $aftercdg_unreadable_win
+	if {$unreadablewinobj == ""} {
+	    set unreadablewinobj [ErrorMsgC "::#auto" close -logo gif/video_camera.gif \
+				      Warning: \
+				      {There are no video devices.} \
+				      {Check that your video camera is plugged.}]
+	} 
+	set aftercdg_unreadable_win [after 7000 [code $this DestroyUnreadableWinObj]]
+	return
+    } 
+
+    foreach dev $video_devices {
+	if {[catch "open $dev r" fd]  == 0} {
+	    close $fd
+	    return
+	}
+    }
+    
+    after cancel $aftercdg_unreadable_win
+    if {$unreadablewinobj == ""} {
+	set unreadablewinobj [ErrorMsgC "::#auto" close -logo gif/video_camera.gif \
+				  Warning: \
+				  {There are no any readable video device.} \
+				  {Check /dev/video* premissions}]
+    } 
+    set aftercdg_unreadable_win [after 7000 [code $this DestroyUnreadableWinObj]]
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::DestroyUnreadableWinObj {} {
+
+    catch {delete object $unreadablewinobj}
+    set unreadablewinobj ""
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::RDO {cmd} {
+
+    if {! $active} return
+    
+    $vdobj RDO $cmd
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::RPC {cmd} {
+
+    if {! $active} return ""
+    
+    $vdobj RPC $cmd
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::RCB {cmd cb} {
+
+    if {! $active} return
+    
+    $vdobj RCB $cmd $cb
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::AddListener {cb} {
+    
+    lappend listeners $cb
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::RemoveListener {cb} {
+
+    set listeners [lremove $listeners $cb]
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::ExecListeners {} {
+
+    foreach cb $listeners {
+    WriteTraceMsg "Video Daemon Task: Listener invocation: $cb."
+	if {[catch {uplevel "#0" $cb} emsg]} {
+	    ErrorTraceMsg "- Video Daemon Task:: Callback error: \"$cb\" produces \"$emsg\"" 
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body VideoDaemonTaskC::MonitorStats {activate} {
+
+    if {$activate == 1} {
+	set doMonitorStats 1
+    } else {
+	set doMonitorStats 0
+    }
+    
+
+    if {! $active} return
+
+    $vdobj RDO video_do_stats($doMonitorStats)
+}
+
+#---------------------------------------------------------------
+

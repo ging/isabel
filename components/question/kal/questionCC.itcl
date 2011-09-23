@@ -1,0 +1,189 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# questionCC.itcl
+#
+# Questions component.
+#
+#########################################################################
+
+class QuestionsComponentClass {
+    inherit Component
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Inherited Component methods
+    public method Create {first}
+    public method AddMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelMySite {}
+    public method DelRemoteSite {site_id}
+    public method SetInteractionMode {imname nsec site_id_list args}
+
+    constructor {} {   
+	Component::constructor Questions
+    } {
+    }
+
+    destructor {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Object that implements the component behaviour
+    private variable questionsobj ""
+
+    # Check if the given site is a hidden one.
+    private method IsHiddenSite {site_id}
+
+}
+
+#---------------------------------------------------------------
+
+body QuestionsComponentClass::destructor {} {
+
+    if {$questionsobj != ""} {
+	delete object $questionsobj
+	set questionsobj ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body QuestionsComponentClass::Create {first} {
+
+    set questionsobj [QuestionsC "#auto"]
+
+    return 0
+}
+
+#---------------------------------------------------------------
+
+body QuestionsComponentClass::AddMySite {} {
+
+    set _me [SiteManager::MySiteId]
+
+    set _tool [SiteManager::GetSiteInfo $_me tool]
+    if {[lsearch -exact "Interactive GatewayClient" $_tool] == -1} {
+	return
+    }
+
+    if {[IsHiddenSite $_me]} {
+	return
+    }
+
+
+    $questionsobj AddMe
+}
+
+#---------------------------------------------------------------
+
+body QuestionsComponentClass::AddRemoteSite {site_id new} {
+
+    set _tool [SiteManager::GetSiteInfo $site_id tool]
+    if {[lsearch -exact "Interactive GatewayClient" $_tool] == -1} {
+	return
+    }
+
+    if {[IsHiddenSite $site_id]} {
+	return
+    }
+    
+
+    $questionsobj AddSite $site_id $new
+}
+
+#---------------------------------------------------------------
+
+body QuestionsComponentClass::DelMySite {} {
+
+    set _me [SiteManager::MySiteId]
+
+    set _tool [SiteManager::GetSiteInfo $_me tool]
+    if {[lsearch -exact "Interactive GatewayClient" $_tool] == -1} {
+	return
+    }
+
+    if {[IsHiddenSite $_me]} {
+	return
+    }
+
+    $questionsobj DelSite $_me
+}
+
+#---------------------------------------------------------------
+
+body QuestionsComponentClass::DelRemoteSite {site_id} {
+
+    set _tool [SiteManager::GetSiteInfo $site_id tool]
+    if {[lsearch -exact "Interactive GatewayClient" $_tool] == -1} {
+	return
+    }
+    
+    if {[IsHiddenSite $site_id]} {
+	return
+    }
+    
+
+    $questionsobj DelSite $site_id
+}
+
+#---------------------------------------------------------------
+
+body QuestionsComponentClass::SetInteractionMode {imname nsec site_id_list args} {
+
+    # Descomentar esto si queremos que las señales amarillas se apagen cada vez que se aplique un modo.
+
+    if 0 {
+	set scenary [session Activity GetResource $imname Questions ""]
+	set active  [GetOptionListValue $scenary -active 0]
+	
+	if {$active != 0} {
+	    
+	    set _me [SiteManager::MySiteId]
+	    sms setState Questions_site_$_me add \
+		-site_id $_me \
+		-request 0
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body QuestionsComponentClass::IsHiddenSite {site_id} {
+
+    set _patterns [session Environ GetEdlGlobalVar ISABEL_HIDDEN_SITES]
+    foreach _re $_patterns {
+	if {[string match $_re $site_id]} {
+	    return 1
+	}
+    }	
+    return 0
+}
+
+#---------------------------------------------------------------
+

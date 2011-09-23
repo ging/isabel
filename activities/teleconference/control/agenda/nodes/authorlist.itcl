@@ -1,0 +1,190 @@
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class AuthorListTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    # List of person references
+    public variable people
+
+    #-- Building the tree
+
+    # $args is a list of person references.
+    constructor {_agendaobj args} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+
+    public method getNodes {}
+
+    #-- Children operations
+
+    # Delete the indicated child node, a AuthorTCC object.
+    public method deleteAuthor {_author}
+
+    # Moves the given author $_offset positions in $people
+    public method moveAuthor {_author _offset}
+
+    # Returns 1 if $_author is the first author, otherwise returns 0.
+    public method firstAuthor {_author}
+    
+    # Returns 1 if $_author is the last author, otherwise returns 0.
+    public method lastAuthor {_author}
+}
+
+#-----------------------------------------
+
+body AuthorListTCC::constructor {_agendaobj args} {
+
+    foreach p $args {
+	CheckClass  $p AuthorTCC
+	CheckUnique $p
+	$p setParent $this
+    }
+    set people $args
+}
+
+#-----------------------------------------
+
+body AuthorListTCC::destructor {} {
+
+    set _auxpeople $people
+    set people ""
+    foreach pr $_auxpeople {
+        delete object $pr
+    }
+}
+
+#-----------------------------------------
+
+body AuthorListTCC::parse {agendaobj str} {
+
+    #set class     [lindex $str 0]
+    #CheckStrings $class AcronymList
+ 
+    set prl ""
+    set cont 0
+    set pr [lindex $str $cont]
+    while {$pr != ""} {
+        set _author [AuthorTCC::parse $agendaobj $pr]
+        lappend prl $_author
+        incr cont
+        set pr [lindex $str $cont]
+    }
+
+    set me [eval AuthorListTCC ::#auto $agendaobj $prl]
+
+    if 0 {
+        foreach pr $prl {
+            $pr setParent $me
+        }
+    }
+
+    return $me
+}
+
+#-----------------------------------------
+
+body AuthorListTCC::prettyPrinter {{offset 0}} {
+
+    set res ""
+    foreach p $people {
+        lappend res [$p prettyPrinter]
+    }
+    return $res
+}
+
+#-----------------------------------------
+
+body AuthorListTCC::getNodes {} {
+
+    set res ""
+    foreach p $people {
+	lappend res [$p getMyNode]
+    }
+    return $res
+}
+
+#-----------------------------------------
+
+body AuthorListTCC::deleteAuthor {_author} {
+
+    set pos [lsearch -exact $people $_author]
+
+    if {$pos == -1} return
+
+    set child [lindex $people $pos]
+    set people [lreplace $people $pos $pos]
+    $child kill
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body AuthorListTCC::moveAuthor {_author _offset} {
+
+    set pos [lsearch -exact $people $_author]
+
+    if {$pos == -1} return
+
+    set child [lindex $people $pos]
+    set people [lreplace $people $pos $pos]
+
+    set newpos [expr $pos + $_offset]
+
+    set people [linsert $people $newpos $child]
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body AuthorListTCC::firstAuthor {_author} {
+    
+    if {[lindex $people 0] == $_author} {
+	return 1
+    } else {
+	return 0
+    }
+}
+   
+#-----------------------------------------
+
+body AuthorListTCC::lastAuthor {_author} {
+
+    if {[lindex $people end] == $_author} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+
+#-----------------------------------------

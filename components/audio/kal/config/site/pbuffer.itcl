@@ -1,0 +1,269 @@
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# pbuffer.itcl
+#
+# Playback buffer size.
+#
+#########################################################################
+
+class AudioPBufferConfigC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {_siteId w _acdobj} {}
+    destructor {}
+
+    # Build the gui.
+    public method MakeGui {}
+
+    # Accessors
+    public method GetPBufferSize {}
+    public method SetPBufferSize {b}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # SiteId of the site
+    private variable siteId
+
+    # root widget
+    private variable wroot ""
+
+    # Audio C daemon object
+    private variable acdobj
+
+    # Current playback buffer size
+    private variable bufferSize ""
+
+    # Initialize bufferSize
+    private method InitPBufferSize {}
+
+    # Send new value to the SMS server
+    private method UpdateSmsPBufferSize {b}
+    private method UpdateSmsPBufferSizeNow {}
+
+    # Process SMS received data.
+    #
+    # Sets the playback buffer state for the given site 
+    #
+    # $args has this format:
+    #     -site_id <site_id> -pBufferSize <#>
+    private method ProcessSmsPBufferSize {args}
+
+    # Configure the audio daemon
+    private method ApplyDaemon {}
+}
+
+#---------------------------------------------------------------------------
+
+body AudioPBufferConfigC::constructor {_siteId w _acdobj} {
+
+    set siteId $_siteId
+    set wroot  $w
+    set acdobj $_acdobj
+
+    InitPBufferSize
+
+    sms joinKey Audio_pbuffer_$_siteId [code $this ProcessSmsPBufferSize]
+
+    set _mySiteId [SiteManager::MySiteId]
+    if {$siteId == $_mySiteId} {
+	sms forceState Audio_pbuffer_$_siteId add \
+	    -site_id $_siteId \
+	    -pBufferSize $bufferSize
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioPBufferConfigC::destructor {} {
+    sms leaveKey Audio_pbuffer_$siteId
+}
+
+#---------------------------------------------------------------------------
+
+body AudioPBufferConfigC::InitPBufferSize {} {
+
+    set _mySiteId [SiteManager::MySiteId]
+    
+    if {$siteId == $_mySiteId} {
+	
+	set bufferSize  [AudioConfigC::Load audio.buffering 300]
+	
+	ApplyDaemon
+	
+	UpdateSmsPBufferSizeNow
+	
+    } else {
+	set bufferSize ""    
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioPBufferConfigC::MakeGui {} {
+
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    frame $wroot  -relief sunken -bd 1
+    
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+
+    #--
+
+    label $wroot.label \
+	-relief flat \
+        -justify left \
+	-font $font \
+	-text "Playback buffer size (msecs):"
+
+
+    scale $wroot.level \
+	-showvalue 1 \
+	-from 300 -to 4000 \
+	-resolution 50 \
+	-orient horizontal \
+	-width 10 \
+	-borderwidth 1 \
+	-state normal  \
+	-highlightthickness 0 \
+	-variable [scope bufferSize]
+    InitScaleValue $wroot.level $bufferSize [code $this UpdateSmsPBufferSize]
+
+    balloon add $wroot.level "Buffering (msecs)"
+
+    label $wroot.help \
+	-relief flat \
+	-justify left \
+	-font $font \
+	-text "Default: 300"
+	
+    #--
+
+    set _mySiteId [SiteManager::MySiteId]
+    if { ! [AudioConfigC::ControlSite] && $siteId != $_mySiteId} {
+	$wroot.label configure -state disabled
+	$wroot.level configure -state disabled
+	$wroot.help  configure -state disabled
+    }
+
+    #--
+
+    grid $wroot.label -row 1 -column 0 -pady 1 -ipadx 6  -sticky ws
+    grid $wroot.level -row 1 -column 1 -pady 1 -ipadx 6  -sticky wes 
+    grid $wroot.help  -row 1 -column 2 -pady 1 -ipadx 6  -sticky ws 
+
+    grid columnconfigure $wroot 1 -weight 1
+
+    grid rowconfigure    $wroot 0 -weight 1
+    grid rowconfigure    $wroot 1 -weight 0
+    grid rowconfigure    $wroot 2 -weight 1
+
+}
+
+#---------------------------------------------------------------------------
+
+body AudioPBufferConfigC::GetPBufferSize {} {
+    
+    return $bufferSize
+}
+
+#---------------------------------------------------------------------------
+
+body AudioPBufferConfigC::SetPBufferSize {b} {
+
+    if {$bufferSize != $b} {
+
+	set bufferSize $b
+
+	set _mySiteId [SiteManager::MySiteId]
+	if {$siteId == $_mySiteId} {
+	    ApplyDaemon
+    	    AudioConfigC::Save audio.buffering $bufferSize
+	}
+	
+	UpdateSmsPBufferSizeNow
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioPBufferConfigC::UpdateSmsPBufferSize {b} {
+
+    after cancel [code $this UpdateSmsPBufferSizeNow]
+    
+    after 200 [code $this UpdateSmsPBufferSizeNow]
+}
+
+#---------------------------------------------------------------------------
+
+body AudioPBufferConfigC::UpdateSmsPBufferSizeNow {} {
+
+    after cancel [code $this UpdateSmsPBufferSizeNow]
+    
+    sms forceState Audio_pbuffer_$siteId add \
+	-site_id $siteId \
+	-pBufferSize $bufferSize
+}
+
+#---------------------------------------------------------------------------
+
+body AudioPBufferConfigC::ProcessSmsPBufferSize {args} {
+
+    # The next line is commented because its value must be $siteId
+    #
+    #  set _site_id [getOptionListValue $args -site_id ""]
+    #
+    
+    set _pbuffer [getOptionListValue $args -pBufferSize ""]
+    
+    if {$_pbuffer != ""} {
+	
+	set bufferSize $_pbuffer
+	
+	set _mySiteId [SiteManager::MySiteId]
+	if {$siteId == $_mySiteId} {
+	    ApplyDaemon
+	    AudioConfigC::Save audio.buffering $bufferSize
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body AudioPBufferConfigC::ApplyDaemon {} {
+
+    $acdobj RDO audio_set_buffering($bufferSize)
+}
+
+#---------------------------------------------------------------------------
+

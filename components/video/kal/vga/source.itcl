@@ -1,0 +1,1208 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#########################################################################
+#
+# source.itcl
+#
+# Configure Local Vga.
+#
+#########################################################################
+
+class VgaSourceC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the user interface.
+    public proc GUI {_wroot}
+
+    public proc Refresh {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    #---- GUI ---------------------
+
+    # toplevel widget.
+    private common wroot ""
+
+    # cache foreground color
+    private common fgtxtcolor
+
+    #---- Camera devices ----------
+
+    # Type of input selected: none, device, file, or url.
+    private common inputType
+
+    # number of items allowed in the URL history
+    private common MAXURLHIST 40
+
+    # Mapping: Label shown in the GUI - Real camera name.
+    # $maplr($label) is the real camera name
+    private common maplr
+
+    private proc ReloadCameras {} 
+    private proc UpdateCameras {} 
+    public  proc SelectCamera  {} 
+    public  proc SelectURLCamera  {} 
+
+    private proc RefreshSelectedCamera {}
+
+    private common lastDirName ""
+
+    private proc LoadFileBrowser {}
+
+    #---- Norms -------------------
+
+    public  proc SetNorm {}
+
+    #---- Flicker -------------------
+
+    public  proc SetFlickerFreq {}
+
+    #---- Image parameters --------
+
+    private common brightness 50
+    private common brightnessPending -1
+
+    private common contrast   50
+    private common contrastPending -1
+
+    private common hue        50
+    private common huePending -1
+
+    private common saturation 50
+    private common saturationPending -1
+
+
+    private proc UpdateVgaParams  {}
+    private proc UpdateNormsListCB {normsList}
+    private proc UpdateFlickerFreqsCB {flickerfreqs}
+    private proc UpdateNormCB {norm}
+    private proc UpdateFlickerFreqCB {flickerfreq}
+    public  proc UpdateBrightnessCB {args}
+    public  proc UpdateContrastCB {args}
+    public  proc UpdateHueCB {args}
+    public  proc UpdateSaturationCB {args}
+
+    public  proc SetBrightness     {value}
+    public  proc SetBrightnessCB   {args}
+    public  proc SetBrightnessInfo {}
+
+    public  proc SetContrast     {value}
+    public  proc SetContrastCB   {args}
+    public  proc SetContrastInfo {}
+
+    public  proc SetHue     {value}
+    public  proc SetHueCB   {args}
+    public  proc SetHueInfo {}
+
+    public  proc SetSaturation     {value}
+    public  proc SetSaturationCB   {args}
+    public  proc SetSaturationInfo {}
+
+
+    #---- Video Effects ---------------
+    private common flip   0
+    private common mirror 0
+
+    private proc UpdateVgaEffects {}
+    public  proc UpdateFlipCB       {args}
+    public  proc UpdateMirrorCB     {args}
+    public  proc VgaEffects       {}
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::GUI {_wroot} {
+    global ISABEL_WORKDIR env
+
+    set wroot $_wroot
+
+    frame $wroot
+
+    #---
+    button $wroot.kk
+    set font [$wroot.kk cget -font]
+    destroy $wroot.kk
+    #---
+
+    set fgtxtcolor [IsabelColorsC::GetResource foreground Foreground Blue]
+    set bgtxtcolor [IsabelColorsC::GetResource Entry.background Background Blue]
+
+    label $wroot.l -text "Configure My Vga"
+
+    ::iwidgets::labeledframe $wroot.g       -labeltext "VGA source:"  -labelpos nw -labelfont $font -borderwidth 3 -relief groove 
+    ::iwidgets::labeledframe $wroot.vset    -labeltext "Config:"      -labelpos nw -labelfont $font -borderwidth 3 -relief groove 
+    ::iwidgets::labeledframe $wroot.effects -labeltext "VGA effects:" -labelpos nw -labelfont $font -borderwidth 3 -relief groove 
+    
+    set _gw  [$wroot.g       childsite]
+    set _vsw [$wroot.vset    childsite]
+    set _efw [$wroot.effects childsite]
+
+    #--------------------------------
+
+    grid rowconfigure $wroot 0 -weight 0
+    grid rowconfigure $wroot 1 -weight 1
+    grid rowconfigure $wroot 2 -weight 3
+    grid rowconfigure $wroot 3 -weight 1
+
+    grid columnconfigure $wroot 0 -weight 1
+
+    grid $wroot.l       -row 0 -column 0                    -sticky wens
+    grid $wroot.g       -row 1 -column 0 -ipadx 5  -ipady 5 -sticky wens
+    grid $wroot.vset    -row 2 -column 0 -ipadx 50 -ipady 5 -sticky wens
+    grid $wroot.effects -row 3 -column 0                    -sticky wens
+
+    #--------------------------------
+
+    radiobutton $_gw.rbnone \
+	-text "Do not send video." \
+	-font $font \
+	-variable [scope inputType] \
+	-value none \
+	-command [code SelectCamera]
+
+    #--
+
+    radiobutton $_gw.rbdev \
+	-text "Input source:" \
+	-font $font \
+	-variable [scope inputType] \
+	-value device \
+	-command [code SelectCamera]
+
+    ::iwidgets::optionmenu $_gw.cameras \
+	-font $font \
+	-command [code SelectCamera]
+    
+    button $_gw.update \
+	-text "Detect Cameras" \
+	-font $font \
+	-command [code VgaSourceC::ReloadCameras]
+
+    #--
+
+    radiobutton $_gw.rbfile \
+	-text "File to play:" \
+	-font $font \
+	-variable [scope inputType] \
+	-value file \
+	-command [code SelectCamera]
+
+    entry  $_gw.flent -width 50
+    button $_gw.flbut -text "Browse ..." -font $font \
+        -command [code LoadFileBrowser]
+
+    bind $_gw.flent <Return> [code SelectCamera]
+
+    #--
+
+    radiobutton $_gw.rburl \
+	-text "Open URL:" \
+	-font $font \
+	-variable [scope inputType] \
+	-value url \
+	-command [code SelectCamera]
+
+    ::iwidgets::combobox $_gw.urlent -width 50 \
+        -textbackground $bgtxtcolor \
+        -selectioncommand [code SelectURLCamera] \
+        -command [code SelectURLCamera]
+
+    #--------------------------------
+
+    # Norm
+    label $_vsw.lnorm -text "Norm:" -font $font
+
+    ::iwidgets::optionmenu $_vsw.norms \
+	-font $font \
+	-command [code SetNorm]
+
+
+    # Flicker frequencies
+    label $_vsw.lffreq -text "Light freq. filter:" -font $font
+
+    ::iwidgets::optionmenu $_vsw.ffreqs \
+	-font $font \
+	-command [code SetFlickerFreq]
+
+    #--------------------------------
+
+    # Brightness
+    label $_vsw.lbrightness -text "Brightness:" -font $font
+
+    scale $_vsw.brightness \
+	    -from 0 -to 100 \
+	    -highlightthickness 0 \
+	    -resolution 1 \
+	    -width 10 \
+	    -orient horizontal \
+	    -showvalue 0 \
+	    -variable [scope brightness]
+    InitScaleValue $_vsw.brightness $brightness [code SetBrightness]
+
+    label $_vsw.lbrightnessinfo -font $font
+    SetBrightnessInfo
+
+    #--------------------------------
+
+    # Contrast
+    label $_vsw.lcontrast -text "Contrast:" -font $font
+
+    scale $_vsw.contrast \
+	    -from 0 -to 100 \
+	    -highlightthickness 0 \
+	    -resolution 1 \
+	    -width 10 \
+	    -orient horizontal \
+	    -showvalue 0 \
+	    -variable [scope contrast]
+    InitScaleValue $_vsw.contrast $contrast [code SetContrast]
+
+    label $_vsw.lcontrastinfo -font $font
+    SetContrastInfo
+
+    #--------------------------------
+
+    # Hue
+    label $_vsw.lhue -text "Hue:" -font $font
+
+    scale $_vsw.hue \
+	    -from 0 -to 100 \
+	    -highlightthickness 0 \
+	    -resolution 1 \
+	    -width 10 \
+	    -orient horizontal \
+	    -showvalue 0 \
+	    -variable [scope hue]
+    InitScaleValue $_vsw.hue $hue [code SetHue]
+
+    label $_vsw.lhueinfo -font $font
+    SetHueInfo
+
+    #--------------------------------
+
+    # Saturation
+    label $_vsw.lsaturation -text "Saturation:" -font $font
+
+    scale $_vsw.saturation \
+	    -from 0 -to 100 \
+	    -highlightthickness 0 \
+	    -resolution 1 \
+	    -width 10 \
+	    -orient horizontal \
+	    -showvalue 0 \
+	    -variable [scope saturation]
+    InitScaleValue $_vsw.saturation $saturation [code SetSaturation]
+
+    label $_vsw.lsaturationinfo -font $font
+    SetSaturationInfo
+
+    #--------------------------------
+
+    # vga effects
+
+    checkbutton $_efw.mirror -text "mirror horizontally" \
+            -variable [scope mirror] -command [code VgaEffects] \
+            -font $font
+
+    checkbutton $_efw.flip -text "flip vertically"     \
+            -variable [scope flip] -command [code VgaEffects] \
+            -font $font
+
+    #--------------------------------
+
+    grid $_gw.rbnone  -row 0 -column 0 -sticky w  -columnspan 4
+
+    grid $_gw.rbdev   -row 1 -column 0 -sticky w  -columnspan 2
+    grid $_gw.cameras -row 1 -column 2 -sticky we
+    grid $_gw.update  -row 1 -column 3 -sticky w
+
+    grid $_gw.rbfile -row 2 -column 0 -sticky w
+    grid $_gw.flent  -row 2 -column 1 -sticky we -columnspan 2
+    grid $_gw.flbut  -row 2 -column 3 -sticky w
+
+    grid $_gw.rburl  -row 3 -column 0 -sticky w
+    grid $_gw.urlent -row 3 -column 1 -sticky we -columnspan 3
+
+    grid columnconfigure $_gw  2 -weight 1
+
+    grid rowconfigure $_gw 0 -weight 1
+    grid rowconfigure $_gw 1 -weight 1
+    grid rowconfigure $_gw 2 -weight 1
+    grid rowconfigure $_gw 3 -weight 1
+
+    #--------------------------------
+
+    grid $_vsw.lnorm  -row 0 -column 0 -sticky e
+    grid $_vsw.norms  -row 0 -column 1 -sticky we
+
+    grid $_vsw.lffreq  -row 1 -column 0 -sticky e
+    grid $_vsw.ffreqs  -row 1 -column 1 -sticky we
+
+    grid $_vsw.lbrightness     -row 2 -column 0 -sticky e
+    grid $_vsw.brightness      -row 2 -column 1 -sticky we
+    grid $_vsw.lbrightnessinfo -row 2 -column 2 -sticky w
+
+    grid $_vsw.lcontrast     -row 3 -column 0 -sticky e
+    grid $_vsw.contrast      -row 3 -column 1 -sticky we
+    grid $_vsw.lcontrastinfo -row 3 -column 2 -sticky w
+
+    grid $_vsw.lhue     -row 4 -column 0 -sticky e
+    grid $_vsw.hue      -row 4 -column 1 -sticky we
+    grid $_vsw.lhueinfo -row 4 -column 2 -sticky w
+
+    grid $_vsw.lsaturation     -row 5 -column 0 -sticky e
+    grid $_vsw.saturation      -row 5 -column 1 -sticky we
+    grid $_vsw.lsaturationinfo -row 5 -column 2 -sticky w
+
+    grid columnconfigure $_vsw  0 -weight 0
+    grid columnconfigure $_vsw  1 -weight 1
+    grid columnconfigure $_vsw  3 -weight 0
+
+    grid rowconfigure $_vsw 0 -weight 1
+    grid rowconfigure $_vsw 1 -weight 1
+    grid rowconfigure $_vsw 2 -weight 1
+    grid rowconfigure $_vsw 3 -weight 1
+    grid rowconfigure $_vsw 4 -weight 1
+    grid rowconfigure $_vsw 5 -weight 1
+
+    #--------------------------------
+  
+    grid $_efw.flip   -row 1 -column 0 -sticky w -padx 5
+    grid $_efw.mirror -row 2 -column 0 -sticky w -padx 5
+
+    grid columnconfigure $_efw 0 -weight 1
+
+    #--------------------------------
+
+    Refresh
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::Refresh {} {
+
+    if {![winfo exist $wroot]} return 
+
+    UpdateCameras
+    UpdateVgaParams
+    UpdateVgaEffects
+}
+
+#---------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------
+# Camera related method
+#---------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SelectCamera {} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _gw  [$wroot.g childsite]
+
+    switch -exact $inputType {
+	none {
+	    set srcName "NONE"
+	}
+	device {
+	    set srcName [$_gw.cameras get]
+	    set srcName $maplr($srcName)
+	}
+	file {
+	    set _fileName [$_gw.flent get]
+	    set srcName "File Source;$_fileName"
+	}
+	url {
+	    set URLaddress [$_gw.urlent get]
+	    set srcName "URL Grabber;$URLaddress"
+	}
+    }
+
+    VgaCmd SetCurrentCamera $srcName
+
+    RefreshSelectedCamera
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SelectURLCamera {} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _gw  [$wroot.g childsite]
+
+    # reorder as selected item should be first
+    set URLselected [$_gw.urlent get]
+    $_gw.urlent insert list 0 $URLselected
+
+    set URLpos [$_gw.urlent curselection]
+
+    $_gw.urlent delete list $URLpos
+    $_gw.urlent selection set 0
+
+    # maximum elements in a combobox: 50
+    set URLhistsize [$_gw.urlent size]
+
+    if {$URLhistsize > $MAXURLHIST} {
+        WriteTraceMsg "URL HISTORY MAXIMUM REACHED"
+
+        $_gw.urlent delete list end
+    }
+
+    # reorder as selected item appears first in the list
+
+    # save URL history
+    set urlhist [session Environ cget -config_dir]/video/url_hist.txt
+
+    if {[catch {set _fd [open $urlhist w]} emsg]} {
+        ErrorTraceMsg "Cannot create URL hist: $emsg"
+    } else {
+        set URLhistsize [$_gw.urlent size]
+        for {set i 0} {$i<$URLhistsize} {incr i} {
+            puts $_fd [$_gw.urlent get $i]
+        }
+
+        close $_fd
+    }
+
+    if {$inputType == "url"} {
+        SelectCamera
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::ReloadCameras {} {
+
+    if {![winfo exist $wroot]} return 
+
+    VgaCmd ExecDaemonCmd video_update_sources()
+
+    UpdateCameras
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateCameras {} {
+
+    if {![winfo exist $wroot]} { 
+	return 
+    }
+
+    set _gw  [$wroot.g childsite]
+
+    #-- Update menu gui with the available camera devices:
+
+    set sc [VgaCmd GetAvailableCameras]
+
+    $_gw.cameras configure -command ""
+
+    $_gw.cameras delete 0 end
+
+    if {$sc != "\{\}"} {
+	foreach isc $sc {
+
+	    if {$isc == "NONE" || $isc == "File Source" || $isc == "URL Grabber"} continue
+
+            set label $isc
+	    regsub -all {v4lUnified::}  $label ""  label
+	    regsub -all {v4l::}  $label ""  label
+	    regsub -all {v4l2::} $label ""  label
+	    regsub -all {::}     $label " " label
+	    regsub -all {/dev/}  $label ""  label
+	    regsub -all {;}      $label " " label
+
+	    set maplr($label) $isc
+
+	    $_gw.cameras insert end $label
+	}
+    }
+
+    after idle catch \{$_gw.cameras configure -command  VgaSourceC::SelectCamera\}
+
+    #-- Update menu gui with the history of URLs
+
+    $_gw.urlent configure -selectioncommand ""
+    $_gw.urlent clear
+
+    # read URL history
+    set urlhist [session Environ cget -config_dir]/video/url_hist.txt
+
+    if {[catch {set _fd [open $urlhist r]} emsg]} {
+	ErrorTraceMsg "URL hist does not exists: $emsg"
+    } else {
+        set URLitems 0
+        while {[gets $_fd histline] >= 0} {
+            incr URLitems
+            if {$URLitems>$MAXURLHIST} {
+                WriteTraceMsg "URL MAXIMUN SIZE REACHED"
+                break
+            }
+            $_gw.urlent insert list end $histline
+        }
+
+	close $_fd
+    }
+
+    $_gw.urlent selection set 0
+
+    after idle catch \{$_gw.urlent configure -selectioncommand VgaSourceC::SelectURLCamera\}
+
+    #-- Update GUI with the current selected source: none, device, file, or url
+
+    set c [VgaCmd GetCurrentCamera]
+
+    regsub \n $c "" c
+
+    if {$c == "NONE"} {
+
+	set inputType none
+
+    } elseif {[regexp {^ERROR:.*} $c _all] == 1} {
+
+	set inputType none
+
+	SelectCamera
+
+    } elseif {[regexp {File Source;(.*)$} $c _all _f] == 1} {
+
+	set inputType file
+	
+	$_gw.flent delete 0 end
+	$_gw.flent insert 0 $_f
+
+    } elseif {[regexp {URL Grabber;(.*)$} $c _all _f] == 1} {
+
+	set inputType url
+
+	$_gw.urlent clear entry
+	$_gw.urlent insert entry 0 $_f
+
+    } else {
+
+	set inputType device
+
+	foreach _label [array names maplr] {
+	    if {$maplr($_label) == $c} {
+		$_gw.cameras select $_label
+		break
+	    }
+	}
+	
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::RefreshSelectedCamera {} {
+
+    if {![winfo exist $wroot]} return 
+
+    UpdateVgaParams
+    UpdateVgaEffects
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::LoadFileBrowser {} {
+    global env ISABEL_WORKDIR
+
+    if {![winfo exist $wroot]} return 
+
+    if { ! [string compare $lastDirName ""]} {
+        set lastDirName $ISABEL_WORKDIR/
+    }
+
+    #       Type names		Extension(s)	Mac File Type(s)
+    set types {
+            {"Supported Files"	{.avi .AVI .gif .GIF .jpeg .JPEG .jpg .JPG .bmp .BMP .png .PNG .tif .TIF .tiff .TIFF}	}
+	    {"Supported Files"	""	{GIFF JPEG BMP PNG TIFF}}
+	    {"Image Files"	{.gif .GIF}		}
+	    {"Image Files"	{.jpeg .jpg .JPEG .JPG}	}
+	    {"Image Files"	{.bmp .BMP}		}
+	    {"Image Files"	{.png .PNG}		}
+	    {"Image Files"	{.tif .TIFF .tiff .TIFF} }
+	    {"Image Files"	""		{GIFF JPEG BMP PNG TIFF}}
+	    {"Movie Files"	{.avi .AVI}}
+	    {"All files"	*}
+    }
+
+    set fileName [tk_getOpenFile \
+		      -filetypes $types \
+		      -parent $wroot \
+                      -initialdir $lastDirName \
+                      -title "Load an image or movie as vga source" ]
+
+
+    if {[string compare $fileName ""]} {
+        set lastDirName [file dirname $fileName]
+
+	set _gw  [$wroot.g childsite]
+
+        $_gw.flent delete 0 end
+        $_gw.flent insert 0 $fileName
+        $_gw.flent xview end
+
+        SelectCamera
+    }
+}
+
+#---------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------
+# Norm related methods
+#---------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetNorm {} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    VgaCmd SetNorm [$_vsw.norms get]
+}
+
+#---------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------
+# Flicker related methods
+#---------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetFlickerFreq {} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    VgaCmd SetFlickerFreq [$_vsw.ffreqs get]
+}
+
+#---------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------
+# Image parameters related methods
+#---------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateVgaParams {} {
+
+    if {![winfo exist $wroot]} return 
+
+    set me [VgaComponentC::MyVgaId]
+
+    VgaCmd ExecDaemonCmd video_list_norms($me)     [code UpdateNormsListCB]
+    VgaCmd ExecDaemonCmd video_list_flickerfreqs($me) [code UpdateFlickerFreqsCB]
+    VgaCmd ExecDaemonCmd video_get_norm($me)       [code UpdateNormCB]
+    VgaCmd ExecDaemonCmd video_get_flickerfreq($me) [code UpdateFlickerFreqCB]
+    VgaCmd ExecDaemonCmd video_get_brightness($me) [code UpdateBrightnessCB]
+    VgaCmd ExecDaemonCmd video_get_contrast($me)   [code UpdateContrastCB]
+    VgaCmd ExecDaemonCmd video_get_hue($me)        [code UpdateHueCB]
+    VgaCmd ExecDaemonCmd video_get_saturation($me) [code UpdateSaturationCB]
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateNormsListCB {normsList} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    set value [lindex $normsList 0]
+
+    $_vsw.norms configure -command ""
+
+    $_vsw.norms delete 0 end
+
+    regsub -all {,} $normsList \}\ \{ normsList
+    regsub \n $normsList "" normsList
+
+    if {[string first "ERROR" $value] == 0} {
+        $_vsw.norms configure -state disabled
+        $_vsw.lnorm configure -fg darkgrey
+    } elseif {$normsList == "\{\}"} {
+        $_vsw.norms configure -state disabled
+        $_vsw.lnorm configure -fg darkgrey
+    } else {
+
+        foreach norm $normsList {
+            $_vsw.norms insert end $norm
+        }
+    
+        after idle catch \{$_vsw.norms configure -command  VgaSourceC::SetNorm\}
+
+        $_vsw.norms configure -state normal
+        $_vsw.lnorm configure -fg $fgtxtcolor
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateFlickerFreqsCB {flickerfreqs} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    set value [lindex $flickerfreqs 0]
+
+    $_vsw.ffreqs configure -command ""
+
+    $_vsw.ffreqs delete 0 end
+
+    regsub -all {,} $flickerfreqs \}\ \{ flickerfreqs
+    regsub \n $flickerfreqs "" flickerfreqs
+
+    if {[string first "ERROR" $value] == 0} {
+        $_vsw.ffreqs configure -state disabled
+        $_vsw.lffreq configure -fg darkgrey
+    } elseif {$flickerfreqs == "\{\}"} {
+        $_vsw.ffreqs configure -state disabled
+        $_vsw.lffreq configure -fg darkgrey
+    } else {
+
+        foreach ffreqs $flickerfreqs {
+            $_vsw.ffreqs insert end $ffreqs
+        }
+    
+        after idle catch \{$_vsw.ffreqs configure -command  VgaSourceC::SetFlickerFreq\}
+
+        $_vsw.ffreqs configure -state normal
+        $_vsw.lffreq configure -fg $fgtxtcolor
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateNormCB {norm} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    set value [lindex $norm 0]
+
+    if {[string first "ERROR" $value] == 0} {
+        $_vsw.norms configure -state disabled
+        $_vsw.lnorm configure -fg darkgrey
+    } else {
+        $_vsw.norms configure -state normal
+        $_vsw.lnorm configure -fg $fgtxtcolor
+
+        $_vsw.norms select $value
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateFlickerFreqCB {flickerfreq} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    set value [lindex $flickerfreq 0]
+
+    if {[string first "ERROR" $value] == 0} {
+        $_vsw.ffreqs configure -state disabled
+        $_vsw.lffreq configure -fg darkgrey
+    } else {
+        $_vsw.ffreqs configure -state normal
+        $_vsw.lffreq configure -fg $fgtxtcolor
+
+        $_vsw.ffreqs select $value
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateBrightnessCB {args} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    set brightnessPending -1
+
+    set value [lindex $args 0]
+
+    if {[string first "ERROR" $value] == 0} {
+        $_vsw.brightness configure -state disabled
+        $_vsw.lbrightness configure -fg darkgrey
+    } else {
+        $_vsw.brightness configure -state normal
+        $_vsw.lbrightness configure -fg $fgtxtcolor
+
+        set brightness [expr $value]
+	SetBrightnessInfo
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateSaturationCB {args} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    set saturationPending -1
+
+    set value [lindex $args 0]
+
+    if {[string first "ERROR" $value] == 0} {
+        $_vsw.saturation configure -state disabled
+        $_vsw.lsaturation configure -fg darkgrey
+    } else {
+        $_vsw.saturation configure -state normal
+        $_vsw.lsaturation configure -fg $fgtxtcolor
+        set saturation [expr $value]
+	SetSaturationInfo
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateHueCB {args} {
+ 
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    set huePending -1
+
+    set value [lindex $args 0]
+
+    if {[string first "ERROR" $value] == 0} {
+        $_vsw.hue configure -state disabled
+        $_vsw.lhue configure -fg darkgrey
+    } else {
+        $_vsw.hue configure -state normal
+        $_vsw.lhue configure -fg $fgtxtcolor
+        set hue [expr $value]
+	SetHueInfo
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateContrastCB {args} {
+ 
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    set contrastPending -1
+
+    set value [lindex $args 0]
+
+    if {[string first "ERROR" $value] == 0} {
+        $_vsw.contrast configure -state disabled
+        $_vsw.lcontrast configure -fg darkgrey
+    } else {
+        $_vsw.contrast configure -state normal
+        $_vsw.lcontrast configure -fg $fgtxtcolor
+        set contrast [expr $value]
+	SetContrastInfo
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetBrightness {value} {
+
+    if {![winfo exist $wroot]} return 
+
+    if {$brightnessPending == -1} {
+	
+	set me [VgaComponentC::MyVgaId]
+	VgaCmd ExecDaemonCmd video_set_brightness($me,$brightness) VgaSourceC::SetBrightnessCB
+	
+	set brightnessPending $brightness
+    }
+    SetBrightnessInfo
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetBrightnessCB {args} {
+
+    if {![winfo exist $wroot]} return 
+
+    set value [lindex $args 0]
+
+    if {$brightnessPending == $brightness} {
+
+	set brightnessPending -1
+
+    } else {
+
+	if {$brightnessPending != -1} {
+    
+	    set me [VgaComponentC::MyVgaId]
+	    VgaCmd ExecDaemonCmd video_set_brightness($me,$brightness) VgaSourceC::SetBrightnessCB
+
+	    set brightnessPending $brightness
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetBrightnessInfo {} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    if {![winfo exist $_vsw.lbrightnessinfo]} return
+
+    $_vsw.lbrightnessinfo configure -text [format %3d%% $brightness]
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetContrast {value} {
+
+    if {![winfo exist $wroot]} return 
+
+    if {$contrastPending == -1} {
+
+	set me [VgaComponentC::MyVgaId]
+	VgaCmd ExecDaemonCmd video_set_contrast($me,$contrast) VgaSourceC::SetContrastCB
+
+	set contrastPending $contrast
+    }
+    SetContrastInfo
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetContrastCB {args} {
+
+    if {![winfo exist $wroot]} return 
+
+    set value [lindex $args 0]
+
+    if {$contrastPending == $contrast} {
+
+	set contrastPending -1
+
+    } else {
+
+	if {$contrastPending != -1} {
+    
+	    set me [VgaComponentC::MyVgaId]
+	    VgaCmd ExecDaemonCmd video_set_contrast($me,$contrast) VgaSourceC::SetContrastCB
+
+	    set contrastPending $contrast
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetContrastInfo {} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    if {![winfo exist $_vsw.lcontrastinfo]} return
+
+    $_vsw.lcontrastinfo configure -text [format %3d%% $contrast]
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetHue {value} {
+
+    if {![winfo exist $wroot]} return 
+
+    if {$huePending == -1} {
+
+	set me [VgaComponentC::MyVgaId]
+	VgaCmd ExecDaemonCmd video_set_hue($me,$hue) VgaSourceC::SetHueCB
+
+	set huePending $hue
+    }
+    SetHueInfo
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetHueCB {args} {
+
+    if {![winfo exist $wroot]} return 
+
+    set value [lindex $args 0]
+
+    if {$huePending == $hue} {
+
+	set huePending -1
+
+    } else {
+
+	if {$huePending != -1} {
+    
+	    set me [VgaComponentC::MyVgaId]
+	    VgaCmd ExecDaemonCmd video_set_hue($me,$hue) VgaSourceC::SetHueCB
+
+	    set huePending $hue
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetHueInfo {} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    if {![winfo exist $_vsw.lhueinfo]} return
+
+    $_vsw.lhueinfo configure -text [format %3d%% $hue]
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetSaturation {value} {
+
+    if {![winfo exist $wroot]} return 
+
+    if {$saturationPending == -1} {
+	
+	set me [VgaComponentC::MyVgaId]
+	VgaCmd ExecDaemonCmd video_set_saturation($me,$saturation) VgaSourceC::SetSaturationCB
+	
+	set saturationPending $saturation
+    }
+    SetSaturationInfo
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetSaturationCB {args} {
+
+    if {![winfo exist $wroot]} return 
+
+    set value [lindex $args 0]
+
+    if {$saturationPending == $saturation} {
+
+	set saturationPending -1
+
+    } else {
+
+	if {$saturationPending != -1} {
+	    
+	    set me [VgaComponentC::MyVgaId]
+	    VgaCmd ExecDaemonCmd video_set_saturation($me,$saturation) VgaSourceC::SetSaturationCB
+
+	    set saturationPending $saturation
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::SetSaturationInfo {} {
+
+    if {![winfo exist $wroot]} return 
+
+    set _vsw [$wroot.vset childsite]
+
+    if {![winfo exist $_vsw.lsaturationinfo]} return
+
+    $_vsw.lsaturationinfo configure -text [format %3d%% $saturation]
+}
+
+#---------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------
+# vga effects related methods 
+#---------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateVgaEffects {} {
+
+    if {![winfo exist $wroot]} return 
+
+    set me [VgaComponentC::MyVgaId]
+
+    VgaCmd ExecDaemonCmd video_get_flip($me)   [code UpdateFlipCB]
+    VgaCmd ExecDaemonCmd video_get_mirror($me) [code UpdateMirrorCB]
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateFlipCB {args} {
+
+    if {![winfo exist $wroot]} return 
+
+    set flip [lindex $args 0]
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::UpdateMirrorCB {args} {
+
+    if {![winfo exist $wroot]} return 
+
+    set mirror [lindex $args 0]
+}
+
+#---------------------------------------------------------------------------
+
+body VgaSourceC::VgaEffects {} {
+
+    if {![winfo exist $wroot]} return 
+
+    VgaCmd VgaSetFlip $flip
+    VgaCmd VgaSetMirror $mirror
+}
+
+#---------------------------------------------------------------------------
+
+

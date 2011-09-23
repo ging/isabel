@@ -1,0 +1,1045 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+# selection.itc
+#
+# GUI to manipulate the seleted sites, people, authors and chairs..
+#
+#-----------------------------------------
+
+
+#-----------------------------------------
+
+class SelectionTCC {
+  
+
+
+    constructor {_agendaobj _wroot} {} {}
+
+    destructor {}
+
+
+    # root path
+    private variable wroot
+
+    # counter used to create uniq widget names
+    private common counter 0
+
+    #-- gui
+    
+    # Create the gui.
+    private method makeGUI {}
+
+    # Update the widget
+    public method refresh {}
+
+    #  Refresh the Users, Roottitles, etc. objects with the selected sites.
+    private method refreshDetails {}
+
+    #-- Selection: People and Sites
+
+    # List of selected chair, author, person and site nodes.
+    private variable caps_selected ""
+
+    # Reference to the Agenda Object
+    public variable agendaobj ""
+
+    # Table with the widget associated to each chair, author, person and site selected node.
+    # $widget($node) is the path to the widget.
+    private variable widget    
+
+    # Which selected node has the focus.
+    private variable focus ""
+
+    # Add a new NodeTCC to the selection.
+    # $_nodetcc is the new selected node.
+    # It must be a AuthorTCC, ChairTCC, SiteTCC or PersonTCC node.
+    public method select {_nodetcc}
+
+    # Delete the given node fron the selection.
+    # $_nodetcc is the unselected node.
+    # It must be a AuthorTCC, ChairTCC, SiteTCC or PersonTCC node.
+    public method unselect {_nodetcc}
+
+    # Return 1 if the given node is selected, otherwise returns 0.
+    # $_nodetcc should be a AuthorTCC, ChairTCC, SiteTCC or PersonTCC node.
+    public method isSelected {_nodetcc}
+
+    # Unselect all the nodes.
+    public method unselectAll {}
+
+    # Unselect all the nodes.
+    private method unselectAllAndScript {}
+
+    #- Focus
+
+    # Move focused node $_offset positions in $caps_selected.
+    public method mvFocus {_offset}
+
+    # Callback executed when the radiobuttons focus change.
+    private method setFocus {}
+
+    #-- Selection: Wallpaper Resource
+
+    # The most recently selected Wallpaper resource.
+    # Only one Wallpaper resource can be selected simultaneously.
+    # This variable contains a reference to the selected
+    # resource object.
+    private variable selectedWallpaperResource ""
+    
+    # Returns the currently selected Wallpaper Resource object.
+    public method getSelectedWallpaperResource {}
+    
+    # Set a new selected Wallpaper resource.
+    public method setSelectedWallpaperResource {_resource}
+
+    #-- Selection: Video Resource
+
+    # The most recently selected Video resource.
+    # Only one Video resource can be selected simultaneously.
+    # This variable contains a reference to the selected
+    # resource object.
+    private variable selectedVideoResource ""
+    
+    # Returns the currently selected Video Resource object.
+    public method getSelectedVideoResource {}
+    
+    # Set a new selected Video resource.
+    public method setSelectedVideoResource {_resource}
+
+    #-- Selection: AppSharing Resource
+
+    # The most recently selected AppSharing resource.
+    # Only one AppSharing resource can be selected simultaneously.
+    # This variable contains a reference to the selected
+    # resource object.
+    private variable selectedAppSharingResource ""
+    
+    # Returns the currently selected AppSharing Resource object.
+    public method getSelectedAppSharingResource {}
+    
+    # Set a new selected AppSharing resource.
+    public method setSelectedAppSharingResource {_resource}
+
+    #-- Selection:Common
+
+    # Returns a list with the selected AuthorTCC, ChairTCC, SiteTCC and PersonTCC nodes.
+    public method getSelectedCAPSs {}
+
+    # Returns the currently selected resources.
+    # It is a list of ResourceTCC objects.
+    public method getSelectedResources {}
+
+
+    #-- Sites
+
+    # Returns a list with the selected sites.
+    private method getSites {}
+
+    # Returns a list with the first selected site and the main sites.
+    private method get1NSites {}
+
+    # Returns a list with the video site referenced in the current 
+    # video demo or camera doc resource; followed by the two first 
+    # selected sites.
+    private method getVideo2Sites {}
+
+    # Returns a list with the site id of the control sites.
+    private method getCtrlSites {}
+   
+    #-- Titles
+
+    # Return the long title of the selected site.
+    private method getLongTitle {_siteid}
+
+    # Returns the short title of the selected site.
+    private method getShortTitle {_siteid}
+
+    #-- Helpers
+
+    # Format a rid resource string.
+    private method formatRId {str}
+}
+
+#-----------------------------------------
+
+body SelectionTCC::constructor {_agendaobj _wroot} {
+
+    set agendaobj $_agendaobj
+    set wroot $_wroot
+    
+    makeGUI
+}
+
+#-----------------------------------------
+
+body SelectionTCC::destructor {} {
+
+    catch {bind $wroot.destroy <Destroy> ""}
+    if {[winfo exist $wroot]} {
+	destroy $wroot
+	set wroot ""
+    }
+}
+
+#-----------------------------------------
+
+body SelectionTCC::makeGUI {} {
+
+    set _tbg [IsabelColorsC::GetResource textbackground Background white]
+
+    frame $wroot \
+	-relief flat \
+	-bd 0
+
+    #--
+
+    frame $wroot.rec \
+	-relief flat \
+	-bd 1 \
+	-height 20 \
+	-width 30
+    pack $wroot.rec -side top -expand 1 -fill both
+
+    label $wroot.rec.ivnc -image icaiconvnc \
+	-bd 0 -padx 0 -pady 0
+    balloon add $wroot.rec.ivnc "Application Sharing"
+    label $wroot.rec.tvnc -text [formatRId "No VNC server selected"] \
+	-padx 0 -pady 0 \
+	-font [IsabelFontsC::GetFont medium medium]
+
+    label $wroot.rec.ivid -image  icaiconvid \
+	-bd 0 -padx 0 -pady 0
+    balloon add $wroot.rec.ivid "Video Site"
+    label $wroot.rec.tvid -text [formatRId "No Video or DocCamera site selected"] \
+	-padx 0 -pady 0 \
+	-font [IsabelFontsC::GetFont medium medium]
+
+    label $wroot.rec.iwp  -image  icaiconwallpaper \
+	-bd 0 -padx 0 -pady 0
+    balloon add $wroot.rec.iwp  "Wallpaper"
+    label $wroot.rec.twp  -text [formatRId "No Wallpaper selected"] \
+	-padx 0 -pady 0 \
+	-font [IsabelFontsC::GetFont medium medium]
+
+    grid $wroot.rec.ivnc -row 0 -column 0 -padx 5
+    grid $wroot.rec.tvnc -row 0 -column 1 -sticky w
+    grid $wroot.rec.ivid -row 1 -column 0 -padx 5
+    grid $wroot.rec.tvid -row 1 -column 1 -sticky w
+    grid $wroot.rec.iwp  -row 2 -column 0 -padx 5
+    grid $wroot.rec.twp  -row 2 -column 1 -sticky w
+
+    grid columnconfigure $wroot.rec 0 -weight 0
+    grid columnconfigure $wroot.rec 1 -weight 1
+
+    #--
+
+    frame $wroot.sep \
+	-relief flat \
+	-bd 0 \
+	-height 3
+    pack $wroot.sep -side top
+
+    #--
+
+    frame $wroot.ps \
+	-relief sunken \
+	-bd 1 \
+	-bg $_tbg \
+	-height 20
+    pack $wroot.ps -side top -expand 1 -fill both
+
+    button $wroot.ps.clean \
+	-image icadelete \
+	-command [code $this unselectAllAndScript] \
+	-bg $_tbg \
+	-highlightthickness 0 \
+	-padx 0 -pady 0 \
+	-relief flat
+    pack   $wroot.ps.clean -side right -padx 5
+
+    button $wroot.ps.mvr \
+	-image icamvselectionright \
+	-command [code $this mvFocus 1] \
+	-bg $_tbg \
+	-highlightthickness 0 \
+	-padx 0 -pady 0 \
+	-relief flat
+    pack   $wroot.ps.mvr -side right -padx 1
+
+    button $wroot.ps.mvl \
+	-image icamvselectionleft \
+	-command [code $this mvFocus -1] \
+	-bg $_tbg \
+	-highlightthickness 0 \
+	-padx 0 -pady 0 \
+	-relief flat
+    pack   $wroot.ps.mvl -side right -padx 1
+
+    #--
+    
+    frame $wroot.destroy
+    bind $wroot.destroy  <Destroy> "delete object $this"
+    
+}
+
+#-----------------------------------------
+
+body SelectionTCC::select {_nodetcc} {
+
+    if { ! [$_nodetcc isa NodeTCC]} {
+	unselect $_nodetcc
+	return
+    }
+
+    if {[isSelected $_nodetcc]} {
+	return
+    }
+
+    # Unselect references to the same person:
+    if {[$_nodetcc isa ChairTCC]} {
+	set _person [$_nodetcc getPerson]
+    } elseif {[$_nodetcc isa AuthorTCC]} {
+	set _person [$_nodetcc getPerson]
+    } elseif {[$_nodetcc isa PersonTCC]} {
+	set _person $_nodetcc
+    } else {
+	set _person ""
+    }
+    if {$_person != ""} {
+	foreach _n $caps_selected {
+	    if {[$_n isa ChairTCC]} {
+		set _p [$_n getPerson]
+	    } elseif {[$_n isa AuthorTCC]} {
+		set _p [$_n getPerson]
+	    } elseif {[$_n isa PersonTCC]} {
+		set _p $_n
+	    } else {
+		set _p ""
+	    }
+	    if {$_person == $_p} {
+		unselect $_n
+	    }
+	}
+    }
+
+
+
+
+    lappend caps_selected $_nodetcc
+
+    incr counter
+    set _cnt $counter
+
+    set widget($_nodetcc) $wroot.ps.f$_cnt
+    
+    frame $wroot.ps.f$_cnt
+
+    set _bg  [IsabelColorsC::GetResource background Background white]
+    set _tbg [IsabelColorsC::GetResource textbackground Background white]
+
+    label $wroot.ps.f$_cnt.img -padx 0 \
+	-bg $_tbg 
+
+    radiobutton $wroot.ps.f$_cnt.rb \
+	-indicatoron 0 \
+	-bg $_tbg \
+	-relief flat \
+	-bd 0 \
+	-highlightthickness 0 \
+	-variable [scope focus] \
+	-value $_nodetcc \
+	-selectcolor $_tbg \
+	-padx 0 \
+	-anchor s \
+	-command [code $this setFocus]
+
+
+    if {[$_nodetcc isa ChairTCC]} {
+	$wroot.ps.f$_cnt.img configure -image icachair
+	$wroot.ps.f$_cnt.rb  configure -text  [$_nodetcc getAcronym]
+    } elseif {[$_nodetcc isa AuthorTCC]} {
+	$wroot.ps.f$_cnt.img configure -image icaauthor
+	$wroot.ps.f$_cnt.rb  configure -text  [$_nodetcc getAcronym]
+    } elseif {[$_nodetcc isa PersonTCC]} {
+	$wroot.ps.f$_cnt.img configure -image icaparticipant
+	$wroot.ps.f$_cnt.rb  configure -text  [$_nodetcc getAcronym]
+    } elseif {[$_nodetcc isa SiteTCC]} {
+	$wroot.ps.f$_cnt.img configure -image icasite
+	$wroot.ps.f$_cnt.rb  configure -text  [$_nodetcc getSiteId]
+    } else {
+	catch {
+	    puts "ERROR: Unexpected selected node: [$_nodetcc getTitle]"
+	}
+    }
+    pack $wroot.ps.f$_cnt -side left -padx 2
+    pack $wroot.ps.f$_cnt.img -side left -fill both
+    pack $wroot.ps.f$_cnt.rb  -side left -fill both -anchor s
+    
+    #-- 
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SelectionTCC::unselect {_nodetcc} {
+
+    if {$focus == $_nodetcc} {
+        set focus ""
+    }
+    
+    set caps_selected [ldelete $caps_selected $_nodetcc]
+    
+    if {[info exists widget($_nodetcc)]} {
+	if {[winfo exists $widget($_nodetcc)]} {
+	    catch "destroy $widget($_nodetcc)"
+	}
+	unset widget($_nodetcc)
+    }
+
+    #-- 
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SelectionTCC::isSelected {_nodetcc} {
+
+    return [expr [lsearch -exact $caps_selected $_nodetcc] != -1]
+
+}
+
+#-----------------------------------------
+
+body SelectionTCC::unselectAll {} {
+
+    foreach _s $caps_selected {
+	
+	if {[info exists widget($_s)]} {
+	    if {[winfo exists $widget($_s)]} {
+		catch "destroy $widget($_s)"
+	    }
+	    unset widget($_s)
+	}
+    }
+
+    set caps_selected ""
+
+    #-- 
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SelectionTCC::unselectAllAndScript {} {
+
+    ScriptItemTCC::cleanSelection
+
+    unselectAll
+}
+
+#-----------------------------------------
+
+body SelectionTCC::mvFocus {_offset} {
+
+    if {$focus == ""} return
+
+    set _pos [lsearch -exact $caps_selected $focus]
+
+    if {$_pos == -1} return
+
+    set caps_selected [lreplace $caps_selected $_pos $_pos]
+
+    set _newpos [expr $_pos + $_offset]
+
+    set caps_selected [linsert $caps_selected $_newpos $focus]
+
+    #-- 
+    
+    ScriptItemTCC::cleanSelection
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SelectionTCC::setFocus {} {
+
+    set _fg [IsabelColorsC::GetResource foreground   Foreground black]
+
+    foreach _s $caps_selected {
+	if {$_s == $focus} {
+	    $widget($_s).rb configure \
+		-foreground red \
+		-activeforeground red
+	} else {
+	    $widget($_s).rb configure \
+		-foreground $_fg \
+		-activeforeground $_fg
+	}
+    }
+}
+
+#-----------------------------------------
+
+body SelectionTCC::getSelectedWallpaperResource {} {
+
+    return $selectedWallpaperResource
+}
+
+#-----------------------------------------
+
+body SelectionTCC::setSelectedWallpaperResource {_resource} {
+
+    set selectedWallpaperResource $_resource
+
+    if {$_resource == ""} {
+	$wroot.rec.twp configure -text "No wallpaper selected"
+    } else {
+	$wroot.rec.twp configure -text [$_resource getTitle]
+    }
+
+    #-- 
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SelectionTCC::getSelectedVideoResource {} {
+
+    return $selectedVideoResource
+}
+
+#-----------------------------------------
+
+body SelectionTCC::setSelectedVideoResource {_resource} {
+
+    set selectedVideoResource $_resource
+
+    if {$_resource == ""} {
+	$wroot.rec.tvid configure -text "No Video or DocCamera site selected"
+    } else {
+	$wroot.rec.tvid configure -text [$_resource getTitle]
+    }
+
+    #-- 
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SelectionTCC::getSelectedAppSharingResource {} {
+
+    return $selectedAppSharingResource
+}
+
+#-----------------------------------------
+
+body SelectionTCC::setSelectedAppSharingResource {_resource} {
+
+    set selectedAppSharingResource $_resource
+
+    if {$_resource == ""} {
+	$wroot.rec.tvnc configure -text "No VNC server selected"
+    } else {
+	$wroot.rec.tvnc configure -text [$_resource getTitle]
+    }
+
+    #-- 
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SelectionTCC::getSelectedCAPSs {} {
+
+    return $caps_selected
+}
+
+#-----------------------------------------
+
+body SelectionTCC::getSelectedResources {} {
+
+    set _robjs ""
+    
+    if {$selectedWallpaperResource != ""} {
+	lappend _robjs $selectedWallpaperResource
+    }
+    if {$selectedVideoResource != ""} {
+	lappend _robjs $selectedVideoResource
+    }
+    if {$selectedAppSharingResource != ""} {
+	lappend _robjs $selectedAppSharingResource
+    }
+
+    return $_robjs
+}
+
+#-----------------------------------------
+
+body SelectionTCC::getSites {} {
+    
+    set _res ""
+    foreach _s $caps_selected {
+	set _siteid [$_s getSiteId]
+	if {[lsearch -exact $_res $_siteid] == -1} {
+	    lappend _res $_siteid
+	}
+    }
+    return $_res
+}
+
+#-----------------------------------------
+
+body SelectionTCC::get1NSites {} {
+    
+    set _1siteid "___1___"
+    foreach _s $caps_selected {
+	set _1siteid [$_s getSiteId] 
+	break
+    }
+
+    set _conf [$agendaobj getConference]
+    set _sites [$_conf cget -sites]
+    set _nsites [$_sites getMainSites]
+
+    set _res $_1siteid
+    foreach _s $_nsites {
+	set _siteid [$_s getSiteId]
+	if {[lsearch -exact $_res $_siteid] == -1} {
+	    lappend _res $_siteid
+	}
+    }
+
+    return $_res
+}
+
+#-----------------------------------------
+
+body SelectionTCC::getVideo2Sites {} {
+
+    set _vsiteid _____VS_____
+    set _resource [getSelectedVideoResource]
+    if {$_resource != ""} {
+	if { [$_resource isa VideoResourceTCC]} {
+	    set _vsiteid  [[$_resource cget -site] cget -siteId]
+	}
+    }
+    
+    set _res $_vsiteid
+    foreach _s $caps_selected {
+	set _siteid [$_s getSiteId]
+	if {[lsearch -exact $_res $_siteid] == -1} {
+	    lappend _res $_siteid
+	}
+    }
+
+    return $_res
+}
+
+#-----------------------------------------
+
+body SelectionTCC::getLongTitle {_siteid} {
+
+    set _title ""
+    
+    foreach _s $caps_selected {
+	if {[$_s getSiteId] == $_siteid} {
+	    if {[$_s isa PersonTCC] || [$_s isa AuthorTCC] || [$_s isa ChairTCC]} {
+		regsub -all ":" [$_s getName]         ";" _t1
+		regsub -all ":" [$_s getPosition]     ";" _t2
+		regsub -all ":" [$_s getOrganization] ";" _t3
+
+		set _t $_t1:$_t2:$_t3
+       
+                regsub -all "::" $_t ":" _t
+                regsub      "^:" $_t ""  _t
+                regsub      ":$" $_t ""  _t
+
+		if {$_title == ""} {
+		    set _title $_t
+		} else {
+		    set _title ${_title}::$_t
+		}
+	    } elseif {[$_s isa SiteTCC]} {
+		regsub -all ":" [$_s getSiteId]   ";" _t1
+		regsub -all ":" [$_s getFullname] ";" _t2
+
+		set _t "$_t1 - $_t2"
+       
+		if {$_title == ""} {
+		    set _title $_t
+		} else {
+		    set _title ${_title}::$_t
+		}
+	    }
+	}
+    }
+    
+    return [list $_title]
+}
+
+#-----------------------------------------
+
+body SelectionTCC::getShortTitle {_siteid} {
+
+    set _title ""
+    
+    foreach _s $caps_selected {
+	if {[$_s getSiteId] == $_siteid} {
+	    if {[$_s isa PersonTCC] || [$_s isa AuthorTCC] || [$_s isa ChairTCC]} {
+		regsub -all ":" [$_s getName]  ";" _t1
+		if {$_title == ""} {
+		    set _title $_t1
+		} else {
+		    set _title $_title:$_t1
+		}
+	    } elseif {[$_s isa SiteTCC]} {
+		regsub -all ":" [$_s getSiteId]   ";" _t1
+		regsub -all ":" [$_s getFullname] ";" _t2
+
+		set _t "$_t1 - $_t2"
+       
+		if {$_title == ""} {
+		    set _title $_t
+		} else {
+		    set _title ${_title}::$_t
+		}
+	    }
+	}
+    }
+    
+    return [list $_title]
+}
+
+#-----------------------------------------
+
+body SelectionTCC::getCtrlSites {} {
+
+    set _allsites [[[$agendaobj getConference] cget -sites] cget -sites] 
+
+    set _res ""
+    foreach _s $_allsites {
+	if {[$_s isCtrlSite]} {
+	    set _siteid [$_s getSiteId]
+	    lappend _res $_siteid
+	}
+    }
+    
+    return $_res
+}
+
+#-----------------------------------------
+
+body SelectionTCC::refresh {} {
+    
+    foreach _s $caps_selected {
+	pack forget $widget($_s)
+	pack $widget($_s) -side left -padx 2
+	
+	if {[$_s isa PersonTCC] || [$_s isa AuthorTCC] || [$_s isa ChairTCC]} {
+	    $widget($_s).rb configure -text  [$_s getAcronym]
+	    set _t [$_s getTitle]
+	    balloon add $widget($_s).img $_t
+	    balloon add $widget($_s).rb  $_t
+	} elseif {[$_s isa SiteTCC]} {
+	    $widget($_s).rb configure -text  [$_s getSiteId]
+	    set _t [$_s getTitle]
+	    balloon add $widget($_s).img $_t
+	    balloon add $widget($_s).rb  $_t
+	}
+    }
+
+    if {$selectedAppSharingResource != ""} { 
+	$wroot.rec.tvnc configure -text [$selectedAppSharingResource getTitle]
+    }
+    
+    if {$selectedWallpaperResource != ""} { 
+	$wroot.rec.twp  configure -text [$selectedWallpaperResource getTitle]
+    }
+    
+    if {$selectedVideoResource != ""} { 
+	$wroot.rec.tvid configure -text [$selectedVideoResource getTitle]
+    }
+
+    refreshDetails
+}
+
+#-----------------------------------------
+
+body SelectionTCC::refreshDetails {} {
+
+    set _conf  [$agendaobj cget -tcobj]
+    set _users [[$_conf cget -detailsobj] cget -usersobj]
+    set _modes [$_conf cget -modesobj]
+
+    # Refresh vnc details
+
+    if {$selectedAppSharingResource != ""} {
+	set _distrib [$selectedAppSharingResource cget -distribution]
+	if {$_distrib == "NeReDa"} {
+	    set _access  [[$selectedAppSharingResource cget -accessSite] getSiteId]
+	} else {
+	    set _access ""
+	}
+	set _server [$selectedAppSharingResource cget -server]
+	if {[$_server isa ServerTCC]} {
+	    set _selection server
+	    set _name   [$_server cget -name]
+	    set _passwd [$_server cget -password]
+	    set _hint   ""
+	} else {
+	    set _selection hint
+	    set _name   ""
+	    set _passwd ""
+	    set _hint   [$_server cget -hint]
+	}
+    } else {
+	set _distrib ""
+	set _access ""
+	set _selection ""
+	set _name   ""
+	set _passwd ""
+	set _hint   ""
+    }
+    
+    set _vncobj [[$_conf cget -detailsobj] cget -vncobj]
+    $_vncobj SetDistNet    $_distrib
+    $_vncobj SetAccessSite $_access
+    $_vncobj SetSelection  $_selection
+    $_vncobj SetHint       $_hint
+    $_vncobj SetServer     $_name
+    $_vncobj SetPassword   $_passwd
+
+
+    # Refresh Video site details
+    
+    if {$selectedVideoResource != ""} {
+	set _site  [[$selectedVideoResource cget -site] getSiteId]
+    } else {
+	set _site  ""
+    }
+
+    set _videositeobj [[$_conf cget -detailsobj] cget -videositeobj]
+    $_videositeobj SetSite $_site
+    
+    # Refresh wallpaper details
+    
+    if {$selectedWallpaperResource != ""} {
+	set _path  [$selectedWallpaperResource cget -path]
+	set _dir   [file dirname $_path]
+	set _sld  [file tail $_path]
+    } else {
+	set _dir  ""
+	set _sld ""
+    }
+
+    set _wallpaperobj [[$_conf cget -detailsobj] cget -wallpaperobj]
+    $_wallpaperobj SetImage $_dir $_sld
+    
+    # Refresh root titles
+    
+    set _roottitlesobj [[$_conf cget -detailsobj] cget -roottitlesobj]
+    $_roottitlesobj CleanRootTitles
+
+    set _sites [lrange [getSites] 0 2]
+    set _1site [lindex $_sites 0]
+    set _2site [lindex $_sites 1]
+    set _3site [lindex $_sites 2]
+
+    set _st1 [getShortTitle $_1site]
+    set _st2 [getShortTitle $_2site]
+    set _st3 [getShortTitle $_3site]
+
+    set _lt1 [getLongTitle $_1site]
+    set _lt2 [getLongTitle $_2site]
+    set _lt3 [getLongTitle $_3site]
+
+    $_roottitlesobj SetShortRootTitles "$_st1 $_st2 $_st3"
+    $_roottitlesobj SetLongRootTitles  "$_lt1 $_lt2 $_lt3"
+
+    # Refresh Scene details
+
+    set _scene ""
+    
+    lappend _scene -conference [[$agendaobj getConference] cget -name]
+
+    set _sceneobj [[$_conf cget -detailsobj] cget -sceneobj]
+   
+    # first selection
+    set _fs [lindex $caps_selected 0]
+
+    if {$_fs != ""} {
+	if {[$_fs isa PersonTCC]} {
+	    
+	    lappend _scene -participant [list [$_fs getName] [$_fs getPosition] [$_fs getOrganization]]
+	    lappend _scene -site "[$_fs getSiteId].[$_fs getFullname]"
+	    
+	} elseif {[$_fs isa AuthorTCC]} {
+	    
+	    set _authors [$_fs getParent]
+	    set _presentation [$_authors getParent]
+	    set _presentations [$_presentation getParent]
+	    set _session [$_presentations getParent]
+	    
+	    lappend _scene -session "[$_session cget -name]"
+	    lappend _scene -presentation "[$_presentation cget -name]"
+	    lappend _scene -author [list [$_fs getName]  [$_fs getPosition] [$_fs getOrganization]]
+	    lappend _scene -site "[$_fs getSiteId].[$_fs getFullname]"
+	    
+	} elseif {[$_fs isa ChairTCC]} {
+	    
+	    set _session [$_fs getParent]
+	    lappend _scene -session "[$_session cget -name]"
+	    
+	    lappend _scene -chair [list [$_fs getName] [$_fs getPosition] [$_fs getOrganization]]
+	    lappend _scene -site "[$_fs getSiteId].[$_fs getFullname]"
+	    
+	} elseif {[$_fs isa SiteTCC]} {
+	    lappend _scene -site "[$_fs getSiteId].[$_fs getFullname]"
+	}
+    }
+
+    $_sceneobj SetScene $_scene
+
+    
+    # Refresh sites
+    
+    $_users SetCtrlSites  [getCtrlSites]
+
+    switch [$_modes GetCurrentMode] {
+	quesmode -
+	mode1 { 
+   
+	    set _n [$_modes GetModeNUsers]
+	    set _sites [lrange [getSites] 0 [expr $_n - 1]]
+
+#	    set _1site [lindex $_sites 0]
+	    
+	    $_users SetVideoSites $_sites
+	    $_users SetAudioSites $_sites
+
+	#    $_roottitlesobj SetRootTitles [getLongTitle $_1site]
+	}
+	    
+	mode2 { 
+   
+	    set _n [$_modes GetModeNUsers]
+	    set _sites [lrange [getSites] 0 [expr $_n - 1]]
+
+	 #   set _1site [lindex $_sites 0]
+	 #   set _2site [lindex $_sites 1]
+	    
+	    $_users SetVideoSites $_sites
+	    $_users SetAudioSites $_sites
+
+	  #  $_roottitlesobj SetRootTitles \
+	#	"[getLongTitle $_1site] [getLongTitle $_2site]"
+	}
+	    
+	mode3 { 
+   
+	    set _n [$_modes GetModeNUsers]
+	    set _sites [lrange [getSites] 0 [expr $_n - 1]]
+
+	 #   set _1site [lindex $_sites 0]
+	 #   set _2site [lindex $_sites 1]
+	 #   set _3site [lindex $_sites 2]
+	    
+	    $_users SetVideoSites $_sites
+	    $_users SetAudioSites $_sites
+
+	  #  $_roottitlesobj SetRootTitles \
+	#	"[getShortTitle $_1site] [getShortTitle $_2site] [getShortTitle $_3site]"
+	}
+	    
+	mode1N {
+	    set _sites [get1NSites]
+	    
+	    set _1site [lindex $_sites 0]
+	    
+	    $_users SetVideoSites $_sites
+	    $_users SetAudioSites $_1site
+
+	 #   $_roottitlesobj SetRootTitles [getLongTitle $_1site]
+	    
+	}
+ 
+	cameradocmode {
+	    set _n [$_modes GetModeNUsers]
+	    set _sites [lrange [getSites] 0 [expr $_n - 1]]
+	    
+	    $_users SetVideoSites $_sites
+	    $_users SetAudioSites $_sites
+	}
+
+	vgamode {
+	    set _n [$_modes GetModeNUsers]
+	    set _sites [lrange [getSites] 0 [expr $_n - 1]]
+	    
+	    $_users SetVideoSites $_sites
+	    $_users SetAudioSites $_sites
+	}
+
+	quespresmode -
+	presmode {
+	    set _n [$_modes GetModeNUsers]
+	    set _sites [lrange [getSites] 0 [expr $_n - 1]]
+
+	    set _1site [lindex $_sites 0]
+	    
+	    $_users SetVideoSites $_sites
+	    $_users SetAudioSites $_sites
+	}
+
+	default {
+	    set _n [$_modes GetModeNUsers]
+	    set _sites [lrange [getSites] 0 [expr $_n - 1]]
+	    
+	    $_users SetVideoSites $_sites
+	    $_users SetAudioSites $_sites
+	}
+    }
+}
+
+#-----------------------------------------
+
+body SelectionTCC::formatRId {str} {
+
+    return "$str "
+}
+
+#-----------------------------------------
+
+
+
+
+
+
+

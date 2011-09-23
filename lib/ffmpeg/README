@@ -1,0 +1,47 @@
+
+0.- Terminología
+    ------------
+
+Cuando se actualiza el árbol de fuentes de isabel, se obtiene un fichero
+ffmpeg-snapshot.tar.bz2, que contiene las fuentes de la biblioteca FFMPEG.
+
+1.- Uso de FFMPEG en Isabel
+    -----------------------
+
+El Makefile desempaqueta el fichero ffmpeg-snapshot.tar.bz2, lo cual genera
+el directorio ffmpeg. Entonces entra en dicho directorio y compila las
+fuentes, generando las bibliotecas libavcodec y libavutil.
+
+Nota: las cabeceras de ffmpeg deben protegerse con un extern "C", por ejemplo:
+#ifdef __cplusplus
+extern "C"
+{
+    #include <libavcodec/avcodec.h>
+    #include <libavformat/avformat.h>
+    #include <libswscale/swscale.h>
+}
+#endif
+
+2.- Actualización de la FFMPEG
+    --------------------------
+
+La biblioteca FFMPEG está en constante evolución. Si se desea actualizarla,
+se necesitan llevar a cabo los siguientes pasos:
+
+  a) se borra el subdirectorio en el que se desempaquetó el snapshot.
+
+  b) se obtiene la nueva versión de FFMPEG, bajadas de
+     http://www.ffmpeg.org/download.html, versión "base source".
+
+  c) se renombra el paquete obtenido ffmpeg-snapshot.tar.bz2 a
+     ffmpeg-AAAAMMDD.tar.bz2, donde AAAAMMDD es fecha DD/MM/AAAA en la
+     que se obtuvo el snapshot
+
+  d) se modifica el Makefile para que desempaquete el nuevo tarball
+
+  e) se compila isabel y se instala
+
+  f) se asegura de que la nueva versión de la FFMPEG funciona según las
+     necesidades de Isabel. Hay que tener en cuenta todos los sabores de
+     Linux, así como MacOS y Windows
+

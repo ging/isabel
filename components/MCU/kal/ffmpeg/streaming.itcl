@@ -1,0 +1,656 @@
+#######################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+class StreamingManagerC {
+
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    #---- Change user interface visibility.
+    public proc Show {}
+    public proc Hide {}
+    public proc ToggleShowHide {}
+
+    #---- Control
+
+    # Autostart
+    # Compares the mtime of the files:
+    #    $env(ISABEL_TMP_DIR)/isabel_is_running
+    #    $env(ISABEL_CONFIG_DIR)/streaming/state 
+    # If the mtime of the "state" file is greater than the mtime of tje isabel_is_running file, then the state saved in the "state" file is reapplied.
+    #
+    # This is done to restart the streaming if the Audio components is restarted.
+    public proc AutoStart {}
+
+    # Start sending streaming.
+    public  proc Start {}
+
+    # Stop sending streaming.
+    public  proc Stop {}
+
+    #---- Set the current state
+    # $state must be started or stopped
+    public proc SetState {state}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+
+    # toplevel widget.
+    private common wroot .audio_streaming_tl
+
+    # Create the user interface.
+    private proc GUI {}
+
+    # Current sending state: started or stopped.
+    private common mgr_state stopped
+
+    #---- Streaming ---------------
+
+    # 1 to stream
+    private common doStream 0
+
+    # Target URL
+    private common target_url ""
+
+    private common target_error ""
+
+    # Update the status message.
+    private proc UpdateStatus {}
+
+    #---- Recording ---------------
+
+    # 1 to record
+    private common doRecord 0
+
+    private common record_filename ""
+
+    # Refresh the label with the size of the recording file
+    private proc UpdateRecSize {}
+
+    #---- Grab Size ---------------
+
+    # Grab Size:
+    #   0 - Use the desktop size defined in the activity.
+    #   1 - Grab size is the half of the desktop size defined in the activity.
+    private common halfSize 0
+ 
+    #---- On Screeen indicator
+
+    # $wroot.recind is a toplevel window used to show the indicator.
+
+    # Starts a loop to change the state of the toplevel window used to show the indicator.
+    private proc ToggleRecIndicatorState {}
+
+   #---- Others
+
+    # Save value $v to file $filename
+    public proc Save {filename v}
+    
+    # Load value from $filename.
+    # Return $default on error.
+    public proc Load {filename default}
+
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::GUI {} {
+    
+    if {[winfo exist $wroot]} { 
+	return
+    }
+    
+    set display [session Environ cget -audio_ctrl_display]
+    
+    toplevel $wroot -screen $display
+    
+    wm protocol $wroot WM_DELETE_WINDOW "wm withdraw $wroot"
+
+    wm title $wroot "UDP Streaming"
+    
+    label $wroot.l \
+	-text "Session Streaming and Recording" \
+	-font [IsabelFontsC::GetFont large medium] \
+	-pady 0
+    
+    button $wroot.kk
+    set font [$wroot.kk cget -font]	
+    destroy $wroot.kk
+    
+    set bgtxtcolor [IsabelColorsC::GetResource Entry.background Background Blue]
+    
+
+    #--------------------------------
+    #--------------------------------
+    # Streaming
+    #--------------------------------
+    #--------------------------------
+
+    ::iwidgets::labeledframe $wroot.stream -labeltext "Stream:"  -labelpos nw -labelfont $font -borderwidth 3 -relief groove 
+    set _stw  [$wroot.stream childsite]
+
+    checkbutton $_stw.dostr -text "Do stream" \
+	-variable [scope doStream] \
+	-command [code UpdateStatus] \
+	-font $font
+
+    set doStream [Load dostream 0]
+
+    #--------------------------------
+    # Target host
+    #--------------------------------
+
+    ::iwidgets::entryfield $_stw.target \
+	-labelfont $font \
+	-labeltext "Target hostname:" \
+	-command [code UpdateStatus] \
+	-focuscommand [code UpdateStatus] \
+	-width 20 \
+        -textbackground $bgtxtcolor
+
+    set _th [Load targethost ""]
+    $_stw.target insert 0 $_th
+
+    #--------------------------------
+    # Status Message
+    #--------------------------------
+
+    label $_stw.status \
+	-relief flat \
+	-justify left \
+	-font $font
+
+
+    #--------------------------------
+    #--------------------------------
+    # Recording
+    #--------------------------------
+    #--------------------------------
+
+    ::iwidgets::labeledframe $wroot.record -labeltext "Record:"  -labelpos nw -labelfont $font -borderwidth 3 -relief groove 
+    set _rew  [$wroot.record childsite]
+
+
+    checkbutton $_rew.dorec -text "Do record" \
+	-variable [scope doRecord] \
+	-command [code UpdateStatus] \
+	-font $font
+
+    set doRecord [Load dorecord 0]
+
+    #--------------------------------
+    # Status Message
+    #--------------------------------
+
+    label $_rew.status \
+	-relief flat \
+	-justify left \
+	-font $font
+
+
+    #--------------------------------
+    # Size of the recording file
+    #--------------------------------
+
+    label $_rew.size \
+	-relief flat \
+	-justify left \
+	-font $font
+
+
+
+    #--------------------------------
+    #--------------------------------
+    # Common: Frame rate, grabsize
+    #--------------------------------
+    #--------------------------------
+
+    ::iwidgets::spinint $wroot.frate \
+	-labelfont $font \
+	-labeltext " Framerate:" \
+	-range {1 15} \
+        -textbackground $bgtxtcolor
+
+    set _fr [Load framerate 1]
+    $wroot.frate delete 0 end
+    $wroot.frate insert 0 $_fr
+
+    #--------------------------------
+
+    checkbutton $wroot.half -text "Half Size" \
+	-variable [scope halfSize] \
+	-font $font
+
+    set halfSize [Load halfsize 0]
+
+    #--------------------------------
+    #--------------------------------
+    # Start - Stop
+    #--------------------------------
+    #--------------------------------
+
+    button $wroot.start \
+	-text Start \
+	-pady 3 \
+	-command StreamingManagerC::Start
+
+    button $wroot.stop \
+	-text Stop \
+	-pady 3 \
+	-command StreamingManagerC::Stop
+
+    #--------------------------------
+    #--------------------------------
+    # Dismiss
+    #--------------------------------
+    #--------------------------------
+
+    button $wroot.close \
+	-text Dismiss \
+	-pady 3 \
+	-command StreamingManagerC::Hide
+
+    #--------------------------------
+    #--------------------------------
+    # Packing
+    #--------------------------------
+    #--------------------------------
+
+    grid columnconfigure $wroot 0 -weight 1
+    grid columnconfigure $wroot 1 -weight 1
+
+    grid rowconfigure $wroot 5 -weight 1
+ 
+    grid $wroot.l       -row 0 -column 0 -pady 10 -columnspan 2
+    grid $wroot.stream  -row 1 -column 0 -pady 1  -columnspan 2          -sticky we
+    grid $wroot.record  -row 2 -column 0 -pady 1  -columnspan 2          -sticky we
+    grid $wroot.frate   -row 3 -column 0 -pady 1  -columnspan 2 -padx 10 -sticky w
+    grid $wroot.half    -row 4 -column 0 -pady 10 -columnspan 2 -padx 10 -sticky w
+    grid $wroot.start   -row 5 -column 0 -pady 10 -padx 10               -sticky e
+    grid $wroot.stop    -row 5 -column 1 -pady 10 -padx 10               -sticky w
+    grid $wroot.close   -row 6 -column 0 -pady 1 -columnspan 2
+
+
+    grid $_stw.dostr   -row 0 -column 0 -pady 10          -sticky w
+    grid $_stw.target  -row 1 -column 0          -padx 10 
+    grid $_stw.status  -row 2 -column 0 -pady 10          -sticky w
+
+    grid $_rew.dorec   -row 0 -column 0 -pady 10 -sticky w
+    grid $_rew.status  -row 1 -column 0          -sticky w
+    grid $_rew.size    -row 2 -column 0 -pady 10 -sticky w
+
+    #--------------------------------
+    # State
+    #--------------------------------
+  
+    SetState stopped
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::AutoStart {} {
+    global env
+
+    if {[catch {
+	set _state [Load state ""]
+	if {$_state == "started"} {
+	    
+	    set _t_start [exec grep date $env(ISABEL_TMP_DIR)/isabel_is_running | sed "s/date=//"] 
+	    set _t_state [file mtime [session Environ cget -config_dir]/streaming/state]
+	    
+	    if {$_t_state > $_t_start} {
+		Show
+		Start
+	    }
+	}
+    } _err]} {
+	ErrorTraceMsg "Streaming: Trying to autostart, I get: $_err"
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::Start {} {
+    global env
+
+    #----- Streaming
+
+    set _stw  [$wroot.stream childsite]
+    set _target [$_stw.target get]
+    
+    set target_url   "udp://$_target:1234"
+    set target_error ""
+
+    if {$doStream == "1"} {
+	
+	if {[catch "exec $env(ISABEL_DIR)/bin/isabel_gethostbyname $_target" _err]} {
+	    
+	    set target_error "unreachable host"
+	    
+	    UpdateStatus
+	    
+	    ErrorTraceMsg "Streaming: unreachable target host: $_target"
+	    return
+	} 
+	
+	Save targethost $_target
+    }
+
+    Save dostream $doStream
+
+    #----- Recording
+
+    Save dorecord $doRecord
+    
+    if {$doRecord == "1"} {
+	set _date [clock format [clock seconds] -format "%Y-%m-%d-%H-%M-%S"]
+	set record_filename isabel_session_$_date.avi
+	UpdateRecSize
+    } else {
+	set record_filename ""
+    }
+    
+    #----- 
+
+    set _frate [$wroot.frate get]
+    Save framerate $_frate
+
+
+    Save halfsize $halfSize
+
+    #----- 
+
+    UpdateStatus
+
+    if {$doStream == "1"} {
+	if {$doRecord == "1"} {
+	    component Cmd StartStreamingAndRecording  $target_url $record_filename $_frate $halfSize
+	} else {
+	    component Cmd StartStreamingAndRecording  $target_url "" $_frate $halfSize
+	}
+    } else {
+	if {$doRecord == "1"} {
+	    component Cmd StartStreamingAndRecording  "" $record_filename $_frate $halfSize
+	}
+    }
+
+    #----- On screen indicator
+    StreamingManagerC::ToggleRecIndicatorState
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::Stop {} {
+
+    component Cmd StopStreaming
+
+    after cancel [code UpdateRecSize]   
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::SetState {state} {
+    global env
+
+    set mgr_state $state
+
+    set _stw  [$wroot.stream childsite]
+    set _rew  [$wroot.record childsite]
+
+    Save state $mgr_state
+    
+    if {[info exists env(ISABEL_STREAMING_DISABLED)] && $env(ISABEL_STREAMING_DISABLED) == "1"} {
+	$_stw.dostr   configure -state disabled
+	$_stw.target  configure -state disabled
+	$_rew.dorec   configure -state disabled
+	$wroot.frate  configure -state disabled
+	$wroot.half   configure -state disabled
+	$wroot.start  configure -state disabled
+	$wroot.stop   configure -state disabled
+
+	$_stw.status configure \
+	    -text "Streaming is disabled.\n\nEdit the Isabel Local Configuration and delete:\n\n    ISABEL_STREAMING_DISABLED = 1\n\nto enable streaming."
+	
+	return
+    }
+
+    if {$mgr_state == "started"} {
+	
+	$_stw.dostr   configure -state disabled
+	$_stw.target  configure -state disabled
+	$_rew.dorec   configure -state disabled
+	$wroot.frate  configure -state disabled
+	$wroot.half   configure -state disabled
+	$wroot.start  configure -state disabled
+	$wroot.stop   configure -state normal
+	
+    } elseif {$mgr_state == "stopped"} {
+	
+	$_stw.dostr   configure -state normal
+	$_stw.target  configure -state normal
+	$_rew.dorec   configure -state normal
+	$wroot.frate  configure -state normal
+	$wroot.half   configure -state normal
+	$wroot.start  configure -state normal
+	$wroot.stop   configure -state disabled
+	
+    } else { // INVALID STATE
+	
+	$_stw.dostr   configure -state normal
+	$_stw.target  configure -state normal
+	$_rew.dorec   configure -state normal
+	$wroot.frate  configure -state normal
+	$wroot.half   configure -state normal
+	$wroot.start  configure -state normal
+	$wroot.stop   configure -state normal
+	
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::UpdateStatus  {} {
+    
+    #----- Streaming
+
+    set _text1 "    Target URL = $target_url"
+    set _text2 "    $target_error"
+
+    set _stw  [$wroot.stream childsite]
+    
+    $_stw.status configure -text "$_text1\n$_text2"
+
+    #----- Recording
+
+    set _rew  [$wroot.record childsite]
+
+    if {$doRecord == "1"} {
+	if {$record_filename == ""} {
+	    $_rew.status configure -text "    No recording "
+	} else {
+	    $_rew.status configure -text "    Recording to file $record_filename "
+	}
+    } else {
+	$_rew.status configure -text "    No recording "
+    }
+    
+    $_rew.size configure -text ""
+
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::UpdateRecSize  {} {
+
+    after cancel [code UpdateRecSize]   
+
+    set _rew  [$wroot.record childsite]
+
+    if {$record_filename == ""} {
+	$_rew.size configure -text ""
+	return 
+    }
+    
+    if {[catch "file size $record_filename" _size]} {
+	$_rew.size configure -text "    Recorded size = ?"
+    } else {
+	set _size_msg "$_size bytes."
+	if {$_size > 1024} {
+	    set _sizek [expr $_size / 1024.0]
+	    set _size_msg "[format %.2f $_sizek] Kbytes."
+	    if {$_sizek > 1024} {
+		set _sizem [expr $_sizek / 1024.0]
+		set _size_msg "[format %.2f $_sizem] Mbytes."
+		if {$_sizem > 1024} {
+		    set _sizeg [expr $_sizem / 1024.0]
+		    set _size_msg "[format %.2f $_sizeg] Gbytes."
+		}
+	    }
+	}
+
+	$_rew.size configure -text "    Recorded size = $_size_msg"
+    }
+
+    after 3000 [code UpdateRecSize]
+}
+    
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::Show {} {
+
+    if {![winfo exist $wroot]} { 
+	GUI
+    } else {
+	wm deiconify $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::Hide {} {
+
+    if {[winfo exist $wroot]} { 
+	wm withdraw $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::ToggleShowHide {} {
+   
+    if {![winfo exist $wroot]} { 
+	Show
+    } else {
+	if {[wm state $wroot] != "normal"} {
+	    Show
+	} else {
+	    Hide
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::ToggleRecIndicatorState {} {
+    global env
+
+    after cancel [code StreamingManagerC::ToggleRecIndicatorState]
+
+    if { ! [winfo exists $wroot.recind]} {
+	toplevel $wroot.recind -bg black
+	
+	wm geometry $wroot.recind -0+3
+	wm overrideredirect $wroot.recind 1 
+	wm attributes $wroot.recind -topmost 1
+	
+	image create photo recstr -file $env(ISABEL_DIR)/lib/images/gif/rec.gif
+	
+	label $wroot.recind.l -image recstr -bg black
+
+	bind $wroot.recind.l <1>  {StreamingManagerC::ToggleShowHide}
+	
+	pack $wroot.recind.l
+    }
+
+
+    if {$mgr_state == "started"} {
+	
+	wm deiconify $wroot.recind
+	wm state $wroot.recind normal
+
+	after 1000 [code StreamingManagerC::ToggleRecIndicatorState]
+	
+	if {[$wroot.recind.l cget -state] == "normal"} {
+	    $wroot.recind.l configure -state disabled
+	} else {
+	    $wroot.recind.l configure -state normal
+	}
+
+    } else {
+
+	wm withdraw $wroot.recind
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::Save {filename v} {
+
+    set cfg_dir [session Environ cget -config_dir]/streaming
+    file mkdir $cfg_dir
+
+    if {[catch { 
+	set fd [open $cfg_dir/$filename w]
+	puts $fd $v
+	close $fd
+    } emsg]} {
+	ErrorTraceMsg "Streaming ($filename): $emsg"
+    }
+    return
+}
+
+#---------------------------------------------------------------------------
+
+body StreamingManagerC::Load {filename default} {
+
+    set cfg_dir [session Environ cget -config_dir]/streaming
+    file mkdir $cfg_dir
+    
+    if {[catch {
+	set fd [open $cfg_dir/$filename r]
+	gets $fd v
+	close $fd
+    } emsg]} {
+	return $default
+    }
+    if {$v == ""} {
+	return $default
+    } else {
+	return $v
+    }
+}
+
+#---------------------------------------------------------------------------

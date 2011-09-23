@@ -1,0 +1,137 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#
+# ---------------- Variables
+#
+OpaqueMove
+NoGrabServer
+NoBackingStore
+#Nodefaults
+NoMenuShadows
+
+TitleFont "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
+ResizeFont "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
+MenuFont "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
+IconFont "-adobe-helvetica-bold-r-normal--*-100-*-*-*-*-*-*"
+IconManagerFont "-adobe-helvetica-bold-r-normal--*-100-*-*-*"
+
+IconManagerGeometry "110x20-0+0"
+RandomPlacement
+
+RestartPreviousState
+DecorateTransients
+
+#
+# Region to place the icons
+#
+IconRegion "10x10+0+0" North East 10 10
+
+#
+# Icon manager is not shown initially 
+#
+#ShowIconManager
+
+#
+# Width of window frames in pixels
+#
+BorderWidth 3
+
+#
+# Pixels to be moved for "deltaStop" function
+#
+MoveDelta 3
+
+#
+# others
+#
+#NoTitleFocus
+
+Color
+{
+    BorderColor "DodgerBlue4"
+    BorderTileBackground "LightSkyBlue4"
+    BorderTileForeground "DodgerBlue4"
+    DefaultBackground "DarkSeaGreen4"
+    DefaultForeground "SeaGreen3"
+    IconBackground "LightSkyBlue4"
+    IconForeground "DodgerBlue4"
+    IconBorderColor "LemonChiffon4"
+    IconManagerBackground "white"
+    IconManagerForeground "black"
+    IconManagerHighlight "black"
+    MenuBackground "dark slate gray"
+    MenuForeground "ivory"
+    MenuTitleBackground "RoyalBlue4"
+    MenuTitleForeground "MistyRose3"
+    TitleBackground "black"
+    TitleForeground "white"
+}
+
+#
+# Define some useful functions for motion-based actions.
+#
+
+Function "move-or-lower" { f.move f.deltastop f.lower }
+Function "move-lower"    { f.move f.lower }
+Function "move-or-iconify" { f.move f.deltastop f.iconify }
+Function "move-or-raise" { f.move f.deltastop f.raise }
+Function "move-or-raiselower" { f.move f.deltastop f.raiselower }
+Function "move-or-iconify" { f.move f.deltastop f.iconify }
+Function "move-or-deiconify" { f.move f.deltastop f.deiconify }
+
+#
+# Bindings.
+#
+
+
+#### Mouse buttons
+ 
+Button1 =  : title : f.function "move-or-raise"
+Button1 =  : frame : f.resize
+Button1 =  : root : f.menu "utilsmenu"
+Button1 =  : icon|iconmgr : f.function "move-or-deiconify"
+
+Button2 =  : title|frame  : f.resize
+Button2 =  : icon|iconmgr : f.iconify
+
+Button3 =  : title|frame  : f.iconify
+Button3 =  : icon|iconmgr : f.deiconify
+ 
+ 
+
+menu "utilsmenu"
+{
+"Utilities"     f.title
+"Terminal"      !"xterm -r -bg black -fg white -T isabel &"   
+"Firefox"       !"firefox &"
+""	        f.nop
+"Iconify"	f.iconify
+"Deiconify"     f.deiconify
+"Resize"	f.resize
+"Move"		f.move
+"AutoRaise"     f.autoraise
+"RaiseLower"    f.raiselower
+"Kill Window"	f.destroy
+"Delete Window"	f.delete
+"Refresh"	f.refresh
+}
+

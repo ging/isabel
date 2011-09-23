@@ -1,0 +1,299 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# network.itcl
+#
+#  Network Class (interactive site)
+#  Only one object of this class is allowed at the same time.
+#  It provides method to communicate different applications
+#  using the SeCo service.
+#
+#########################################################################
+
+class NetworkC {
+
+    private variable asciiport 53023
+
+    private variable secoobj
+
+    # Construct the network object.
+    # Parameters:
+    #  - i_am_master: 1 if I run in the isabel master program (isanel_master), else 0.
+    #  - _descr: description. 
+    constructor {i_am_master _descr} {}
+
+    destructor  {}
+
+    # Returns my secoid.
+    public method WhoAmI {}
+
+    # MasterDisconnection callbacks to execute when a 
+    # handle_disconection is received from the SeCo daemon.
+    # This callback is set by the master site of the session.
+    # args is the list of disconnected secoid's.
+    private method MasterDisconnectionHDSeCo {args}
+
+    # SiteDisconnection callbacks to execute when a 
+    # handle_disconection is received from the SeCo daemon.
+    # This callback is set by all excepts the master site of the session.
+    # args is the list of disconnected secoid's.
+    private method SiteDisconnectionHDSeCo {args}
+
+    # Add a new disconnection callback.
+    public method AddDisconnectionCB {cb}
+
+    # Removes a disconnection callback.
+    public method DelDisconnectionCB {cb}
+
+    # Join and leave groups.
+    public method join_group {gname}
+    public method join_local_group {gname}
+    public method leave_group {gname}
+    public method leave_local_group {gname}
+
+    # Methods to send messages to sites identified by its secoid. 
+    public method RDO      {to cmd}
+    public method RPC      {to cmd}
+    public method RCB      {to cmd cb {error_cb ""}}
+
+    # Methods to send messages to global or local SeCo groups.
+    public method RDOGroup      {group cmd {echo 0}}
+    public method RDOLocalGroup {group cmd {echo 0}}
+    public method RDOSync       {group sync cmd {echo 0}}
+    public method RDOLocalSync  {group sync cmd {echo 0}}
+    public method RPCGroup      {group cmd {echo 0}}
+    public method RPCLocalGroup {group cmd {echo 0}}
+
+    # Send a message to the master.
+    public method MasterRequest {args}
+
+    # Send a message to an isabel site.
+    public method SiteRequest {site_id args}
+
+    # Send a message to all interactive sites (also to me).
+    public method SiteBroadcast {args}
+
+    #-------------------------------------------------
+    # Avoid a deadlock because SeCo::whoami does not respond
+    #-------------------------------------------------
+
+    # after code used to call
+    private variable after_nowai ""
+
+    # method to invoke if whoami does not respond
+    private method WhoAmINoResponseCB {}
+}
+
+#-------------------------------
+
+body NetworkC::constructor {i_am_master _descr} {
+
+    set ssecohost 127.0.0.1
+    set descr $_descr
+
+    set secoobj [ISASeCoPrimC "#auto" $ssecohost $asciiport $descr]
+
+    set after_nowai [after 30000 [code $this WhoAmINoResponseCB]]
+    set wai [$secoobj who_am_i]
+    after cancel $after_nowai
+    set after_nowai ""
+
+    DebugTraceMsg "- SeCo: I ($descr) am the client $wai." 3
+
+    if {$i_am_master} {
+	$secoobj AddCB [code $this MasterDisconnectionHDSeCo]
+	session SetMasterInfo secoid $wai
+	$secoobj join_group isabel_master
+    } else {
+	########### $secoobj AddCB [code $this SiteDisconnectionHDSeCo]
+    }
+}
+
+#-------------------------------
+
+body NetworkC::destructor {} {
+
+    after cancel $after_nowai
+    $secoobj quit
+    set secoobj ""
+}
+
+#-------------------------------
+
+body NetworkC::WhoAmI {} {
+    $secoobj who_am_i
+}
+
+#-------------------------------
+
+body NetworkC::WhoAmINoResponseCB {} {
+    ErrorTraceMsg "SeCo connection failure: there is no response to hello_client."
+    delete object $this
+}
+
+#-------------------------------
+
+body NetworkC::MasterDisconnectionHDSeCo {args} {
+
+    foreach _site_id [SiteManager::GetSites] {
+
+	set _site_secoid [SiteManager::GetSiteInfo $_site_id secoid]
+
+	foreach secoid $args {
+	    if {$_site_secoid == $secoid || \
+		    [regexp -- ${secoid}: $_site_secoid]} {
+
+		SiteManager::SiteDisconnection $_site_id
+	    }
+	}
+    }
+}
+
+#-------------------------------
+
+body NetworkC::SiteDisconnectionHDSeCo {args} {
+
+    foreach secoid $args {
+	if {[session GetMasterInfo secoid] == $secoid || \
+		[regexp -- ${secoid}: [session GetMasterInfo secoid]]} {
+	    
+	    puts stderr \
+		    "\n\n- Warning: master network connection closed. I leave session.\n"
+	    
+	    AtExit::Exit 1
+	}
+    }
+}
+
+#-------------------------------
+
+body NetworkC::AddDisconnectionCB {cb} {
+    $secoobj AddCB $cb
+}
+
+#-------------------------------
+
+body NetworkC::DelDisconnectionCB {cb} {
+    $secoobj DelCB $cb
+}
+
+#-------------------------------
+
+body NetworkC::join_group {gname} {
+    $secoobj join_group $gname
+}
+
+#-------------------------------
+
+body NetworkC::join_local_group {gname} {
+    $secoobj join_local_group $gname
+}
+
+#-------------------------------
+
+body NetworkC::leave_group {gname} {
+    $secoobj leave_group $gname
+}
+
+#-------------------------------
+
+body NetworkC::leave_local_group {gname} {
+    $secoobj leave_local_group $gname
+}
+
+#-------------------------------
+
+body NetworkC::RDO {to cmd} {
+    $secoobj RDO $to $cmd
+}
+
+#-------------------------------
+
+body NetworkC::RPC {to cmd} {
+    $secoobj RPC $to $cmd
+}
+
+#-------------------------------
+
+body NetworkC::RCB {to cmd cb {error_cb ""}} {
+    $secoobj RCB $to $cmd $cb $error_cb
+}
+
+#-------------------------------
+
+body NetworkC::RDOGroup {group cmd {echo 0}} {
+    $secoobj RDOGroup $group $cmd $echo
+}
+
+#-------------------------------
+
+body NetworkC::RDOLocalGroup {group cmd {echo 0}} {
+    $secoobj RDOLocalGroup $group $cmd $echo
+}
+
+#-------------------------------
+
+body NetworkC::RDOSync {group sync cmd {echo 0}} {
+    $secoobj RDOSync $group $sync $cmd $echo
+}
+
+#-------------------------------
+
+body NetworkC::RDOLocalSync {group sync cmd {echo 0}} {
+    $secoobj RDOLocalSync $group $sync $cmd $echo
+}
+
+#-------------------------------
+
+body NetworkC::RPCGroup {group cmd {echo 0}} {
+    $secoobj RPCGroup $group $cmd $echo
+}
+
+#-------------------------------
+
+body NetworkC::RPCLocalGroup {group cmd {echo 0}} {
+    $secoobj RPCLocalGroup $group $cmd $echo
+}
+
+#-------------------------------
+
+body NetworkC::MasterRequest {args} {
+    $secoobj send_group_msg isabel_master $args 1
+}
+
+#-------------------------------
+
+body NetworkC::SiteRequest {site_id args} {
+    $secoobj RDO [SiteManager::GetSiteInfo $site_id secoid] $args
+}
+
+#-------------------------------
+
+body NetworkC::SiteBroadcast {args} {
+    
+    $secoobj RDOGroup isabel_client $args 1
+}
+
+#-------------------------------
+

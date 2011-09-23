@@ -1,0 +1,91 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#############################################################################
+#
+# autoquit.itcl
+#
+# Quits master after a given period of time if there are no users connected.
+#
+#
+#############################################################################
+
+
+class AutoQuitC {
+
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+
+    # Refresh state.
+    #
+    # Checks if the number of connected sites is 1. 
+    # If so, then it starts a timeout to quit the session if none connects.
+    public proc refresh {site_id} 
+
+
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # after code of the pending task.
+    private common aftercode ""
+    
+}
+
+
+#------------------------------------------------------------------
+
+body AutoQuitC::refresh {site_id} {
+
+    set actname [session Activity GetName]
+    set timeout [session Activity GetResource $actname autoquit 0]
+    
+    if {$timeout == 0} {
+	return
+    }
+    
+    if {[catch "expr $timeout*60*1000" _msecs]} {
+	ErrorTrceMsg "Invalid activity resource \"$actname.autoquit: $timeout\""
+	return
+    }
+    
+    if {$aftercode != ""} {
+	WriteTraceMsg "Desactivating AutoQuit."
+	after cancel $aftercode
+	set aftercode ""
+    }
+    
+    set _sites [SiteManager::GetSites]
+    
+    if {[llength $_sites] == 1} {
+	WriteTraceMsg "Activating AutoQuit ($timeout minutes)."
+	set aftercode [after $_msecs SiteManager::MasterDisconnection]
+    }
+
+}
+
+#------------------------------------------------------------------

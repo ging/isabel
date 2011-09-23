@@ -1,0 +1,126 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#########################################################################
+#
+# SeCoQueueSession.itcl
+#
+# Description
+#
+#   SeCoSession sends its messages using a FIFO strategy. 
+#
+#   Then, SeCoSession puts the messages to send in this queue, and they are send in the same order
+#   in which they where introduced in the queue.
+#
+#   This queue is necessary because if I want to send a message to a group_name and I have not 
+#   the associated group_id, then I must wait until a message with the group_id is received. During
+#   this waiting time I don't want to send more messages (FIFO constraint) so I store the new 
+#   messages to send in this queue.
+#
+# The formats of the messages stored in the queue are: 
+#
+#   1) Destination is a client Id:
+#       $from_id ID $to_id $cmd_type $msg
+#
+#   2) Destination is a group:
+#       $from_id GROUP $group_name $cmd_type $msg
+#
+#   3) Destination is a local group:
+#       $from_id LGROUP $local_group_name $cmd_type $msg
+#
+# Messages of type 1 are send inmediatly when they are in the first position of the queue.
+# Messages of type 2 and 3 are send when we have the group id of the associated group name, and they 
+# are in the first position of the queue.
+#
+#########################################################################
+
+class SeCoQueueSession {
+
+
+    # the queue
+    private variable queue
+
+    constructor {} {
+	set queue ""
+    }
+
+    destructor {
+    }
+
+    # Is the queue empty?
+    public method Empty {} {
+	if {$queue == ""} {
+	    return 1
+	} else {
+	    return 0
+	}
+    }
+    
+    # Get the next message from the queue, removing it from the queue.
+    # $from is the client id of the sender.
+    # $to_type must be ID, GROUPNAME or LOCALGROUPNAME.
+    # $to is the destination client id or the destination group name.
+    # $cmd_type if the type of SeCo primitive.
+    # $data is the (upper level) data to send.
+    public method Get {from to_type to cmd_type data} {
+	upvar $from _from $to_type _to_type $to _to $cmd_type _cmd_type $data _data
+
+	Top $_from $_to_type $_to $_cmd_type $_data
+
+	set queue [lreplace $queue 0 0]
+
+	return
+    }
+
+    # Get the next message from the queue, but do NOT removing it from the queue.
+    # $from is the client id of the sender.
+    # $to_type must be ID, GROUPNAME or LOCALGROUPNAME.
+    # $to is the destination client id or the destination group name.
+    # $cmd_type if the type of SeCo primitive.
+    # $data is the (upper level) data to send.
+    public method Top {from to_type to cmd_type data} {
+	upvar $from _from $to_type _to_type $to _to $cmd_type _cmd_type $data _data
+
+	set _msg [lindex $queue 0]
+
+	set _from     [lindex $_msg 0]
+	set _to_type  [lindex $_msg 1]
+	set _to       [lindex $_msg 2]
+	set _cmd_type [lindex $_msg 3]
+	set _data     [lrange $_msg 4 end]
+
+	return
+    }
+
+    # Put a message in the queue 
+    public method Put {msg} {
+
+	lappend queue $msg
+    }
+
+    # Delete the top of the queue
+    public method RemoveTop {} {
+
+	set queue [lreplace $queue 0 0]
+	return
+    }
+}
+

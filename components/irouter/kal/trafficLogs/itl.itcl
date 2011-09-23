@@ -1,0 +1,878 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#########################################################################
+#
+# itl.itcl
+#
+# Irouter Traffic Logs
+#
+#########################################################################
+
+class IrouterTrafficLogsC {
+    
+    
+    # Inicializacion del modulo
+    public proc Initialice {}
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    #---- GUI ---------------------
+    
+    # Change user interface visibility.
+    public proc Show {}
+    public proc Hide {}
+    public proc ToggleShowHide {}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    #---- GUI ---------------------
+    
+    # toplevel widget.
+    private common wroot .itl_gui_tl
+    
+    # Create the user interface.
+    private proc GUI {}
+
+    private proc UpdateGUIState {}
+    
+    #----------------------
+
+    #----------------------
+    # Metodos y estado del protocolo
+    #
+    # Nota: para evitar el entrelazamiento de las peticiones de casa sitio 
+    #       se usa el master para serializarlas.
+    #
+    # Nota: El master reenvia las peticiones recibidas usando el grupo
+    #       isabel_itl del SeCo  
+    #----------------------
+    
+    # siteid del sitio que ha solicitado los logs.
+    # "" indica nadie
+    private common invoker
+
+    # Fecha a usar en el nombre de los ficheros de logs a generar.
+    private common log_date ""
+
+    # Funciones asociadas a los botones del gui, es decir se ejecutan
+    # cuando se pulsan los botones de mi gui.  
+    # Estas funciones se envian al master, para que el invoque la misma funcion 
+    # hacia todos los sitios, pero usando los metodos cuyo nombre tiene un 2.
+    private proc Start  {_invoker}
+    private proc Finish {_invoker}
+    private proc End    {_invoker}
+    private proc Abort  {_invoker}
+
+    # Funciones 2 invocadas por el master
+    public proc Start_2  {_invoker _log_date}
+    public proc Finish_2 {_invoker}
+    public proc End_2  {_invoker}
+    public proc Abort_2  {_invoker}
+
+    # Funcion invocada desde los sitios remotos para informar al invoker 
+    # sobre el exito o fracaso en el envio de su fichero de logs.
+    # El parametro $res es:
+    #      0 para envio correcto
+    #      1 para envio fallido.
+    # El parametro $siteid identifica al sitio remoto que envio el fichero.
+    # El parametro msg puede contener un mensaje de error.
+    public proc Done {res siteid {msgerror ""}}
+
+    # Esta funcion se encarga de comprobar si ya se han recibido todos los ficheros remotos,
+    # o se ha informado de error en el envio, de tal forma que ya podemos dar por terminada la fase 
+    # de envio de ficheros de logs, y podemos pasar al estado DONE.
+    private proc CheckReadyToDONE {}
+
+    # El invoker realiza periodicamente un "after CheckReadyToDone" para ver si debe terminar. 
+    # Esto es necesario porque si los sitios que quedan por enviar se salen de isabel, entonces nadie llama a Done,
+    # y por tanto nadie llamaria a CheckReadyToDONE.
+    # Esta variable almacena el after code de la llamada after.
+    private common after_code_crtd ""
+
+    # lista de sitios que ya han enviado el fichero, o que han informado de que no lo pueden enviar.
+    private common received_sites ""
+    private common no_received_sites ""
+
+    #----------------------
+
+    # Envia el fichero de medidas al invoker
+    private proc SendLogFile {filename cbres}
+    private proc SendDoneCB  {orig}
+    private proc SendAckCB   {orig}
+    private proc SendNackCB  {orig msg}
+    private proc SendToutCB  {orig}
+
+    private common ftp_task -1
+
+    #----------------------
+    
+    # Escuchadores locales de los relanzamientos del irouter
+    private proc LocalIrouterRestartedListener {}
+    
+    #----------------------
+    
+    # Metodo ejecutado cuando algun sitio entra en la sesion, o
+    # cuando lanza su irouter
+    public proc AddSite {siteid}
+    
+    # Metodo ejecutado cuando algun sitio deja la sesion, o
+    # se muere su irouter
+    public proc DelSite {siteid}
+    
+    #----------------------
+
+    # Estados: 
+    #   DISABLED: para masters que corren con un proceso interactive
+    #   STOPPED:  no estoy haciendo medidas
+    #   LOGGING:  se estan volcando las medidas a fichero
+    #   SENDING:  se estan transfiriendo los ficheros de medidas al invoker
+    #   DONE:     ya he enviado mi fichero. o he recibido todos los ficheros remotos. Solo
+    #             estoy a la espera de que el invoker lea en mensaje de finalizacion en el gui
+    #             y pulse el boton "done".
+    #   ABORTING: se han abortado los maedidas, y estamos esperando confirmacion.
+    private common state STOPPED
+
+    private proc SetState {_state}
+
+    #----------------------
+    # Mensajes
+    #----------------------
+    global env
+
+    private common htmldisabled \
+	"You have not permission to generate irouter traffic logs in this session."
+
+    private common htmlgui \
+	"Building the application graphical user interface.
+         <P>
+         Please wait..."
+
+    private common htmlstart \
+         "Press the <font color=red>Start</font> button to generate irouter traffic logs.
+          <P>
+          Traffic logs files created in all the session sites will be tranffered to the
+          <b>$env(ISABEL_SESSION_LOGS_DIR)/itl</b> directory when you press the
+          <font color=red>Finish</font> button.
+          <P>
+          Logs files are named <b>itc_&lt;date&gt;_&lt;site&gt;.txt</b>."
+
+    private common htmllogging \
+         "Irouter traffic logs are being generated now.
+          <P>
+          Press the <font color=red>Finish</font> button to terminate and copy all the generated measures files at
+          <b>$env(ISABEL_SESSION_LOGS_DIR)/itl</b> directory. 
+          <P>
+          Traffic logs files created in all the session sites will be copied into the
+          <b>$env(ISABEL_SESSION_LOGS_DIR)/itl</b> directory. 
+          <BR>
+          Logs files are named <b>itc_&lt;date&gt;_&lt;site&gt;.txt</b>.
+          <P>
+          Press the <font color=red>Abort</font> button to abort."
+
+    private common htmlsending \
+         "Receiving irouter traffic logs from remote sites.
+          <P>
+          Traffic logs files created in all the session sites will be copied into the
+          <b>$env(ISABEL_SESSION_LOGS_DIR)/itl</b> directory. 
+          <P>
+          Press the <font color=red>Abort</font> button to abort.
+          <P>
+          Filenames are named as <b>itc_&lt;date&gt;_&lt;site&gt;.txt</b>."
+
+    private common htmldone \
+         "Irouter traffic logs have been generated and received.
+          <P>
+          Traffic logs files are placed into the
+          <b>$env(ISABEL_SESSION_LOGS_DIR)/itl</b> directory. 
+          <BR>
+          Logs files are named <b>itc_&lt;date&gt;_&lt;site&gt;.txt</b>.
+          <UL>
+             <LI> Received logs: <b>%OKSITES%</b>
+             <BR>
+             <LI> Lost logs: <b>%BADSITES%</b>
+          </UL>
+          Press the <font color=red>Done</font> button to terminate.
+          "
+          
+    private common htmlaborting \
+	"Aborting irouter traffic logs .
+         <P>
+         Please wait..."
+
+    private common htmlbusy \
+	"Some site is generating irouter traffic logs .
+         <P>
+         Please wait..."
+
+    private proc SetInfo {msg}
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::Initialice {} {
+    global env
+
+    catch {exec /bin/mkdir -p $env(ISABEL_SESSION_LOGS_DIR)/itl}
+    catch {exec /bin/sh -c "/bin/rm -f $env(ISABEL_SESSION_LOGS_DIR)/itl/*"}
+
+    set invoker ""
+    
+    Hide
+
+    SetState STOPPED
+
+    network join_group isabel_itl
+
+    ::irouter AddListener [code LocalIrouterRestartedListener]
+}
+
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::GUI {} {
+
+    if {$state == "DISABLED"} return
+
+    if {[winfo exist $wroot]} { 
+	return
+    }
+
+    toplevel $wroot -screen [session Environ cget -ctrl_display]
+
+    wm title $wroot "Irouter Traffic Logs"
+
+    #---
+
+    label $wroot.l -text "Irouter Traffic Logs"
+
+    #---
+
+    CreateImage itlimg gif/data_net.gif
+    label $wroot.img -image itlimg 
+
+    #---
+
+    button $wroot.start \
+	-text "Start" \
+	-command [code Start [SiteManager::MySiteId]]
+
+    button $wroot.finish \
+	-text "Finish" \
+	-command [code Finish [SiteManager::MySiteId]]
+
+    button $wroot.abort \
+	-text "Abort" \
+	-command [code Abort [SiteManager::MySiteId]]
+
+    button $wroot.done \
+	-text "Done" \
+	-command [code End [SiteManager::MySiteId]]
+
+    #---
+
+    iwidgets::scrolledhtml $wroot.info \
+	-relief flat \
+	-width 500 \
+	-height 100 \
+	-vscrollmode dynamic \
+	-hscrollmode none \
+	-wrap word \
+	-spacing1 1 \
+	-spacing2 1 \
+	-spacing3 5 \
+	-state disabled
+
+    SetInfo $htmlgui
+
+    #---
+
+    button $wroot.close -text Dismiss -command IrouterTrafficLogsC::Hide
+
+    #--------------------------------
+
+    grid rowconfigure $wroot 0 -weight 0
+    grid rowconfigure $wroot 1 -weight 0  
+    grid rowconfigure $wroot 2 -weight 0
+    grid rowconfigure $wroot 3 -weight 0
+    grid rowconfigure $wroot 4 -weight 1
+    grid rowconfigure $wroot 5 -weight 0
+
+    grid columnconfigure $wroot 2 -weight 1
+
+    grid $wroot.l      -row 0 -column 0 -columnspan 3 -padx 6 -pady 2                    -sticky wens
+    grid $wroot.img    -row 1 -column 0 -rowspan    3 -padx 6 -pady 3 -ipadx 5  -ipady 5 -sticky wens
+    grid $wroot.start  -row 1 -column 1               -padx 6 -pady 3 -ipadx 50 -ipady 5 -sticky wens
+    grid $wroot.finish -row 2 -column 1               -padx 6 -pady 3 -ipadx 50 -ipady 5 -sticky wens
+    grid $wroot.done   -row 3 -column 1               -padx 6 -pady 3 -ipadx 50 -ipady 5 -sticky wens
+    grid $wroot.abort  -row 1 -column 2 -rowspan 3    -padx 6 -pady 3 -ipadx 5  -ipady 5 
+    grid $wroot.info   -row 4 -column 0 -columnspan 3 -padx 6 -pady 3                    -sticky wens
+    grid $wroot.close  -row 5 -column 0 -columnspan 3 -padx 6 -pady 2 
+
+    #--------------------------------
+    
+    UpdateGUIState
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::SetState {_state} {
+
+    set state $_state
+    UpdateGUIState
+
+    if {$state == "STOPPED"} {
+	# Matar restos del ftp
+	if {$ftp_task != -1} {
+	    network RDOLocalGroup local_isabel_comp_Ftp "Eval delete object $ftp_task"
+	}
+	set ftp_task -1
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::UpdateGUIState {} {
+    
+    switch $state {
+	DISABLED {
+	    $wroot.start  conf -state disabled
+	    $wroot.finish conf -state disabled
+	    $wroot.done   conf -state disabled
+	    $wroot.abort  conf -state disabled
+	    SetInfo $htmldisabled
+	}
+	STOPPED {
+	    if {$invoker == ""} {
+		$wroot.start  conf -state normal
+		SetInfo $htmlstart
+	    } else {
+		$wroot.start  conf -state disabled
+		SetInfo $htmlbusy
+	    }
+	    $wroot.finish conf -state disabled
+	    $wroot.done   conf -state disabled
+	    $wroot.abort  conf -state disabled
+	} 
+	LOGGING {
+	    $wroot.start  conf -state disabled
+	    if {$invoker == [SiteManager::MySiteId]} {
+		$wroot.finish conf -state normal
+		$wroot.done   conf -state disabled
+		$wroot.abort  conf -state normal
+		SetInfo $htmllogging
+	    } else {
+		$wroot.finish conf -state disabled
+		$wroot.done   conf -state disabled
+		$wroot.abort  conf -state disabled
+		SetInfo $htmlbusy
+	    }
+	}
+	SENDING {
+	    $wroot.start  conf -state disabled
+	    $wroot.finish conf -state disabled
+	    $wroot.done   conf -state disabled
+	    if {$invoker ==  [SiteManager::MySiteId]} {
+		$wroot.abort  conf -state normal
+		SetInfo $htmlsending
+	    } else {
+		$wroot.abort  conf -state disabled
+		SetInfo $htmlbusy
+	    }
+	}
+	DONE {
+	    $wroot.start  conf -state disabled
+	    $wroot.finish conf -state disabled
+	    if {$invoker ==  [SiteManager::MySiteId]} {
+		$wroot.done  conf -state normal
+
+		set _oksites $received_sites
+
+		set _badsites [SiteManager::GetSites]
+		foreach _sid $received_sites {
+		    set _badsites [ldelete $_badsites $_sid]
+		}
+
+		regsub -all {%OKSITES%}  $htmldone $_oksites  msg 
+		regsub -all {%BADSITES%} $msg      $_badsites msg 
+
+		SetInfo $msg
+	    } else {
+		$wroot.done  conf -state disabled
+		SetInfo $htmlbusy
+	    }
+	    $wroot.abort  conf -state disabled
+	}
+	ABORTING {
+	    $wroot.start  conf -state disabled
+	    $wroot.finish conf -state disabled
+	    $wroot.done   conf -state disabled
+	    $wroot.abort  conf -state disabled
+	    SetInfo $htmlaborting
+	}
+	default {
+	    ErrorTraceMsg "IrouterTrafficLogsC::Invalid State \"$state\""
+	    $wroot.start  conf -state disabled
+	    $wroot.finish conf -state disabled
+	    $wroot.done   conf -state disabled
+	    $wroot.abort  conf -state disabled
+	    SetInfo "Internal ERROR"
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::Show {} {
+    
+    if {![winfo exist $wroot]} { 
+	GUI
+    } else {
+	wm deiconify $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::Hide {} {
+
+    if {![winfo exist $wroot]} { 
+	GUI
+    }
+    wm withdraw $wroot
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::ToggleShowHide {} {
+    
+    if {![winfo exist $wroot]} { 
+	GUI
+    } else {
+	if {[wm state $wroot] != "normal"} {
+	    wm deiconify $wroot
+	} else {
+	    wm withdraw $wroot
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::Start {_invoker} {
+
+    if {$state == "DISABLED"} return
+
+    if {$state != "STOPPED" || $invoker != ""} {
+	ErrorTraceMsg "********* INTERNAL ERROR 1 ->IrouterTrafficLogsC::Start ($state,$invoker,$_invoker,[SiteManager::MySiteId])"
+	return
+    }
+
+    set invoker $_invoker
+    UpdateGUIState
+
+    set seconds [clock seconds]
+    set log_date [clock format $seconds -format "%Y%m%d-%H%M%S"]
+
+    network MasterRequest network RDOSync isabel_itl 0 "IrouterTrafficLogsC::Start_2 [SiteManager::MySiteId] $log_date"
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::Start_2 {_invoker _log_date} {
+
+    if {$state == "DISABLED"} return
+
+    if {$state != "STOPPED"} {
+	return
+    }
+
+    DebugTraceMsg "IrouterTrafficLogsC::Start_2 $_invoker $_log_date"
+    
+    set invoker $_invoker
+    
+    SetState LOGGING
+
+    if {$invoker != [SiteManager::MySiteId]} return 
+
+    # Aqui solo llega el invoker.
+
+    if {$log_date == ""} {
+	# Estoy aqui porque inicie los logs, pero sali de isabel y volvi a entrar en isabel.
+	# Entonces estoy recibiendo los mensajes porque son de sincronismo y me los envia SeCo
+	set log_date $_log_date
+
+	# Me programo para generar logs
+	::irouter StartTrafficLogs $log_date
+
+    } else {
+
+	# Que todos los sitios empiecen a generar logs.
+	network MasterRequest network RDOSync isabel_itl 0 "::irouter StartTrafficLogs $log_date"
+    }
+    
+    # No tengo el fichero de logs de nadie
+    set received_sites ""
+    set no_received_sites ""
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::Finish {_invoker} {
+
+    if {$state == "DISABLED"} return
+
+    if {$state != "LOGGING" || $invoker != [SiteManager::MySiteId]} {
+	ErrorTraceMsg "********* INTERNAL ERROR 2 ->IrouterTrafficLogsC::Finish ($state,$invoker,$_invoker,[SiteManager::MySiteId])"
+	return
+    }
+
+    network MasterRequest network RDOSync isabel_itl 0 "IrouterTrafficLogsC::Finish_2 [SiteManager::MySiteId]"
+
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::Finish_2 {_invoker} {
+
+    if {$state == "DISABLED"} return
+
+    if {$state != "LOGGING" || $invoker != $_invoker} {
+	return
+    }
+
+    DebugTraceMsg "IrouterTrafficLogsC::Finisg_2 $_invoker"
+
+    SetState SENDING
+
+    if {$invoker == [SiteManager::MySiteId]} {
+	# Esto lo ejecuta el invoker
+
+	# Detener mis logs.
+	::irouter StopTrafficLogs ""
+	Done 0 [SiteManager::MySiteId]
+
+    } else {
+	
+	# Aqui solo llegan sitios remotos
+	
+	# Detener mis logs y enviar los datos al invoker
+	::irouter StopTrafficLogs [code SendLogFile]
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::Done {res siteid {msgerror ""}} {
+
+    if {$invoker != [SiteManager::MySiteId]} return
+
+    if {$res == 0} {
+	if {[lsearch -exact $received_sites $siteid] == -1} {
+	    lappend received_sites $siteid
+	}
+    } else {
+	if {[lsearch -exact $no_received_sites $siteid] == -1} {
+	    lappend no_received_sites $siteid
+	}
+    }
+
+    CheckReadyToDONE
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::CheckReadyToDONE {} {
+
+    if {$after_code_crtd != ""} {
+	after cancel $after_code_crtd
+	set after_code_crtd ""
+    }
+
+    if {$state == "DISABLED"} return
+
+    if {$invoker != [SiteManager::MySiteId]} {
+	ErrorTraceMsg "********* INTERNAL ERROR 5 ->IrouterTrafficLogsC::CheckReadyToDONE ($state,$invoker,[SiteManager::MySiteId])"
+	return
+    }
+
+    set connected_now [SiteManager::GetSites]
+
+    foreach siteid $connected_now {
+
+	if {$siteid == [SiteManager::MySiteId]} continue
+
+
+	# Mejora: - comprobar la existencia del fichero en el disco
+	#         - crear otro fichero para envios fallidos.
+
+	if {[lsearch -exact $received_sites $siteid] == -1 &&
+	    [lsearch -exact $no_received_sites $siteid] == -1} {
+
+	    set after_code_crtd [after 5000 [code CheckReadyToDONE]]
+
+	    return
+	}
+    }
+
+    # He terminado. Paso a mostrar estadisticas.
+    SetState DONE
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::SendLogFile {filename cbres} {
+    global env
+
+    if {$cbres != "OK\n"} {
+	network MasterRequest network RDOSync isabel_itl 0 "IrouterTrafficLogsC::Done 1 [SiteManager::MySiteId] {I can not create irouter logs}"
+    }
+
+    set bw [session Activity GetResource Ftp itl.bw 128]
+    set connected_now [SiteManager::GetSites]
+    if {[catch {expr $bw/([llength $connected_now]-1)} bw]} {
+	set bw 128
+    }
+    
+    set res [network RPCLocalGroup local_isabel_comp_Ftp "Eval \
+		     FtpSendFile \
+                     [list $env(ISABEL_SESSION_LOGS_DIR)/itl] \
+                     [list $filename] \
+                     ISABEL_SESSION_LOGS_DIR \
+                     [list itl/$filename] \
+		     [list $invoker] \
+                     local_isabel_client \
+   		     6000000 \
+		     [list [code SendAckCB]] \
+		     [list [code SendNackCB]] \
+		     [list [code SendDoneCB $invoker]] \
+		     [list [code SendToutCB $invoker]] \
+		     $bw \
+		     {}"]
+
+    if {$res == -1} {
+	network MasterRequest network RDOSync isabel_itl 0 "IrouterTrafficLogsC::Done 1 [SiteManager::MySiteId] {I can not start ftp sender task}"
+    }
+
+    set ftp_task $res
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::SendDoneCB {orig} {
+
+    if {$state == "DISABLED"} return
+
+    if {$state != "SENDING" || $invoker != $orig} {
+	return
+    }
+
+    SetState DONE
+
+    set ftp_task -1
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::SendAckCB {orig} {
+
+    if {$state == "DISABLED"} return
+
+    if {$state != "SENDING" || $invoker != $orig} {
+	return
+    }
+
+    network MasterRequest network RDOSync isabel_itl 0 "IrouterTrafficLogsC::Done 0 [SiteManager::MySiteId]"
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::SendNackCB {orig msg} {
+
+    if {$state == "DISABLED"} return
+
+    if {$state != "SENDING" || $invoker != $orig} {
+	return
+    }
+
+    network MasterRequest network RDOSync isabel_itl 0 "IrouterTrafficLogsC::Done 1 [SiteManager::MySiteId] [list $msg]"
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::SendToutCB {orig} {
+
+    if {$state == "DISABLED"} return
+
+    if {$state != "SENDING" || $invoker != $orig} {
+	return
+    }
+
+    SetState DONE
+
+    network MasterRequest network RDOSync isabel_itl 0 "IrouterTrafficLogsC::Done 1 [SiteManager::MySiteId] Timeout"
+
+    set ftp_task -1
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::End {_invoker} {
+
+    if {$state == "DISABLED"} return
+
+    if {$state != "DONE" || $invoker != [SiteManager::MySiteId]} {
+	ErrorTraceMsg "********* INTERNAL ERROR 4 ->IrouterTrafficLogsC::End ($state,$invoker,$_invoker,[SiteManager::MySiteId])"
+	return
+    }
+
+    # He terminado completamente.
+    network MasterRequest network RDOSync isabel_itl 1 "IrouterTrafficLogsC::End_2 [SiteManager::MySiteId]"
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::End_2 {_invoker} {
+
+    if {$state == "DISABLED"} return
+
+    if {$state != "DONE" || $invoker != $_invoker} {
+	return
+    }
+
+    DebugTraceMsg "IrouterTrafficLogsC::End_2 $_invoker"
+
+    set invoker ""
+
+    SetState STOPPED
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::Abort {_invoker} {
+
+    if {$state == "DISABLED"} return
+
+    if {($state != "LOGGING" && $state != "SENDING") || $invoker != [SiteManager::MySiteId]} {
+	ErrorTraceMsg "********* INTERNAL ERROR 3 ->IrouterTrafficLogsC::Abort ($state,$invoker,$_invoker,[SiteManager::MySiteId])"
+	return
+    }
+
+    SetState ABORTING
+
+    network MasterRequest network RDOSync isabel_itl 1 "IrouterTrafficLogsC::Abort_2 [SiteManager::MySiteId]"
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::Abort_2 {_invoker} {
+
+    if {$state == "DISABLED"} return
+
+    switch $state {
+	STOPPED {
+	    return
+	}
+	LOGGING {
+	    if {$invoker == $_invoker && $invoker != [SiteManager::MySiteId]} {
+		DebugTraceMsg "IrouterTrafficLogsC::Abort_2 $_invoker"
+		
+		set invoker ""
+
+		SetState STOPPED
+	    }
+	}
+	SENDING {
+	    if {$invoker == $_invoker && $invoker != [SiteManager::MySiteId]} {
+		DebugTraceMsg "IrouterTrafficLogsC::Abort_2 $_invoker"
+		
+		set invoker ""
+
+		SetState STOPPED
+	    }
+	}
+	DONE {
+	    if {$invoker == $_invoker && $invoker != [SiteManager::MySiteId]} {
+		DebugTraceMsg "IrouterTrafficLogsC::Abort_2 $_invoker"
+		
+		set invoker ""
+
+		SetState STOPPED
+	    }
+	}
+	ABORTING {
+	    if {$invoker == $_invoker && $invoker == [SiteManager::MySiteId]} {
+		DebugTraceMsg "IrouterTrafficLogsC::Abort_2 $_invoker"
+		
+		set invoker ""
+
+		SetState STOPPED
+	    }
+	}
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::LocalIrouterRestartedListener {} {
+
+    if {$state == "DISABLED"} return
+
+    puts "IrouterTrafficLogsC::LocalIrouterRestartedner"
+
+    network MasterRequest network RDOSync isabel_itl 0 "IrouterTrafficLogsC::AddSite [SiteManager::MySiteId]"
+
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::AddSite {siteid} {
+
+    if {$state == "DISABLED"} return
+
+    puts "Nuevo irouter en $siteid"
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::DelSite {siteid} {
+
+    if {$state == "DISABLED"} return
+
+    puts "Muerto irouter en $siteid"
+}
+
+#---------------------------------------------------------------------------
+
+body IrouterTrafficLogsC::SetInfo {msg} {
+
+    $wroot.info configure -state normal
+    $wroot.info render "<html><body> $msg </body></html>"
+    $wroot.info configure -state disabled
+
+}
+
+#---------------------------------------------------------------------------
+

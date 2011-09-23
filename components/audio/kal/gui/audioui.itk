@@ -1,0 +1,193 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# audioui.itk
+#
+# Description
+#
+#    Implements the complete audio interface for isabel
+#
+#########################################################################
+
+# ------------------------------------------------------------------
+#                            AUDIOUI
+# ------------------------------------------------------------------
+class AudioGuiC {
+
+    # Mixer object
+    private variable mixerobj
+
+    # Alsamixer object
+    private variable alsamixobj
+
+    # Audio control display
+    private variable display
+
+    #
+    # Widgets
+    #    
+    private variable wroot
+
+    constructor {w _display} {}
+    destructor {}
+    
+    # Method to access to the mixer.
+    public method Mixer {args}
+
+    # Command invoked by the view checkbutton to select the mixer view
+    private method SetMixerView {}
+
+    # Variables used by the view checkbutton.
+    private variable mixerVar 1
+
+    # Callback command invoked to update the widget where the bypass state
+    # is displayed.
+    private method UpdateBypass {args}
+
+}
+
+#-------------------------------------------------------------------
+
+body AudioGuiC::constructor {w _display} {
+    global env
+
+    set wroot     $w
+    set display $_display
+
+    frame $wroot
+    pack  $wroot -expand 1 -fill both -padx 2 -pady 1
+
+    label $wroot.title \
+	-text "Digital Mixer" \
+	-font [IsabelFontsC::GetFont large medium] \
+	-padx 0
+
+    set mixerobj         [MixerGuiC          "#auto" $wroot.lchs]
+
+    CreateImage audioconfigimg $env(ISABEL_DIR)/lib/images/gif/gear.gif
+
+    button $wroot.configure \
+ 	-image audioconfigimg \
+	-relief raised \
+	-command AudioConfigC::ToggleShowHide
+
+    balloon add $wroot.configure "Configure"
+
+    checkbutton $wroot.view \
+	-text "Show All" \
+        -bd 2 \
+	-padx 0 -pady 0 \
+	-highlightthickness 0 \
+	-onvalue  1 \
+	-offvalue 0 \
+	-variable [scope mixerVar] \
+	-command  [code $this SetMixerView]
+
+    if {[catch "$wroot.view cget -tristatevalue"]} {
+	$wroot.view configure -selectcolor green
+    }
+    
+    balloon add $wroot.view "View all channels"
+
+    #-- Bypass
+
+    set _bypass [session Activity GetResource Audio bypass 0]
+    
+    if {$_bypass != "0"} {
+	
+	label $wroot.bypass -fg red
+	
+	balloon add $wroot.bypass "Audio slave dependency"
+	
+	trace variable AudioBypassConfigC::myMasterBypass w [code $this UpdateBypass]
+
+	UpdateBypass 
+    }
+    
+    #--
+
+    # grid of $wroot is done by the method UpdateBypass.
+
+    grid $wroot.title   -row 1 -column 0 -sticky nswe
+    grid $wroot.view    -row 1 -column 1 -sticky nswe -padx 5
+    grid $wroot.configure -row 1 -column 2 -sticky nswe
+
+    grid $wroot.lchs    -row 2 -column 0 -columnspan 3 -sticky nswe
+     
+    grid columnconfigure $wroot 0 -weight 100
+    grid columnconfigure $wroot 1 -weight 1
+    grid columnconfigure $wroot 2 -weight 1
+    
+    grid rowconfigure    $wroot 2 -weight 1
+
+    #---
+
+    frame $wroot.destroy
+    bind $wroot.destroy <Destroy> "delete object $this"
+}
+
+#-------------------------------------------------------------------
+
+body AudioGuiC::destructor {} {
+
+    catch {bind $wroot.destroy <Destroy> ""}
+    if {[winfo exist $wroot]} {
+	destroy $wroot
+    }
+
+    trace vdelete AudioBypassConfigC::myMasterBypass w [code $this UpdateBypass]
+}
+
+#-------------------------------------------------------------------
+
+body AudioGuiC::SetMixerView {} {
+
+    $mixerobj ShowAllChannels $mixerVar
+}
+
+#-------------------------------------------------------------------
+
+body AudioGuiC::Mixer {args} {
+    eval $mixerobj $args
+}
+
+#-------------------------------------------------------------------
+
+body AudioGuiC::UpdateBypass {args} {
+    
+    if {[AudioConfigC::SiteConfigCmd [SiteManager::MySiteId] Bypass GetMasterBypass] == ""} {
+	
+	grid forget $wroot.bypass
+	
+    } else {
+	
+	$wroot.bypass configure \
+	    -text "This audio is slave of $AudioBypassConfigC::myMasterBypass"
+	
+	grid $wroot.bypass  -row 0 -column 0 -columnspan 3 -sticky nswe
+	
+    }
+}
+
+#-------------------------------------------------------------------

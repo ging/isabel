@@ -1,0 +1,307 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#-----------------------------------------
+
+class PersonListTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    public variable people
+    
+    #-- Building the tree
+
+    # $args is a person list
+    constructor {_agendaobj args} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+
+    public method getNodes {}
+
+    #-- Selection
+
+    # Returns the list of selected people.
+    # Item list are references to PersonTCC objects.
+    public method getSelectedPeople {}
+
+    #-- Node creation
+
+    # Create a new empty child node.
+    public method newChild {}
+
+    #-- Node deletion
+
+    # Delete the indicated child node, a PersonTCC object.
+    public method deletePerson {_person}
+
+    #-- Children operations
+
+    # Moves the given person $_offset positions in $people
+    public method movePerson {_person _offset}
+
+    # Returns 1 if $_person is the first person, otherwise returns 0.
+    public method firstPerson {_person}
+    
+    # Returns 1 if $_person is the last person, otherwise returns 0.
+    public method lastPerson {_person}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+
+    #-- Sorting
+
+    # Sort people by acronym
+    public method sortByAcronym {}
+
+    # Sort people by name
+    public method sortByName {}
+
+    # Sort people by siteId
+    public method sortBySiteId {}
+}
+
+#-----------------------------------------
+
+body PersonListTCC::constructor {_agendaobj args} {
+
+    foreach p $args {
+	CheckClass  $p PersonTCC
+	CheckUnique $p
+	$p setParent $this
+    }
+    set people $args
+}
+
+#-----------------------------------------
+
+body PersonListTCC::destructor {} {
+
+    set _auxpeople $people
+    set people ""
+    foreach p $_auxpeople {
+        delete object $p
+    }
+}
+
+#-----------------------------------------
+
+body PersonListTCC::parse {agendaobj str} {
+
+    set pl ""
+    set cont 0
+    set p [lindex $str $cont]
+    while {$p != ""} {
+        set person [PersonTCC::parse $agendaobj $p]
+        lappend pl $person
+        incr cont
+        set p [lindex $str $cont]
+    }
+
+    set me [eval PersonListTCC ::#auto $agendaobj $pl]
+
+    foreach p $pl {
+        $p setParent $me
+    }
+
+    return $me
+}
+
+#-----------------------------------------
+
+body PersonListTCC::prettyPrinter {{offset 0}} {
+
+    set _res ""
+    foreach p $people {
+       if {$_res != ""} {
+	    set _res "$_res\n"
+	}
+        set _res "$_res[$p prettyPrinter $offset]"
+    }
+    return $_res
+}
+
+#-----------------------------------------
+
+body PersonListTCC::getMyNode {} {
+
+    set _icons ""
+    
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    list \
+	[getMyUid] \
+        "Participants" \
+        "participantsnode branch" \
+	"$_icons"
+
+}
+
+#-----------------------------------------
+
+body PersonListTCC::getNodes {} {
+
+    set res ""
+    foreach p $people {
+
+	lappend res [$p getMyNode]
+
+    }
+    return $res
+}
+
+#-----------------------------------------
+
+body PersonListTCC::newChild {} {
+
+    set child [PersonTCC::new $agendaobj]
+
+    if {$child != ""} {
+
+	$child setParent $this
+	
+	lappend people $child
+    }
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body PersonListTCC::deletePerson {_person} {
+
+    set pos [lsearch -exact $people $_person]
+
+    if {$pos == -1} return
+
+    set child [lindex $people $pos]
+    set people [lreplace $people $pos $pos]
+    $child kill
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body PersonListTCC::movePerson {_person _offset} {
+
+    set pos [lsearch -exact $people $_person]
+
+    if {$pos == -1} return
+
+    set child [lindex $people $pos]
+    set people [lreplace $people $pos $pos]
+
+    set newpos [expr $pos + $_offset]
+
+    set people [linsert $people $newpos $child]
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body PersonListTCC::firstPerson {_person} {
+    
+    if {[lindex $people 0] == $_person} {
+	return 1
+    } else {
+	return 0
+    }
+}
+   
+#-----------------------------------------
+
+body PersonListTCC::lastPerson {_person} {
+
+    if {[lindex $people end] == $_person} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+
+#-----------------------------------------
+
+body PersonListTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "New Participant" \
+	-command [code $this newChild]
+    
+    $menu add separator
+    
+    $menu add command -label "Sort by Acronym" \
+	-command [code $this sortByAcronym]
+    
+    $menu add command -label "Sort by Name" \
+	-command [code $this sortByName]
+    
+    $menu add command -label "Sort by Site Id" \
+	-command [code $this sortBySiteId]
+    
+    return $menu   
+}
+
+#-----------------------------------------
+
+body PersonListTCC::sortByAcronym {} {
+    
+    set people [lsort -command PersonTCC::compareAcronyms $people]
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body PersonListTCC::sortByName {} {
+    
+    set people [lsort -command PersonTCC::compareNames $people]
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body PersonListTCC::sortBySiteId {} {
+    
+    set people [lsort -command PersonTCC::compareSiteIds $people]
+    $agendaobj refresh
+}
+
+#-----------------------------------------

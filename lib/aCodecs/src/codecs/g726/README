@@ -1,0 +1,5 @@
+Se han utilizado el codigo de SUN que implementa el codec g726_XX.
+Se han modificado un poco los fuentes de SUN para no tener que pasarle todos
+los parametros que necesitaba pero se ha dejado comentado el codigo.
+Recomiendo bajarse el codigo de sun y cambiar el wraper (g726.c) para
+utilizar el codigo original sin modificaciones.

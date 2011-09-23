@@ -1,0 +1,428 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vc.itcl
+#
+# video channel objects.
+#
+#########################################################################
+
+#==============================================================
+# Video channel: Parent of local and remote channels.
+#==============================================================
+
+class VideoChannelC {
+
+    # long window title. 
+    protected variable ltitle
+
+    # short window title. 
+    protected variable stitle
+
+    # Site identifier
+    protected variable siteId
+
+    # channel identifier
+    protected variable chId
+
+    # avatar type: male, female, both, other ot custom
+    protected variable avatarType ""
+
+    # avatar custom file
+    protected variable avatarCustomFile ""
+
+    # Is the channel mapped
+    protected variable mapped 0
+
+    # Current geometry
+    protected variable geometry 0x0+0+0
+
+    # Video Daemon Object reference
+    protected variable vdObj ""
+
+    constructor {siteid vd} {}
+
+    destructor {}
+
+    public method CreateChannel {} {}
+
+    public method nop {} {}
+
+    public method Map {} {}
+    public method Unmap {} {}
+    public method IsMapped {} {}
+
+    public method SetGeometry {geom}
+
+    public method SetAvatar {_type _file}
+
+    # Is a local channel
+    public method IsLocal {}
+
+    # Send all the needed commands to configure the video C daemon state.
+    # Used when the video C daemon state is restarted.
+    protected method ReapplyState {} 
+
+    public method Info {}
+}
+
+#--------------------------------------------------------------
+
+body VideoChannelC::constructor {siteid vd} {
+
+    set siteId $siteid
+
+    set chId [SiteManager::GetSiteInfo $siteId chid]
+
+    set vdObj $vd
+
+    regsub -all {\(} "[SiteManager::GetSiteInfo $siteId name]" \{ aux
+    regsub -all {\)} $aux \} aux
+    regsub -all {,} $aux . ltitle
+
+    regsub -all {\(} $siteId \{ aux
+    regsub -all {\)} $aux \} aux
+    regsub -all {,} $aux . stitle
+}
+
+#--------------------------------------------------------------
+
+body VideoChannelC::destructor {} {
+
+}
+
+#--------------------------------------------------------------
+
+body VideoChannelC::Map {} {
+
+    set mapped 1
+    $vdObj RDO video_map_channel($chId)
+}
+
+#--------------------------------------------------------------
+
+body VideoChannelC::Unmap {} {
+
+    set mapped 0
+    $vdObj RDO video_unmap_channel($chId)
+}
+
+#--------------------------------------------------------------
+
+body VideoChannelC::IsMapped {} {
+
+    return $mapped
+}
+
+#--------------------------------------------------------------
+
+body VideoChannelC::SetGeometry {geom} {
+
+    set geometry $geom
+    $vdObj SetGeometry $siteId $geom
+}
+
+#--------------------------------------------------------------
+
+body VideoChannelC::SetAvatar {_type _file} {
+    global env
+    
+    set avatarType $_type
+    set avatarCustomFile $_file
+
+    switch $avatarType {
+	male {
+	    set _avatar_path $env(ISABEL_DIR)/lib/images/png/avatar_m.png 
+	}
+	female {
+	    set _avatar_path $env(ISABEL_DIR)/lib/images/png/avatar_f.png 
+	}
+	both {
+	    set _avatar_path $env(ISABEL_DIR)/lib/images/png/avatar_fm.png 
+	}
+	other {
+	    set _avatar_path $env(ISABEL_DIR)/lib/images/png/avatar.png 
+	}
+	custom {
+	    set _avatar_path $avatarCustomFile
+	}
+        default {
+	    return
+	}
+    }
+    
+    $vdObj RDO video_avatar($chId,$_avatar_path)
+}
+
+#--------------------------------------------------------------
+
+body VideoChannelC::IsLocal {} {
+    return 0
+}
+
+#--------------------------------------------------------------
+
+body VideoChannelC::ReapplyState {} {
+
+    CreateChannel
+    SetAvatar $avatarType $avatarCustomFile
+}
+
+#--------------------------------------------------------------
+
+body VideoChannelC::Info {} {
+
+    set    res " o Channel $siteId\n"
+    append res "    channel Id = $chId\n"
+    append res "    stitle = $stitle\n"
+    append res "    ltitle = $ltitle\n"
+    append res "    mapped = $mapped\n"
+    append res "    geometry = $geometry\n"
+    return $res
+}
+
+#--------------------------------------------------------------
+
+
+#==============================================================
+# Local video channel
+#==============================================================
+
+class VideoLocalC {
+    inherit VideoChannelC
+
+    # communication port base.
+    private variable data_port 51017
+
+    # binding: bind assigned to send my video.
+    private variable binding 0
+
+    constructor {siteid vd} {
+	VideoChannelC::constructor $siteid $vd
+    } {}
+
+    destructor {}
+
+    public method CreateChannel {}
+
+    public method SetGeometry {geom}
+
+    # Send local channel to the partner userid
+    public method Bind {}
+    private method SetBindId {bindId}
+
+    # Stop sendind local channel to the partner userid
+    public method Unbind {}
+
+    public method Map {} {}
+    public method Unmap {} {}
+
+    # Is a local channel
+    public method IsLocal {}
+
+    # Send all the needed commands to configure the video C daemon state.
+    # Used when the video C daemon state is restarted.
+    public method ReapplyState {} 
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::constructor {siteid vd} {
+
+    CreateChannel
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::destructor {} {
+
+
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::CreateChannel {} {
+    global env
+
+    set _source [$vdObj Load NONE]
+
+    CameraSourceC::PublishSMSCameraSource $_source
+
+    $vdObj RDO video_rec_channel($chId,$_source)
+    
+    $vdObj RDO video_window_title($chId,$stitle,$ltitle)
+
+    if {[info exists env(ISABEL_VIDEO_CROP)]} {
+	set _top    [lindex $env(ISABEL_VIDEO_CROP) 0]
+	set _left   [lindex $env(ISABEL_VIDEO_CROP) 1]
+	set _bottom [lindex $env(ISABEL_VIDEO_CROP) 2]
+	set _right  [lindex $env(ISABEL_VIDEO_CROP) 3]
+	$vdObj RDO video_crop($chId,$_top,$_left,$_bottom,$_right)
+    }
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::SetGeometry {geom} {
+
+    VideoChannelC::SetGeometry $geom
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::Bind {} {
+    global env
+
+    set host 127.0.0.1
+
+    # data port should be a pair number, RTP compliant
+    set port 51018
+
+    $vdObj RCB video_bind([SiteManager::MyChId],$host,$port) [code $this SetBindId]
+
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::SetBindId {bindId} {
+
+    if {[catch {set binding [expr $bindId]} res]} {
+	ErrorTraceMsg "Video: daemon is not working properly."
+        ErrorTraceMsg "         Bind request failure."
+	set binding 0
+    }
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::Unbind {} {
+
+    if {$binding != 0} {
+	$vdObj RDO video_unbind([SiteManager::MyChId],$binding)
+	binding 0
+    }
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::Map {} {
+
+    VideoChannelC::Map
+
+    $vdObj RDO video_send($chId,1)
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::Unmap {} {
+
+    VideoChannelC::Unmap
+
+    $vdObj RDO video_send($chId,0)
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::IsLocal {} {
+    return 1
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::ReapplyState {} {
+
+    VideoChannelC::ReapplyState
+
+    if {[IsMapped]} {
+	$vdObj ReapplyState
+
+	SetGeometry $geometry
+	Map 
+    } else {
+	Unmap
+    }
+
+    Bind
+}
+
+#--------------------------------------------------------------
+
+#==============================================================
+# Remote video channels
+#==============================================================
+
+class VideoRemoteC {
+    inherit VideoChannelC
+
+    constructor {siteid vd} {
+	VideoChannelC::constructor $siteid $vd
+    } {}
+
+    destructor {}
+
+    private method CreateChannel {}
+
+    # Send all the needed commands to configure the video C daemon state.
+    # Used when the video C daemon state is restarted.
+    public method ReapplyState {} 
+}
+
+#--------------------------------------------------------------
+
+body VideoRemoteC::constructor {siteid vd} {
+
+    CreateChannel
+}
+
+#--------------------------------------------------------------
+
+body VideoRemoteC::destructor {} {
+
+
+}
+
+#--------------------------------------------------------------
+
+body VideoRemoteC::CreateChannel {} {
+    
+    $vdObj RDO video_play_channel($chId)
+    $vdObj RDO video_window_title($chId,$stitle,$ltitle)
+}
+
+#--------------------------------------------------------------
+
+body VideoRemoteC::ReapplyState {} {
+
+    VideoChannelC::ReapplyState
+    
+    if {[IsMapped]} {
+	VideoChannelC::SetGeometry $geometry
+	VideoChannelC::Map
+    } else {
+	VideoChannelC::Unmap
+    }
+}
+
+#--------------------------------------------------------------
+

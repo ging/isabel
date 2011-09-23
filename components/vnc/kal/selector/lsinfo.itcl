@@ -1,0 +1,70 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# lsinfo.itcl
+#
+# This class is used to store information about the local vnc servers.
+#
+#########################################################################
+
+class VNCLocalServerInfoC {
+
+    # Server title.
+    # Text to display in the gui listbox widget.
+    public variable title
+
+    # Server.
+    # VNC server to connect to.
+    public variable server
+
+    # VNC server password.
+    # Password to connect to the server.
+    public variable passwd
+
+    # Server access.
+    # Valid values:
+    #   - r -> means read-only. Can not be deleted.
+    #   - w -> means writable. Can be deleted.
+    # Indicates if I can delete or edit this value using the gui.
+    public variable access
+
+    # VNC server description.
+    # Long description of this VNC server.
+    public variable descr
+
+    # Public or private  access to this server
+    # Valid values:
+    #   - public
+    #   - private
+    public variable visibility
+
+    constructor {t s p a d v} {
+	set title      $t
+	set server     $s
+	set passwd     $p
+	set access     $a
+	set descr      $d
+	set visibility $v
+    }
+}

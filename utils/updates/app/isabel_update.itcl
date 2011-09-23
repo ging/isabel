@@ -1,0 +1,96 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+set title "Isabel Update"
+set fgcolor #000077
+
+set sources_list_file /etc/apt/sources.list
+set sources_list_file /home/santiago/sources.list
+
+
+
+wm title    . $title
+
+
+label .title \
+    -text $title \
+    -foreground $fgcolor \
+    -font -*-helvetica-bold-o-*-*-25-*-*-*-*-*-*-* \
+    -anchor w
+pack .title -side top -fill x
+
+
+button .close -text Close \
+    -bd 4 \
+    -command exit \
+    -foreground       $fgcolor \
+    -activeforeground $fgcolor
+bind .close <Return> exit
+pack .close -side bottom -pady 7
+    
+frame .line1 -background $fgcolor -height 3
+pack  .line1 -side top -fill x 
+    
+
+frame .line2 -background $fgcolor -height 3
+pack  .line2 -side bottom -fill x -padx 10
+
+    
+set logo gif/tiburon_icon.gif
+CreateImage emc_logo $logo
+label .logo -image emc_logo
+pack  .logo -side left
+    
+
+if {[catch {exec $env(ISABEL_DIR)/bin/isabel_sourceslist.sh get} res]} {
+
+    label .no \
+	-text "Isabel update is not supported"
+    pack .no -side top -fill both -expand 1 -padx 30 -pady 50
+    
+} else {
+    
+    button .now \
+	-text "Update Isabel now" \
+	-command UpdateNow
+    pack .now -side top -fill both -expand 1 -anchor w -padx 50 -pady 20
+
+}
+
+
+proc UpdateNow {} {
+    global env
+
+    wm withdraw .
+
+    catch "exec /bin/cp $env(ISABEL_DIR)/bin/isabel_sourceslist.sh /tmp/." res
+
+    catch "exec gksu -m \"Enter your password to update isabel now\" \
+                     -i $env(ISABEL_DIR)/lib/images/gif/tiburon.icon.gif \
+                     /tmp/isabel_sourceslist.sh add_and_install" res
+
+    exit
+
+}
+
+

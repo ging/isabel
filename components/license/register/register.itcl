@@ -1,0 +1,65 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# register.itcl
+#
+# Description
+#
+#   Main program to update the ISABEL license.
+#
+#########################################################################
+
+
+wm withdraw .
+
+# Initialice logs
+LogsMessagesC::Initialice RegLicense
+WriteTraceMsg "Checking license"
+
+# Initializations
+set noexit    [expr [lsearch -exact $argv -noexit] != -1]
+set gotoagree [expr [lsearch -exact $argv -gotoagree] != -1]
+
+# Load configuration values
+RegLicConfigC::Load 
+
+# Constants
+CtesC CTESOBJ
+
+# Create main window
+LicenseWindowC::Create
+
+# frame to agree the license. 
+AgreeFrameC   AgreeFobj 
+
+# start in the agree state.
+if {[file exists [CTESOBJ cget -agreedone]]} {
+    exit
+}
+
+wm deiconify .
+
+LicenseWindowC::SetFrames AgreeFobj
+
+

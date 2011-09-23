@@ -1,0 +1,3 @@
+CONFIG.LD.SHARED:=g++ -shared
+
+include $(PROJECT_ROOT_DIR)/CONFIG/Makefile.compiler.g++.$(TARGET.OS).$(TARGET.MACH)

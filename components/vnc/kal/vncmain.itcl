@@ -1,0 +1,515 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vncmain.itcl
+#
+# Descripcion
+#
+#     Object to implement the VNC component functionality.
+#
+#########################################################################
+
+
+class VNCMainC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {_shdisplayobj} {}
+    destructor  {} 
+
+    public method AddMySite {}
+    public method DelMySite {}
+    public method AddRemoteSite {site_id new}
+    public method DelRemoteSite {site_id}
+
+    # Local stop.
+    # Stops the component, the distribution network, the viewerr, etc.
+    private method Stop {}
+    
+    # Activate component:
+    # Start is used to start the daemons, viewers, etc...
+    # This method is called when a SMS message is received.
+    private method Start  {}
+
+    # Create a ShDisplay remote channel if it is necessary.
+    # This method is called when an AddRemoteSite is received.
+    # The new site is $site_id.
+    # I need this method when I am executing a VNC interaction mode, I have already
+    # executed Start, and I receive an AddRemoteSiteMessage. In this situation, it is
+    # possible that I need start ShDisplay channel.
+    # This solves a race condition between the SMS and the AddRemoteSite messages.
+    # Reason: I dont known the chid of the site until I have received the AddRemoteSite message.
+    private method StartSync {site_id}
+
+    # Do nothing
+    public method Nop {} {}
+
+    # Returns the current speaker site.
+    public method GetCurrentSpeaker {}
+
+    # Returns the current distribution network.
+    public method GetCurrentDistNet {}
+
+    # Returns the current server.
+    public method GetCurrentServer {}
+
+    # Returns the current password.
+    public method GetCurrentPasswd {}
+
+    # Returns the current access site.
+    public method GetCurrentAccessSite {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Value of the -active option of the VNC component in the current interaction mode
+    private variable active
+
+    # current secuence number of the last interaction mode selection.
+    # It is used by the NeReDa primitives.
+    private variable nsec
+
+    # userid of the speaker site
+    private variable speaker
+
+    # BW to send images.
+    # Used only when using ShDisplay distribution network.
+    private variable bw
+
+    # Codec
+    # Used only when using ShDisplay distribution network.
+    private variable codec
+
+    # Shdisplay windows layoutname. 
+    # See ShDisplay.layout.$layoutname to get the virtual
+    # geometries of the vnc viewer (source) and the shdisplay (sink) windows.
+    private variable layoutname
+
+    # Distribution Network to use.
+    # Valid values: NeReDa, ShDisplay.
+    private variable distnet
+
+    # VNC server access site 
+    private variable accessSite
+
+    # Vnc hint
+    private variable hint
+
+    # Vnc server
+    private variable server
+
+    # Vnc server password
+    private variable passwd
+
+    #
+    # -- Daemons ----
+    #
+
+    
+    # Local vncreflector object.
+    private variable neredaobj
+
+    # Object that implements the shdisplay subcomponent behaviour
+    private variable shdisplayobj ""
+
+    # vnc viewer daemon.
+    private variable viewerdaemon
+
+    # Xvnc object
+    private variable xvncobj ""
+
+    #
+    # -- SMS ----
+    #
+
+    # Processes SMS messages:
+    private method processVncState {args}
+
+    private method processVncRemoteServersState {args}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method getOptionListValue {list optname {default ""}}
+
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::constructor {_shdisplayobj} {
+    
+    set shdisplayobj $_shdisplayobj
+
+    set active      0
+    set nsec        0
+    set speaker     ""
+    set bw          0
+    set codec       ""
+    set layoutname  ""
+    set distnet     ""
+    set accessSite  ""
+    set hint        ""
+    set server      ""
+    set passwd      ""
+
+    # Object to access NeReDa
+    set no_cc_cb "network MasterRequest CM KillComponent [SiteManager::MySiteId] VNC"
+    set neredaobj [NeReDaDaemonC "#auto" $no_cc_cb]
+    if {[catch {$neredaobj Start} res]} {
+	delete object $neredaobj
+	ErrorTraceMsg "NeReDa: I can't connect to local NeReDa node."
+	error $res
+    }
+
+    set viewerdaemon ""
+
+    # Global SMS messages which I want to receive:
+    sms joinKey Vnc        [code $this processVncState]
+
+    #sms joinKey ShDisplay
+    #sms joinKey ShDisplay_config
+
+   # Send an empty messages to get the states
+    # sms setState Vnc add 
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::destructor {} {
+
+    catch {delete object $viewerdaemon}
+    catch {delete object $neredaobj}
+    catch {delete object $xvncobj}
+}
+
+#--------------------------------------------------------------
+
+body VNCMainC::AddMySite {} {
+
+    set mysite_id [SiteManager::MySiteId]
+
+    sms joinKey Vnc_servers_${mysite_id} ""
+
+    # Update my list of servers:
+    set myservers [VNCLocalServersFrameC::GetPublicServers]
+    sms forceState Vnc_servers_${mysite_id} add \
+	-site_id $mysite_id \
+	-servers $myservers
+}
+
+#--------------------------------------------------------------
+
+body VNCMainC::DelMySite {} {
+    
+    if {$viewerdaemon != ""} {
+	catch {delete object $viewerdaemon}
+	set viewerdaemon ""
+    }
+    if {$neredaobj != ""} {
+	catch {delete object $neredaobj}
+	set neredaobj ""
+    }
+}
+
+#--------------------------------------------------------------
+
+body VNCMainC::AddRemoteSite {site_id new} {
+
+    WriteTraceMsg "VNC: Adding site $site_id." VNC
+
+    # Global SMS messages which I want to receive:
+    sms joinKey Vnc_servers_${site_id} [code $this processVncRemoteServersState]
+    
+    StartSync $site_id
+}
+
+#--------------------------------------------------------------
+
+body VNCMainC::DelRemoteSite {site_id} {
+
+    WriteTraceMsg "VNC: Removing site $site_id." VNC
+
+    # Global SMS messages which I do not want to receive:
+    sms leaveKey Vnc_servers_${site_id}
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::Stop {} {
+
+    $neredaobj RDO nereda_stop($nsec)
+
+    $shdisplayobj Stop
+
+    if {$viewerdaemon != ""} {
+	catch {delete object $viewerdaemon}
+	set viewerdaemon ""
+    }
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::Start {} {
+    
+    set _my_site_id [SiteManager::MySiteId]
+    
+    #
+    # If I am the access site, the server is :89, and there is not a local Xvnc server,
+    # then I must start it. 
+    #
+    set actserverdisplay [session Activity GetResource VNC server.display _SKIP_SKIP_]
+    
+    if {$_my_site_id == $accessSite && $xvncobj == ""} {
+	if {$server == $actserverdisplay || $server == "127.0.0.1$actserverdisplay"} {
+	    set xvncobj [LocalXvncC "#auto"]
+	}
+    }
+    
+    #
+    # ---  Clean up ---
+    #
+    
+    # Destroy the viewer
+    if {$viewerdaemon != ""} {
+	catch {delete object $viewerdaemon}
+	set viewerdaemon ""
+    }
+    
+    # Stop the NeReDa distribution network:
+    if {$distnet == "ShDisplay"} {
+	$neredaobj RDO nereda_stop($nsec)
+    }
+    
+    #-----
+    
+    # Get windows layout:
+    set viewerlayout [session Activity GetResource VNC viewerlayout.$layoutname]
+
+    # Resolves hint if it neccesary
+    if {$hint != ""} {
+	set _sp [VNCHintResolverC::ResolveHint $distnet $accessSite $hint]
+	set server [lindex $_sp 0]
+	set passwd [lindex $_sp 1]
+    }
+    
+    
+    # Starts a new viewer and configure distribution network.
+    switch $distnet {
+	
+	NeReDa {
+	    
+	    # Stop the ShDisplay component:
+	    $shdisplayobj Stop
+
+	    # Configures NeReDa:
+	    if {$accessSite == $_my_site_id} {
+		$neredaobj RDO nereda_start($nsec,$server,$passwd)
+	    }
+	    
+	    # VncViewer is not displayed in MCU sites.
+	    set _tool [SiteManager::GetSiteInfo $_my_site_id tool]
+	    if {$_tool == "MCU"} return
+	    
+	    
+	    # Starts vncviewer:
+	    
+	    if {$speaker == $_my_site_id} {
+		# I am the speaker
+		set _viewonly_opt ""
+	    } elseif {[lsearch -exact "FlashGateway" $_tool] != -1} {
+		# [SiteManager::GetSiteInfo $speaker tool] == "GatewayClient"
+		# I am the gateway, and
+		# the speaker is a gateway client (Esta parte esta comentada de momento)
+		set _viewonly_opt ""
+	    } else {
+		# I am a receiver site		
+		set _viewonly_opt -viewonly
+	    }
+	    
+	    if {[catch {VNCViewerTaskC "#auto" :53021 $server "" $viewerlayout 0 $_viewonly_opt} res]} {
+		ErrorTraceMsg "VNC: viewer can not be created."
+		ErrorMsgC "#auto" close -timeout 15000 \
+		    "VNC viewer ERROR:" ""  "VNC viewer application can not be created." $res
+		
+		error $res
+	    }
+	    set viewerdaemon $res
+	    
+	}
+	
+	ShDisplay {
+	    
+            # ShDisplay windows are not displayed in MCU sites.
+            set _tool [SiteManager::GetSiteInfo $_my_site_id tool]
+	    if {$_tool == "MCU"} return
+
+	    if {$speaker == $_my_site_id} {
+		# Starts vncviewer in speaker site:
+		
+		if {[catch {VNCViewerTaskC "#auto" $server $server $passwd $viewerlayout 1} res]} {
+		    ErrorTraceMsg "VNC: ShmCapture can not be created."
+		    ErrorMsgC "#auto" close -timeout 15000 \
+			"VNC ShmCapture ERROR:" ""  "VNC ShmCapture application can not be created." $res
+		    
+		    error $res
+		}
+		set viewerdaemon $res
+		
+	    }
+	    
+	    # ShDisplay configuration:    
+	    # The sender site is the only site configuring the Shdisplay Status
+            if {$speaker == $_my_site_id} {
+		$shdisplayobj SetBW $bw
+		$shdisplayobj SetCodec $codec
+		# $shdisplayobj SetGrabSize ???
+		# $shdisplayobj 	SetPktDuplication ???
+		# $shdisplayobj 	SetQuality ???
+	    }
+	    
+	    # Start ShDisplay sites
+	    set wname [session Activity GetResource VNC title "TightVNC"]
+	    $shdisplayobj Start $speaker * $speaker shmem $wname $viewerlayout
+	}
+	
+    }
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::StartSync {site_id} {
+
+    if {$active != 1} return
+
+    if {$distnet != "ShDisplay"} return
+
+    set me [SiteManager::MySiteId]
+ 
+    # ShDisplay windows are not displayed in MCU sites.
+    set _tool [SiteManager::GetSiteInfo $me tool]
+    if {$_tool == "MCU"} return
+
+    if {$speaker != $me} {
+	if {$speaker != ""} {
+	    set wname [session Activity GetResource VNC title "TightVNC"]
+	    set viewerlayout [session Activity GetResource VNC viewerlayout.$layoutname]
+	    $shdisplayobj Start $speaker * $speaker shmem $wname $viewerlayout
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::GetCurrentSpeaker {} {
+
+    return $speaker
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::GetCurrentDistNet {} {
+
+    return $distnet
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::GetCurrentServer {} {
+
+    return $server
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::GetCurrentPasswd {} {
+
+    return $passwd
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::GetCurrentAccessSite {} {
+
+    return $accessSite
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::processVncState {args} {
+
+    # Saves received values in the attributes:
+    set speaker     [getOptionListValue $args -speaker_site ""]
+    set nsec        [getOptionListValue $args -nsec 0]
+    set bw          [getOptionListValue $args -shdisplay_bw 0]
+    set codec       [getOptionListValue $args -shdisplay_codec ""]
+    set layoutname  [getOptionListValue $args -viewer_layout ""]        
+
+    set distnet    [getOptionListValue $args -distribution_network $distnet]
+    set accessSite [getOptionListValue $args -access_site $accessSite]
+
+    set hint       [getOptionListValue $args -hint $hint]
+    set server     [getOptionListValue $args -vnc_server $server]
+    set passwd     [getOptionListValue $args -password $passwd]
+
+    set active [getOptionListValue $args -active 0]
+
+    # Apply state:
+    if {$active == "0"} {
+	Stop
+    } else {
+	Start
+    }
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::processVncRemoteServersState {args} {
+
+    set _site_id [getOptionListValue $args -site_id ""]
+    set _servers [getOptionListValue $args -servers ""]
+    
+    VNCRemoteServersFrameC::SetSiteServers $_site_id $_servers
+}
+
+#---------------------------------------------------------------
+
+body VNCMainC::getOptionListValue {list optname {default ""}} {
+    
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#---------------------------------------------------------------
+
+
+
+

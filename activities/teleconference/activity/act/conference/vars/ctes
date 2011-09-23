@@ -1,0 +1,55 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#
+# Media display resolution
+#
+define(_ISERV_MEDIA_DISPLAY_WIDTH,1024)
+define(_ISERV_MEDIA_DISPLAY_HEIGHT,768)
+
+#
+# Disabled interaction modes in the global control pannel
+#
+define(_ISERV_DISABLEDMODES, \
+       ifelse(ISABEL_ENABLE_VNC_MODE,no,vncmode vncquesmode) )
+
+#
+# Application Sharing:
+#
+define(_ISERV_VNCVIEWER_APPSHARING_LAYOUT,+220+1 0 1)
+define(_ISERV_VNCVIEWER_SHDISP_CAPTURE_AREA,800x600+220+1 0 1)
+
+#
+# Slides
+#
+define(_ISERV_SLIDES_BACKGROUND,gif/blackbg.gif)
+
+#
+# Whiteboard
+#
+define(_ISERV_WB_GEOMETRY,800x600+220+1)
+
+#
+# Miscellaneous
+#
+define(_ISERV_SCRIPTSFILE,scripts.itc)
+

@@ -1,0 +1,147 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# snmpagent.itcl
+#
+# Description
+#
+#  Monitor.
+#
+#########################################################################
+
+
+class MonitorC {
+
+    # Monitor daemon object
+    private variable sadobj
+
+    # Is the daemon running?
+    private variable daemonRunning
+
+    # 1 if the components are sending snmp statistics.
+    private variable activeStats
+
+    constructor {} {}
+
+    destructor {}
+
+    public method Nop {} {}
+
+    public method Start {}
+    public method Stop  {}
+
+    public method StartOrStop {}
+
+    private method DoStats {activate}
+
+    private method DoStatsNoCcCB {}
+
+}
+
+#----------------------------------------------------------------------
+
+body MonitorC::constructor {} {
+
+    set daemonRunning 0
+    set activeStats 0
+}
+
+#----------------------------------------------------------------------
+
+body MonitorC::destructor {} {
+
+    catch {delete object $sadobj}
+
+    DoStats 0
+}
+
+#----------------------------------------------------------------------
+
+body MonitorC::Start {} {
+
+    # If the daemons is not running, them I launch it.
+    if {!$daemonRunning} {
+	
+	set no_cc_cb [code $this DoStatsNoCcCB]
+	set sadobj [DMonitorC #auto $no_cc_cb]
+		    
+	if {[catch {$sadobj Start} res]} {
+	    delete object $sadobj
+	    ErrorTraceMsg "Monitor: Daemon can not be created."
+	    error $res
+	}
+
+	set daemonRunning 1 
+    }
+
+    $sadobj RDO snmp_gui(1)
+
+    DoStats 1
+}
+
+#----------------------------------------------------------------------
+
+body MonitorC::DoStatsNoCcCB {} {
+
+    set daemonRunning 0 
+
+    DoStats 0
+
+    # network MasterRequest CM KillComponent [SiteManager::MySiteId] Monitor
+}
+
+
+#----------------------------------------------------------------------
+
+body MonitorC::Stop {} {
+
+    if {$daemonRunning} {
+	$sadobj RDO snmp_gui(0)
+    }
+
+    DoStats 0
+}
+
+#----------------------------------------------------------------------
+
+body MonitorC::StartOrStop {} {
+
+    if {$activeStats} {
+	Stop
+    } else {
+	Start
+    }
+}
+
+#----------------------------------------------------------------------
+
+body MonitorC::DoStats {activate} {
+    
+    network RDOLocalSync isabel_snmp 1 "SNMP MonitorStats $activate"
+    set activeStats $activate
+}
+
+#----------------------------------------------------------------------
+
+

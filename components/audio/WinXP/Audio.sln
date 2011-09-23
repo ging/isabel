@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio", "Audio.vcproj", "{EAC09D55-676E-4130-9CB1-B4D1F70295AF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41B39295-DF16-460C-A90A-477B5468957D} = {41B39295-DF16-460C-A90A-477B5468957D}
+		{B52A4896-2073-4358-BEB9-FA831821CCB2} = {B52A4896-2073-4358-BEB9-FA831821CCB2}
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B} = {2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aCodecs", "..\..\..\lib\aCodecs\Win32\aCodecs\aCodecs.vcproj", "{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ICF2", "..\..\..\lib\ICF2\WinXP\ICF2.vcproj", "{41B39295-DF16-460C-A90A-477B5468957D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RTP", "..\..\..\lib\RTP\Win32\RTP\RTP.vcproj", "{B52A4896-2073-4358-BEB9-FA831821CCB2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{41B39295-DF16-460C-A90A-477B5468957D} = {41B39295-DF16-460C-A90A-477B5468957D}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EAC09D55-676E-4130-9CB1-B4D1F70295AF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EAC09D55-676E-4130-9CB1-B4D1F70295AF}.Debug|Win32.Build.0 = Debug|Win32
+		{EAC09D55-676E-4130-9CB1-B4D1F70295AF}.Release|Win32.ActiveCfg = Release|Win32
+		{EAC09D55-676E-4130-9CB1-B4D1F70295AF}.Release|Win32.Build.0 = Release|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug|Win32.ActiveCfg = Debug -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Debug|Win32.Build.0 = Debug -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release|Win32.ActiveCfg = Release -static|Win32
+		{2857BDC1-B13F-49D3-8BE5-3B06C6B9D81B}.Release|Win32.Build.0 = Release -static|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Debug|Win32.ActiveCfg = DebugNonThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Debug|Win32.Build.0 = DebugNonThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Release|Win32.ActiveCfg = ReleaseNonThreaded|Win32
+		{41B39295-DF16-460C-A90A-477B5468957D}.Release|Win32.Build.0 = ReleaseNonThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.Debug|Win32.ActiveCfg = DebugNonThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.Debug|Win32.Build.0 = DebugNonThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.Release|Win32.ActiveCfg = ReleaseNonThreaded|Win32
+		{B52A4896-2073-4358-BEB9-FA831821CCB2}.Release|Win32.Build.0 = ReleaseNonThreaded|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

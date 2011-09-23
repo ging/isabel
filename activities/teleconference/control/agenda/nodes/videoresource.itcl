@@ -1,0 +1,530 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#-----------------------------------------
+
+class VideoResourceTCC {
+    inherit ResourceTCC
+
+    #-- Node attributes
+
+    public variable site
+    
+    #-- Building the tree
+
+    constructor {_agendaobj _rId _site} {
+	ResourceTCC::constructor $_agendaobj $_rId} {}
+
+    destructor {}
+    
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+    
+    public method getTitle {}
+ 
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+    
+    public method getNodes {}
+
+    #-- Online  
+
+    public method online {}
+
+    #-- Selection
+    
+    # Returns the icon associated to the selected resource
+    public method getResourceIcon {} 
+
+    # Methods called when a resource is selected or unselected.
+    public method select {}
+    public method unselect {}
+
+    # Return 1 if the node is selected, otherwise returns 0.
+    public method isSelected {}
+
+    #-- Node edition
+
+    # Auxiliar variables used to show the fullname of the isabel site.
+    # Used by new and edit
+    public common aux_siteid
+    public common aux_fullname
+
+    public method edit {}
+
+    # Method used to validate the values modified when this node is edited.
+    # $tl is the object created to edit the values.
+    private method validateEdit {tl}
+
+    # Method used to update the nod3e values with the edited values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the values.
+    private method updateEdit {tl}
+
+    #-- Node creation
+    
+    # Create a new empty node, and opens an edition window to edit its values.
+    # If the node is created successfully, then this method returns a reference
+    # to the new created node; else it returns "".
+    # $agendaobj is a reference to the AgendaTCC object which will contain the created node.
+    public proc new {agendaobj}
+
+    # Method used to validate the values of the new node.
+    # $tl is the object created to edit the new values.
+    private proc validateNew {tl}
+
+    # Method used to create the new node with the validated values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the new values.
+    private proc updateNew {tl agendaobj}
+
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::constructor {_agendaobj _rId _site} {
+
+    CheckClass  $_site SiteTCC
+
+    set site    $_site
+
+    set _sr [$site cget -sitereferences]
+    $site configure -sitereferences [expr $_sr + 1]
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::destructor {} {
+
+    if {[isSelected]} {
+        unselect
+    }
+
+    set _sr [$site cget -sitereferences]
+    $site configure -sitereferences [expr $_sr - 1]
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::parse {agendaobj str} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class VideoResource
+ 
+    set _rid [getOptionListValue $str -id]
+
+    WriteTraceMsg "ica: parsing video resource \"$_rid\""
+
+    set _siteid [getOptionListValue $str -site]
+    
+    set _siteobj [SiteTCC::getSite $_siteid]
+    if {$_siteobj == ""} {
+	set emsg "ERROR:: There are no sites with the siteId \"$_siteid\"."
+	puts stderr $emsg
+	error $emsg 
+    }
+    
+    set site $_siteobj
+
+    set me [VideoResourceTCC ::#auto $agendaobj $_rid $site]
+
+    return $me
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::prettyPrinter {{offset 0}} {
+
+    set _spc1 [NodeTCC::spaces $offset]
+
+    return "${_spc1}[list [list VideoResource \
+	    -id $rid \
+	    -site [$site getSiteId]]]"
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::getTitle {} {
+
+    if {$resourcereferences != 0} {
+	return "Video from [$site getSiteId] ($rid) \[$resourcereferences\]"
+    } else {
+	return "Video from [$site getSiteId] ($rid)"
+    }
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::getMyNode {} {
+
+    if {[isSelected]} {
+   	set tags "selected"
+    } else {
+  	set tags ""
+    }
+
+    #--
+    
+    lappend _icons icaiconvid     
+
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    set _show_mv_icons  [$_menubarobj cget -show_mv_icons]
+    if {$_show_mv_icons} {
+	if { ! [$parent firstResource $this]} {
+	    lappend _icons icafocusup
+	}
+	if { ! [$parent lastResource $this]} {
+	    lappend _icons icafocusdown         
+	}
+    }
+    
+    if {$resourcereferences == 0} {
+	set _show_delete_icon  [$_menubarobj cget -show_delete_icon]
+	if {$_show_delete_icon} {
+	    lappend _icons icadelete         
+	}
+    }
+    
+    if {! [online]} {
+     	lappend _icons icaoffline
+    }
+    
+    #--
+
+    list \
+	[getMyUid] \
+	[getTitle] \
+	"resource leaf $tags" \
+	"$_icons"
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::getNodes {} {
+
+return ""
+    list \
+	[list [$site getMyUid] "Source site: [$site getTitle]" "site leaf"]
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::online {} {
+
+    $site online
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::getResourceIcon {} {
+    
+    return icaim-viddem
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::select {} {
+
+    [$agendaobj getSelection] setSelectedVideoResource $this
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::unselect {} {
+
+    [$agendaobj getSelection] setSelectedVideoResource ""
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::isSelected {} {
+
+    if {[[$agendaobj getSelection] getSelectedVideoResource] == $this} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::edit {} {
+
+    set tl [BaseFrameTCC #auto -title [getTitle]]
+    
+    $tl setValidationCmd [code $this validateEdit $tl]
+    
+    $tl setUpdateCmd     [code $this updateEdit $tl]
+    
+    set c [$tl getContent]
+    
+    #--
+
+    iwidgets::entryfield $c.rid \
+	-labeltext "Resource Id:" \
+	-labelpos nw
+    pack $c.rid -padx 14 -pady 4 -fill x -anchor w
+    $c.rid component entry insert 0 $rid
+
+    #--
+    
+    frame $c.sep0
+    pack  $c.sep0 -expand 1
+    
+    #--
+
+    frame $c.f
+    pack $c.f -padx 14 -pady 4 -fill both -expand 1 
+
+    trace vdelete VideoResourceTCC::aux_siteid w \
+	"SiteTCC::traceInfo VideoResourceTCC::aux_fullname"
+    set aux_fullname ""
+    set aux_siteid   ""
+    trace variable VideoResourceTCC::aux_siteid w \
+	"SiteTCC::traceInfo VideoResourceTCC::aux_fullname"
+
+    ::iwidgets::combobox $c.f.site \
+	-labeltext "Video Site Nickname:" \
+	-validate "SiteTCC::ValidateSiteIdCB %c" \
+	-labelpos w \
+	-textvariable VideoResourceTCC::aux_siteid
+    pack $c.f.site -side left
+    $c.f.site component entry insert 0 [$site getSiteId]
+
+    foreach sid [array names SiteTCC::everysite] { 
+	$c.f.site insert list end $sid
+    }
+    foreach sid [SiteManager::GetSites] { 
+	if { ! [info exists SiteTCC::everysite($sid)]} {
+	    $c.f.site insert list end $sid
+	}
+    }
+
+
+
+    label $c.f.sitedata \
+	-textvariable VideoResourceTCC::aux_fullname \
+	-font [IsabelFontsC::GetFont medium medium]
+    pack $c.f.sitedata -side left
+
+    #--
+
+    frame $c.end
+    pack $c.end -expand 1
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::validateEdit {tl} {
+    
+    set c [$tl getContent]
+
+    # No empty rid
+    set newrid [string trim [$c.rid get]]
+    if {$newrid == ""} {
+	return "Resource Id can not be empty"
+    }
+    
+    # No duplicated rid
+    if {[info exists everyresource($newrid)]} {
+	if {$everyresource($newrid) != $this} {
+	    return "Resource Id \"$newrid\" has been already defined."
+	}
+    }
+
+    # No empty isabel site
+    if {[string trim [$c.f.site get]] == ""} {
+	return "Video site nickname can not be empty"
+    }
+    
+    return ""
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::updateEdit {tl} {
+
+    set c [$tl getContent]
+    
+    #--
+
+    unset everyresource($rid)    
+    set rid [string trim [$c.rid get]]
+    set everyresource($rid) $this
+
+    #--
+
+    set _sr [$site cget -sitereferences]
+    $site configure -sitereferences [expr $_sr - 1]
+
+    set _newsiteid [string trim [$c.f.site get]]
+
+    # Create a new site if necessary
+    if {[SiteTCC::getSite $_newsiteid] == ""} {
+	set confobj [$agendaobj getConference]
+	$confobj createUnknownSite $_newsiteid
+    }
+
+    set site [SiteTCC::getSite $_newsiteid] 
+
+    set _sr [$site cget -sitereferences]
+    $site configure -sitereferences [expr $_sr + 1]
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::new {agendaobj} {
+    
+    set tl [BaseFrameTCC #auto -title "New Video Site Resource"]
+    
+    $tl setValidationCmd [code validateNew $tl]
+    
+    $tl setUpdateCmd     [code updateNew $tl $agendaobj]
+    
+    set c [$tl getContent]
+    
+    #--
+
+    iwidgets::entryfield $c.rid \
+	-labeltext "Resource Id:" \
+	-labelpos nw
+    pack $c.rid -padx 14 -pady 4 -fill x -anchor w
+
+    #--
+    
+    frame $c.sep0
+    pack  $c.sep0 -expand 1
+
+    #--
+
+    frame $c.f
+    pack $c.f -padx 14 -pady 4 -fill both -expand 1 
+
+    trace vdelete VideoResourceTCC::aux_siteid w \
+	"SiteTCC::traceInfo VideoResourceTCC::aux_fullname"
+    set aux_fullname ""
+    set aux_siteid   ""
+    trace variable VideoResourceTCC::aux_siteid w \
+	"SiteTCC::traceInfo VideoResourceTCC::aux_fullname"
+
+    ::iwidgets::combobox $c.f.site \
+	-labeltext "Video Site Nickname:" \
+	-validate "SiteTCC::ValidateSiteIdCB %c" \
+	-labelpos w \
+	-textvariable VideoResourceTCC::aux_siteid
+    pack $c.f.site -side left
+
+    foreach sid [array names SiteTCC::everysite] { 
+	$c.f.site insert list end $sid
+    }
+    foreach sid [SiteManager::GetSites] { 
+	if { ! [info exists SiteTCC::everysite($sid)]} {
+	    $c.f.site insert list end $sid
+	}
+    }
+    
+    label $c.f.sitedata \
+	-textvariable VideoResourceTCC::aux_fullname \
+	-font [IsabelFontsC::GetFont medium medium]
+    pack $c.f.sitedata -side left
+
+    #--
+
+
+    frame $c.end
+    pack $c.end -expand 1
+
+    set res [$tl waitFor]
+    
+    return $res
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::validateNew {tl} {
+
+    set c [$tl getContent]
+
+    # No empty rid
+    set newrid [string trim [$c.rid get]]
+    if {$newrid == ""} {
+	return "Resource Id can not be empty"
+    }
+    
+    # No duplicated rid
+    if {[info exists everyresource($newrid)]} {
+	return "Resource Id \"$newrid\" has been already defined."
+    }
+
+
+    # No empty isabel site
+    if {[string trim [$c.f.site get]] == ""} {
+	return "Video site nickname can not be empty"
+    }
+
+    return ""
+}
+
+#-----------------------------------------
+
+body VideoResourceTCC::updateNew {tl agendaobj} {
+
+    set c [$tl getContent]
+
+    #--
+
+    set _rid [string trim [$c.rid get]]
+
+    set _siteid [string trim [$c.f.site get]]
+
+    #--
+
+    # Create a new site if necessary
+    if {[SiteTCC::getSite $_siteid] == ""} {
+	set confobj [$agendaobj getConference]
+	$confobj createUnknownSite $_siteid
+    }
+
+    set _str [list VideoResource \
+		  -id $_rid \
+		  -site $_siteid \
+		 ]
+    
+    set child [VideoResourceTCC::parse $agendaobj $_str]
+
+    return $child
+}
+
+#-----------------------------------------
+

@@ -1,0 +1,117 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# audio_imm.itcl
+#
+# Audio: interaction mode manager.
+#
+#########################################################################
+
+
+class Audio_IMM_Class {
+
+    public proc SetInteractionMode {imname nsec site_id_list _args}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private proc GetOptionListValue {list optname {default ""}}
+}
+
+#---------------------------------------------------------------
+
+body Audio_IMM_Class::SetInteractionMode {imname nsec site_id_list _args} {
+
+    set scenary [session Activity GetResource $imname Audio]
+    set active   [GetOptionListValue $scenary -active 0]
+    
+    if {$active == 0} {
+	AudioBypassTranslator::setCaptures ""
+    } else {
+	
+	set codec    [GetOptionListValue $scenary -codec]
+	set maxbw    [GetOptionListValue $scenary -maxbw]
+
+	if {$codec != "" || $maxbw != ""} {
+	    sms forceState Audio_global add -codec $codec -max_bw $maxbw
+	}
+
+	set skip [GetOptionListValue $scenary -skip 0]
+	if {$skip == 1} {
+	    return
+	}
+
+	set setmutes [GetOptionListValue $scenary -setmutes]
+	set closeall [GetOptionListValue $scenary -closeall]
+	set openall  [GetOptionListValue $scenary -openall]
+	
+	set audiosites [GetOptionListValue $_args -audiosites none]
+
+	if {$closeall == "1"} {
+	    set site_id_list ""
+	} elseif {$openall == "1"} {
+            set site_id_list *
+	} elseif {$audiosites != "none"} {
+	    set site_id_list $audiosites
+	}
+
+
+	set _all_site_ids [SiteManager::GetSites]
+
+	switch -exact -- $site_id_list {
+	    "" {}
+	    *  {set site_id_list $_all_site_ids}
+	}
+
+	#--------------------
+
+	if {$setmutes == "1" || $closeall == "1" || $openall == "1"} {
+	    
+	    set _capturing_sites ""
+
+	    foreach _site_id $_all_site_ids {
+		if {[lsearch -exact $site_id_list $_site_id] != -1} {
+		    lappend _capturing_sites $_site_id
+		}
+	    }
+	    AudioBypassTranslator::setCaptures $_capturing_sites
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+body Audio_IMM_Class::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+
+#---------------------------------------------------------------

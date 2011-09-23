@@ -1,0 +1,30 @@
+/*
+-----------------------------------------------------------------------------
+
+    aCodecsTest.mmp - project definition file
+
+-----------------------------------------------------------------------------
+*/
+
+TARGET          aCodecsTest.app
+TARGETTYPE      app
+TARGETPATH      \system\apps\acodecstest
+UID             0x100039CE 0x0116C9D3    // random temporary UID
+
+USERINCLUDE     ..\tsrc
+USERINCLUDE     ..\..\include
+SYSTEMINCLUDE     ..\inc
+SYSTEMINCLUDE   \epoc32\include
+
+SOURCEPATH      ..\tsrc
+//DOCUMENT        readme.txt
+SOURCE          aCodecsTest.cpp
+RESOURCE        aCodecsTest.rss
+
+LIBRARY         euser.lib
+LIBRARY         apparc.lib
+LIBRARY         eikcore.lib
+LIBRARY         cone.lib
+LIBRARY         acodecs.lib      // uses aCodecs DLL
+
+// End of file

@@ -1,0 +1,158 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# modes.itcl
+#
+# Widget with the buttons to set a interaction mode, or execute another command.
+#
+#########################################################################
+
+
+class TeleClass_CP_Modes {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the object.
+    # $w is the widget to create, where the gui is packed.
+    # $cobj is a reference to the cmds object. 
+    constructor {w cobj} {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # Root widget
+    private variable wroot
+
+    # $cmdsobj is the object with the commands to set the interaction modes.
+    private variable cmdsobj
+ 
+    destructor {}
+
+    # Creates the user interface.
+    private method CreateGUI {}
+
+    # Defines all modes.
+    private method DefineModes {}
+
+    # Register a new mode.
+    # $name: Mode name.
+    # $gif:  Pixmap shown in the mode button.
+    # $balloon: button balloon.
+    # $cmd: Command to execute when mode is applied.
+    private method Add {name gif balloon cmd} 
+
+    # These variables store the position where the button added with Add
+    # is gridded.
+    private variable addRow 0
+    private variable addCol 0
+    private variable maxCol 3
+}
+
+#----------------------------------------------------------------
+
+body TeleClass_CP_Modes::constructor {w cobj} {
+
+    set wroot $w
+
+    set cmdsobj $cobj
+
+    CreateGUI
+}    
+
+#----------------------------------------------------------------
+
+body TeleClass_CP_Modes::destructor {} {
+
+    catch {bind $wroot <Destroy> ""}
+    if {[winfo exists $wroot]} {
+        destroy $wroot
+    }
+}
+
+#----------------------------------------------------------------
+
+body TeleClass_CP_Modes::CreateGUI {} {
+
+    frame $wroot -relief flat -borderwidth 0
+    
+    bind $wroot <Destroy> "delete object $this"
+
+    DefineModes
+}
+
+#----------------------------------------------------------------
+	
+body TeleClass_CP_Modes::DefineModes {} {
+    
+    Add chat      ng/pall       "Chat mode"                Chat   
+    Add questions ng/pques5     "Question mode"            Questions
+    Add onemain   ng/gcq1       "One + Main Sites mode"    OneMain   
+    Add bigone    ng/gc1big     "Big One mode"             BigOne   
+    Add onevga    ng/gcvga      "One + VGA mode"           OneVga   
+    Add shdisplay ng/pqvnc      "Application sharing mode" AppSharing
+    Add vga       ng/pqvga      "VGA mode"                 Vga   
+    Add npad      ng/pqnpad     "Notepad mode"             Notepad
+    Add wb        ng/pqwb2      "Whiteboard mode"          Whiteboard
+}    
+
+#----------------------------------------------------------------
+
+body TeleClass_CP_Modes::Add {name gif balloon cmd} {
+
+    set thecmd [eval code $cmdsobj $cmd]
+
+    CreateImage img$name gif/$gif.gif
+
+    button $wroot.b$name \
+	-image img$name \
+	-bd 0 \
+	-relief flat \
+	-command $thecmd
+
+    balloon add $wroot.b$name $balloon
+
+    grid $wroot.b$name \
+	    -row    $addRow \
+	    -column $addCol 
+    
+    grid rowconfigure    $wroot $addRow -weight 1
+    grid columnconfigure $wroot $addCol -weight 1
+
+    incr addCol
+    if {$addCol == $maxCol} {
+	set addCol 0
+	incr addRow
+    }
+}
+
+#----------------------------------------------------------------
+
+
+
+
+
+

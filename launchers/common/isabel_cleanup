@@ -1,0 +1,123 @@
+#! /bin/sh
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+export ISABEL_DIR=/usr/local/isabel
+
+
+#-----------------------------------------------------
+# isabel common code
+#-----------------------------------------------------
+. $ISABEL_DIR/bin/isabel.common.sh
+
+#-----------------------------------------------------
+# isabel environment variables
+#-----------------------------------------------------
+. $ISABEL_DIR/bin/isabel.environ.sh -skipmkdir
+
+
+/bin/echo "Deleting processes ..."
+$ISABEL_DIR/bin/isabel_fp -k \
+    isabel_launch \
+    isabel_loop \
+    isabel_master \
+    isabel_interactive \
+    $ISABEL_DIR/lib/isatcl/isacomp_ \
+    isabel_video \
+    isabel_titles \
+    isabel_XUtils \
+    isabel_irouter \
+    isabel_mcu \
+    isabel_cftp \
+    isabel_audio \
+    isabel_vumeter \
+    isabel_vncreflector \
+    isabel_SNMPAgent \
+    vncShmCapture \
+    "Xvnc.*:89" \
+    "Xtightvnc.*:89" \
+    mediaserver.passwd
+
+
+/bin/echo "Killing processes ..."
+$ISABEL_DIR/bin/isabel_fp -k9 \
+    isabel.launch.Start \
+    isabel.launcher.Start \
+    isabel.nereda.NeReDa \
+    isabel.seco.server.SeCo
+
+/bin/echo "killing vnc server at :89 :33"
+   nohup nautilus -q --display=:89 > /dev/null 2>&1
+   /usr/bin/killall -q Xvnc Xtightvnc
+
+   # Remove Xvnc used files:
+   /bin/rm -f /tmp/.X89-lock 
+   /bin/rm -f /tmp/.X11-unix/X89 
+   /bin/rm -f /tmp/.X33-lock 
+   /bin/rm -f /tmp/.X11-unix/X33 
+
+
+/bin/echo "Killing shared memory ..."
+$ISABEL_DIR/bin/shmkill
+
+
+/bin/echo "Cleaning tmp directory ..."
+/bin/rm -f $ISABEL_TMP_DIR/*.pid  > /dev/null 2>&1
+#/bin/rm -f $ISABEL_TMP_DIR/*.pid2 > /dev/null 2>&1
+/bin/rm -f $ISABEL_TMP_DIR/clientTunnel.pid2 > /dev/null 2>&1
+
+/bin/echo "Stopping httpliveencoding services"
+$ISABEL_DIR/bin/httpliveencoding.sh stop
+$ISABEL_DIR/bin/xservervnc.sh stop
+
+
+# Remove flag indicating that isabel is running
+/bin/echo "Removing flag indicating that isabel is running ..."
+/bin/rm -f $ISABEL_TMP_DIR/isabel_is_running
+
+
+__NO_RESTORE_DESKTOP=$(echo $* | grep "\-nodesktop\>")
+
+if [ -z "$__NO_RESTORE_DESKTOP" ] ; then 
+   /bin/echo "Restoring desktop ..."
+   CleanUpDesktop
+fi
+
+
+__RESTART_SERVICES=$(echo $* | grep "\-services\>")
+
+if [ -n "$__RESTART_SERVICES" ] ; then 
+	/bin/echo "Stopping NetworkManagerServer, the server for the tunnels ..."
+	$ISABEL_DIR/bin/isabel_fp -k networkManager.isabel.NetworkManagerServer
+
+	/bin/echo "Stopping xlim server ..."
+	$ISABEL_DIR/bin/isabel_fp -k app.isabel.Server
+
+	/bin/echo "Closing openvpn tunnels ..."
+	$ISABEL_DIR/bin/isabel_openvpn clean_up
+	/usr/bin/killall -q isabel_openvpn
+
+	/bin/echo "Launching again NetworkManagerServer and xlim server ..."
+	setsid $ISABEL_DIR/bin/isabel -unmap > /tmp/nohup.$$.out
+fi
+
+#----------------------------------------------------

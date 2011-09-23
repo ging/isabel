@@ -1,0 +1,221 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#########################################################################
+#
+# chatGUI.itcl
+#
+# Description
+#
+#   Chat daemon gui.
+#
+#########################################################################
+
+
+class ChatGUIC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    constructor {} {}
+    destructor {}
+    
+    public method NewMessage {msg}
+
+    public method ToggleGUI {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    private variable prompt
+
+    # Toplevel widget name.
+    private variable wroot .tChat
+
+    # Build the GUI.
+    private method MakeGUI {display geometry}
+    private method MakeTextFrame {}
+    private method MakeInteractiveFrame {}
+
+    private method CreateIcon {}
+
+    private method NewEntry {}
+}
+
+#---------------------------------------------------------------
+
+body ChatGUIC::constructor {} {
+    global env
+
+    set display [session Environ cget -ctrl_display]
+    set layout  [session Activity GetResource Chat layout 300x200+100+100]
+    set dvirtualobj [DVirtualC "#auto" $display]
+    set geometry [$dvirtualobj V2R_Layout $layout 1]
+    delete object $dvirtualobj
+
+    set prompt  $env(ISABEL_SITE_ID)
+
+    MakeGUI $display $geometry
+}
+
+#---------------------------------------------------------------
+
+body ChatGUIC::destructor {} {
+
+    if {[winfo exists $wroot]} {
+        destroy $wroot
+    }
+}
+
+#---------------------------------------------------------------
+
+body ChatGUIC::MakeGUI {display geometry} {
+
+    if {[winfo exists $wroot]} {
+        destroy $wroot
+    }
+
+    toplevel $wroot -screen $display
+
+    wm protocol $wroot WM_DELETE_WINDOW "wm withdraw $wroot"
+
+    wm geometry $wroot $geometry
+
+    wm title $wroot "Chat"
+    $wroot configure -borderwidth 4
+    wm withdraw .
+
+    MakeTextFrame
+    MakeInteractiveFrame
+
+}
+
+#---------------------------------------------------------------
+
+body ChatGUIC::MakeTextFrame {} {
+
+    frame $wroot.text 
+    text $wroot.text.t \
+	-wrap word \
+	-font [IsabelFontsC::GetFont large] \
+	-width 50 \
+	-height 5 \
+	-state disabled \
+	-yscrollcommand "$wroot.text.sb set"
+    scrollbar $wroot.text.sb -command "$wroot.text.t yview"
+
+    pack $wroot.text    -side top  -fill both -expand 1
+    pack $wroot.text.t  -side left -fill both -expand 1
+    pack $wroot.text.sb -side left -fill both
+}
+
+#---------------------------------------------------------------
+
+body ChatGUIC::MakeInteractiveFrame {} {
+
+    frame $wroot.interactive 
+    pack $wroot.interactive -fill x
+
+    label $wroot.interactive.n -text " $prompt:"
+    pack $wroot.interactive.n -side left
+
+    entry $wroot.interactive.e
+    bind $wroot.interactive.e <Return> [code $this NewEntry]
+    pack $wroot.interactive.e -side left -expand 1 -fill x
+
+    button $wroot.interactive.b2 -text Send -command [code $this NewEntry]
+    pack $wroot.interactive.b2 -side left
+}
+
+#---------------------------------------------------------------
+
+body ChatGUIC::NewEntry {} {
+
+    set str [$wroot.interactive.e get]
+
+    $wroot.interactive.e delete 0 end
+
+    NewMessage "$prompt: $str" 
+    network RDOGroup chat "Cmd NewMessage \"$prompt: $str\"" 
+
+}
+
+#---------------------------------------------------------------
+
+body ChatGUIC::NewMessage {msg} {
+
+    $wroot.text.t configure -state normal
+    $wroot.text.t insert end "$msg\n"
+    $wroot.text.t configure -state disabled
+    $wroot.text.t see end
+
+    set state [wm state $wroot] 
+
+    if {($state=="withdrawn") || ($state=="iconic") || ($state=="iconified")} {
+       CreateIcon
+    }
+}
+
+#---------------------------------------------------------------
+
+body ChatGUIC::CreateIcon {} {
+
+    if {[winfo exists $wroot.icon]} {
+	destroy $wroot.icon
+    }
+
+    toplevel $wroot.icon 
+
+    wm protocol $wroot.icon WM_DELETE_WINDOW "wm withdraw $wroot.icon"
+
+    CreateImage newMsg gif/chatrecv.gif
+    button $wroot.icon.l -image newMsg -command "$this ToggleGUI"
+    pack $wroot.icon.l
+    wm overrideredirect $wroot.icon 1
+}
+
+#---------------------------------------------------------------
+
+body ChatGUIC::ToggleGUI {} {
+    
+    if {![winfo exists $wroot]} return
+    
+    switch -- [wm state $wroot] {
+	iconic    -
+	icon      -
+	withdrawn -
+	iconified {
+	    wm deiconify $wroot
+	    if {[winfo exists $wroot.icon]} {
+		destroy $wroot.icon
+	    }
+	}
+	normal {
+	    wm withdraw $wroot
+	}
+    }
+}
+
+#---------------------------------------------------------------
+
+

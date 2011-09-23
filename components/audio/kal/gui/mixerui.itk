@@ -1,0 +1,459 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#------------------------------------------------------------
+# Create a frame to pack all the mixer.
+#------------------------------------------------------------
+
+class MixerGuiC {
+
+    # root widget
+    private variable wroot
+
+    # frame where channels are gridded.
+    private variable chroot
+
+    # How many channel slots have been created (busy or free).
+    # This value is used to create unique channel widget names, 
+    # with this format: $chroot.slot#
+    private variable createdSlots 0
+
+    # 1 if test tone buttons must be mapped.
+    # 0 if test tone buttons must not be mapped.
+    private variable maptest 1
+
+    # Variable to store the state of the channels view.
+    # 1 means that the channels of unconnected sites are shown.
+    # 0 means that the channels of unconnected sites are hidden.
+    private variable showallchannels 1
+
+    # $slotobj($slot) is the channel object of the given slot.
+    # One slot is assigned to each declared audio channel, and it has
+    # a widget slot named as $chroot.$slot, where $slot has the following
+    # format: "slot#"
+    private variable slotobj
+
+    # Slot assigned to the connected and desconnected channels.
+    # $connectedSlot($chid) is the slot asigned to $chid channel (when it is connected)
+    # $unconnectedSlot($chid) is the slot asigned to $chid channel (when it is desconnected)
+    # Note: slots without an assigned channel are not included in these arrays.
+    private variable connectedSlot
+    private variable unconnectedSlot
+
+    # List with the titles of all the defined channel.
+    # This list is sorted, except that the value "local" is always in the first position.
+    private variable definedTitles ""
+
+    # $position($wslot): Position (column) where the given channel widget is mapped in the gui.
+    # $wslot is the widget name of some slot.
+    private variable position
+
+    constructor {w args} {}
+
+    destructor {}
+
+    # Create number new empty channels
+    public method CreateEmptyChannels {number}
+
+    # Add a new channel. 
+    # It starts active.
+    public method Add {chid title}
+
+    # Declare a new channel. 
+    # If the channel has been already declared or added, then nothing is done.
+    # It starts disabled.
+    public method Declare {chid title} {}
+
+    # Delete a channel.
+    # First test if the user is already registered. 
+    # If it isn't the error "unknown user" is generated.
+    # If it is, disabled its audiochannel and do nothing more
+    # Next time the user connects, will recover the same audiochannel 
+    public method Del {chid} 
+
+    # Return the list of active channels.
+    public method Channels   {}
+
+    # Frame for the channel id vumeter.
+    public method getChildsite {chid}
+
+    # Return window path of the frame for the output volumete vumeter.
+    public method GetMixerVumeterSite {}
+
+    # Keep channels in mixer alphabetically ordered  by title.
+    # If there is a channel with title "local" always put it first
+    # Algorithm:
+    #     Each time a new user is declared, this method is called.
+    private method OrderChannels {slot title}
+    private method CompareTitles {t1 t2}
+
+    # Select channel to show.
+    # 1 to show all the channels.
+    # 0 to show channels of the copnnected sites.
+    public method ShowAllChannels {bool}
+
+    # Method to access to the $id channel.
+    public method Channel {chid args}
+
+    # Enable or disable test tone buttons.
+    # This method must be called before creating any channel.
+    public method SetEnableTones {bool}
+
+    public method SetMixerHeight {}
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::constructor {w args} {
+
+    set wroot  $w
+
+    eval configure $args    
+
+    #-------------
+    
+    frame $wroot -relief flat
+
+    #-------------
+
+    frame $wroot.vol -relief flat
+    #pack  $wroot.vol -side right -fill y -padx 1
+    
+    label $wroot.vol.title \
+	-text "OUT" \
+	-font [IsabelFontsC::GetFont small medium]
+    #pack  $wroot.vol.title -fill x -pady 3
+    
+    frame $wroot.vol.vumeter -width 10 -height 100 -relief flat
+    #pack  $wroot.vol.vumeter -side top -fill x -expand 0
+
+    #-------------
+    
+    iwidgets::scrolledframe $w.channels \
+	-relief flat \
+	-width 20 \
+	-sbwidth 10 \
+	-height 100 \
+	-vscrollmode none \
+	-hscrollmode static
+    #pack  $w.channels -side left -fill both -expand 1
+
+    #-------------
+
+    grid $wroot.vol      -row 0 -column 1 -sticky n   -padx 1
+    grid $wroot.channels -row 0 -column 0 -sticky nwe
+
+    grid rowconfigure    $wroot 0 -weight 1
+    grid columnconfigure $wroot 0 -weight 1
+
+    grid $wroot.vol.title   -row 0 -column 0 -sticky we -pady 3
+    grid $wroot.vol.vumeter -row 1 -column 0 -sticky we
+
+    set chroot [$w.channels childsite]
+
+    grid rowconfigure $chroot 0 -weight 1
+
+    #-------------
+
+    #bind $wroot <Visibility> "after idle [code $this SetMixerHeight]"
+    bind $wroot <Map> "after idle [code $this SetMixerHeight]"
+
+    #-------------
+
+    bind $wroot <Destroy> "delete object $this"
+
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::SetMixerHeight {} {
+
+    
+    set h [winfo reqheight $chroot.slot0]
+    set h [expr $h + 24]
+    
+    set w [winfo width $wroot.channels]
+
+    $wroot.channels configure -height $h -width $w
+    
+    set tl [winfo toplevel $wroot]
+    wm geometry $tl ""
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::destructor {} {
+
+    if {[winfo exists $wroot]} {
+        bind $wroot <Destroy> ""
+        destroy $wroot
+    }
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::SetEnableTones {bool} {
+
+    set maptest $bool
+
+    foreach slot [array names slotobj] {
+	$slotobj($slot) SendToneVisible  $bool
+	$slotobj($slot) LocalToneVisible $bool
+    }
+    if {[winfo exists $chroot.slot0]} {
+	after idle [code $this SetMixerHeight]
+    }
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::CreateEmptyChannels {number} {
+
+    for {set i 1} {$i <= $number} {incr i} {
+
+	set noc $createdSlots
+	incr createdSlots
+
+	set slotobj(slot$noc) [ChannelGuiC "#auto" $chroot.slot$noc $maptest]
+	$slotobj(slot$noc) Deactivate
+
+	set position($chroot.slot$noc) $noc
+
+	grid $chroot.slot$noc -row 0 -column $noc -sticky ns
+	grid columnconfigure $chroot $noc -weight 1
+
+	if {! $showallchannels} {
+	    grid forget $chroot.slot$noc
+	}
+
+    }
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::Add {chid title} {
+
+    #
+    # test if user is already connected 
+    #
+    if {[lsearch -exact [array names connectedSlot] $chid] != -1} {
+	error "Duplicated audio channel \"$chid\" ($title)."
+    }
+
+    Declare $chid $title
+
+    # user is registered, but not currently connected
+    # Now it is connected, set his state to normal
+    set slot $unconnectedSlot($chid)
+    $slotobj($slot) Activate
+    
+    # move chid from the unconnectedSlot array to the connectedSlot array.
+    set connectedSlot($chid) $unconnectedSlot($chid)
+    unset unconnectedSlot($chid)
+
+    # Set visible
+    set _col $position($chroot.$slot)
+    grid $chroot.$slot -row 0 -column $_col -sticky ns
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::Declare {chid title} {
+
+    #
+    # test if user has been already declared or added.
+    #
+    if {[lsearch -exact [array names connectedSlot] $chid] != -1} {
+	return
+    }
+    if {[info exist unconnectedSlot($chid)]} {
+	return
+    }
+
+    #
+    # ok, it's a new user. Let's search a free slot and configure it
+    #
+
+    # assing a free audio channel 
+    set firstFree [expr [array size connectedSlot]+[array size unconnectedSlot]]
+    if {$firstFree >= $createdSlots} {
+	CreateEmptyChannels 1
+    }
+
+    # configure the channel
+    set unconnectedSlot($chid) slot$firstFree
+
+    $slotobj(slot$firstFree) Identify $title
+
+    OrderChannels slot$firstFree $title
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::OrderChannels {slot title} {
+
+    set pos 0
+    foreach t $definedTitles {
+	
+	if {[CompareTitles $title $t] < 0} {
+	    
+	    # Moves all columns from $pos one place to the right.
+	    
+	    set _mywslot $chroot.$slot
+	    foreach _wslot [array names position] {
+		if {$_mywslot == $_wslot} continue
+		
+		
+		if {$position($_wslot) >= $pos && $position($_wslot) < $position($_mywslot)} {
+		    if {[grid slaves $chroot -column $position($_wslot)] != ""} {
+			# this slot is mapped
+			incr position($_wslot)
+			grid $_wslot -row 0 -column $position($_wslot) -sticky ns
+		    } else {
+			# this slot is not mapped
+			incr position($_wslot)
+		    }
+		}
+	    }
+	    break;
+	}
+	incr pos
+    }
+    
+    set definedTitles [linsert $definedTitles $pos $title]
+    
+    # Grid the new slot in the $pos column.
+    set position($chroot.$slot) $pos   
+    grid $chroot.$slot -row 0 -column $pos -sticky ns
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::CompareTitles {t1 t2} {
+
+    set mt1 [string tolower $t1]
+    set mt2 [string tolower $t2]
+    if {$mt1 == "local"} {
+	return -1
+    }
+    if {$mt2 == "local"} {
+	return 1
+    }
+    return [string compare $mt1 $mt2]
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::ShowAllChannels {bool} {
+
+    set showallchannels $bool
+
+    if {$bool} {
+	for {set i 0} {$i < $createdSlots} {incr i} {
+	    set _col $position($chroot.slot$i)
+	    grid $chroot.slot$i -row 0 -column $_col -sticky ns
+	}
+    } else {
+	for {set i 0} {$i < $createdSlots} {incr i} {
+	    grid forget $chroot.slot$i
+	}
+
+	foreach chid [array names connectedSlot] {
+	    set slot $connectedSlot($chid)
+	    set _col $position($chroot.$slot)
+	    grid $chroot.$slot -row 0 -column $_col -sticky ns
+	}
+    }
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::Del {chid} {
+    
+    if {![info exist connectedSlot($chid)]} {
+	error "Unknown audio channel \"$chid\"."
+    }
+
+    # user is registered. Unconnect it.
+    $slotobj($connectedSlot($chid)) Deactivate
+
+
+    if {! $showallchannels} {
+	set slot $connectedSlot($chid)
+	grid forget $chroot.$slot
+    }
+
+    
+    # move chanel chid from the connectedSlot array to the unconnectedSlot array.
+    set unconnectedSlot($chid) $connectedSlot($chid)
+    unset connectedSlot($chid)
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::Channels {} {
+
+    return [array names connectedSlot]
+}
+
+#------------------------------------------------------------
+
+
+body MixerGuiC::getChildsite {chid} {
+
+    if {[array names connectedSlot $chid] != ""} {
+	set w  $connectedSlot($chid)
+    } elseif {[array names unconnectedSlot $chid] != ""} {
+	set w  $unconnectedSlot($chid)
+    } else {
+	error "Unknown audio channel: \"$chid\"."
+    }
+    if {[winfo exists $chroot.$w.cs]} {
+	return $chroot.$w.cs 
+    } else {
+	error "Can't find childsite for audio channel \"$chid\"."
+    }
+}
+
+
+#------------------------------------------------------------
+
+body MixerGuiC::GetMixerVumeterSite {} {
+    return $wroot.vol.vumeter
+}
+
+#------------------------------------------------------------
+
+body MixerGuiC::Channel {chid args} {
+
+    if {[info exists connectedSlot($chid)]} {
+	set slot $connectedSlot($chid)
+    } elseif {[info exists unconnectedSlot($chid)]} {
+	set slot $unconnectedSlot($chid)
+    } else {
+	error "Unknown audio channel \"$chid\"."
+    }
+
+    eval $slotobj($slot) $args
+}
+
+#------------------------------------------------------------

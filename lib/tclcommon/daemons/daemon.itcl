@@ -1,0 +1,274 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# daemon.itcl
+#
+# Description
+#
+#     daemon base class
+#
+#########################################################################
+
+class DaemonC {
+
+    # Daemon name
+    protected variable name
+
+    # daemon control port.
+    public variable cport 0
+
+    # Timeout waiting for daemon responses.
+    private variable timeout
+
+    # Flag used while waiting for connection.
+    private common cc_res
+
+    # Maximun connection tries.
+    private variable cc_tries
+
+    # ports assigned to client sockets: 51050 51499
+    private common next_port 51050
+
+    # control service access point.
+    private variable sap ""
+
+    # Request serializer object
+    private variable serializer ""
+
+    # Quit daemon command. Needed for the serializer.
+    private variable quit_cmd
+
+    # NOP command. Used for keep-alive checking.
+    private variable nop_cmd
+
+    # Add newline to the daemon commands.
+    private variable addnl
+
+    # No connection CallBack.
+    private variable no_cc_cb
+
+    # Name of the daemon executable. Used to invoke gcore.
+    private variable gcorename
+
+    constructor {_name _timeout _quit_cmd _nop_cmd _addnl _no_cc_cb _gcorename} {}
+
+    destructor {}
+
+    # Starts the object.
+    # Produces error if something is wrong.
+    public method Start {}
+
+    # Invokes the daemon.
+    # Returns -1 if error.
+    protected method Invoke {}
+
+    # Connects with the daemon.
+    # Sets cc_res to -1 if error; to 1 if ok.
+    private method Connect {} 
+
+    # Checks that the daemon is alive.
+    private method Ping {}
+
+    # Method to call when the daemon doesn't respond.
+    private method NoConnection {}
+
+    # Daemon requests
+    public method RDO {req}
+    public method RPC {req}
+    public method RCB {req cb}
+}
+
+#------------------------------------------------------------
+
+body DaemonC::constructor {
+    _name _timeout _quit_cmd _nop_cmd _addnl _no_cc_cb _gcorename
+} {
+    set name      $_name
+    set timeout   $_timeout
+    set cc_tries  [expr $timeout/200]
+    set quit_cmd  $_quit_cmd
+    set nop_cmd   $_nop_cmd
+    set addnl     $_addnl
+    set no_cc_cb  $_no_cc_cb
+    set gcorename $_gcorename
+}
+
+#------------------------------------------------------------
+
+body DaemonC::destructor {} {
+
+    DeletePingEntry $sap
+    catch {unset cc_res($this)}
+    catch {delete object $serializer}
+    set serializer ""
+}
+
+#------------------------------------------------------------
+
+body DaemonC::Start {} {
+
+    if {[Invoke] == -1} {
+	error "- I can't start $name daemon."
+    }
+    set cc_res($this) 0
+    Connect
+    if {$cc_res($this) == 0} {
+	tkwait variable [scope cc_res($this)]
+    }
+    if {$cc_res($this) == -1} {
+	error "- I can't connect with $name daemon."
+    }
+    unset cc_res($this)
+}
+
+#------------------------------------------------------------
+
+body DaemonC::Invoke {} {
+
+    DebugTraceMsg "- $name daemon control port: $cport" 2
+    return 0
+}
+
+#------------------------------------------------------------
+
+body DaemonC::Connect {} {
+    global errorCode
+
+    set first_free_ports $next_port
+
+    while {[catch {set sap [socket -myport $next_port 127.0.0.1 $cport]}] != 0} {
+
+	set error_code $errorCode
+	if {[lindex $error_code 0] == "POSIX"} {
+	    set ecode1 [lindex $error_code 1]
+	    if {$ecode1 == "EADDRNOTAVAIL" || $ecode1 == "EADDRINUSE"} {
+
+		incr next_port
+		if {$next_port == 51500} {
+		    set next_port 51050
+		}
+
+		if {$first_free_ports == $next_port} {
+		    ErrorTraceMsg "$name: I can't connect with $name daemon: no free client ports in range 51075-51499."
+		    set cc_res($this) -1
+		    return
+		}
+		
+		continue
+	    }
+	}
+
+	if {$cc_tries == 0} {
+	    ErrorTraceMsg "$name: I can't connect with $name daemon."
+	    set cc_res($this) -1
+	    return
+	} else {
+	    incr cc_tries -1
+	    after 200 [code $this Connect]
+	    return
+	}   
+    } 
+
+    incr next_port
+    if {$next_port == 51500} {
+	set next_port 51050
+    }
+
+    fconfigure $sap -buffering none -translation binary
+    if {[catch {set serializer [DSerializerC "#auto_$name" $name $sap $timeout $quit_cmd $addnl]} res]} {
+	set serializer ""
+	ErrorTraceMsg "$name: I can't start the $name command serializer.\n$res"
+	set cc_res($this) -1
+    } else {
+	CreatePingEntry $sap [code $this Ping] [code $this NoConnection]
+	set cc_res($this) 1
+    }
+}
+
+#------------------------------------------------------------
+
+body DaemonC::Ping {} {
+
+    if {[RDO $nop_cmd] == -1} {
+	return 0
+    } else {
+	return 1
+    }
+}
+
+#------------------------------------------------------------
+
+body DaemonC::NoConnection {} {
+    global env
+
+    ErrorTraceMsg "$name: Connection with $name daemon lost."
+
+    DeletePingEntry $sap
+
+    catch {delete object $serializer}
+    set serializer ""
+
+    if {[info exists env(ISABEL_CORE)]} {
+	if {$env(ISABEL_CORE) == "1"} {
+	    catch {exec isabel_fp -c $gcorename}
+	}
+    }
+
+    if {[catch {uplevel #0 $no_cc_cb} emsg]} {
+	    ErrorTraceMsg "$name: No Connection Callback \"$no_cc_cb\": $emsg"
+    }
+
+    delete object $this
+}
+
+#------------------------------------------------------------
+
+body DaemonC::RDO {req} {
+
+    if {$serializer != ""} {
+	$serializer RDO $req
+    }
+}
+
+#------------------------------------------------------------
+
+body DaemonC::RPC {req} {
+
+    if {$serializer == ""} {
+	return ""
+    }
+    $serializer RPC $req
+}
+
+#------------------------------------------------------------
+
+body DaemonC::RCB {req cb} {
+
+    if {$serializer == ""} {
+	return -1
+    }
+    $serializer RCB $req $cb
+}
+
+#------------------------------------------------------------

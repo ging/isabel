@@ -1,0 +1,134 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# distnet.itcl
+#
+# Selection of the distribution net: NeReDa o ShDisplay
+#
+# Creates a frame with two radiobuttons to select the distribution to use.
+#
+#########################################################################
+
+class VNCDistNetC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the frame to select the distribution network.
+    # Parameters:
+    #   wroot_: name of the frame widget which we must create.
+    constructor {wroot_} {}
+
+    destructor {}
+
+    # Set the distibution network
+    # $n must be NeReDa or ShDisplay
+    public  proc SetNet   {n}
+
+    # Get the distibution network, i.e. NeReDa or ShDisplay
+    public  proc GetNet   {}
+
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+
+    # toplevel widget.
+    private variable wroot
+
+    # Current distribution network: NeReDa or ShDisplay
+    private common currentNet NeReDa
+
+    # Create browser widgets
+    private method CreateGUI {}
+}
+
+#---------------------------------------------------------------------------
+
+body VNCDistNetC::constructor {wroot_} {
+
+    set wroot $wroot_
+
+    CreateGUI
+}
+
+#---------------------------------------------------------------------------
+
+body VNCDistNetC::destructor {} {
+
+}
+
+#---------------------------------------------------------------------------
+
+body VNCDistNetC::CreateGUI {} {
+
+    frame $wroot \
+        -bd 3 
+    
+    #----
+    label $wroot.lnet -text "Distribution network:"
+
+    radiobutton $wroot.nereda \
+	-text "NeReDa" \
+	-variable [scope currentNet] \
+	-value NeReDa
+
+    radiobutton $wroot.shdisplay \
+	-text "ShDisplay" \
+	-variable [scope currentNet] \
+	-value ShDisplay
+
+    #--------------------------------
+
+    grid $wroot.lnet       -row 0 -column 0 -sticky e
+    grid $wroot.nereda     -row 0 -column 1 -sticky w
+    grid $wroot.shdisplay  -row 1 -column 1 -sticky w
+
+    grid columnconfigure $wroot 1 -weight 1
+
+}
+
+#---------------------------------------------------------------------------
+
+body VNCDistNetC::SetNet {n} {
+
+    set currentNet $n
+}
+
+#---------------------------------------------------------------------------
+
+body VNCDistNetC::GetNet {} {
+
+    return $currentNet
+}
+
+#---------------------------------------------------------------------------
+
+
+
+
+
+
+
+

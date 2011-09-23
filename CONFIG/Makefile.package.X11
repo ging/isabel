@@ -1,0 +1,6 @@
+#
+# X11 libraries are system dependant
+#
+include $(PROJECT_ROOT_DIR)/CONFIG/Makefile.os.package.X11.$(TARGET.OS)
+
+LINK.X11:=$(X11.library) $(X11.library.libs)

@@ -1,0 +1,103 @@
+#!/bin/sh
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+#--------------------------------------------------------
+# isabel_fp -- find process,
+#--------------------------------------------------------
+
+Usage()
+{
+   echo "Usage: $0 [options] <string_to_find> ... "
+   echo "       $0       list processes"
+   echo "       $0 -k    kill processes"
+   echo "       $0 -k9   kill processes (with -9 option)"
+   echo "       $0 -h    this help"
+   echo " More options:"
+   echo "          -a0   only search inside process names."
+   exit
+}
+
+opt_f="-f"
+opt_x=""
+
+while true ; do
+
+   case "$1" in
+     -h)
+        Usage
+        ;;
+
+     -a0)
+	opt_f=""
+	opt_x="-x"
+	shift
+        ;;
+
+     -k)
+	kill=YES
+	shift
+        ;;
+
+     -k9)
+	kill9=YES
+	shift
+        ;;
+
+     -*) 
+        echo "Warning: \"$1\" is an unknown option."
+        shift
+        ;;
+
+     *) 
+        break
+        ;;
+   esac
+done
+
+
+if [ "$1" = "" ] ; then
+   Usage
+fi
+
+
+if [ "$#" -eq 0 ] ; then
+   Usage
+fi
+
+
+mypid=$$
+pids=$(/usr/bin/pgrep $opt_f $opt_x $(echo $* | sed "s/ /|/g") | grep -v "\<$mypid\>")
+
+if [ -n "$kill" ] ; then
+
+   /bin/kill    $pids > /dev/null 2>&1
+   /bin/kill -9 $pids > /dev/null 2>&1
+
+elif [ -n "$kill9" ] ; then
+
+   /bin/kill -9 $pids > /dev/null 2>&1
+
+else
+
+   /bin/ps -Fww $pids
+
+fi

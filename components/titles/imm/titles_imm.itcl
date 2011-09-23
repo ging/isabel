@@ -1,0 +1,95 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# titles_imm.itcl
+#
+# Titles: interaction mode manager.
+#
+#########################################################################
+
+
+class Titles_IMM_Class {
+
+    public proc SetInteractionMode {imname nsec site_id_list _args}
+
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private proc GetOptionListValue {list optname {default ""}}
+
+}
+
+#---------------------------------------------------------------
+
+body Titles_IMM_Class::SetInteractionMode {imname nsec site_id_list _args} {
+
+    set _scenary      [session Activity GetResource $imname Titles ""]
+
+    # Root titles
+    set _roottitles [GetOptionListValue $_args -roottitles none]
+
+    # Clean old titles
+    set _tl ""
+
+    # Set new titles
+    if {$_roottitles != "none"} {
+	regsub -all {,}  $_roottitles {.} _roottitles
+	regsub -all {\(} $_roottitles {[} _roottitles
+	    regsub -all {\)} $_roottitles {]} _roottitles
+	set _rtlname [GetOptionListValue $_scenary -roottitleslayout]
+	if {$_rtlname != ""} {
+	    set _layouts [session Activity GetResource Titles roottitles.layout.$_rtlname ""]
+	    set _rtlen [llength $_roottitles]
+	    for {set i 0} {$i < $_rtlen} {incr i} {
+		set _title [lindex $_roottitles $i]
+		set _layout [lindex $_layouts $i]
+		if {$_layout == ""} break;
+		set _tposx [lindex $_layout 0]
+		set _tposy [lindex $_layout 1]
+		set _tanchor [lindex $_layout 2]
+
+		lappend _tl "$_title,$_tposx,$_tposy,$_tanchor"
+	    }
+	}
+    }
+
+    sms forceState Titles add -titles $_tl
+
+}
+
+#---------------------------------------------------------------
+
+body Titles_IMM_Class::GetOptionListValue {list optname {default ""}} {
+
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+
+#---------------------------------------------------------------

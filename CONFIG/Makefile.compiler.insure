@@ -1,0 +1,7 @@
+CONFIG.CXX      :=insure
+CONFIG.CXX.name :=insure
+CONFIG.LD       :=insure
+CONFIG.LD.SHARED:=insure -shared
+CONFIG.LD.STATIC:=insure -static -rdynamic
+
+include $(PROJECT_ROOT_DIR)/CONFIG/Makefile.compiler.$(CONFIG.COMPILER).$(TARGET.OS)

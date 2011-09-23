@@ -1,0 +1,38 @@
+#! /bin/sh
+
+#
+# Check variables
+#
+if [ -z "$SRC_DIR" ] ; then echo "SRC_DIR undefined" ; exit ; fi
+if [ -z "$PKG_NAME" ] ; then echo "PKG_NAME undefined" ; exit ; fi
+if [ -z "$DISTRIB_DIR" ] ; then echo "DISTRIB_DIR undefined" ; exit ; fi
+if [ -z "$PKG_DIR" ] ; then echo "PKG_DIR undefined" ; exit ; fi
+
+VERSIONS_DIR=$ISA_VERSIONS_DIR/$PKG_NAME
+if [ ! -d $VERSIONS_DIR ] ; then 
+    mkdir -p $VERSIONS_DIR
+fi 
+
+
+#
+# Hacer el paquete y copiar en el directorio de versiones.
+#
+if [ "$PKG_TYPE" = "deb" ] ; then
+
+   export DEBFILENAME=$(echo ${PKG_NAME}_${VERSION}-${RELEASE}_${LINUX_DISTRIB}_i586.deb | tr A-Z a-z)
+   ./mkPkg_deb.sh
+
+   mv $DEB_DIR/$DEBFILENAME $VERSIONS_DIR
+   chmod 644 $VERSIONS_DIR/$DEBFILENAME
+   sudo rm -rf $PKG_DIR
+
+else
+
+   echo "ERROR: RPM packages not supported."
+   exit 1
+
+fi
+
+exit 0
+
+

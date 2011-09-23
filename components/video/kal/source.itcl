@@ -1,0 +1,133 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# source.itcl
+#
+# Select Camera and Vga source, and configure them.
+#
+#########################################################################
+
+class VideoSourceC {
+    
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+    
+    # Change user interface visibility.
+    public proc Show {}
+    public proc Hide {}
+    public proc ToggleShowHide {}
+    
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # toplevel widget.
+    private common wroot .video_source_tl
+    
+    
+    # Create the user interface.
+    private proc GUI {}
+}
+
+#---------------------------------------------------------------------------
+
+body VideoSourceC::GUI {} {
+    
+    if {[winfo exist $wroot]} { 
+	return
+    }
+    
+    toplevel $wroot -screen [session Environ cget -ctrl_display]
+    
+    wm title $wroot "Video Sources"
+    
+    wm geometry $wroot 540x650
+    
+    #--------------------------------
+    
+    button $wroot.close -text Dismiss -command VideoSourceC::Hide
+    
+    pack $wroot.close -side bottom -pady 8
+    
+    #--------------------------------
+    
+    set wtab $wroot.tab 
+    ::iwidgets::tabnotebook $wtab -tabpos n 
+    pack  $wtab -side top -expand 1 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+    
+    #-- Camera:
+    set child1w [$wtab add -label "Camera" -font [IsabelFontsC::GetFont medium medium]]
+    $wtab view "Camera"
+    CameraSourceC::GUI $child1w.camera
+    pack  $child1w.camera -side top -expand 1 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+    
+    
+    #-- Vga:
+    set _vgaenabled [session Activity GetResource Video vga.enabled 0]
+    if {$_vgaenabled == 1} {
+	set child2w [$wtab add -label "VGA"    -font [IsabelFontsC::GetFont medium medium]]
+	VgaSourceC::GUI $child2w.vga
+	pack  $child2w.vga    -side top -expand 1 -fill both -padx 5 -pady 5 -ipadx 5 -ipady 5
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VideoSourceC::Show {} {
+    
+    if {![winfo exist $wroot]} { 
+	GUI
+    } else {
+	wm deiconify $wroot
+    }
+    after idle raise $wroot
+}
+
+#---------------------------------------------------------------------------
+
+body VideoSourceC::Hide {} {
+    
+    if {[winfo exist $wroot]} { 
+	wm withdraw $wroot
+    }
+}
+
+#---------------------------------------------------------------------------
+
+body VideoSourceC::ToggleShowHide {} {
+    
+    if {![winfo exist $wroot]} { 
+	Show
+    } else {
+	if {[wm state $wroot] != "normal"} {
+	    Show
+	} else {
+	    Hide
+	}
+    }
+}
+
+#---------------------------------------------------------------------------

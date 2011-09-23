@@ -1,0 +1,158 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+class SeCoSRPacketC {
+
+
+    #----------------
+    # Estadisticas
+    #----------------
+    private common sentBytes 0
+    private common recvBytes 0
+
+    #----------------
+    # Campos de las PDU's
+    #----------------
+
+
+    public variable from_id   0
+    public variable to_id     0
+    public variable type      0
+    public variable data_size 0
+    public variable data      ""
+
+
+
+
+    #----------------
+    # read/write
+    #----------------
+
+
+    # buffer to store the receiced message fragments.
+    private variable buffer ""
+
+    public method Receive {}
+
+    public method Send {from_ to_ type_ data_}
+
+    #----------------
+    # Constructor, destructor
+    #----------------
+
+    # socket
+    private variable sock
+
+    constructor {_sock} {}
+
+    destructor {}
+
+    public method Statistics {}
+}
+
+#------------------------------------------------
+
+body SeCoSRPacketC::constructor {_sock} {
+
+    set sock $_sock
+
+    AtExit::Append [code $this Statistics]
+}
+
+#------------------------------------------------
+
+body SeCoSRPacketC::destructor {} {
+
+}
+
+#------------------------------------------------
+
+body SeCoSRPacketC::Statistics {} {
+
+    WriteTraceMsg "SeCo statistics: $sentBytes sent bytes, and $recvBytes received bytes."
+}
+
+#------------------------------------------------
+
+body SeCoSRPacketC::Receive {} {
+
+    #
+    # Getting the head
+    #
+    set lenbuf [string length $buffer]
+    if {$lenbuf >= 16} {
+	set head [string range $buffer 0 15]
+	set buffer [string range $buffer 16 end]
+    } else { 
+	set lh [expr 16 - $lenbuf]
+	set aux [read $sock $lh]
+	set lenaux [string length $aux]
+	if {$lenaux != $lh} {
+	    set buffer $buffer$aux
+	    return 0
+	}
+	set head $buffer$aux
+	set buffer ""
+    }
+    
+    #
+    # Getting the body
+    #
+    binary scan $head IIII from_id to_id type data_size
+    set len $data_size
+    set lenbuf [string length $buffer]
+    if {$len <= $lenbuf} {
+	set data [string range $buffer 0 [expr $len-1]]
+	set buffer [string range $buffer $len end]
+    } else {
+	set lm [expr $len - $lenbuf]
+	set aux [read $sock $lm]
+	set lenaux [string length $aux]
+	if {$lenaux != $lm} {
+	    set buffer $head$buffer$aux
+	    return 0
+	}
+	set aux [string range $aux 0 [expr $lenaux-1]]
+	set data $buffer$aux
+	set buffer ""
+    }
+    incr recvBytes $len
+    return 1
+}
+
+#------------------------------------------------
+
+body SeCoSRPacketC::Send {from_ to_ type_ data_} {
+    
+    set len_ [string length $data_]
+    incr sentBytes $len_
+    
+    set head_ [binary format IIII $from_ $to_ $type_ $len_]
+
+    if {[catch {puts -nonewline $sock $head_$data_} errmsg]} {
+	ErrorTraceMsg "- SeCo error: While sending messages, I get \"$errmsg\""
+    }
+}
+
+#------------------------------------------------
+

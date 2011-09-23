@@ -1,0 +1,39 @@
+/* XPM */
+static char *l_green[] = {
+/* width height num_colors chars_per_pixel */
+"    25    25        7            1",
+/* colors */
+". c #000000",
+"# c #32cd32",
+"a c #00ff00",
+"b c #2f4f4f",
+"c c #2e8b57",
+"d c #bfbfbf",
+"e c #98fb98",
+/* pixels */
+"ddddddddddddddddddddddddd",
+"ddddddddddddddddddddddddd",
+"ddddddddddddddddddddddddd",
+"ddddddddd######dddddddddd",
+"ddddddda######b#cdddddddd",
+"dddddd##a#######c#ddddddd",
+"ddddda#c#aac###cccbdddddd",
+"dddd###aaeea##c##c#bddddd",
+"dddd#c##aeeaa##cccbcddddd",
+"dddcc##a#aa#####c#ccbdddd",
+"ddd#c#c##aca##c#cbcbbdddd",
+"dddcc##########cc#bcbdddd",
+"ddd#b#c#####b#b#bcbbbdddd",
+"ddd.#b#bc#b##c#b#cbcbdddd",
+"ddd#b#c#cc#b#b#.#.#.bdddd",
+"ddddbcbcb#cccccccbbbddddd",
+"ddddbcb#bcb#bbc.#.bbddddd",
+"dddddcbbcb#bbcb#.bbdddddd",
+"ddddddbcbbbbc.c.c.ddddddd",
+"dddddddbbbbbbc.c.dddddddd",
+"ddddddddd.c.bb.dddddddddd",
+"ddddddddddddddddddddddddd",
+"ddddddddddddddddddddddddd",
+"ddddddddddddddddddddddddd",
+"ddddddddddddddddddddddddd"
+};

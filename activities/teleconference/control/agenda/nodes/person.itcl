@@ -1,0 +1,825 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#-----------------------------------------
+
+class PersonTCC {
+    inherit NodeTCC
+
+    #-- Node attributes
+
+    public variable acronym
+    public variable name
+    public variable position
+    public variable organization
+    public variable site
+
+    #-- Building the tree
+
+    constructor {_agendaobj _acronym _name _position _organization _site} {
+    	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+    
+    # Cleanup - Destroy all the internal state information. 
+    # This method is called when the state of the agenda is inconsistent,
+    # so we will try to delete all the invalid information.
+    public proc cleanup {}
+    
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+    
+    public method getTitle {}
+
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+
+    public method getNodes {}
+    
+    #-- References
+
+    # Counter: How many existing objects are pointing to me
+    public variable personreferences 0
+
+    public method getReferenceTitle {}
+
+    #-- Accessors
+
+    public method getAcronym {}
+    public method getName {}
+    public method getPosition {}
+    public method getOrganization {}
+    public method getSite {}
+    public method getSiteId {}
+    public method getFullname {}
+    public method getMain {}
+
+    #-- Online  
+
+    public method online {}
+
+    #-- Selection
+
+    # Return 1 if the node can be selected
+    public method isSelectable {}
+
+    # Methods called when a node is selected or unselected.
+    public method select {} 
+    public method unselect {}
+
+    # Return 1 if the node is selected, otherwise returns 0.
+    public method isSelected {}
+
+    #-- Node edition
+
+    # Auxiliar variables used to show the fullname of the isabel site.
+    # Used by new and edit
+    public common aux_siteid
+    public common aux_fullname
+
+    public method edit {}
+
+    # Method used to validate the values modified when this node is edited.
+    # $tl is the object created to edit the values.
+    private method validateEdit {tl}
+
+    # Method used to update the nod3e values with the edited values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the values.
+    private method updateEdit {tl}
+
+    #-- Node creation
+
+    # Create a new empty node, and opens an edition window to edit its values.
+    # If the node is created successfully, then this method returns a reference
+    # to the new created node; else it returns "".
+    # $agendaobj is a reference to the AgendaTCC object which will contain the created node.
+    public proc new {agendaobj}
+
+    # Method used to validate the values of the new node.
+    # $tl is the object created to edit the new values.
+    private proc validateNew {tl}
+
+    # Method used to create the new node with the validated values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the new values.
+    private proc updateNew {tl agendaobj}
+
+    #-- Node deletion
+
+    # Delete this node
+    public method kill {}
+
+    # Delete this node
+    public method deleteNode {}
+
+    #-- All the created people
+
+    # Array with all the created people.
+    # $everybody($acronym) is the PersonTCC object associated to the given acronym.
+    public common everybody
+
+    public proc getPerson {acronym}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+
+    #-- Helpers
+
+    # Helper procedure used by the tcl trace command to update the
+    # infovar variable (passed by reference) with the name (and othres)
+    # of the person whose acronym is $var 
+    public proc traceInfo {infovar var index op}
+
+    # Compare the acronym of two persons. Used to sort the participant
+    # list by acronym
+    public proc compareAcronyms {_person1 _person2}
+
+    # Compare the name of two persons. Used to sort the participant
+    # list by name
+    public proc compareNames {_person1 _person2}
+
+    # Compare the siteid of two persons. Used to sort the participant
+    # list by siteid
+    public proc compareSiteIds {_person1 _person2}
+
+    #-- Order
+
+    # Moves the node in the tree up.
+    public method moveUp {} {}
+
+    # Moves the node in the tree down.
+    public method moveDown {} {}
+}
+
+#-----------------------------------------
+
+body PersonTCC::constructor {_agendaobj _acronym _name _position _organization _site} {
+
+    set acronym      $_acronym
+    set name         $_name 
+    set position     $_position 
+    set organization $_organization
+
+    CheckClass  $_site SiteTCC
+    set site    $_site
+    set _sr [$site cget -sitereferences]
+    $site configure -sitereferences [expr $_sr + 1]
+
+
+    if {[info exists everybody($acronym)]} {
+	set emsg "ERROR:: Acronym \"$acronym\" has been already defined."
+	puts stderr $emsg
+	error $emsg 
+    }
+    set everybody($acronym) $this
+
+}
+
+#-----------------------------------------
+
+body PersonTCC::destructor {} {
+
+    if {[isSelected]} {
+        unselect
+    }
+
+    unset everybody($acronym)
+
+    set _sr [$site cget -sitereferences]
+    $site configure -sitereferences [expr $_sr - 1]
+}
+
+#-----------------------------------------
+
+body PersonTCC::cleanup {} {
+
+    foreach _acro [array names everybody] {
+        catch {unset everybody($_acro)}
+    }
+}
+
+#-----------------------------------------
+
+body PersonTCC::parse {agendaobj str} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class Person
+ 
+    set acronym      [getOptionListValue $str -acronym]
+
+    WriteTraceMsg "ica: parsing person \"$acronym\""
+
+    set name         [getOptionListValue $str -name]
+    set position     [getOptionListValue $str -position]
+    set organization [getOptionListValue $str -organization]
+
+
+    set _siteid [getOptionListValue $str -site access]
+    set _siteobj [SiteTCC::getSite $_siteid]
+    if {$_siteobj == ""} {
+	set emsg "ERROR:: There are no sites with the siteId \"$_siteid\"."
+	puts stderr $emsg
+	error $emsg 
+    }
+    set site $_siteobj
+
+    set me [PersonTCC ::#auto $agendaobj $acronym $name $position $organization $site]
+
+    return $me
+}
+
+#-----------------------------------------
+
+body PersonTCC::prettyPrinter {{offset 0}} {
+
+    set _spc1 [NodeTCC::spaces $offset]
+    
+    return "${_spc1}[list [list Person \
+            -acronym $acronym \
+	    -name $name \
+	    -position $position \
+	    -organization $organization \
+	    -site [$site getSiteId]]]"
+}
+
+#-----------------------------------------
+
+body PersonTCC::getTitle {} {
+    
+    return "$acronym ([$site getSiteId]) $name"
+}
+
+#-----------------------------------------
+
+body PersonTCC::getReferenceTitle {} {
+
+    if {$personreferences != 0} {
+	return "\[$personreferences\]"
+    } else {
+	return ""
+    }
+}
+
+#-----------------------------------------
+
+body PersonTCC::isSelectable {} {
+
+    return 1
+}
+
+#-----------------------------------------
+
+body PersonTCC::select {} {
+    
+    [$agendaobj getSelection] select $this
+}
+
+#-----------------------------------------
+
+body PersonTCC::unselect {} {
+
+    [$agendaobj getSelection] unselect $this
+}
+
+#-----------------------------------------
+
+body PersonTCC::isSelected {} {
+
+    [$agendaobj getSelection] isSelected $this
+}
+
+#-----------------------------------------
+
+body PersonTCC::getMyNode {} {
+  
+    if {[isSelected]} {
+	set tags "selected"
+    } else {
+	set tags ""
+    }
+ 
+    set _icons "icaparticipant"
+  
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_mv_icons  [$_menubarobj cget -show_mv_icons]
+    if {$_show_mv_icons} {
+	if { ! [$parent firstPerson $this]} {
+	    lappend _icons icafocusup
+	}
+	if { ! [$parent lastPerson $this]} {
+	    lappend _icons icafocusdown         
+	}
+    }
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+
+    if {$personreferences == 0} {
+	set _show_delete_icon  [$_menubarobj cget -show_delete_icon]
+	if {$_show_delete_icon} {
+	    lappend _icons icadelete         
+	}
+    }
+
+    if {![online]} {
+	lappend _icons icaoffline
+    }
+ 
+    list \
+	[getMyUid] \
+	"[getTitle]  [getReferenceTitle]" \
+	"participant leaf $tags" \
+	$_icons
+}
+
+#-----------------------------------------
+
+body PersonTCC::getNodes {} {
+
+    return ""
+}
+
+#-----------------------------------------
+
+body PersonTCC::getAcronym {} {
+
+    return $acronym
+}
+
+#-----------------------------------------
+
+body PersonTCC::getName {} {
+
+    return $name
+}
+
+#-----------------------------------------
+
+body PersonTCC::getPosition {} {
+
+    return $position
+}
+
+#-----------------------------------------
+
+body PersonTCC::getOrganization {} {
+
+    return $organization
+}
+
+#-----------------------------------------
+
+body PersonTCC::getSite {} {
+
+    return $site
+}
+
+#-----------------------------------------
+
+body PersonTCC::getSiteId {} {
+
+    $site getSiteId 
+}
+
+#-----------------------------------------
+
+body PersonTCC::getFullname {} {
+
+    $site getFullname
+}
+
+#-----------------------------------------
+
+body PersonTCC::getMain {} {
+
+    $site getMain
+}
+
+#-----------------------------------------
+
+body PersonTCC::online {} {
+
+    $site online
+}
+
+#-----------------------------------------
+
+body PersonTCC::edit {} {
+
+    set tl [BaseFrameTCC #auto -title "Edit Participant"]
+    
+    $tl setValidationCmd [code $this validateEdit $tl]
+    
+    $tl setUpdateCmd     [code $this updateEdit $tl]
+    
+    set c [$tl getContent]
+    
+    iwidgets::entryfield $c.acro \
+	-labeltext "Acronym:" \
+	-labelpos w
+    pack $c.acro -padx 14 -pady 4 -fill x -expand 1 -anchor s
+    $c.acro component entry insert 0 $acronym
+
+    iwidgets::entryfield $c.name \
+	-labeltext "Name:" \
+	-labelpos w
+    pack $c.name -padx 14 -pady 4 -fill x
+    $c.name component entry insert 0 $name
+
+    iwidgets::entryfield $c.pos \
+	-labeltext "Position:" \
+	-labelpos w
+    pack $c.pos -padx 14 -pady 4 -fill x
+    $c.pos component entry insert 0 $position
+
+    iwidgets::entryfield $c.org \
+	-labeltext "Organization:" \
+	-labelpos w
+    pack $c.org -padx 14 -pady 4 -fill x
+    $c.org component entry insert 0 $organization
+
+    #--
+
+    frame $c.f
+    pack $c.f -padx 14 -pady 4 -fill both -expand 1 
+
+    trace vdelete PersonTCC::aux_siteid w \
+	"SiteTCC::traceInfo PersonTCC::aux_fullname"
+    set aux_fullname ""
+    set aux_siteid   ""
+    trace variable PersonTCC::aux_siteid w \
+	"SiteTCC::traceInfo PersonTCC::aux_fullname"
+
+    ::iwidgets::combobox $c.f.site \
+	-validate "SiteTCC::ValidateSiteIdCB %c" \
+ 	-labeltext "Isabel site nickname:" \
+	-labelpos w \
+	-textvariable PersonTCC::aux_siteid
+    pack $c.f.site -side left -anchor n
+    $c.f.site component entry insert 0 [$site getSiteId]
+    foreach sid [array names SiteTCC::everysite] { 
+	$c.f.site insert list end $sid
+    }
+
+    label $c.f.sitedata \
+	-textvariable PersonTCC::aux_fullname \
+	-font [IsabelFontsC::GetFont medium medium]
+    pack $c.f.sitedata -side left -anchor n
+
+    #--
+
+}
+
+#-----------------------------------------
+
+body PersonTCC::validateEdit {tl} {
+    
+    set c [$tl getContent]
+    
+    # No empty acronym
+    set newacro [string trim [$c.acro get]]
+    if {$newacro == ""} {
+	return "Participant acronym can not be empty"
+    }
+    
+    # No duplicated acronym
+    if {[info exists everybody($newacro)]} {
+	if {$everybody($newacro) != $this} {
+	    return "Acronym \"$newacro\" has been already defined."
+	}
+    }
+
+    # No empty name
+    if {[string trim [$c.name get]] == ""} {
+	return "Participant name can not be empty"
+    }
+
+    # No empty isabel site
+    if {[string trim [$c.f.site get]] == ""} {
+	return "Isabel site nickname can not be empty"
+    }
+    
+    return ""
+}
+
+#-----------------------------------------
+
+body PersonTCC::updateEdit {tl} {
+
+    set c [$tl getContent]
+    
+    unset everybody($acronym)
+    puts [array names everybody]
+    set acronym      [string trim [$c.acro get]]
+    set everybody($acronym) $this
+
+    set name         [string trim [$c.name get]]
+    set position     [string trim [$c.pos  get]]
+    set organization [string trim [$c.org  get]]
+
+    #--
+    
+    set _sr [$site cget -sitereferences]
+    $site configure -sitereferences [expr $_sr - 1]
+    
+    set newsiteid [string trim [$c.f.site get]]
+    
+    # Create a new site if necessary
+    if {[SiteTCC::getSite $newsiteid] == ""} {
+	set confobj [$agendaobj getConference]
+	$confobj createUnknownSite $newsiteid
+    }
+    
+    set site [SiteTCC::getSite $newsiteid]
+    
+    set _sr [$site cget -sitereferences]
+    $site configure -sitereferences [expr $_sr + 1]
+    
+    #--
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body PersonTCC::new {agendaobj} {
+
+    set tl [BaseFrameTCC #auto -title "New Participant"]
+    
+    $tl setValidationCmd [code validateNew $tl]
+    
+    $tl setUpdateCmd     [code updateNew $tl $agendaobj]
+    
+    set c [$tl getContent]
+    
+    iwidgets::entryfield $c.acro \
+	-labeltext "Acronym:" \
+	-labelpos nw
+    pack $c.acro -padx 14 -pady 4 -fill x -expand 1 -anchor s
+
+    iwidgets::entryfield $c.name \
+	-labeltext "Name:" \
+	-labelpos nw
+    pack $c.name -padx 14 -pady 4 -fill x
+
+    iwidgets::entryfield $c.pos \
+	-labeltext "Position:" \
+	-labelpos nw
+    pack $c.pos -padx 14 -pady 4 -fill x
+
+    iwidgets::entryfield $c.org \
+	-labeltext "Organization:" \
+	-labelpos nw
+    pack $c.org -padx 14 -pady 4 -fill x
+
+    #--
+
+    frame $c.f
+    pack $c.f -padx 14 -pady 4 -fill both -expand 1 
+
+    trace vdelete PersonTCC::aux_siteid w \
+	"SiteTCC::traceInfo PersonTCC::aux_fullname"
+    set aux_fullname ""
+    set aux_siteid   ""
+    trace variable PersonTCC::aux_siteid w \
+	"SiteTCC::traceInfo PersonTCC::aux_fullname"
+
+    ::iwidgets::combobox $c.f.site \
+	-validate "SiteTCC::ValidateSiteIdCB %c" \
+ 	-labeltext "Isabel site nickname:" \
+	-labelpos w \
+	-textvariable PersonTCC::aux_siteid
+    pack $c.f.site -side left -anchor n
+    foreach sid [array names SiteTCC::everysite] { 
+	$c.f.site insert list end $sid
+    }
+
+    label $c.f.sitedata \
+	-textvariable PersonTCC::aux_fullname \
+	-font [IsabelFontsC::GetFont medium medium]
+    pack $c.f.sitedata -side left -anchor n
+
+    #--
+
+    set res [$tl waitFor]
+    
+    return $res
+}
+
+#-----------------------------------------
+
+body PersonTCC::validateNew {tl} {
+    
+    set c [$tl getContent]
+    
+    # No empty acronym
+    set newacro [string trim [$c.acro get]]
+    if {$newacro == ""} {
+	return "Participant acronym can not be empty"
+    }
+    
+    # No duplicated acronym
+    if {[info exists everybody($newacro)]} {
+	return "Acronym \"$newacro\" has been already defined."
+    }
+
+    # No empty name
+    if {[string trim [$c.name get]] == ""} {
+	return "Participant name can not be empty"
+    }
+
+    # No empty isabel site
+    if {[string trim [$c.f.site get]] == ""} {
+	return "Isabel site Id can not be empty"
+    }
+
+    return ""
+}
+
+#-----------------------------------------
+
+body PersonTCC::updateNew {tl agendaobj} {
+
+    set c [$tl getContent]
+    
+    set _acronym      [string trim [$c.acro get]]
+    set _name         [string trim [$c.name get]]
+    set _position     [string trim [$c.pos  get]]
+    set _organization [string trim [$c.org  get]]
+    set _siteid       [string trim [$c.f.site get]]
+
+    # Create a new site if necessary
+    if {[SiteTCC::getSite $_siteid] == ""} {
+	set confobj [$agendaobj getConference]
+	$confobj createUnknownSite $_siteid
+    }
+
+    set _person [list Person \
+		     -acronym $_acronym \
+		     -name $_name \
+		     -position $_position \
+		     -organization $_organization \
+		     -site $_siteid]
+    
+    set child [PersonTCC::parse $agendaobj $_person]
+
+    return $child
+}
+
+#-----------------------------------------
+
+body PersonTCC::kill {} {
+
+    if {$personreferences != 0} return
+
+    unselect
+
+    delete object $this
+}
+
+#-----------------------------------------
+
+body PersonTCC::deleteNode {} {
+
+    $parent deletePerson $this
+}
+
+#-----------------------------------------
+
+body PersonTCC::getPerson {acronym} {
+
+    if {[info exists everybody($acronym)]} {
+	return $everybody($acronym)
+    } else {
+	return ""
+    }
+}
+
+#-----------------------------------------
+
+body PersonTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "Edit Participant" \
+	-command [code $this edit]
+
+    $menu add separator
+    
+    if {$personreferences == 0} {
+	
+	$menu add command -image icadelete \
+	    -command [code $this deleteNode]
+    }
+
+    if { ! [$parent firstPerson $this]} {
+	$menu add command -image icafocusup \
+	    -command [code $this moveUp]
+    }
+    
+    if { ! [$parent lastPerson $this]} {
+	$menu add command -image icafocusdown \
+	    -command [code $this moveDown]
+    }
+
+    return $menu   
+}
+
+#-----------------------------------------
+
+body PersonTCC::traceInfo {infovar var index op} {
+    upvar $infovar iv $var v
+
+    if {$index == ""} {
+	if {$v == ""} {
+	    set iv ""
+	    return
+	}
+	set p [getPerson [string trim $v]]
+    } else {
+	set p [getPerson [string trim $v($index)]]
+    }
+
+    if {$p == ""} {
+	set iv "Unknown Participant"
+    } else {
+	set iv "([[$p cget -site] getTitle]) [$p cget -name]"
+    } 
+
+}
+
+#-----------------------------------------
+
+body PersonTCC::compareAcronyms {_person1 _person2} {
+    
+    set _acro1 [string tolower [$_person1 cget -acronym]]
+    set _acro2 [string tolower [$_person2 cget -acronym]]
+
+    string compare $_acro1 $_acro2
+}
+
+#-----------------------------------------
+
+body PersonTCC::compareNames {_person1 _person2} {
+    
+    set _name1 [string tolower [$_person1 cget -name]]
+    set _name2 [string tolower [$_person2 cget -name]]
+
+    string compare $_name1 $_name2
+}
+
+#-----------------------------------------
+
+body PersonTCC::compareSiteIds {_person1 _person2} {
+    
+    set _sid1 [[$_person1 cget -site] getSiteId]
+    set _sid2 [[$_person2 cget -site] getSiteId]
+
+    string compare $_sid1 $_sid2
+}
+
+#-----------------------------------------
+
+body PersonTCC::moveUp {} {
+
+    $parent movePerson $this -1
+}
+
+#-----------------------------------------
+
+body PersonTCC::moveDown {} {
+
+    $parent movePerson $this 1
+}
+
+#-----------------------------------------

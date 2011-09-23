@@ -1,0 +1,30 @@
+#
+# ICF & SDK top directories are common for all OS
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.baselib       -- root of subsystem libraries
+#	*.library       -- root of subsystem libraries (-L)
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+VUTILS.topdir       :=$(PROJECT_ROOT_DIR)/lib/vUtils
+VUTILS.include      :=$(VUTILS.topdir)/include
+VUTILS.include.files:=\
+        $(wildcard $(VUTILS.include)/vUtils/*.hh)    \
+        $(wildcard $(VUTILS.include)/vUtils/*.h)
+
+VUTILS.baselib.ugly:=$(OBJS_ROOT_DIR)/lib/vUtils/libNonThreaded
+VUTILS.baselib:=$(shell echo $(VUTILS.baselib.ugly)|sed 's@^\(./\)*@@;s@/./@/@')
+
+VUTILS.library      :=-L$(VUTILS.baselib)
+VUTILS.library.libs :=-lnonthreadedicfvutils
+
+MKDEPVERSION+= -include $(VUTILS.topdir)/version
+
+CONFIG.generic.define+=
+CONFIG.generic.include+=-I$(VUTILS.include)
+
+LINK.VUTILS:=$(VUTILS.library) $(VUTILS.library.libs)

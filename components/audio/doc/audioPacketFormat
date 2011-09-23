@@ -1,0 +1,162 @@
+/////////////////////////////////////////////////////////////////////////
+//
+// ISABEL: A group collaboration tool for the Internet
+// Copyright (C) 2009 Agora System S.A.
+// 
+// This file is part of Isabel.
+// 
+// Isabel is free software: you can redistribute it and/or modify
+// it under the terms of the Affero GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Isabel is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// Affero GNU General Public License for more details.
+// 
+// You should have received a copy of the Affero GNU General Public License
+// along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+//
+/////////////////////////////////////////////////////////////////////////
+
+Isabel audio packet format description 
+
+v2.1 (last updated Fri May 26 16:19:39 CEST 2000)
+
+This document describes the format of the Isabel audio packet. It should be considered both as specification and documentation.
+
+----------------------------------------------------------------------
+Table of contents
+
+1.- Packet structure
+2.- Fields description
+	2.1.- The dataChannel field
+	2.2.- The dataTime field
+	2.3.- The dataFormat field
+	2.4.- The dataRate field
+	2.5.- The dataSamples field
+	2.6.- The dataTracks field
+	2.7.- The dataCodec field
+	2.8.- The dataCodecReset field
+	2.9.- The dataCRC field
+
+
+----------------------------------------------------------------------
+Updates:
+
+v2.1: Fixed the correct header size in bytes
+v2.0: Added CRC field
+v1.0: document creation
+----------------------------------------------------------------------
+
+1.- Packet structure
+
+The Isabel audio packet has the following structure:
+
+	0				    31
+	+--------|--------|--------|--------+
+	|		dataChannel	                |
+	+--------|--------|--------|--------+
+	|		dataTime	                |
+	+--------|--------|--------|--------+
+	|   dataFormat    |	dataRate        |
+	+--------|--------|--------|--------+
+	|   dataSamples   |	dataTracks      |
+	+--------|--------|--------|--------+
+	|   dataCodec	  |  dataCodecReset |
+	+--------|--------|--------|--------+
+	|		dataCRC		                |
+	+--------|--------|--------|--------+
+	|	            data	            |
+	.				                    .
+	.				                    .
+	|		    		                |
+	+--------|--------|--------|--------+
+
+As shown in the figure, there is header and payload. The header is composed of the first 24 bytes. The rest is the payload formed by a set of samples.
+
+
+2.- Fields description
+
+2.1.- The dataChannel field
+
+This field is an integer number which identifies the channel this packet belongs to. Each audio channel must have a different dataChannel during the conference.
+
+2.2.- The dataTime field
+
+This field is an integer number which can be used to order received packets in time. Its value is calculated at the audio source using the following expression:
+
+					  REFERENCE_CLOCK_RATE
+	DT = <number of samples sent> * ---------------------------
+					  SOURCE SAMPLE RATE
+
+REFERENCE_CLOCK_RATE is fixed at 48000Hz. SOURCE SAMPLE RATE depends on the quality selected by user. The table below describes current possible values:
+
+		Quality		SOURCE SAMPLE RATE
+		-------		------------------
+		Low		 8000 Hz
+		Standard	16000 Hz
+		High		44100 Hz
+
+The receiver should use the following formula to calculate the local dataTime:
+
+  						      RECEIVER SAMPLE RATE
+     <number of first sample received > = dataTime * ----------------------
+						      REFERENCE_CLOCK_RATE
+
+The obtained value is the local sequence number of the first sample received. There is no need to know the source sample rate!. But if the value of the dataRate field received is different from the RECEIVER SAMPLE RATE, resampling is needed. 
+
+2.3.- The dataFormat field
+
+This field is an integer describing the format of the included samples. Current possible values are:
+
+	AUDIO_FORMAT_8LINEAR_signed             0
+	AUDIO_FORMAT_8LINEAR_unsigned           1
+	AUDIO_FORMAT_8ULAW_signed               2
+	AUDIO_FORMAT_8ULAW_unsigned             3
+	AUDIO_FORMAT_16LINEAR_MSB_signed        4
+	AUDIO_FORMAT_16LINEAR_MSB_unsigned      5
+	AUDIO_FORMAT_16LINEAR_LSB_signed        6
+	AUDIO_FORMAT_16LINEAR_LSB_unsigned      7
+
+2.4.- The dataRate field
+
+This field is an integer representing the sample rate of the included samples. It is given in samples per second. 
+
+2.5.- The dataSamples field
+
+This field is an integer representing the number of samples included in the payload. 
+
+2.6.- The dataTracks field
+
+This field is an integer representing the number of tracks per sample. Supported values are 1 for monofonic samples or 2 for stereo samples. 
+
+2.7.- The dataCodec field
+
+This field is an integer describing the codec used to codify included samples. Current possible values are:
+
+        CODEC_NONE                              0
+        CODEC_DUMMY                             1
+        CODEC_TESTING                           2
+        CODEC_GSM                               3
+        CODEC_GSM_EXACT                         4
+        CODEC_G721                              5
+        CODEC_G722                              6
+        CODEC_IMA                               7
+        CODEC_G723_40                           8
+        CODEC_G723_24                           9
+        CODEC_G723_16                          10
+        CODEC_HALFQ                            11
+
+
+2.8.- The dataCodecReset field
+
+This field is an integer indicating whether codec reset is needed at receiver (value 1) or not (value 0).
+
+2.9.- The dataCRC field
+
+This field is a long integer containing the CRC of the packet header. CRC is computed as the XOR function of each long integer of the header. Packet header is already in network format when CRC is computed. CRC field is not included in CRC computation.
+
+
+<end of document>

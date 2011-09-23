@@ -1,0 +1,30 @@
+#
+# ICF & SDK top directories are common for all OS
+#
+#	*.topdir        -- root of subsystem
+#	*.include       -- root of subsystem include
+#	*.include.files -- files to watch for autodependency check
+#	*.baselib       -- root of subsystem libraries
+#	*.library       -- root of subsystem libraries (-L)
+#	*.library.libs  -- libs to link from subsystem
+#
+#	LINK.*          -- cmd line for linking subsystem
+#
+RTP.topdir       :=$(PROJECT_ROOT_DIR)/lib/RTP
+RTP.include      :=$(RTP.topdir)/include
+RTP.include.files:=\
+        $(wildcard $(RTP.include)/rtp/*.hh)    \
+        $(wildcard $(RTP.include)/rtp/*.h)
+
+RTP.baselib.ugly:=$(OBJS_ROOT_DIR)/lib/RTP/libThreaded
+RTP.baselib:=$(shell echo $(RTP.baselib.ugly)|sed 's@^\(./\)*@@;s@/./@/@')
+
+RTP.library      :=-L$(RTP.baselib)
+RTP.library.libs :=-lthreadedicfrtp
+
+MKDEPVERSION+= -include $(RTP.topdir)/version
+
+CONFIG.generic.define+=
+CONFIG.generic.include+=-I$(RTP.include)
+
+LINK.RTP:=$(RTP.library) $(RTP.library.libs)

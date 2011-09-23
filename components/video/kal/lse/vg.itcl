@@ -1,0 +1,265 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# vg.itcl
+#
+# Lse geometry manager.
+#
+#########################################################################
+
+#---------------------------------------------------------------
+#
+# 32 module width video sizes:
+#      32x24   64x48   96x72  128x96 160x120 192x144 224x168
+#    256x192 288x216 320x240 352x264 384x288 416x312 448x336
+#    480x360 512x384 544x408 576x432 608x456 640x480 672x504
+#    704x528 736x552 768x576
+#
+# CIF sizes:
+#    SQCIF =  128 x   96
+#     QCIF =  176 x  144
+#      CIF =  352 x  288
+#     4CIF =  704 x  576
+#    16CIF = 1408 x 1152
+#
+#---------------------------------------------------------------
+
+class LseLayoutMgrC {
+    
+    # Current MAIN layout name.
+    private variable cmainlayoutname  ""
+    
+    # Current layout.
+    private variable cmainlayout    ""
+    
+    # chObj is the Lse Channel.
+    private variable chObj
+    
+    # Reference to Lse Daemon Object
+    private variable vdObj ""
+    
+    constructor {vd} {}
+    
+    destructor {}
+    
+    public  method ApplyLayout {_layoutname}
+    private method ReapplyLayout  {}
+    private method ApplyLayoutCh {}
+    
+    # Translate a layout name to the real values of bandwidth, codec, etc.
+    # which is the resource Lse.name specified in the activity.
+    private method LayoutName2Value {layoutname}
+    
+    public method AddChannel {chid chobj}
+    public method DelChannel {chid}
+    
+    public method Nop {} {}
+    
+    public method Info {}
+    
+    # Return one value option from a option-value list.
+    # $list is the option-value list.
+    # $optname is option name to search.
+    # $default is the value to return if $optname option is not found.
+    private method GetOptionListValue {list optname {default ""}}
+}
+
+#--------------------------------------------------------------------------
+
+body LseLayoutMgrC::constructor {vd} {
+    
+    set vdObj $vd
+    
+    LseLayoutInfoC::Cleanup
+}
+
+#--------------------------------------------------------------------------
+
+body LseLayoutMgrC::destructor {} {
+    
+}
+
+#--------------------------------------------------------------------------
+
+body LseLayoutMgrC::ApplyLayout {_layoutname} {
+
+    set cmainlayoutname  $_layoutname
+    set cmainlayout [LayoutName2Value $cmainlayoutname]
+    
+    ReapplyLayout
+}
+
+
+#--------------------------------------------------------------------------
+
+body LseLayoutMgrC::LayoutName2Value {layoutname} {
+    
+    session Activity GetResource Video lse.layout.$layoutname ""
+}
+
+#--------------------------------------------------------------------------
+
+body LseLayoutMgrC::ReapplyLayout {} {
+    
+    if {[catch {ApplyLayoutCh} errormsg]} {
+	ErrorTraceMsg "- Lse Error: Applying layout I get:\n$errormsg"
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body LseLayoutMgrC::ApplyLayoutCh {} {
+
+    set chid [VideoLSEComponentC::LseChId]
+    
+    if {$cmainlayout == ""} {
+	$chObj Unmap
+	LseLayoutInfoC::Unmap $chid
+	return
+    }
+    
+    if {[llength $cmainlayout] != 3} {
+	set emsg1 "Lse Error: Invalid layout value \"$cmainlayout\""
+	set emsg2 "   Current  main layout name = \"$cmainlayoutname\""
+	WarningTraceMsg "- $emsg1 \n $emsg2"
+	$chObj Unmap
+	LseLayoutInfoC::Unmap $chid
+	return 
+    }    
+    
+    set ctname    [lindex $cmainlayout 0]
+    set geom      [lindex $cmainlayout 1]
+    
+    set bw        [lindex $cmainlayout 2]
+    
+    if {[catch {expr $bw*1} res]} {
+	set emsg1 "Lse Error: Invalid bw in this layout \"$cmainlayout\""
+	set emsg2 "   Current  main layout name = \"$cmainlayoutname\""
+	WarningTraceMsg "- $emsg1 \n $emsg2"
+	$chObj Unmap
+	LseLayoutInfoC::Unmap $chid
+	return 
+    }
+    
+    if {[catch {VideoConfigTablesC::GetConfig $ctname $geom $bw} cg]} {
+	WarningTraceMsg "- Error querying lse configuration for table \"$ctname\" for geom=$geom and bw=$bw:\n$cg"
+	$chObj Unmap
+	LseLayoutInfoC::Unmap $chid
+	return 
+	
+    }
+    
+    set codec     [lindex $cg 0]
+    set codecname [lindex $codec 0]
+    set qlty [GetOptionListValue $codec -qlty 50]
+    
+    set grabsize  [lindex $cg 1]
+    switch -- $grabsize {
+	SQCIF { set grabsize  128x96 }
+	QCIF  { set grabsize 176x144 }
+	CIF   { set grabsize 352x288 }
+	4CIF  { set grabsize 704x576 }
+	16CIF { set grabsize 1408x1152 }
+    }
+    if {$grabsize == 0} {
+	#set re {([0-9]+)x([0-9]+)([+\-]+[0-9]+[+\-]+[0-9]+)?}
+	set re {([0-9]+x[0-9]+)}
+	regexp $re $geom todo grabsize
+    }
+    
+    $chObj SetGeometry $geom
+    
+    if {[$chObj IsLocal]} {
+	
+	$vdObj SetLocalConfiguration $grabsize $codec $bw 
+	
+    } else {
+	
+	set _fec_k [session Activity GetResource Video FEC.K 0]
+	
+	if {$_fec_k != "" && $_fec_k != "0"} {
+	    if { ! [catch "expr 1.0 * $bw * $_fec_k / ($_fec_k + 1)" _res]} {
+		set bw $_res
+	    }
+	}
+	
+	LseLayoutInfoC::GrabSize  $chid $grabsize
+	LseLayoutInfoC::BW        $chid $bw
+	LseLayoutInfoC::Codec     $chid $codecname
+	LseLayoutInfoC::Qlty      $chid $qlty
+    }
+    
+    LseLayoutInfoC::Map $chid
+    $chObj Map
+}
+
+#--------------------------------------------------------------------------
+
+body LseLayoutMgrC::GetOptionListValue {list optname {default ""}} {
+    
+    set pos [lsearch -exact $list $optname]
+    if {$pos == -1} {
+	return $default	
+    } else {
+	return [lindex $list [expr $pos+1]]
+    }
+}
+
+#--------------------------------------------------------------------------
+
+body LseLayoutMgrC::AddChannel {chid chobj} {
+    
+    set chObj $chobj
+    
+    LseLayoutInfoC::AddChannel $chid
+    
+    ReapplyLayout
+}
+
+#--------------------------------------------------------------------------
+
+body LseLayoutMgrC::DelChannel {chid} {
+    
+    set chObj ""
+    
+    LseLayoutInfoC::DelChannel $chid
+}
+
+#--------------------------------------------------------------------------
+
+body LseLayoutMgrC::Info {} {
+    
+    set res " o Lse layout manager:\n"
+    
+    append res "\n"
+    
+    append res "    Layout.mainname  = $cmainlayoutname\n"
+    append res "    Layout.main  = $cmainlayout\n"
+    append res "    Channel layout = $cmainlayout\n"
+    
+    return $res
+}
+
+#--------------------------------------------------------------------------
+

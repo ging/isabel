@@ -1,0 +1,1768 @@
+\section{Codecs}
+
+El desarrollo de codecs para el demonio sigue las líneas descritas en
+los capítulos \ref{dlm:chap} y \ref{factory:chap}. Esto significa
+que tendremos una o más factorías de codecs registrada bajo uno o más
+descriptores. El sistema cuando necesite un determinado codec invocará
+a la factoría adecuada y ésta será responsable de crearlo.
+
+En este capítulo se describen los detalles de las clases abstractas:
+\begin{itemize}
+  \item {\tt codecDescriptor\_t}
+	Clase que define el tipo de conversión que va a realizar
+	el codec. Las principales características que recoge son las
+	siguientes: formato de entrada, formato de salida, nombre del
+	codec.
+  \item {\tt codecFactory\_t}
+	Factoría para generar codecs de un tipo determinado. Dado
+	un descriptor de codec, es capaz de generar el codec capaz
+	de realizar la conversión definida en dicho descritor.
+  \item {\tt codec\_t}
+	Es la clase que implementa la conversión de formatos.
+\end{itemize}
+
+
+\subsection{La clase {\tt codecDescriptor\_t}}
+
+La clase {\tt codecDescriptor\_t} es una clase abstracta de la cuál
+derivan todos los descriptores de codec. El código final debe
+proveer los siguientes métodos:
+\begin{itemize}
+   \item{\tt virtual const char      *getName               (void) const = 0;}
+   \item{\tt virtual const char      *getDescription        (void) const = 0;}
+
+   \item{\tt virtual formatId\_t     getInputFormat        (void) const = 0;}
+   \item{\tt virtual formatId\_t     getOutputFormat       (void) const = 0;}
+
+   \item{\tt virtual cost\_t         getCost               (void) const = 0;}
+\end{itemize}
+
+El primer método, {\tt getName()}, debe retornar una cadena corta
+pero suficientemente descriptiva del codec. Debe ser una cadena
+sin espacios insertados, ya que el demonio tiene una consola de comandos
+y este nombre es usado por algunos comandos para realizar operaciones
+de control y configuración (ajustes finos). Ejemplos de valores
+validos podrían ser: {\em cellb\_encoder},{\em  mjpeg\_decoder},
+{\em rgb2png} y otros similares.
+
+El segundo método debe retornar un pequeño texto descriptivo que sea
+adecuado para presentar en pantalla al usuario. Por ejemplo:
+\begin{quote}
+  {\em Motion JPEG decoder (built ontop of IJG library).}
+\end{quote}
+\begin{quote}
+  {\em mpetit's own version of CellB (non standard conforming).}
+\end{quote}
+y otras por el estilo.
+
+Los métodos {\tt getInputFormat()} y {\tt getOutputFormat()}
+identifican los formatos de entrada y de salida del codec.
+Estos formatos son los valores de retorno de la funcion
+{\tt getFormatIdByName()} descrita en el capítulo \ref{format:chap}.
+
+En el caso de que los codec generados por una factoría acepten
+o generen más de un formato la factoría debe ser registrada bajo
+varios descriptores distintos.
+
+Por último el método {\tt getCost()} retorna un valor de coste,
+entendiendo como tal la cantidad de CPU invertida en la transformación:
+muchísima, mucha, poca, apenas...
+
+Existen varios valores predefinidos para esta función que son:
+\begin{itemize}
+  \item COST\_LOW
+  \item COST\_MEDIUM
+  \item COST\_HIGH
+  \item COST\_ONASYS
+\end{itemize}
+
+Este valor de coste es un intento de clasificar los codecs que realizan
+la misma conversión, para que cuando alguien solicite cierta conversión
+se escoja aquel de menor coste. Aunque actualmente no se usa y se
+escoge el primer codec que se haya regostrado para la conversión
+solicitada.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\subsubsection{Ejemplo de código: codecDescriptor.hh}
+\begin{verbatim}
+
+#include <icf2/general.h>
+#include <icf2/smartReference.hh>
+#include <icf2/ql.hh>
+
+
+#include <Isabel_SDK/sdkTypes.hh>
+
+
+class codecDescriptor_t: public virtual collectible_t
+{
+private:
+public:
+   virtual const char      *getName               (void) const = 0;
+   virtual const char      *getDescription        (void) const = 0;
+
+   virtual formatId_t       getInputFormat        (void) const = 0;
+   virtual formatId_t       getOutputFormat       (void) const = 0;
+
+   virtual cost_t           getCost               (void) const = 0;
+
+   friend class smartReference_t<codecDescriptor_t>;
+};
+
+typedef smartReference_t<codecDescriptor_t> codecDescriptor_ref;
+
+\end{verbatim}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{La clase {\tt codecFactory\_t}}
+
+La clase {\tt codecFactory\_t} se utiliza para crear un objeto
+codec que sea capaz de realizar la conversión de formatos
+definida en un {\tt codecDescriptor\_t} a través de su
+método {\tt createCodec}. Dado que una misma
+factoría puede crear diferentes codecs, es necesario que 
+la factoría sepa que conversión necesitamos para
+proporcionar el codec necesario, es decir, el método
+{\tt createCodec} toma como argumento un {\tt codecDescriptor\_ref}.
+
+Por tanto para generar una factoría que sea capaz de crear
+el codec que queramos, es necesario derivar de {\tt codecFactory\_t}.
+Y además hay que registrar esta factoría para que la consulta por un
+codec determinado proporcione la factoría capaz de generarlo. Las
+funciones para la gestión de factorías de codecs están definidas
+en el fichero {\tt Isabel\_SDK/systemRegistry.hh}:
+
+\begin{verbatim}
+
+// Registro de factoria de codecs
+extern bool
+    registerCodecFactory(codecDescriptor_ref, codecFactory_ref);
+
+// Obtine lista de factorias de codecs registrados
+extern codecFactoryInfoList_ref getCodecFactoryInfoList(void);
+
+
+// Obtiene lista de factorias de codecs capaces de realizar la 
+// conversion de formatos: de inFmt a outFmt
+extern codecFactoryInfoList_ref matchCodec(formatId_t inFmt,
+                                             formatId_t outFmt
+                                            );
+
+// Obtiene lista de factorias de codecs que toman como entrada 
+// el formato dado por inFmt.
+extern codecFactoryInfoList_ref matchCodecInput(formatId_t inFmt);
+
+// Obtiene lista de factorias de codecs que proporcionan como salida 
+// el formato dado por ouFmt.
+extern codecFactoryInfoList_ref matchCodecOutput(formatId_t outFmt);
+
+\end{verbatim}
+
+
+
+\subsubsection{Ejemplo de código: {\tt codecFactory.hh}}
+\begin{verbatim}
+
+#include <icf2/general.h>
+#include <icf2/smartReference.hh>
+
+#include <Isabel_SDK/codecDefinition.hh>
+
+class codecFactory_t: public virtual collectible_t
+{
+private:
+public:
+    virtual codec_ref createCodec(codecDescriptor_ref)= 0;
+
+    friend class smartReference_t<codecFactory_t>;
+};
+typedef smartReference_t<codecFactory_t> codecFactory_ref;
+
+\end{verbatim}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{La clase {\tt codec\_t}}
+
+La clase {\tt codec\_t} es la clase que realmente realiza
+la conversión de formatos de imágenes. 
+Por tanto, para implementar nuestro propio codec es necesario
+derivar de esta clase y redefinir el método {\tt handleImage} 
+que es el que implementa la conversión.
+
+\subsubsection{Ejemplo de código: {\tt codecDefinition.hh}}
+\begin{verbatim}
+
+#include <icf2/general.h>
+#include <icf2/smartReference.hh>
+
+#include <Isabel_SDK/image.hh>
+#include <Isabel_SDK/codecDescriptor.hh>
+
+//
+// handleImage() does the actual work is intended to be redefined by user code
+//
+// putImage() is toolkit hook (interface code) and is intended to replaced
+// by the toolkit
+//
+class codec_t: public virtual collectible_t,
+               public virtual propertyHolder_t
+{
+private:
+    codecDescriptor_ref __descriptor;
+
+public:
+    virtual image_ref putImage(image_ref)= 0;
+
+    virtual image_ref handleImage(image_ref)= 0;
+
+    virtual codecDescriptor_ref getDescriptor(void) const { return __descriptor; };
+
+    friend class smartReference_t<codec_t>;
+};
+
+typedef smartReference_t<codec_t> codec_ref;
+
+
+
+//
+// the following macros are sugar for developers, for instance:
+//
+//   class myCodec: public virtual threadedTask_t, public codec_t
+//   {
+//       ...
+//       THREADED_CODEC_IMPLEMENTATION
+//       ...
+//   };
+//
+#define NONTHREADED_CODEC_IMPLEMENTATION    \
+virtual image_ref putImage(image_ref r) { return handleImage(r); }
+#define THREADED_CODEC_IMPLEMENTATION       \
+virtual image_ref putImage(image_ref r) { tlPost(...); }
+
+\end{verbatim}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Ejemplo de código: CellB}
+
+Este ejemplo de código presenta el {\em stub} de cellb. El módulo de
+cellb está constituido por tres ficheros: {\tt cellbStub.cc, cellbImpl.hh,
+cellbImpl.cc}. El primero, como su nombre indica, es el stub que liga
+la implementación al demonio, y es el que define la factoría y los
+descriptores.
+
+Los otros dos constituyen la implementación en sí y se incluyen
+como complemento al primero aunque no son necesarios para ilustrar este
+capítulo.
+
+El ejemplo sirve también para ilustrar cómo incorporar código
+{\em foraneo} a un módulo del demonio. Tal cual está el código
+{\tt cellbImpl.cc} realiza todo el trabajo: define su propio tipo
+de imagen ({\tt cellbEncodedImage\_t}), sus propios {\em handles} de
+sesión ({\tt cellbEncodeSession\_t, cellbDecodeSession\_t}) y las rutinas
+de conversión ({\tt cellbEncode(), cellbDecode()}). {\tt CellbStub.cc}
+realiza un recubrimiento de todo esto y lo presenta con el aspecto
+que desea el demonio. Así:
+
+
+\begin{itemize}
+  \item CODIGO DEL CODEC \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \            
+  $<$---$>$ RECUBRIMIENTO 
+  \item {\tt cellbEncodedImage\_t} \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \
+  \ \ \ \ \ \ \ \ \ \ \ \ \
+        $<$---$>$ {\tt cellbImageImplemetation\_t}
+  \item {\tt cellbEncode()+cellbEncodeSession\_t}
+        $<$---$>$ {\tt cellbEncoder\_t}
+  \item {\tt cellbDecode()+cellbDecodeSession\_t}
+        $<$---$>$ {\tt cellbEncoder\_t}
+\end{itemize}
+
+El código presentado está tal cual en el árbol de fuentes de
+{\em piggyBox}.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\subsubsection{Ejemplo: cellbStub.cc}
+\begin{verbatim}
+
+// $Log$
+// Revision 1.3  2004/08/23 16:01:47  gabriel
+// *** empty log message ***
+//
+// Revision 1.2  2004/02/18 15:11:37  gabriel
+// *** empty log message ***
+//
+// Revision 1.1  2001/06/12 16:27:20  eva
+// *** empty log message ***
+//
+// Revision 1.1  2001/06/12 16:16:48  eva
+// *** empty log message ***
+//
+
+#include <icf2/general.h>
+#include <Isabel_SDK/dlm.hh>
+#include <Isabel_SDK/codecDescriptor.hh>
+#include <Isabel_SDK/codecDefinition.hh>
+#include <Isabel_SDK/codecFactory.hh>
+#include <Isabel_SDK/systemRegistry.hh>
+
+#include <Isabel_SDK/builtins/rawImages.hh>
+
+#include <stdio.h>
+
+#include "cellbImpl.hh"
+
+
+
+#define MY_FORMAT_FALLBACK_ID	0x99998888
+#define MY_FORMAT_FALLBACK_ID2	0x99998887
+
+static int cellbModuleInitFunction(int, char **);
+static int cellbModuleShutdownFunction(void);
+
+DLM_CONTROL_STRUCT
+(
+    1, 0,
+    "CellB",
+    "Cell B (Quick and dirty implementation by mpetit@dit.upm.es)",
+    "(c) Copyright 1998,1999 Manuel J. Petit de Gabriel",
+    cellbModuleInitFunction,
+    cellbModuleShutdownFunction
+);
+
+
+
+//
+// our image format
+//
+class cellbImageImplementation_t: public imageImplementation_t
+{
+private:
+   cellbEncodedImage_t *__hiddenFrame;
+
+   formatId_t           __fmt;
+
+
+public:
+    cellbImageImplementation_t(cellbEncodedImage_t *img) {
+        __hiddenFrame= img;
+        __fmt= getFormatIdByName("CELLB::MPETIT");
+    };
+
+    virtual ~cellbImageImplementation_t(void) {
+        delete __hiddenFrame;
+    }
+
+    unsigned   getWidth (void) const { return __hiddenFrame->w; }
+    unsigned   getHeight(void) const { return __hiddenFrame->h; }
+    formatId_t getFormat(void) const { return __fmt; }
+
+    cellbEncodedImage_t *getCellb(void) const { return __hiddenFrame; }
+};
+
+
+//
+// our source descriptor -- yeah!
+//
+#define CELLB_NAME "cellb"
+#define CELLB_DESC "mpetit's own version of cellb"
+
+enum cellbFlow_e
+{
+    cellb_ENCODE_RGB,
+    cellb_ENCODE_BGR,
+    cellb_DECODE
+};
+
+class cellbCodecDescriptor_t: public codecDescriptor_t
+{
+private:
+   formatId_t       __inFmt;
+   formatId_t       __outFmt;
+
+   cellbFlow_e  __flow;
+
+
+public:
+   cellbCodecDescriptor_t(formatId_t inFmt, formatId_t outFmt, cellbFlow_e f)
+     : __inFmt(inFmt), __outFmt(outFmt), __flow(f) { };
+
+
+public:
+   //
+   // imposed by runtime
+   //
+   virtual const char *getName         (void) const { return CELLB_NAME; }//;
+   virtual const char *getDescription  (void) const { return CELLB_DESC; }//;
+
+   virtual formatId_t  getInputFormat  (void) const { return __inFmt;     }//;
+   virtual formatId_t  getOutputFormat (void) const { return __outFmt;    }//;
+
+   virtual cost_t      getCost         (void) const { return COST_MEDIUM; }//;
+
+
+   //
+   // implementation extras
+   //
+   virtual cellbFlow_e getFlow(void) const { return __flow; };
+};
+
+
+
+//
+// codec raw24 --> cellb
+//
+class cellbEncoder_t: public codec_t
+{
+    NONTHREADED_CODEC_IMPLEMENTATION
+
+private:
+    codecDescriptor_ref __codecDescriptor;
+
+    //
+    //sesion
+    //
+    cellbEncodeSession_t *__session;
+
+
+public:
+    cellbEncoder_t(codecDescriptor_ref desc, unsigned cellbPar)
+    : __codecDescriptor(desc),
+      __session(cellbCreateEncodeSession(cellbPar))
+    {
+        //
+        // ritos frestonianos (generar sesion y otras hierbas)
+        //
+    }//;
+    
+    virtual ~cellbEncoder_t(void) {
+        //
+        // eliminar sesion, etc
+        //
+        cellbDestroyEncodeSession(__session);
+    }//;
+
+    image_ref
+    handleImage(image_ref img) {
+        imageImplementation_ref           impl= img->getImplementation();
+        imageImplementation_t           *pimpl= impl;
+        rawRGB24ImageImplementation_t   *rimpl=
+            static_cast<rawRGB24ImageImplementation_t*>(pimpl);
+
+        u8 *buff= (u8 *)rimpl->getBuf();
+
+        unsigned  width= img->getWidth();
+        unsigned height= img->getHeight();
+
+
+        //
+        // ritos frestonianos
+        //
+        cellbEncodedImage_t *fr= cellbEncode(__session, buff, width, height);
+
+
+        //
+        // trailer
+        //
+        cellbImageImplementation_t *cellb= new cellbImageImplementation_t(fr);
+        img->replaceImplementation(cellb);
+
+
+        return img;
+    }//;
+
+    codecDescriptor_ref getDescriptor(void) const { return __codecDescriptor; }
+};
+
+
+
+//
+// codec cellb --> raw24
+//
+class cellbDecoder_t: public codec_t
+{
+    NONTHREADED_CODEC_IMPLEMENTATION
+
+private:
+    codecDescriptor_ref __codecDescriptor;
+
+    //
+    //sesion
+    //
+    cellbDecodeSession_t *__session;
+
+public:
+    cellbDecoder_t(codecDescriptor_ref desc)
+    : __codecDescriptor(desc),
+      __session(cellbCreateDecodeSession()) {
+        //
+        // ritos frestonianos (generar sesion y otras hierbas)
+        //
+    }//;
+    
+    virtual ~cellbDecoder_t(void) {
+        //
+        // eliminar sesion, etc
+        //
+        cellbDestroyDecodeSession(__session);
+    }//;
+
+    image_ref
+    handleImage(image_ref img) {
+        imageImplementation_ref       impl= img->getImplementation();
+        imageImplementation_t       *pimpl= impl;
+        cellbImageImplementation_t  *cimpl=
+            static_cast<cellbImageImplementation_t*>(pimpl);
+
+        //
+        // ritos frestonianos
+        //
+        u8 *buffer= cellbDecode(__session, cimpl->getCellb());
+
+
+        //
+        // trailer
+        //
+        rawRGB24ImageImplementation_t *rawImg=
+              new rawRGB24ImageImplementation_t(buffer,
+                                                cimpl->getWidth(),
+                                                cimpl->getHeight(),
+                                                false
+                                               );
+        
+        img->replaceImplementation(rawImg);
+        
+
+        return img;
+    }//;
+
+    codecDescriptor_ref getDescriptor(void) const { return __codecDescriptor; }
+};
+
+
+
+
+//
+// our source factory -- yeah! yeah!
+//
+class cellbCodecFactory_t: public codecFactory_t
+{
+private:
+public:
+    codec_ref createCodec(codecDescriptor_ref cdr) {
+        codecDescriptor_t *cdp= cdr;
+
+        cellbCodecDescriptor_t *c=
+            static_cast<cellbCodecDescriptor_t*>(cdp);
+
+
+        switch(c->getFlow()) {
+            case cellb_ENCODE_RGB:
+                return new cellbEncoder_t(cdr, cellb_ENCODE_INPUT_RGB);
+            case cellb_ENCODE_BGR:
+                return new cellbEncoder_t(cdr, cellb_ENCODE_INPUT_BGR);
+            case cellb_DECODE:
+                return new cellbDecoder_t(cdr);
+            default:
+                return NULL;
+        }
+    }
+};
+
+
+
+//
+// housekeeping functions
+//
+#define CELLB_INPUT_FORMAT	 "RAW::RGB24"
+#define CELLB_INPUT_FORMAT_2	 "RAW::BGR24"
+#define CELLB_OUTPUT_FORMAT	 "CELLB::MPETIT"
+
+#define CELLB_FALLBACK_FORMAT_ID 0x77771111
+
+static int
+cellbModuleInitFunction(int, char **)
+{
+    NOTIFY("%s: starting up\n", DLM_NAME);
+
+    formatId_t       fmtIn = getFormatIdByName(CELLB_INPUT_FORMAT);
+    formatId_t       fmtIn2= getFormatIdByName(CELLB_INPUT_FORMAT_2);
+    formatId_t       fmtOut= getFormatIdByName(CELLB_OUTPUT_FORMAT);
+
+    if(fmtIn>= 0) {
+        NOTIFY("+++Using format %s==%08x\n", CELLB_INPUT_FORMAT, fmtIn);
+    } else {
+        NOTIFY("---Format %s not found\n", CELLB_INPUT_FORMAT);
+        NOTIFY("---Bailing out\n");
+
+        return -1;
+    }
+
+    if(fmtOut>= 0) {
+        NOTIFY(
+            "+++Using format %s==%08x\n",
+            CELLB_OUTPUT_FORMAT,
+            fmtOut
+        );
+    } else {
+        NOTIFY(
+            "---Format %s not found\n",
+            CELLB_OUTPUT_FORMAT
+        );
+        NOTIFY(
+            "+++Registering format %s=%08x\n",
+            CELLB_OUTPUT_FORMAT,
+            CELLB_FALLBACK_FORMAT_ID
+        );
+        registerFormat(CELLB_FALLBACK_FORMAT_ID, CELLB_OUTPUT_FORMAT);
+        fmtOut= getFormatIdByName(CELLB_OUTPUT_FORMAT);
+        if(fmtOut< 0) {
+            NOTIFY("---Registration failed\n");
+            NOTIFY("---Bailing out\n");
+
+            return -1;
+        }
+    }
+
+
+    codecDescriptor_ref  descENCODE=
+       new cellbCodecDescriptor_t(fmtIn , fmtOut, cellb_ENCODE_RGB);
+    codecDescriptor_ref  descENCODE2=
+       new cellbCodecDescriptor_t(fmtIn2, fmtOut, cellb_ENCODE_BGR);
+    codecDescriptor_ref  descDECODE=
+       new cellbCodecDescriptor_t(fmtOut, fmtIn , cellb_DECODE);
+    codecFactory_ref     fact= new cellbCodecFactory_t;
+
+
+    registerCodecFactory(descENCODE , fact);
+    registerCodecFactory(descENCODE2, fact);
+    registerCodecFactory(descDECODE , fact);
+
+    return 0;
+}
+
+static int
+cellbModuleShutdownFunction(void)
+{
+    NOTIFY("%s: shutting down\n", DLM_NAME);
+
+
+    return 0;
+}
+
+\end{verbatim}
+\newpage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\subsubsection{Ejemplo: cellbImpl.hh}
+\begin{verbatim}
+
+#ifndef __mpetit__cellb_implementation__hh__
+#define __mpetit__cellb_implementation__hh__
+
+#include <icf2/general.h>
+
+class cellbEncodeSession_t;
+class cellbDecodeSession_t;
+
+unsigned const cellb_ENCODE_INPUT_RGB=0;
+unsigned const cellb_ENCODE_INPUT_BGR=1;
+
+cellbEncodeSession_t *cellbCreateEncodeSession(unsigned);
+cellbDecodeSession_t *cellbCreateDecodeSession(void);
+
+void cellbDestroyEncodeSession(cellbEncodeSession_t *);
+void cellbDestroyDecodeSession(cellbDecodeSession_t *);
+
+
+struct cellbEncodedImage_t
+{
+    u8         *buffer;
+    unsigned    numBytes;
+    unsigned    w;
+    unsigned    h;
+
+    ~cellbEncodedImage_t(void) { free(buffer); buffer= NULL; }//;
+};
+
+extern cellbEncodedImage_t *
+cellbEncode(cellbEncodeSession_t *, const u8 *b, unsigned w, unsigned h);
+
+extern u8 *
+cellbDecode(cellbDecodeSession_t *, const cellbEncodedImage_t *);
+
+#endif
+
+\end{verbatim}
+\newpage
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\subsubsection{Ejemplo: cellbImpl.cc}
+\begin{verbatim}
+
+#include <icf2/general.h>
+
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <fcntl.h>
+
+#include "cellbImpl.hh"
+
+
+class cellbEncodeSession_t
+{
+public:
+    unsigned inputType;
+
+    unsigned w;
+    unsigned h;
+
+    u8 *lumaCache;
+    i8 *timeCache;
+
+    cellbEncodeSession_t(unsigned inType) {
+        lumaCache= new u8[65536];
+        timeCache= new i8[65536];
+
+        inputType= inType;
+        w= h= 0;
+    }//;
+
+    ~cellbEncodeSession_t(void) {
+        delete[] lumaCache;
+        delete[] timeCache;
+    }//;
+
+    void reset(unsigned w, unsigned h) {
+        this->w= w;
+        this->h= h;
+        memset(lumaCache, 0, 65536*sizeof(u8));
+        memset(timeCache, 0, 65536*sizeof(u8));
+    };
+};
+
+class cellbDecodeSession_t
+{
+public:
+    unsigned w;
+    unsigned h;
+
+    u8 *imgCache;
+
+    cellbDecodeSession_t(void) {
+        imgCache= new u8[3*1024*1024];
+
+        w= h= 0;
+    }//;
+
+    ~cellbDecodeSession_t(void) {
+        delete[] imgCache;
+    }//;
+
+    void reset(unsigned w, unsigned h) {
+        this->w= w;
+        this->h= h;
+        memset(imgCache, 0, 3*1024*1024*sizeof(u8));
+    };
+};
+
+
+
+cellbEncodeSession_t *
+cellbCreateEncodeSession(unsigned inType)
+{
+    return new cellbEncodeSession_t(inType);
+}
+
+cellbDecodeSession_t *
+cellbCreateDecodeSession(void)
+{
+    return new cellbDecodeSession_t;
+}
+
+void
+cellbDestroyEncodeSession(cellbEncodeSession_t *s)
+{
+    delete s;
+}
+
+void
+cellbDestroyDecodeSession(cellbDecodeSession_t *s)
+{
+    delete s;
+}
+
+
+
+//
+// some table required
+//
+static
+struct {
+    u8 y1;
+    u8 y2;
+} yyTable[256]=
+{
+    {  16,  20  }, {  16,  24  }, {  16,  32  }, {  16,  48  },
+    {  16,  64  }, {  16,  80  }, {  16, 112  }, {  16, 144  },
+    {  16, 176  }, {  16, 208  }, {  16, 240  }, {  20,  24  },
+    {  24,  28  }, {  24,  32  }, {  24,  40  }, {  28,  32  },
+    {  32,  36  }, {  32,  40  }, {  32,  48  }, {  32,  64  },
+    {  32,  80  }, {  32,  96  }, {  36,  40  }, {  40,  44  },
+    {  40,  48  }, {  40,  56  }, {  44,  48  }, {  48,  52  },
+    {  48,  56  }, {  48,  64  }, {  48,  80  }, {  48,  96  },
+    {  48, 112  }, {  48, 144  }, {  48, 176  }, {  48, 208  },
+    {  48, 240  }, {  52,  56  }, {  56,  60  }, {  56,  64  },
+    {  56,  72  }, {  60,  64  }, {  64,  68  }, {  64,  72  },
+    {  64,  80  }, {  64,  96  }, {  64, 112  }, {  64, 128  },
+    {  68, 128  }, {  72,  76  }, {  72,  80  }, {  72,  88  },
+    {  76,  80  }, {  80,  84  }, {  80,  88  }, {  80,  96  },
+    {  80, 112  }, {  80, 128  }, {  80, 144  }, {  80, 176  },
+    {  80, 208  }, {  80, 240  }, {  84,  88  }, {  88,  92  },
+    {  88,  96  }, {  88, 104  }, {  92,  96  }, {  96, 100  },
+    {  96, 104  }, {  96, 112  }, {  96, 128  }, {  96, 144  },
+    {  96, 160  }, { 100, 104  }, { 104, 108  }, { 104, 112  },
+    { 104, 120  }, { 108, 112  }, { 112, 116  }, { 112, 120  },
+    { 112, 128  }, { 112, 144  }, { 112, 160  }, { 112, 176  },
+    { 112, 208  }, { 112, 240  }, { 120, 128  }, { 120, 136  },
+    { 128, 136  }, { 128, 144  }, { 128, 160  }, { 128, 176  },
+    { 128, 192  }, { 136, 144  }, { 136, 152  }, { 144, 152  },
+    { 144, 160  }, { 144, 176  }, { 144, 192  }, { 144, 208  },
+    { 144, 240  }, { 152, 160  }, { 152, 168  }, { 160, 168  },
+    { 160, 176  }, { 160, 192  }, { 160, 208  }, { 160, 224  },
+    { 168, 176  }, { 168, 184  }, { 176, 184  }, { 176, 192  },
+    { 176, 208  }, { 176, 224  }, { 176, 240  }, { 184, 192  },
+    { 184, 200  }, { 192, 200  }, { 192, 208  }, { 192, 224  },
+    { 192, 240  }, { 200, 208  }, { 200, 216  }, { 208, 216  },
+    { 208, 224  }, { 208, 240  }, { 216, 232  }, { 224, 240  },
+
+    {  20 , 16  }, {  24 , 16  }, {  32 , 16  }, {  48 , 16  },
+    {  64 , 16  }, {  80 , 16  }, { 112 , 16  }, { 144 , 16  },
+    { 176 , 16  }, { 208 , 16  }, { 240 , 16  }, {  24 , 20  },
+    {  28 , 24  }, {  32 , 24  }, {  40 , 24  }, {  32 , 28  },
+    {  36 , 32  }, {  40 , 32  }, {  48 , 32  }, {  64 , 32  },
+    {  80 , 32  }, {  96 , 32  }, {  40 , 36  }, {  44 , 40  },
+    {  48 , 40  }, {  56 , 40  }, {  48 , 44  }, {  52 , 48  },
+    {  56 , 48  }, {  64 , 48  }, {  80 , 48  }, {  96 , 48  },
+    { 112 , 48  }, { 144 , 48  }, { 176 , 48  }, { 208 , 48  },
+    { 240 , 48  }, {  56 , 52  }, {  60 , 56  }, {  64 , 56  },
+    {  72 , 56  }, {  64 , 60  }, {  68 , 64  }, {  72 , 64  },
+    {  80 , 64  }, {  96 , 64  }, { 112 , 64  }, { 128 , 64  },
+    { 128 , 68  }, {  76 , 72  }, {  80 , 72  }, {  88 , 72  },
+    {  80 , 76  }, {  84 , 80  }, {  88 , 80  }, {  96 , 80  },
+    { 112 , 80  }, { 128 , 80  }, { 144 , 80  }, { 176 , 80  },
+    { 208 , 80  }, { 240 , 80  }, {  88 , 84  }, {  92 , 88  },
+    {  96 , 88  }, { 104 , 88  }, {  96 , 92  }, { 100 , 96  },
+    { 104 , 96  }, { 112 , 96  }, { 128 , 96  }, { 144 , 96  },
+    { 160 , 96  }, { 104 ,100  }, { 108 ,104  }, { 112 ,104  },
+    { 120 ,104  }, { 112 ,108  }, { 116 ,112  }, { 120 ,112  },
+    { 128 ,112  }, { 144 ,112  }, { 160 ,112  }, { 176 ,112  },
+    { 208 ,112  }, { 240 ,112  }, { 128 ,120  }, { 136 ,120  },
+    { 136 ,128  }, { 144 ,128  }, { 160 ,128  }, { 176 ,128  },
+    { 192 ,128  }, { 144 ,136  }, { 152 ,136  }, { 152 ,144  },
+    { 160 ,144  }, { 176 ,144  }, { 192 ,144  }, { 208 ,144  },
+    { 240 ,144  }, { 160 ,152  }, { 168 ,152  }, { 168 ,160  },
+    { 176 ,160  }, { 192 ,160  }, { 208 ,160  }, { 224 ,160  },
+    { 176 ,168  }, { 184 ,168  }, { 184 ,176  }, { 192 ,176  },
+    { 208 ,176  }, { 224 ,176  }, { 240 ,176  }, { 192 ,184  },
+    { 200 ,184  }, { 200 ,192  }, { 208 ,192  }, { 224 ,192  },
+    { 240 ,192  }, { 208 ,200  }, { 216 ,200  }, { 216 ,208  },
+    { 224 ,208  }, { 240 ,208  }, { 232 ,216  }, { 240 ,224  }
+};
+
+
+static
+struct {
+    u8 uu;
+    u8 vv;
+} uvTable[256]=
+{
+    {  16,  16  }, {  16,  48  }, {  16,  80  }, {  16, 112  },
+    {  16, 144  }, {  16, 176  }, {  16, 208  }, {  16, 240  },
+    {  48,  16  }, {  48,  48  }, {  48,  80  }, {  48, 112  },
+    {  48, 144  }, {  48, 176  }, {  48, 208  }, {  48, 240  },
+    {  64, 112  }, {  64, 128  }, {  64, 144  }, {  64, 160  },
+    {  64, 176  }, {  80,  16  }, {  80,  48  }, {  80,  80  },
+    {  80,  96  }, {  80, 112  }, {  80, 128  }, {  80, 144  },
+    {  80, 160  }, {  80, 176  }, {  80, 192  }, {  80, 208  },
+    {  80, 240  }, {  96,  80  }, {  96,  96  }, {  96, 112  },
+    {  96, 128  }, {  96, 144  }, {  96, 160  }, {  96, 176  },
+    {  96, 192  }, {  96, 208  }, { 104, 128  }, { 104, 136  },
+    { 104, 133  }, { 104, 152  }, { 104, 160  }, { 112,  16  },
+    { 112,  48  }, { 112,  64  }, { 112,  80  }, { 112,  96  },
+    { 112, 112  }, { 112, 120  }, { 112, 128  }, { 112, 136  },
+    { 112, 144  }, { 112, 152  }, { 112, 160  }, { 112, 168  },
+    { 112, 176  }, { 112, 192  }, { 112, 208  }, { 112, 224  },
+    { 112, 240  }, { 120, 112  }, { 120, 120  }, { 120, 128  },
+    { 120, 136  }, { 120, 144  }, { 120, 152  }, { 120, 160  },
+    { 120, 168  }, { 120, 176  }, { 128,  64  }, { 128,  80  },
+    { 128,  96  }, { 128, 104  }, { 128, 112  }, { 128, 120  },
+    { 128, 128  }, { 128, 136  }, { 128, 144  }, { 128, 152  },
+    { 128, 160  }, { 128, 168  }, { 128, 176  }, { 128, 184  },
+    { 128, 192  }, { 128, 208  }, { 128, 224  }, { 132, 136  },
+    { 132, 140  }, { 132, 148  }, { 132, 152  }, { 132, 104  },
+    { 136, 104  }, { 136, 112  }, { 136, 120  }, { 136, 128  },
+    { 136, 132  }, { 136, 136  }, { 136, 140  }, { 136, 144  },
+    { 136, 148  }, { 136, 152  }, { 136, 156  }, { 136, 160  },
+    { 136, 168  }, { 136, 176  }, { 136, 184  }, { 140, 132  },
+    { 140, 136  }, { 140, 140  }, { 140, 144  }, { 140, 148  },
+    { 140, 152  }, { 140, 156  }, { 144,  16  }, { 144,  48  },
+    { 144,  64  }, { 144,  80  }, { 144,  96  }, { 144, 104  },
+    { 144, 112  }, { 144, 120  }, { 144, 128  }, { 144, 132  },
+    { 144, 136  }, { 144, 140  }, { 144, 140  }, { 144, 148  },
+    { 144, 152  }, { 144, 156  }, { 144, 160  }, { 144, 168  },
+    { 144, 176  }, { 144, 184  }, { 144, 192  }, { 144, 208  },
+    { 144, 224  }, { 144, 240  }, { 148, 132  }, { 148, 136  },
+    { 148, 140  }, { 148, 144  }, { 148, 148  }, { 148, 152  },
+    { 148, 156  }, { 152, 104  }, { 152, 112  }, { 152, 120  },
+    { 152, 128  }, { 152, 132  }, { 152, 136  }, { 152, 140  },
+    { 152, 144  }, { 152, 148  }, { 152, 152  }, { 152, 156  },
+    { 152, 160  }, { 152, 168  }, { 152, 176  }, { 152, 184  },
+    { 156, 136  }, { 156, 140  }, { 156, 144  }, { 156, 148  },
+    { 156, 152  }, { 160,  64  }, { 160,  80  }, { 160,  96  },
+    { 160, 104  }, { 160, 112  }, { 160, 120  }, { 160, 128  },
+    { 160, 136  }, { 160, 144  }, { 160, 152  }, { 160, 160  },
+    { 160, 168  }, { 160, 176  }, { 160, 184  }, { 160, 192  },
+    { 160, 208  }, { 160, 224  }, { 168, 112  }, { 168, 120  },
+    { 168, 128  }, { 168, 136  }, { 168, 144  }, { 168, 152  },
+    { 168, 160  }, { 168, 168  }, { 168, 176  }, { 176,  16  },
+    { 176,  48  }, { 176,  64  }, { 176,  80  }, { 176,  96  },
+    { 176, 112  }, { 176, 120  }, { 176, 128  }, { 176, 136  },
+    { 176, 144  }, { 176, 152  }, { 176, 160  }, { 176, 168  },
+    { 176, 176  }, { 176, 192  }, { 176, 208  }, { 176, 224  },
+    { 176, 240  }, { 184, 128  }, { 184, 136  }, { 184, 144  },
+    { 184, 152  }, { 184, 160  }, { 192,  80  }, { 192,  96  },
+    { 192, 112  }, { 192, 128  }, { 192, 144  }, { 192, 160  },
+    { 192, 176  }, { 192, 192  }, { 192, 208  }, { 208,  16  },
+    { 208,  48  }, { 208,  80  }, { 208,  96  }, { 208, 112  },
+    { 208, 128  }, { 208, 144  }, { 208, 160  }, { 208, 176  },
+    { 208, 192  }, { 208, 208  }, { 208, 240  }, { 224, 112  },
+    { 224, 128  }, { 224, 144  }, { 224, 160  }, { 224, 176  },
+    { 240,  16  }, { 240,  48  }, { 240,  80  }, { 240, 112  },
+    { 240, 144  }, { 240, 176  }, { 240, 208  }, { 240, 240  },
+    {   0,   0  }, {   0,   0  }, {   0,   0  }, {   0,   0  }
+};
+
+
+
+//
+// some lookups required
+//
+static float sqrtQ16LookupTable[16];
+static u8 yyLookupTable[4096];
+static u8 uvLookupTable[4096];
+
+
+#define DIST(U,V,tU,tV)				\
+(						\
+	((U)-int(tU))*((U)-int(tU)) +		\
+	((V)-int(tV))*((V)-int(tV))		\
+)
+static class __initializeLookups_t
+{
+public:
+     __initializeLookups_t(void) {
+          for(int q= 0; q< 16; q++)
+                sqrtQ16LookupTable[q]= sqrt(q/(16.0-q));
+
+          for(unsigned i= 0; i< 4096; i++) {
+              int u0= i & 0x3f;
+              int v0= i >> 6;
+
+
+              unsigned dist= 0xffffffff;
+              unsigned nearest= 0xff;
+
+              for(unsigned j= 0; j< 252; j++) {
+                  unsigned newDist= DIST(u0, v0, uvTable[j].uu>>2, 
+                                         uvTable[j].vv>>2);
+                  if(newDist< dist) {
+                      nearest= j;
+                      dist   = newDist;
+                  }
+              }
+
+              uvLookupTable[i]= nearest;
+          }
+
+          for(unsigned i= 0; i< 4096; i++) {
+              int y1= i & 0x3f;
+              int y2= i >> 6;
+
+              unsigned dist= 0xffffffff;
+              unsigned nearest= 0xff;
+
+              for(unsigned j= 0; j< 128; j++) {
+                  unsigned newDist= DIST(y1, y2, yyTable[j].y1>>2, 
+                                         yyTable[j].y2>>2);
+                  if(newDist< dist) {
+                      nearest= j;
+                      dist   = newDist;
+                  }
+              }
+
+              yyLookupTable[i]= nearest;
+          }
+     }
+} __initializeLookups;
+
+
+//
+// dirty work ahead
+//
+static u16
+getLuma(const u8 *ptr, unsigned stride)
+{
+    u16 retVal= 0;
+
+    for(unsigned i= 0; i< 4; i++) {
+        for(unsigned j= 0; j< 4*3; j++) {
+            retVal+= *ptr;
+            ptr++;
+        }
+        ptr+= stride;
+    }
+
+#if 0
+    return retVal/3;
+#else
+    return (retVal*85)>>8;
+#endif
+}
+
+template<int rOff, int gOff, int bOff>
+class cellbEncodeCell
+{
+public:
+    cellbEncodeCell(const u8 *imgPtr, u32 stride, u8 *outPtr, u16 referenceLuma)
+    {
+        const u8 *ptr= imgPtr;
+
+        int   yAcum = 0;
+        int   yAcum2= 0;
+        int   gAcum = 0;
+        int   bAcum = 0;
+        float yyMean= 0;
+        float yyMean2= 0;
+        float uuMean= 0;
+        float vvMean= 0;
+    
+        u16      code= 0;
+        unsigned q   = 0;
+    
+        referenceLuma*= 3;
+    
+        for(unsigned jj= 0; jj< 4; jj++) {
+            for(unsigned ii= 0; ii< 4; ii++) {
+                //
+                // actual formula is 0.3R+0.5G+0.2B
+                //
+                int curY= int(ptr[0])+ int(ptr[1])+ int(ptr[2]);
+    
+    
+                yAcum += curY;
+                yAcum2+= curY*curY;
+    
+    
+                //
+                // calcular ´gAcum´, ´bAcum´
+                //
+                gAcum+= ptr[gOff];
+                bAcum+= ptr[bOff];
+    
+                //
+                // calcular ´code´ an ´q´
+                //
+                if(curY>= referenceLuma) {
+                   code<<= 1;
+                   code |= 1;
+                   q++;
+                } else {
+                   code<<= 1;
+                   code |= 0;
+                }
+                ptr+= 3;
+            }
+    
+            ptr+= stride;
+        }
+    
+#if 0
+        uuMean= 0.493*bAcum-(0.493/3)*yAcum;
+        vvMean= 0.877*gAcum-(0.877/3)*yAcum;
+    
+        yyMean = float(yAcum )/16; yAcum>>= 4;
+        yyMean2= float(yAcum2)/16;
+        uuMean /= 16; uuMean+= 128;
+        vvMean /= 16; vvMean+= 128;
+#else
+        uuMean= float(128+(126*bAcum-42*yAcum)/(4096));
+        vvMean= float(128+(224*gAcum-74*yAcum)/(4096));
+    
+        yyMean = float(yAcum/16); yAcum/= 16;
+        yyMean2= float(yAcum2/16);
+#endif
+    
+        //
+        // normalize yyMean, yyMean2
+        //
+        yyMean /= 3;
+        yyMean2/= 3*3;
+    
+    
+    
+    
+        //
+        // find sigma
+        //
+        float sigma = sqrt(yyMean2 - yyMean*yyMean);
+    
+    
+        //
+        // find y1 and y2
+        //
+        u8 yy1;
+        u8 yy2;
+    
+    
+        if(yyMean<  16) yyMean=  16;
+        if(yyMean> 240) yyMean= 240;
+    
+        if(q== 16) {
+            yy1= yy2= u8(yyMean);    /* all pixels are the same */
+        } else {
+            float d= sqrtQ16LookupTable[q];
+    
+            float tmpY1= yyMean - sigma*d;
+            float tmpY2= yyMean + sigma/d;
+    
+            if (tmpY1<  16.0) tmpY1=  16.0;
+            if (tmpY2> 240.0) tmpY2= 240.0;
+    
+            /* Round values to nearest integer */
+            yy1= (u8)(tmpY1+0.5);  
+            yy2= (u8)(tmpY2-0.5);
+        }
+    
+    
+        //
+        // find yy codeword
+        //
+        yy1= (yy1+2)>>2;
+        yy2= (yy2+2)>>2;
+    
+        u8 yyCode= yyLookupTable[yy2<<6|yy1];
+    
+    
+        //
+        // find uu codeword
+        //
+        u8 uu= ((u8)(uuMean)+2)>> 2;
+        u8 vv= ((u8)(vvMean)+2)>> 2;
+    
+        u8 uvCode= uvLookupTable[vv<<6|uu];
+    
+    
+        //
+        // hight bit of code must be zero
+        //
+        if(code & (1<< 15)) {
+            //
+            // u8 swp= yy1;
+            //
+            // yy1= yy2;
+            // yy2= swp;
+            //
+    
+            code^= 0xffff;
+    
+            yyCode+=128;
+        }
+    
+    
+        /////////////////////////////////////////////////////////
+        //
+        // at this point code, yyCode and uvCode contains
+        // the cellb info
+        //
+        /////////////////////////////////////////////////////////
+    
+        outPtr[0]= code>>8;
+        outPtr[1]= code& 0xff;
+        outPtr[2]= uvCode;
+        outPtr[3]= yyCode;
+    }
+};
+
+static u8 *
+cellbEmitSkip(u8 *outPtr, unsigned nSkips)
+{
+    outPtr[0]= 0x80 | ((nSkips-1) & 0x1f);
+
+    outPtr++;
+
+    return outPtr;
+}
+
+
+extern
+cellbEncodedImage_t *
+cellbEncode(cellbEncodeSession_t *s, const u8 *b, unsigned w, unsigned h)
+{
+    cellbEncodedImage_t *retVal= new cellbEncodedImage_t;
+
+    unsigned encodeW= 4*(w/4);
+    unsigned encodeH= 4*(h/4);
+
+    if((s->w!=encodeW) || (s->h!= encodeH)) {
+        s->reset(encodeW, encodeH);
+    }
+
+
+    unsigned bpp        = 3;
+    unsigned rowStride  = bpp*w;
+    unsigned cellsPerRow= encodeW/4;
+    unsigned numCells   = (encodeW*encodeH)/(4*4);
+
+    const u8 *imgPtr= b;
+    u8       *outPtr= (u8*)malloc(4*numCells);
+
+    retVal->buffer= outPtr;
+    retVal->w     = encodeW;
+    retVal->h     = encodeH;
+
+    unsigned tSkips= 0;
+    unsigned xSkips= 0;
+    unsigned nSkips= 0;
+
+    for(unsigned currCell= 0; currCell< numCells; currCell++) {
+
+        //
+        // get luma for this cell
+        //
+        u16 cachedLuma = s->lumaCache[currCell];
+        u16 currentLuma= getLuma(imgPtr, rowStride-bpp*4);
+
+
+        //
+        // Facts at this point:
+        //   + ´luma´ is the actual luma multiplied by 16 (4 bits)
+        //     so it's a 12 bit value.
+        //
+        //   + cellb quatization disregards 2 bits(at least).
+        //
+        //   + we consider a change in the last 2 bits a ´small change´
+        //
+        // So 4+2+2 = 8 bits are not checked. Only 4 higher order
+        // bits are considered for detecting changes.
+        //
+        u8 checkLuma= currentLuma>>8;
+
+        u8 lumaMaskIndex= checkLuma|cachedLuma;
+        u8 lumaMask[]=
+        {
+            0xfe,
+            0xfe,
+            0xff, 0xff,
+            0xff,0xff, 0xff, 0xff,
+            0xff,0xff, 0xff, 0xff, 0xff,0xff, 0xfe, 0xfe
+        };
+        u8 deltaVal[]=
+        {
+            0,
+            0, 1,
+            1, 1, 2, 2,
+            2, 2,
+            2, 2, 1, 1,
+            1, 0,
+            0
+        };
+
+        u8 deltaLuma=lumaMask[lumaMaskIndex]&(checkLuma ^ cachedLuma);
+
+        
+        s->timeCache[currCell]-= deltaVal[lumaMaskIndex];
+
+        if(deltaLuma || (s->timeCache[currCell]< 0)) {
+            //
+            // compress
+            //
+
+            //
+            // start by saving the luma in the cache
+            //
+            s->lumaCache[currCell]= checkLuma;
+
+            s->timeCache[ currCell   ] = 24+(random()%32);
+            if(currCell>0 && currCell<numCells-1) {
+              s->timeCache[(currCell+1)]-= 8*deltaLuma ;
+              s->timeCache[(currCell-1)]-= 8*deltaLuma ;
+            }
+
+
+            //
+            // scale the luma (4 bits = divide by 16)
+            //
+            currentLuma>>= 4;
+
+            if(nSkips) {
+               outPtr= cellbEmitSkip(outPtr, nSkips);
+               nSkips= 0;
+               xSkips++;
+            }
+
+            switch(s->inputType) {
+                case cellb_ENCODE_INPUT_RGB:
+                    {
+                        cellbEncodeCell<0,1,2>(
+                            imgPtr,
+                            rowStride-4*bpp,
+                            outPtr, currentLuma
+                        );
+                    } break;
+                case cellb_ENCODE_INPUT_BGR:
+                    {
+                        cellbEncodeCell<2,1,0>(
+                            imgPtr,
+                            rowStride-4*bpp,
+                            outPtr, currentLuma
+                        );
+                    } break;
+                default:
+                    abort();
+            }
+
+            outPtr+= 4;
+        } else {
+            //
+            // skip
+            //
+            tSkips++;
+            nSkips++;
+            if(nSkips== 32) {
+               outPtr= cellbEmitSkip(outPtr, nSkips);
+               nSkips= 0;
+               xSkips++;
+            }
+
+            if(lumaMaskIndex<2 || lumaMaskIndex>12)
+                s->timeCache[currCell]+= 1;
+        }
+
+        imgPtr+= bpp*4;
+        if((currCell%cellsPerRow)== cellsPerRow-1) {
+            imgPtr+= (w-encodeW)*bpp;
+            imgPtr+= rowStride*(4-1);
+        }
+    }
+
+    retVal->numBytes= outPtr-retVal->buffer;
+
+    printf(
+        "encSize=%5d\tskips=%4d %4d (%6.2f%%)\t",
+        retVal->numBytes,
+        tSkips,
+        xSkips,
+        100.0*float(numCells-tSkips)/numCells
+    );
+#if 0
+    if(float(numCells-tSkips)/numCells>0.20) {
+        int h= open("/dev/audio", O_WRONLY);
+
+        write(h, yyTable, sizeof(yyTable)/4);
+
+        close(h);
+    }
+#endif
+
+    return retVal;
+}
+
+
+
+static void
+cellbDecodeCell(u8 *ptr, u32 stride, u16 code, u8 uvCode, u8 yyCode)
+{
+    u8 ry1= yyTable[yyCode]. y1;
+    u8 ry2= yyTable[yyCode]. y2;
+
+    u8 ruu= uvTable[uvCode].uu;
+    u8 rvv= uvTable[uvCode].vv;
+
+    i16 R[2];
+    i16 G[2];
+    i16 B[2];
+
+
+#if 0
+    B[0]=i16(float(int(ruu)-128)/0.493+ry1);
+    G[0]=i16(float(int(rvv)-128)/0.877+ry1);
+    R[0]=i16(3*int(ry1)-G[0]-B[0]);
+#else
+    B[0]=((int(ruu)-128)*519)/256+ry1;
+    G[0]=((int(rvv)-128)*291)/256+ry1;
+    R[0]=(int(ry1)+int(ry1)+int(ry1)-G[0]-B[0]);
+#endif
+
+    if(R[0]<   0) R[0]=   0;
+    if(R[0]> 255) R[0]= 255;
+    if(G[0]<   0) G[0]=   0;
+    if(G[0]> 255) G[0]= 255;
+    if(B[0]<   0) B[0]=   0;
+    if(B[0]> 255) B[0]= 255;
+
+#if 0
+    B[1]=i16(float(int(ruu)-128)/ 0.493+ry2);
+    G[1]=i16(float(int(rvv)-128)/ 0.877+ry2);
+    R[1]=i16(3*int(ry2)-G[1]-B[1]);
+#else
+    B[1]=((int(ruu)-128)*519)/256+ry2;
+    G[1]=((int(rvv)-128)*291)/256+ry2;
+    R[1]=(int(ry2)+int(ry2)+int(ry2)-G[1]-B[1]);
+#endif
+
+    if(R[1]<   0) R[1]=   0;
+    if(R[1]> 255) R[1]= 255;
+    if(G[1]<   0) G[1]=   0;
+    if(G[1]> 255) G[1]= 255;
+    if(B[1]<   0) B[1]=   0;
+    if(B[1]> 255) B[1]= 255;
+
+
+
+#ifdef __LOTSA_REGISTERS
+    u32 *bw= (u32*)ptr;
+    u8   sel;
+
+    u32 x0;
+    u32 x1;
+    u32 x2;
+
+
+    //
+    // first scan
+    //
+    x0= x1= x2= 0;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x0 |= R[sel]<<  0;
+    x0 |= G[sel]<<  8;
+    x0 |= B[sel]<< 16;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x0 |= R[sel]<< 24;
+    x1 |= G[sel]<<  0;
+    x1 |= B[sel]<<  8;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x1 |= R[sel]<< 16;
+    x1 |= G[sel]<< 24;
+    x2 |= B[sel]<<  0;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x2 |= R[sel]<<  8;
+    x2 |= G[sel]<< 16;
+    x2 |= B[sel]<< 24;
+
+    bw[0]= x0;
+    bw[1]= x1;
+    bw[2]= x2;
+            
+    bw+= 3*w/4;
+
+
+    //
+    // second scan
+    //
+    x0= x1= x2= 0;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x0 |= R[sel]<<  0;
+    x0 |= G[sel]<<  8;
+    x0 |= B[sel]<< 16;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x0 |= R[sel]<< 24;
+    x1 |= G[sel]<<  0;
+    x1 |= B[sel]<<  8;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x1 |= R[sel]<< 16;
+    x1 |= G[sel]<< 24;
+    x2 |= B[sel]<<  0;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x2 |= R[sel]<<  8;
+    x2 |= G[sel]<< 16;
+    x2 |= B[sel]<< 24;
+        
+    bw[0]= x0;
+    bw[1]= x1;
+    bw[2]= x2;
+    bw+= 3*w/4;
+
+
+    //
+    // third scan
+    //
+    x0= x1= x2= 0;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x0 |= R[sel]<<  0;
+    x0 |= G[sel]<<  8;
+    x0 |= B[sel]<< 16;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x0 |= R[sel]<< 24;
+    x1 |= G[sel]<<  0;
+    x1 |= B[sel]<<  8;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x1 |= R[sel]<< 16;
+    x1 |= G[sel]<< 24;
+    x2 |= B[sel]<<  0;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x2 |= R[sel]<<  8;
+    x2 |= G[sel]<< 16;
+    x2 |= B[sel]<< 24;
+    
+    bw[0]= x0;
+    bw[1]= x1;
+    bw[2]= x2;
+    bw+= 3*w/4;
+
+
+    //
+    // fourth scan
+    //
+    x0= x1= x2= 0;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x0 |= R[sel]<<  0;
+    x0 |= G[sel]<<  8;
+    x0 |= B[sel]<< 16;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x0 |= R[sel]<< 24;
+    x1 |= G[sel]<<  0;
+    x1 |= B[sel]<<  8;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x1 |= R[sel]<< 16;
+    x1 |= G[sel]<< 24;
+    x2 |= B[sel]<<  0;
+
+    sel=(code&(1<<15))?1:0; code<<= 1;
+    x2 |= R[sel]<<  8;
+    x2 |= G[sel]<< 16;
+    x2 |= B[sel]<< 24;
+    
+    bw[0]= x0;
+    bw[1]= x1;
+    bw[2]= x2;
+    bw+= 3*w/4;
+
+#else
+
+    u8 rr[2]; rr[0]= R[0]; rr[1]= R[1];
+    u8 gg[2]; gg[0]= G[0]; gg[1]= G[1];
+    u8 bb[2]; bb[0]= B[0]; bb[1]= B[1];
+    for(unsigned jj= 0; jj< 4; jj++) {
+            u8 sel=(code&(1<<15))>>15;
+
+            ptr[3*0  ]= (rr[sel]+ptr[3*(0-1)+0])/2;
+            ptr[3*0+1]= (gg[sel]+ptr[3*(0-1)+1])/2;
+            ptr[3*0+2]= (bb[sel]+ptr[3*(0-1)+2])/2;
+
+            code<<= 1;
+        for(unsigned ii= 1; ii< 4; ii++) {
+            u8 sel=(code&(1<<15))>>15;
+
+#if 0
+            ptr[3*ii  ]= (3*rr[sel]+ptr[3*(ii-1)+0])/4;
+            ptr[3*ii+1]= (3*gg[sel]+ptr[3*(ii-1)+1])/4;
+            ptr[3*ii+2]= (3*bb[sel]+ptr[3*(ii-1)+2])/4;
+#else
+            ptr[3*ii  ]= rr[sel];
+            ptr[3*ii+1]= gg[sel];
+            ptr[3*ii+2]= bb[sel];
+#endif
+
+            code<<= 1;
+        }
+        ptr+= stride;
+    }
+#endif
+}
+
+extern
+u8 *
+cellbDecode(cellbDecodeSession_t *s, const cellbEncodedImage_t *img)
+{
+    u8 *retVal;
+
+    unsigned decodeW= img->w;
+    unsigned decodeH= img->h;
+
+    unsigned numBytes= img->numBytes;
+
+    if((s->w!=decodeW) || (s->h!= decodeH)) {
+        s->reset(decodeW, decodeH);
+    }
+
+
+    unsigned bpp        = 3;
+    unsigned rowStride  = bpp*decodeW;
+    unsigned cellsPerRow= decodeW/4;
+    unsigned numCells   = (decodeW*decodeH)/(4*4);
+
+#if 0
+    const u8 *imgPtr= img->buffer;
+    u8       *outPtr= (u8*)malloc(bpp*decodeW*decodeH);
+
+    retVal= outPtr;
+
+
+    memcpy(retVal, s->imgCache, bpp*decodeW*decodeH);
+
+    unsigned currCell= 0;
+    for(unsigned currByte= 0; currByte< numBytes;) {
+
+        assert(currCell< numCells);
+
+        if(imgPtr[currByte] & 0x80) {
+            //
+            // skip cells
+            //
+            currCell+= 1 + (imgPtr[currByte]&0x1f) ;
+
+            currByte++;
+        } else {
+            //
+            // decode cell
+            //
+            unsigned xCell= currCell%cellsPerRow;
+            unsigned yCell= currCell/cellsPerRow;
+
+            u8 *ptr= outPtr+ bpp*yCell*4*decodeW+bpp*xCell*4;
+
+            u16 code  = (imgPtr[currByte+0]<< 8)|(imgPtr[currByte+1]) ;
+            u8  uvCode= (imgPtr[currByte+2]);
+            u8  yyCode= (imgPtr[currByte+3]);
+
+            cellbDecodeCell(ptr, rowStride, code, uvCode, yyCode);
+
+            u8 *cachePtr= s->imgCache+ bpp*yCell*4*decodeW+bpp*xCell*4;
+
+            u32 *p1= (u32*)ptr;
+            u32 *p2= (u32*)cachePtr;
+
+            p2[0]= p1[0];
+            p2[1]= p1[1];
+            p2[2]= p1[2];
+            
+            p1+= (decodeW*bpp)/4;
+            p2+= (decodeW*bpp)/4;
+
+            p2[0]= p1[0];
+            p2[1]= p1[1];
+            p2[2]= p1[2];
+            
+            p1+= (decodeW*bpp)/4;
+            p2+= (decodeW*bpp)/4;
+
+            p2[0]= p1[0];
+            p2[1]= p1[1];
+            p2[2]= p1[2];
+            
+            p1+= (decodeW*bpp)/4;
+            p2+= (decodeW*bpp)/4;
+
+            p2[0]= p1[0];
+            p2[1]= p1[1];
+            p2[2]= p1[2];
+            
+
+            currCell++;
+
+            currByte+= 4;
+        }
+    }
+#else
+    const u8 *imgPtr= img->buffer;
+    u8       *outPtr= s->imgCache;
+
+    retVal= outPtr;
+
+
+    unsigned currCell= 0;
+    for(unsigned currByte= 0; currByte< numBytes;) {
+
+        assert(currCell< numCells);
+
+        if(imgPtr[currByte] & 0x80) {
+            //
+            // skip cells
+            //
+            currCell+= 1 + (imgPtr[currByte]&0x1f) ;
+
+            currByte++;
+        } else {
+            //
+            // decode cell
+            //
+            unsigned xCell= currCell%cellsPerRow;
+            unsigned yCell= currCell/cellsPerRow;
+
+            u8 *ptr= outPtr+ bpp*yCell*4*decodeW+bpp*xCell*4;
+
+            u16 code  = (imgPtr[currByte+0]<< 8)|(imgPtr[currByte+1]) ;
+            u8  uvCode= (imgPtr[currByte+2]);
+            u8  yyCode= (imgPtr[currByte+3]);
+
+            cellbDecodeCell(ptr, rowStride, code, uvCode, yyCode);
+
+            currCell++;
+
+            currByte+= 4;
+        }
+    }
+#endif
+
+    return retVal;
+}
+
+
+\end{verbatim}

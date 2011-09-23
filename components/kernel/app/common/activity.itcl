@@ -1,0 +1,842 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# activity.itcl
+#
+# Define the class where the services are stored.
+#
+#########################################################################
+
+class ActivityC {
+
+    # Service name.
+    private variable name ""
+
+    # List of valid whatis
+    private variable whatis "service role component action menuitem imode"
+    
+    # List of role names
+    private variable roles ""
+    
+    # List of component names
+    private variable components ""
+    
+    # List of action names.
+    private variable actions ""
+    
+    # List of menuitem names.
+    private variable menuitems ""
+    
+    # List of interaction mode names.
+    private variable imodes ""
+    
+    # The array with the values of the service
+    private variable resources
+    
+    # The string sent with SeCo to distribute the service to all the sites.
+    private variable service_msg
+
+    constructor {} {}
+
+    destructor {}
+
+
+    # Load a Service definition file.
+    public method Load {file}
+
+    # Sets the values specified in $_name, $_views, $_roles, $_components,
+    # $_imodes and $_resources as the service values.
+    public method SetValues {_name _actions _menuitems _roles _components _imodes _resources}
+
+    # Returns the name, the actions, the menuitems, the roles, the components, the interaction modes or
+    # resources defined.
+    public method GetName {}
+    public method GetActions {}
+    public method GetMenuItems {}
+    public method GetRoles {}
+    public method GetToolRoles {tool}
+    public method GetScenaries {}
+    public method GetComponents {}
+    public method GetResources {}
+
+    # Return the resource $con,$res.
+    # If that resource does not exist then $default is returned.
+    #
+    # $check is an optional expression to check if the specified resource value
+    # is valid. 
+    # $check can use the wild %R to refer to the value specified in the
+    # resource, so that before evaluating $check, %R is replaced with this value.
+    # If the value is not valid, $default is returned.
+    #
+    public method GetResource {con res {default ""} {check ""}}
+
+    # Assigns $value to resources($c,$r).
+    public method SetResource {c r value}
+
+    # Print the internal information.
+    public method Dump {}
+
+
+    # Reads the Service definition file "file".
+    private method ReadFile {file}
+
+    # Reads a line from "fd". If the line ends with backslash,
+    # then a new line is read and joined with the previous one.
+    private method MultiGets {fd line}
+
+    # Set the default resource values for a components, a role, 
+    # an action, a menuitem, a interaction mode or the service.
+    private method SetComponentDefaults {c}
+    private method SetRoleDefaults {r}
+    private method SetActionDefaults {a}
+    private method SetMenuItemDefaults {m}
+    private method SetIModeDefaults {s}
+    private method SetServiceDefaults {a}
+
+
+    # Assigns "resources($c,$r):=$value" if the value has not 
+    # been assigned yet.
+    private method SetResDefaults {c r value}
+
+    # Check that the rpm packages specified in the service are installed.
+    private method CheckRPM {} 
+
+    # Check if the version of all the packages specified in the "required.versions" 
+    # activity resource are installed.
+    private method CheckVersions {} 
+
+    # Loads files referenced in the service file.
+    private method LoadSourceFiles {}
+
+    # Loads isatcl files referenced in the service file.
+    private method LoadIsaTclFiles {}
+
+    #------------------------------------------
+    # Master-Interactive protocol: 
+    # Send Service to the service SeCo Group.
+    #------------------------------------------
+
+    # The master site sends a synchronized message with the service definition to the SeCo service group.
+    # Interactive sites must receive this message to know the service definition.
+    public method WaitForServiceDefinition {}
+    public method ServiceDefinition {name actions menuitems roles components imodes resources sourceslist}
+
+    # Master site publishes the loaded service in the "service" group of SeCo when this method is invoked.
+    public method PublishService {}
+}
+    
+#----------------------------------------------
+
+body ActivityC::Load {file} {
+
+    WriteTraceMsg "Reading Service definition file."
+    
+    if {[catch {ReadFile $file} emsg] == 1} {
+	puts stderr "Erroneous Service definition file:\n$emsg"
+	exit 1
+    }
+    
+    if {[catch {LoadSourceFiles} emsg] == 1} {
+	puts stderr "Erroneous Service source files:\n$emsg"
+	exit 1
+    }
+}
+
+#----------------------------------------------
+
+body ActivityC::SetValues {_name _actions _menuitems _roles _components _imodes _resources} {
+
+    set name       $_name
+    set actions    $_actions
+    set menuitems  $_menuitems
+    set roles      $_roles
+    set components $_components
+    set imodes     $_imodes
+    foreach r $_resources {
+	set i [lindex $r 0]
+	set v [lindex $r 1]
+	set resources($i) $v
+    }
+    return
+}
+
+#----------------------------------------------
+
+body ActivityC::GetName {} {
+    return $name
+}
+
+#----------------------------------------------
+
+body ActivityC::GetActions {} {
+    return $actions
+}
+
+#----------------------------------------------
+
+body ActivityC::GetMenuItems {} {
+    return $menuitems
+}
+
+#----------------------------------------------
+
+body ActivityC::GetRoles {} {
+    return $roles
+}
+
+#----------------------------------------------
+
+body ActivityC::GetToolRoles {tool} {
+
+    return [GetResource $name roles.$tool ""]
+}
+
+#----------------------------------------------
+
+body ActivityC::GetScenaries {} {
+    return $imodes
+}
+
+#----------------------------------------------
+
+body ActivityC::GetComponents {} {
+    return $components
+}
+
+#----------------------------------------------
+
+body ActivityC::GetResources {} {
+    
+    foreach n [array names resources] {
+	lappend res [list $n $resources($n)]
+    }
+    return $res
+}
+
+#----------------------------------------------
+
+body ActivityC::GetResource {con res {default ""} {check ""}} {
+    
+    if {$check != ""} {
+	echo ---------------------------------------
+	echo Emiminar CHECK de: [info level 0]
+	echo ---------------------------------------
+    }
+
+
+    if {[info exist resources($con,$res)]} {
+	set r $resources($con,$res)
+	if {$check != ""} {
+	    regsub -all %R $check \{$r\} check
+            if {[eval expr $check]} {
+		return $r
+	    } else {
+		return $default
+	    }
+	}
+	return $r
+    } else {
+	return $default
+    }
+}
+
+#----------------------------------------------
+
+body ActivityC::SetResource {c r value} {
+
+    set resources($c,$r) $value
+}
+
+
+#----------------------------------------------
+
+body ActivityC::Dump {} {
+    
+    WriteTraceMsg "- SERVICE ----------------------------------"
+    WriteTraceMsg "Name = $name"
+    WriteTraceMsg ""
+    foreach i [array names resources] {
+	if {[eval "regexp \{^$name,(.+)\$\} $i todo res"] == 1} {
+	    WriteTraceMsg [format "   %15s : %s" $res $resources($name,$res)]
+	}
+    }
+    WriteTraceMsg ""
+    
+    WriteTraceMsg "- ROLES -------------------------------------"
+    WriteTraceMsg "Roles = $roles"
+    WriteTraceMsg ""
+    foreach r $roles {
+	WriteTraceMsg "Role $r:"
+	foreach i [array names resources] {
+	    if {[eval "regexp \{^$r,(.+)\$\} $i todo res"] == 1} {
+		WriteTraceMsg [format "   %15s : %s" $res $resources($r,$res)]
+	    }
+	}
+	WriteTraceMsg ""
+    }
+    
+    WriteTraceMsg "- ACTIONS -------------------------------------"
+    WriteTraceMsg "Actions = $actions"
+    WriteTraceMsg ""
+    foreach v $actions {
+	WriteTraceMsg "Action $v:"
+	foreach i [array names resources] {
+	    if {[eval "regexp \{^$v,(.+)\$\} $i todo res"] == 1} {
+		WriteTraceMsg [format "   %15s : %s" $res $resources($v,$res)]
+	    }
+	}
+	WriteTraceMsg ""
+    }
+    
+    WriteTraceMsg "- MENUITEMS -------------------------------------"
+    WriteTraceMsg "Menu Items = $menuitems"
+    WriteTraceMsg ""
+    foreach v $menuitems {
+	WriteTraceMsg "Menu Item $v:"
+	foreach i [array names resources] {
+	    if {[eval "regexp \{^$v,(.+)\$\} $i todo res"] == 1} {
+		WriteTraceMsg [format "   %15s : %s" $res $resources($v,$res)]
+	    }
+	}
+	WriteTraceMsg ""
+    }
+    
+    WriteTraceMsg "- COMPONENTS --------------------------------"
+    WriteTraceMsg "Components = $components"
+    WriteTraceMsg ""
+    foreach c $components {
+	WriteTraceMsg "Component $c:"
+	foreach i [array names resources] {
+	    if {[eval "regexp \{^$c,(.+)\$\} $i todo res"] == 1} {
+		WriteTraceMsg [format "   %15s : %s" $res $resources($c,$res)]
+	    }
+	}
+	WriteTraceMsg ""
+    }
+    
+    WriteTraceMsg "- INTERACTION MODES --------------------------------"
+    WriteTraceMsg "Interaction modes = $imodes"
+    WriteTraceMsg ""
+    foreach s $imodes {
+	WriteTraceMsg "Interaction mode $s:"
+	foreach i [array names resources] {
+	    if {[eval "regexp \{^$s,(.+)\$\} $i todo res"] == 1} {
+		WriteTraceMsg [format "   %15s : %s" $res $resources($s,$res)]
+	    }
+	}
+	WriteTraceMsg ""
+    }
+    
+    WriteTraceMsg "---------------------------------------------"
+} 
+
+#----------------------------------------------
+
+body ActivityC::ReadFile {file} {
+    global ISABEL_WORKDIR ISABEL_DIR
+    
+    if {![file exists $file]} {
+	ErrorTraceMsg "Service file \"$file\" not found."    
+	return -code 1
+    }
+    
+    if {![file isfile $file]} {
+	ErrorTraceMsg "Service file \"$file\" is not a regular file."
+	return -code 1
+    }
+    
+    if {![file readable $file]} {
+	ErrorTraceMsg "Service file \"$file\" is not readable."
+	return -code 1
+    }
+    
+    if {[catch {set fdbd [open $file r]} emsg]} {
+	ErrorTraceMsg "Service file error: $emsg"
+	return -code 1
+    }
+    
+    set returnerror 0
+    
+    while {[MultiGets $fdbd line] >= 0} {
+	# removes coments and empty lines.
+	if {[set c0 [string index $line 0]] == "!" || $c0 == "#" ||
+	    [string trim $line] == ""} {
+	    continue
+	}
+	if {[regexp "^(\[^!#.\]+)\.(\[^ :\]*): *(.*)\$" $line todo \
+		 con       res       val] == 0} {
+	    ErrorTraceMsg "Service file: syntax error in line: $line"
+	    continue
+	} else {
+	    # return if name or resource is empty.
+	    if {$con == "" || $res == ""} {
+		continue
+	    }
+	    set val [string trim $val]
+	    set resources($con,$res) $val
+	    switch $res {
+		whatis { 
+		    switch $val {
+			service  {
+			    if {$name == ""} { 
+				set name $con 
+			    } else {
+				ErrorTraceMsg \
+				    "Warning in service file: Multiple service definition lines."
+				set returnerror 1
+			    }
+			    SetServiceDefaults  $name
+			}
+			role      {
+			    lappend roles $con 
+			    SetRoleDefaults $con
+			}
+			action      {
+			    lappend actions $con 
+			    SetActionDefaults $con
+			}
+			menuitem      {
+			    lappend menuitems $con 
+			    SetMenuItemDefaults $con
+			}
+			component { 
+			    lappend components $con 
+			    SetComponentDefaults $con
+			}
+			imode { 
+			    lappend imodes $con 
+			    SetIModeDefaults $con
+			}
+			default   {
+			    ErrorTraceMsg "Warning in service file: \"$val\" unknown \"whatis\" for \"$con\"."
+			    set returnerror 1
+			}
+		    }       
+		}
+		
+		default   { }
+	    } 
+	}
+    }
+    close $fdbd
+    
+    #
+    # Checks service correctness.
+    #
+
+    # Checks that all the roles referenced in roles.interactive, roles.watchpoint, roles.mcu, etc. exist.
+    foreach tool "Interactive MCU SipGateway FlashGateway GatewayClient Watchpoint" {
+	if { ! [info exists resources($name,roles.$tool)]} { 
+	    WarningTraceMsg "Warning in service file: resource \"$name.roles.$tool\" is not defined." 
+	} else {
+	    foreach ir $resources($name,roles.$tool) {
+		if {[lsearch -exact $roles $ir] == -1} {
+		    ErrorTraceMsg "Error in service file: role \"$ir\", referenced by \"$name.roles.$tool\", is not defined." 
+		    set returnerror 1
+		}
+	    }
+	}
+    }
+
+    # Checks that the "components" resource of any defined roles, is a list of valid component names.
+    foreach r $roles {
+	foreach c $resources($r,components) {
+	    if {[lsearch -exact $components $c] == -1} {
+		ErrorTraceMsg "Warning in service file: component \"$c\" referenced by role \"$r\" is not defined." 
+		set returnerror 1
+	    }
+	}
+    }
+
+    # Checks that the "actions" resource of any defined roles, is a list of valid action names.
+    foreach r $roles {
+	foreach a $resources($r,actions) {
+	    if {[lsearch -exact $actions $a] == -1} {
+		ErrorTraceMsg "Warning in service file: action \"$a\" referenced by role \"$r\" is not defined." 
+		set returnerror 1
+	    }
+	}
+    }
+
+    # Checks that the "menuitems" resource of any defined roles, is a list of valid menuitem names.
+    foreach r $roles {
+	foreach m $resources($r,menuitems) {
+	    if {[lsearch -exact $menuitems $m] == -1} {
+		ErrorTraceMsg "Warning in service file: menuitem \"$m\" referenced by role \"$r\" is not defined." 
+		set returnerror 1
+	    }
+	}
+    }
+
+    if 0 {
+	# Checks that the "menus" resource of any defined actions, is a list of valid component names.
+	foreach a $actions {
+	    foreach c $resources($a,menus) {
+		if {[lsearch -exact $components $c] == -1} {
+		    ErrorTraceMsg "Warning in service file: component \"$c\" referenced as a menu by action \"$a\" is not defined." 
+		    set returnerror 1
+		}
+	    }
+	}
+    }
+
+    if 0 {
+	# Checks that the "menuitems" resource of any defined component, is a list of valid menuitem names.
+	foreach c $components {
+	    foreach m $resources($c,menuitems) {
+		if {[lsearch -exact $menuitems $m] == -1} {
+		    ErrorTraceMsg "Warning in service file: menuitem \"$m\" referenced by component \"$c\" is not defined." 
+		    set returnerror 1
+		}
+	    }
+	}
+    }
+    
+    # Checks that icons exist.
+    foreach v [concat $actions $menuitems] {
+	set title $resources($v,title)
+	if {[string range $title 0 0] == "@"} {
+	    
+	    set fmt  [string range [file extension $title] 1 end]
+	    set imgname [string range $title 1 end]
+	    set img $ISABEL_DIR/lib/images/$fmt/$imgname
+	    if {![file exists $img] || \
+		    ![file isfile $img] || \
+		    ![file readable $img]} {
+		set img $ISABEL_WORKDIR/lib/$fmt/$imgname
+		if {![file exists $img] || \
+			![file isfile $img] || \
+			![file readable $img]} {
+		    ErrorTraceMsg "Warning in service file:  bitmap \"$imgname\" is not readable"
+		}
+	    }
+	}
+    }
+    
+    if {$returnerror == 1} {
+	return -code 1
+    }
+}
+
+
+#----------------------------------------------
+
+body ActivityC::MultiGets {fd line} {
+    upvar $line l
+
+    set l ""
+    while 1 {
+	set res [gets $fd aux]
+	if {$res < 0} {
+	    return $res
+	}
+	set len [string length $aux]
+	if {$len > 0} {
+	    set c [string index $aux [expr $len-1]]
+	    if {$c == "\\"} {
+		set l "$l[string range $aux 0 [expr $len-2]] "
+	    } else {
+		set l "$l$aux"
+		return $res
+	    }
+	} else {
+	    return $res
+	}
+    }
+}
+
+#----------------------------------------------
+
+body ActivityC::SetResDefaults {c r value} {
+
+    if {![info exist resources($c,$r)]} {
+	set resources($c,$r) $value 
+    }
+}
+
+#----------------------------------------------
+
+body ActivityC::SetComponentDefaults {c} {
+
+    SetResDefaults $c proc        ""
+    SetResDefaults $c source      ""
+    SetResDefaults $c admin.show   1
+}
+
+#----------------------------------------------
+
+body ActivityC::SetRoleDefaults {r} {
+
+    SetResDefaults $r sites       ""
+    SetResDefaults $r except     ""
+    SetResDefaults $r components ""
+    SetResDefaults $r actions    ""
+    SetResDefaults $r menuitems  ""
+}
+
+#----------------------------------------------
+
+body ActivityC::SetActionDefaults {v} {
+
+    SetResDefaults $v title    $v
+    SetResDefaults $v balloon  $v
+    SetResDefaults $v cmd      "puts $v"
+    SetResDefaults $v source   ""
+    SetResDefaults $v path     ""
+}
+
+#----------------------------------------------
+
+body ActivityC::SetMenuItemDefaults {v} {
+
+    SetResDefaults $v title    $v
+    SetResDefaults $v balloon  $v
+    SetResDefaults $v cmd      "puts $v"
+    SetResDefaults $v source   ""
+}
+
+#----------------------------------------------
+
+body ActivityC::SetIModeDefaults {s} {
+
+    SetResDefaults $s order    ""
+
+}
+
+#----------------------------------------------
+
+body ActivityC::SetServiceDefaults {a} {
+
+   SetResDefaults $a server [exec hostname]
+   SetResDefaults $a isatcl ""
+}
+
+#----------------------------------------------
+
+body ActivityC::CheckRPM {} {
+    global env
+
+    if {[info exists env(ISABEL_SKIP_REQUIRED_RPMS)]} {
+	WriteTraceMsg "-Warning: checking required service RPM packages skipped."
+	return
+    }
+
+    set needed ""
+    foreach rpm [GetResource $name requiredrpms] {
+        regexp {^([^-]+)} $rpm all rpmname
+	catch {exec rpm -q --queryformat "OK %{NAME}-%{VERSION}-%{RELEASE}" $rpmname} res
+	if {[string first $rpm $res] != 3} {
+	    lappend needed $rpm
+	}
+    }
+    if {$needed != ""} {
+	ErrorMsgC #auto quit \
+		-grab \
+		-timeout 300000 \
+                "EVENT ERROR:" \
+                "These rpm packages must be installed before connecting to this event:" \
+                $needed
+    }   
+}
+
+#----------------------------------------------
+
+body ActivityC::CheckVersions {} {
+    global env ISABEL_DIR
+
+    if {[info exists env(ISABEL_SKIP_REQUIRED_VERSIONS)]} {
+	WriteTraceMsg "-Warning: checking required service version packages skipped."
+	return
+    }
+
+    set needed ""
+    foreach ver [GetResource $name required.versions] {
+        regexp {^([^-]+)} $ver all vername
+
+	catch {exec grep VERSION /etc/isabel/vers/version.$vername} vernum
+	set vernum [lindex $vernum 1]
+
+	if {"$vername-$vernum" != $ver} {
+	    lappend needed $ver
+	}
+    }
+    if {$needed != ""} {
+	ErrorMsgC #auto quit \
+		-grab \
+		-timeout 300000 \
+                "EVENT ERROR:" \
+                "These packages must be installed before connecting to this event:" \
+                $needed
+    }   
+}
+
+#----------------------------------------------
+
+body ActivityC::LoadSourceFiles {} {
+    global ISABEL_DIR ISABEL_WORKDIR
+    
+    set sources ""
+    foreach vc [concat $actions $menuitems $components] {
+	foreach source $resources($vc,source) {
+	    if {$source != "\"\""  && $source != ""} { 
+		if {[lsearch -exact $sources $source] == -1} {
+		    lappend sources $source
+		    set fs ""
+		    if {[file exist $ISABEL_WORKDIR/act/$source] && \
+			    [file isfile $ISABEL_WORKDIR/act/$source] && \
+			    [file readable $ISABEL_WORKDIR/act/$source]} {
+			set fs $ISABEL_WORKDIR/act/$source
+		    } else {
+			if {[file exist $ISABEL_DIR/lib/$source] && \
+				[file isfile $ISABEL_DIR/lib/$source] && \
+				[file readable $ISABEL_DIR/lib/$source]} {
+			    set fs $ISABEL_DIR/lib/$source
+			}
+		    }
+		    if {$fs != ""} {
+			if {[glob -nocomplain $fs] != ""} {
+			    if {[catch {uplevel "#0" "source $fs"} emsg]} {
+				ErrorTraceMsg \
+				    "Service error in <$source> file:\n$emsg"
+			    }
+			}
+		    } else {
+			ErrorTraceMsg "Warning in service file: I can't source $source"
+		    }
+		}
+	    }   
+	}
+    }
+}
+
+#----------------------------------------------
+
+body ActivityC::LoadIsaTclFiles {} {
+    global ISABEL_DIR
+
+    if {![info exists resources($name,isatcl)]} return
+
+    foreach isatcl $resources($name,isatcl) {
+	set f $ISABEL_DIR/lib/isatcl/$isatcl
+	if {[file exists $f]} {
+	    if {[catch {uplevel "#0" "source $f"} emsg]} {
+		ErrorMsgC "#auto" quit \
+		    -grab \
+		    -timeout 300000 \
+		    "Error in service file:" \
+		    "I can't load the \"$isatcl\" file." \
+		    $emsg \
+		    "Please, contact with the ISABEL session administrator."
+	    }
+	} else {
+	    ErrorMsgC "#auto" quit \
+		-grab \
+		-timeout 300000 \
+		"Error in service file:" \
+		"I can't locate \"$isatcl\" file." \
+		"Please, contact with the ISABEL session administrator."
+	}
+    }
+}   
+
+#----------------------------------------------
+
+body ActivityC::WaitForServiceDefinition {} {
+
+
+    while {$name == ""} {
+	update
+	after 100
+    }
+    
+}
+
+#----------------------------------------------
+body ActivityC::ServiceDefinition {name actions menuitems roles components imodes resources sourceslist} {
+
+    SetValues $name $actions $menuitems $roles $components $imodes $resources
+
+    CheckRPM
+    CheckVersions
+
+    foreach ns $sourceslist {
+	set name [lindex $ns 0]
+	set code [lindex $ns 1]
+	if {[catch {uplevel "#0" $code} emsg]} {
+	    ErrorTraceMsg "Service: error in $name service source file:\n$emsg"
+	}
+    }
+    
+    LoadIsaTclFiles
+}
+
+#----------------------------------------------
+
+body ActivityC::PublishService {} {
+    global ISABEL_DIR ISABEL_WORKDIR 
+    
+    # Create a list with the souce files referenced in the service.
+    set sourceslist ""
+    set sourcesdone ""
+    foreach vc [concat [session Activity GetActions] [session Activity GetMenuItems] [session Activity GetComponents]] {
+	foreach source [session Activity GetResource $vc source] {
+	    if {$source != "\"\"" && $source != ""} { 
+		if {[lsearch -exact $sourcesdone $source] == -1} {
+		    lappend sourcesdone $source
+		    set fs ""
+		    if {[file exist    $ISABEL_WORKDIR/act/$source] &&
+		    [file isfile   $ISABEL_WORKDIR/act/$source] &&
+		    [file readable $ISABEL_WORKDIR/act/$source]} {
+			set fs $ISABEL_WORKDIR/act/$source
+		    } else {
+			if {[file exist    $ISABEL_DIR/lib/$source] &&
+			[file isfile   $ISABEL_DIR/lib/$source] &&
+			[file readable $ISABEL_DIR/lib/$source]} {
+			    set fs $ISABEL_DIR/lib/$source
+			}
+		    }
+		    if {$fs != ""} {
+			if {[glob -nocomplain $fs] != ""} {
+			    lappend sourceslist [list $source [list [exec cat $fs]]]
+			}
+		    }
+		}
+	    }   
+	}
+    }
+
+    set n [list [session Activity GetName]]
+    set a [list [session Activity GetActions]]
+    set m [list [session Activity GetMenuItems]]
+    set r [list [session Activity GetRoles]]
+    set c [list [session Activity GetComponents]]
+    set s [list [session Activity GetScenaries]]
+    set x [list [session Activity GetResources]]
+
+    set service_msg "$n $a $m $r $c $s $x [list $sourceslist]"
+
+    network RDOSync isabel_master_service 1 "SERV ServiceDefinition $service_msg"
+}
+
+#----------------------------------------------

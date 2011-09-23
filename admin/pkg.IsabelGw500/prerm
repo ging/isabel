@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+if [ -f /usr/local/isabel/bin/isabel_cleanup ] ; then
+   /usr/local/isabel/bin/isabel_cleanup -nodesktop || true
+fi
+
+if [ -f /usr/local/isabel/bin/stop_services ] ; then
+   /usr/local/isabel/bin/stop_services || true
+fi
+

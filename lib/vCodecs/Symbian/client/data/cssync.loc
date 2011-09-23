@@ -1,0 +1,21 @@
+/* Copyright (c) 2004, Nokia. All rights reserved */
+
+
+// LOCALISATION STRINGS
+
+//d:Command in options list.
+//d:Display time.
+#define qtn_cssy_submenu_display "Display Time"
+
+//d:Command in options list.
+//d:Exit the program.
+#define qtn_cssy_submenu_exit "Exit"
+
+//d:Caption string for app.
+#define qtn_cssy_caption_string "Synchronous Client/Server"
+
+//d:Short caption string for app.
+#define qtn_cssy_short_caption_string "CSSync"
+
+
+// End of File

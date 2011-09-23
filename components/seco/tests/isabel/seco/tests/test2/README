@@ -1,0 +1,54 @@
+                                ___
+                            ,-''   `'-.
+                          ,'           `.
+         Aplicacion1-----.' __    __    '.....Aplicacion2
+                         | (_  _ /   _   |
+                         \ __)(/_  _(_)  /
+                          \      /|     /
+                           /-.    |  ,-'
+                          /   ``-  ''  \
+                         /              \
+                        /                \
+                       /                  \
+             _,...._ .'                    \_,...__
+          ,-'       `:_                  ,-'       -.
+         /  __    __   \                /  __    __   .
+        |  (_  _ /   _  |              /  (_  _ /   _  |
+        |  __)(/_\__(_) |             |   __)(/_\__(_) |
+        |     __        |              |      __       |
+         \     _)      /               `.     __)     /
+         _`.  /__    ,'                  `.   __)   ,''.
+        /   `.....--' \                    '-.   .-'   `.
+      ,'              \                   /             `.
+ Aplicacion3      Aplicacion4        Aplicacion5      Aplicacion6
+
+
+
+En esta prueba se simula el escenario anterior. 
+Cada SeCo tiene un grupo local "pregunta" y a la vez hay un grupo general con el mismo nombre al que están apuntados todas las aplicaciones menos la aplicación 5.
+Lo primero que hace cada aplicación de número impar es enviar dos mensajes (uno con sincronismo y otro sin sincronismo) preguntando una suma a su grupo local. La otra aplicación de su mismo SeCo contesta respondiendo a la suma.
+Por último la aplicación envía un HelloMsg al grupo general "pregunta" para que le contesten todos.
+Esta aplicación comprueba que los mensajes locales solo llegan a las aplicaciones del grupo local y que los mensajes a un grupo general llegan a todos aunque este se llame igual que otro grupo local.
+Para ejecutar la aplicación basta con ejecutar el archivo 'startTest2.sh' al que se puede dar como parámetro un nombre pa un archivo en el que imprimir los resultados de la prueba.
+Se abren a su vez 4 ventanas: 3 con los logs de los 3 SeCos y otra con los logs de las aplicaciones.
+Para que la prueba haya sido superada con éxito el resultado impreso en el archivo debe ser como el siguiente:
+
+=====>>> Test done on: Tue Sep 18 15:04:49 GMT+01:00 2007 <<<=====
+Aplicación 1: Respuesta a Mensaje Local sin sincronismo ==> OK 
+Aplicación 1: Respuesta a Mensaje Local con sincronismo ==> OK 
+Aplicación 3: Respuesta a Mensaje Local sin sincronismo ==> OK 
+Aplicación 3: Respuesta a Mensaje Local con sincronismo ==> OK 
+Aplicación 5: Respuesta a Mensaje Local sin sincronismo ==> OK 
+Aplicación 5: Respuesta a Mensaje Local con sincronismo ==> OK 
+Contestación al Hello al grupo GENERAL pregunta de parte de Aplicación 6 ==> OK  
+Contestación al Hello al grupo GENERAL pregunta de parte de Aplicación 4 ==> OK  
+Contestación al Hello al grupo GENERAL pregunta de parte de Aplicación 2 ==> OK  
+Contestación al Hello al grupo GENERAL pregunta de parte de Aplicación 1 ==> OK  
+Contestación al Hello al grupo GENERAL pregunta de parte de Aplicación 3 ==> OK  
+
+Si se recibe algún mensaje que no se debería por alguna de las aplicaciones saldrá un mensaje de error como el siguiente:
+
+Respuesta HelloMsg recibida que no se debería recibir de Aplicacion4: ERROR ==> isabel.seco.tests.test2.HelloMsg@11a64ed
+
+
+Deben estar además todas las líneas anteriormente expuestas para que la prueba haya sido superada con éxito.

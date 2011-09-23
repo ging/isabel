@@ -1,0 +1,784 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+#-----------------------------------------
+
+
+class SiteTCC {
+    inherit NodeTCC
+    
+    #-- Node attributes
+
+    public variable siteId
+    public variable fullname
+    public variable main
+    public variable ctrl
+
+    #-- Building the tree
+    
+    constructor {_agendaobj _siteId _fullname _main {_ctrl 0}} {
+	NodeTCC::constructor $_agendaobj} {}
+
+    destructor {}
+
+    # Cleanup - Destroy all the internal state information. 
+    # This method is called when the state of the agenda is inconsistent,
+    # so we will try to delete all the invalid information.
+    public proc cleanup {}
+
+    public proc parse {agendaobj str}
+
+    public method prettyPrinter {{offset 0}}
+    
+    public method getTitle {}
+    
+    # Returns a list describing my node. 
+    # It is called by the method getNodes of my parent node.
+    public method getMyNode {} {}
+    
+    public method getNodes {}
+
+    # Counter: How many existing objects are pointing to me
+    public variable sitereferences 0
+
+    #-- Accessors
+
+    public method getSiteId {}
+    public method getFullname {}
+    public method getMain {}
+    public method getCtrl {}
+
+    #-- Online  
+
+    public method online {}
+
+    #-- Selection
+
+    # Return 1 if the node can be selected
+    public method isSelectable {}
+
+    # Methods called when a node is selected or unselected.
+    public method select {} 
+    public method unselect {}
+
+    # Return 1 if the node is selected, otherwise returns 0.
+    public method isSelected {}
+
+    #-- Main sites
+
+    # Auxiliar variable used when creating or editing site objects.
+    private common aux_main
+
+    # Include me to or remove me from the list of main sites.
+    public method toggleMainSite {}
+
+    # Returns 1 if this is a main site, else 0.
+    public method isMainSite {}
+
+    #-- Additional control sites
+
+    # Auxiliar variable used when creating or editing site objects.
+    private common aux_ctrl
+
+    # Include me to or remove me from the list of additional control sites.
+    public method toggleCtrlSite {}
+
+    # Returns 1 if this is an additional control site, else 0.
+    public method isCtrlSite {}
+
+    #-- Node edition
+
+    public method edit {}
+
+    # Method used to validate the values modified when this node is edited.
+    # $tl is the object created to edit the values.
+    private method validateEdit {tl}
+
+    # Method used to update the nod3e values with the edited values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the values.
+    private method updateEdit {tl}
+
+    #-- Node creation
+
+    # Create a new empty node, and opens an edition window to edit its values.
+    # If the node is created successfully, then this method returns a reference
+    # to the new created node; else it returns "".
+    # $agendaobj is a reference to the AgendaTCC object which will contain the created node.
+    public proc new {agendaobj}
+
+    # Method used to validate the values of the new node.
+    # $tl is the object created to edit the new values.
+    private proc validateNew {tl}
+
+    # Method used to create the new node with the validated values.
+    # It is called when the OK button is pressed.
+    # $tl is the object created to edit the new values.
+    private proc updateNew {tl agendaobj}
+
+    #-- Node deletion
+
+    # Delete this node
+    public method kill {}
+
+    # Delete this node
+    public method deleteNode {}
+
+    #-- All the created sites
+
+    # Array with all the created sites.
+    # $everysite($siteId) is the SiteTCC object associated to the given siteId.
+    public common everysite
+
+    # Returns the SiteTCC object associated to the given siteId.
+    public proc getSite {siteId}
+
+    #-- Menu configuration
+
+    # Configures the entries of the itemMenu of this node.
+    # Returns a reference to this menu.
+    public method configureItemMenu {{menu ""}}
+
+    #-- Helpers
+
+    # Helper procedure used by the tcl trace command to update the
+    # infovar variable (passed by reference) with the fullname of the
+    # site whose siteId is $var 
+    public proc traceInfo {infovar var index op}
+
+    # Validate character of a SiteId
+    public proc ValidateSiteIdCB {c}
+
+    # Compare the siteid of two sites. Used to sort the site
+    # list by siteid
+    public proc compareSiteIds {_site1 _site2}
+
+    #-- Order
+
+    # Moves the node in the tree up.
+    public method moveUp {} {}
+
+    # Moves the node in the tree down.
+    public method moveDown {} {}
+}
+
+#-----------------------------------------
+
+body SiteTCC::constructor {_agendaobj _siteId _fullname _main {_ctrl 0}} {
+
+    set siteId     $_siteId
+    set fullname   $_fullname
+    set main       $_main
+    set ctrl       $_ctrl
+
+    if {[lsearch -exact "0 1" $_main] == -1} {
+	set emsg "ERROR:: Main site: No valid boolean value: \"$_main\""
+	puts stderr $emsg
+	error $emsg 
+    }
+
+    if {[lsearch -exact "0 1" $_ctrl] == -1} {
+	set emsg "ERROR:: control site: No valid boolean value: \"$_ctrl\""
+	puts stderr $emsg
+	error $emsg 
+    }
+
+    if {[info exists everysite($siteId)]} {
+	set emsg "ERROR:: SiteId \"$siteId\" has been already defined."
+	puts stderr $emsg
+	error $emsg 
+    }
+    set everysite($siteId) $this
+}
+
+#-----------------------------------------
+
+body SiteTCC::destructor {} {
+
+    if {[isSelected]} {
+        unselect
+    }
+    
+    unset everysite($siteId)
+}
+
+#-----------------------------------------
+
+body SiteTCC::cleanup {} {
+
+    foreach _nick [array names everysite] {
+        catch {unset everysite($_nick)}
+    }
+}
+
+#-----------------------------------------
+
+body SiteTCC::parse {agendaobj str} {
+
+    set class     [lindex $str 0]
+    CheckStrings $class Site
+ 
+    set siteid     [getOptionListValue $str -nickname]
+    set fullname   [getOptionListValue $str -location]
+    set main       [getOptionListValue $str -main 0] 
+    set ctrl       [getOptionListValue $str -ctrl 0] 
+
+    WriteTraceMsg "ica: parsing site \"$siteid\""
+
+    set me [SiteTCC ::#auto $agendaobj $siteid $fullname $main $ctrl]
+
+    return $me
+}
+
+#-----------------------------------------
+
+body SiteTCC::prettyPrinter {{offset 0}} {
+    
+    set _spc1 [NodeTCC::spaces $offset]
+
+    return "${_spc1}[list [list Site -nickname $siteId -location $fullname -main $main -ctrl $ctrl]]"
+}
+
+#-----------------------------------------
+
+body SiteTCC::isSelectable {} {
+
+    return 1
+}
+
+#-----------------------------------------
+
+body SiteTCC::select {} {
+
+    [$agendaobj getSelection] select $this
+}
+
+#-----------------------------------------
+
+body SiteTCC::unselect {} {
+
+    [$agendaobj getSelection] unselect $this
+}
+
+#-----------------------------------------
+
+body SiteTCC::isSelected {} {
+    
+    [$agendaobj getSelection] isSelected $this
+}
+
+#-----------------------------------------
+
+body SiteTCC::getTitle {} {
+
+    if {$sitereferences != 0} {
+	return "$siteId - $fullname \[$sitereferences\]"
+    } else {
+	return "$siteId - $fullname"
+    }
+}
+
+#-----------------------------------------
+
+body SiteTCC::getMyNode {} {
+
+    if {[isSelected]} {
+	set tags "selected"
+    } else {
+	set tags ""
+    }
+    
+    #--
+
+    set _icons "icasite "
+    
+    set _tcobj [$agendaobj cget -tcobj]
+    set _menubarobj [$_tcobj cget -menubarobj]    
+
+    set _show_menu_icon  [$_menubarobj cget -show_menu_icon]
+    if {$_show_menu_icon} {
+	lappend _icons icamenu         
+    }
+ 
+    set _show_mv_icons  [$_menubarobj cget -show_mv_icons]
+    if {$_show_mv_icons} {
+	if { ! [$parent firstSite $this]} {
+	    lappend _icons icafocusup
+	}
+	if { ! [$parent lastSite $this]} {
+	    lappend _icons icafocusdown         
+	}
+    }
+
+    if {$main} {
+	lappend _icons icamainsite
+    } else {
+	lappend _icons icanomainsite
+    }
+
+    if {$ctrl} {
+	lappend _icons icactrlsite
+    } else {
+	lappend _icons icanoctrlsite
+    }
+    
+    if {$sitereferences == 0} {
+	set _show_delete_icon  [$_menubarobj cget -show_delete_icon]
+	if {$_show_delete_icon} {
+	    lappend _icons icadelete         
+	}
+    }
+
+    if { ! [online]} {
+	lappend _icons icaoffline
+    }
+    
+    
+    list \
+	[getMyUid]  \
+	[getTitle] \
+	"site leaf $tags" \
+	"$_icons"
+}
+
+#-----------------------------------------
+
+body SiteTCC::getNodes {} {
+    
+    return ""
+}
+
+#-----------------------------------------
+
+body SiteTCC::getSiteId {} {
+
+    return $siteId
+}
+
+#-----------------------------------------
+
+body SiteTCC::getFullname {} {
+
+    return $fullname
+}
+
+#-----------------------------------------
+
+body SiteTCC::online {} {
+
+    set ccobj [$agendaobj getConnections]
+    $ccobj online $siteId
+}
+
+#-----------------------------------------
+
+body SiteTCC::getMain {} {
+
+    return $main
+}
+
+#-----------------------------------------
+
+body SiteTCC::getCtrl {} {
+
+    return $ctrl
+}
+
+#-----------------------------------------
+
+body SiteTCC::toggleMainSite {} {
+
+    set main [expr 1 - $main]
+}
+
+#-----------------------------------------
+
+body SiteTCC::isMainSite {} {
+
+    return $main
+}
+
+#-----------------------------------------
+
+body SiteTCC::toggleCtrlSite {} {
+
+    set ctrl [expr 1 - $ctrl]
+}
+
+#-----------------------------------------
+
+body SiteTCC::isCtrlSite {} {
+
+    return $ctrl
+}
+
+#-----------------------------------------
+
+body SiteTCC::edit {} {
+
+    set tl [BaseFrameTCC #auto -title [getTitle]]
+    
+    $tl setValidationCmd [code $this validateEdit $tl]
+    
+    $tl setUpdateCmd     [code $this updateEdit $tl]
+    
+    set c [$tl getContent]
+    
+    iwidgets::combobox $c.sid \
+	-labeltext "Site Nickname:" \
+	-labelpos nw
+    pack $c.sid -padx 14 -pady 4 -fill x -expand 1 -anchor s
+    $c.sid component entry insert 0 $siteId
+    
+    foreach sid [SiteManager::GetSites] { 
+	if { ! [info exists everysite($sid)]} {
+	    $c.sid insert list end $sid
+	}
+    }
+
+    iwidgets::entryfield $c.name \
+	-labeltext "Site Location:" \
+	-labelpos nw
+    pack $c.name -padx 14 -pady 4 -fill x
+    $c.name component entry insert 0 $fullname
+
+#--
+
+    frame $c.f
+    pack $c.f -expand 1 -padx 14 -pady 4 -anchor nw
+
+    set _font [$c.name cget -labelfont]
+
+    label $c.f.lmain \
+	-text "Main Site: " \
+	-font $_font 
+
+    checkbutton $c.f.main \
+	-indicatoron 0 \
+	-bd 0 \
+	-image icanomainsite \
+	-selectimage icamainsite \
+	-variable [scope aux_main] \
+	-onvalue 1 \
+	-offvalue 0
+    set aux_main $main
+
+    label $c.f.lctrl \
+	-text "Control Site: " \
+	-font $_font 
+
+    checkbutton $c.f.ctrl \
+	-indicatoron 0 \
+	-bd 0 \
+	-image icanoctrlsite \
+	-selectimage icactrlsite \
+	-variable [scope aux_ctrl] \
+	-onvalue 1 \
+	-offvalue 0
+    set aux_ctrl $ctrl
+
+    grid $c.f.lmain -row 0 -column 0 -sticky e 
+    grid $c.f.main  -row 0 -column 1 
+    grid $c.f.lctrl -row 1 -column 0 -sticky e 
+    grid $c.f.ctrl  -row 1 -column 1 
+
+}
+
+#-----------------------------------------
+
+body SiteTCC::validateEdit {tl} {
+    
+    set c [$tl getContent]
+    
+    # No empty siteId
+    set newsiteid [string trim [$c.sid get]]
+    if {$newsiteid == ""} {
+	return "Side Nickname can not be empty"
+    }
+    
+    # No duplicated siteId
+    if {[info exists everysite($newsiteid)]} {
+	if {$everysite($newsiteid) != $this} {
+	    return "Site Nickname \"$newsiteid\" has been already defined."
+	}
+    }
+
+    # No empty name
+    if {[string trim [$c.name get]] == ""} {
+	return "Site Location can not be empty"
+    }
+
+    return ""
+}
+
+#-----------------------------------------
+
+body SiteTCC::updateEdit {tl} {
+
+    set c [$tl getContent]
+
+    unset everysite($siteId)    
+    set siteId     [string trim [$c.sid get]]
+    set everysite($siteId) $this
+
+    set fullname   [string trim [$c.name get]]
+    set main       $aux_main
+    set ctrl       $aux_ctrl
+
+    $agendaobj refresh
+}
+
+#-----------------------------------------
+
+body SiteTCC::new {agendaobj} {
+
+    set tl [BaseFrameTCC #auto -title "New Participant"]
+    
+    $tl setValidationCmd [code validateNew $tl]
+    
+    $tl setUpdateCmd     [code updateNew $tl $agendaobj]
+    
+    set c [$tl getContent]
+    
+    iwidgets::combobox $c.sid \
+	-labeltext "Site Nickname:" \
+	-labelpos nw
+    pack $c.sid -padx 14 -pady 4 -fill x -expand 1 -anchor s
+    
+    foreach sid [SiteManager::GetSites] { 
+	if { ! [info exists everysite($sid)]} {
+	    $c.sid insert list end $sid
+	}
+    }
+
+    iwidgets::entryfield $c.name \
+	-labeltext "Site Location:" \
+	-labelpos nw
+    pack $c.name -padx 14 -pady 4 -fill x
+
+    #--
+
+    frame $c.f
+    pack $c.f -expand 1 -padx 14 -pady 4 -anchor nw
+
+    set _font [$c.name cget -labelfont]
+
+    label $c.f.lmain \
+	-text "Main Site: " \
+	-font $_font 
+
+    checkbutton $c.f.main \
+	-indicatoron 0 \
+	-bd 0 \
+	-image icanomainsite \
+	-selectimage icamainsite \
+	-variable [scope aux_main] \
+	-onvalue 1 \
+	-offvalue 0
+
+    label $c.f.lctrl \
+	-text "Control Site: " \
+	-font $_font 
+
+    checkbutton $c.f.ctrl \
+	-indicatoron 0 \
+	-bd 0 \
+	-image icanoctrlsite \
+	-selectimage icactrlsite \
+	-variable [scope aux_ctrl] \
+	-onvalue 1 \
+	-offvalue 0
+
+    grid $c.f.lmain -row 0 -column 0 -sticky e 
+    grid $c.f.main  -row 0 -column 1 
+    grid $c.f.lctrl -row 1 -column 0 -sticky e 
+    grid $c.f.ctrl  -row 1 -column 1 
+
+    #--
+
+    set res [$tl waitFor]
+    
+    return $res
+}
+
+#-----------------------------------------
+
+body SiteTCC::validateNew {tl} {
+  
+    set c [$tl getContent]
+    
+    # No empty siteId
+    set newsiteid [string trim [$c.sid get]]
+    if {$newsiteid == ""} {
+	return "Side Nickname can not be empty"
+    }
+    
+    # No duplicated siteId
+    if {[info exists everysite($newsiteid)]} {
+	return "Site Nickname \"$newsiteid\" has been already defined."
+    }
+
+    # No empty name
+    if {[string trim [$c.name get]] == ""} {
+	return "Site Location can not be empty"
+    }
+
+    return ""
+}
+ 
+#-----------------------------------------
+
+body SiteTCC::updateNew {tl agendaobj} {
+
+    set c [$tl getContent]
+
+    set _siteId     [string trim [$c.sid get]]
+    set _fullname   [string trim [$c.name get]]
+    set _main       $aux_main
+    set _ctrl       $aux_ctrl
+
+    set _site [list Site \
+		   -nickname $_siteId \
+		   -location $_fullname \
+		   -main $_main \
+		   -ctrl $_ctrl]
+    
+    set child [SiteTCC::parse $agendaobj $_site]
+
+    return $child
+}
+
+#-----------------------------------------
+
+body SiteTCC::kill {} {
+
+    if {$sitereferences != 0} return
+
+    unselect 
+
+    delete object $this
+}
+
+#-----------------------------------------
+
+body SiteTCC::deleteNode {} {
+    
+    $parent deleteChild $this
+}
+
+#-----------------------------------------
+
+body SiteTCC::getSite {siteId} {
+
+    if {[info exists everysite($siteId)]} {
+	return $everysite($siteId)
+    } else {
+	return ""
+    }
+}
+
+#-----------------------------------------
+
+body SiteTCC::configureItemMenu {{menu ""}} {
+    
+    set menu [NodeTCC::configureItemMenu $menu]
+    
+    $menu add command -label "Edit Site" \
+	-command [code $this edit]
+    
+    $menu add separator
+    
+    if {$sitereferences == 0} {
+	$menu add command -image icadelete \
+	    -command [code $this deleteNode]
+    }
+    
+    if { ! [$parent firstSite $this]} {
+	$menu add command -image icafocusup \
+	    -command [code $this moveUp]
+    }
+    
+    if { ! [$parent lastSite $this]} {
+	$menu add command -image icafocusdown \
+	    -command [code $this moveDown]
+    }
+
+    return $menu   
+}
+
+#-----------------------------------------
+
+body SiteTCC::traceInfo {infovar var index op} {
+    upvar $infovar iv $var v
+
+    if {$index == ""} {
+	if {$v == ""} {
+	    set iv ""
+	    return
+	}
+	set s [getSite [string trim $v]]
+    } else {
+	set s [getSite [string trim $v($index)]]
+    }
+
+    if {$s == ""} {
+	set iv "Unknown Site"
+    } else {
+	set iv [$s cget -fullname]
+    } 
+
+}
+
+#-----------------------------------------
+
+body SiteTCC::ValidateSiteIdCB {c} {
+
+    regexp {[a-z]|[A-Z]|[0-9]|-|_} $c
+}
+
+
+#-----------------------------------------
+
+body SiteTCC::compareSiteIds {_site1 _site2} {
+    
+    set _sid1 [string tolower [$_site1 cget -siteId]]
+    set _sid2 [string tolower [$_site2 cget -siteId]]
+
+    string compare $_sid1 $_sid2
+}
+
+#-----------------------------------------
+
+body SiteTCC::moveUp {} {
+
+    $parent moveSite $this -1
+}
+
+#-----------------------------------------
+
+body SiteTCC::moveDown {} {
+
+    $parent moveSite $this 1
+}
+
+#-----------------------------------------

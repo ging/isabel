@@ -1,0 +1,626 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+################################################################
+#
+############## Description #####################################
+#
+#   Tree widget.
+#
+############## Summary of Data Structures ######################
+#
+#  Classes: 
+#
+#    - TreeWidgetC: A canvas with a scrollbar to display info.
+#    - TreeNodeWidgetC: Each entry to display in the list.
+#
+############## Public variables and methods ####################
+#
+#    - TreeWidgetC:
+#
+#       o Add {path icon tags} 
+#       o Del {path} 
+#       o DelAll {} 
+#       o SetSelection {path} 
+#       o GetSelection {} 
+#       o Open {path} 
+#       o Close {path} 
+#       o ToggleOC {path} 
+#       o SetState {st} 
+#
+#    - TreeNodeWidgetC:
+#
+#       o  path
+#       o  children
+#       o  open
+#       o  icon
+#       o  tags
+#       o  highlight_w
+#
+#       o AddChild {node} 
+#       o DelChild {node} 
+#
+################################################################
+
+
+class TreeWidgetC {
+
+    private common maskdata {
+#define solid_width 9
+#define solid_height 9
+static unsigned char solid_bits[] = {
+    0xff, 0x01, 0xff, 0x01, 0xff, 0x01, 0xff, 0x01, 0xff, 0x01, 0xff, 0x01,
+    0xff, 0x01, 0xff, 0x01, 0xff, 0x01
+};
+    }
+
+    private common opendata {
+#define open_width 9
+#define open_height 9
+static unsigned char open_bits[] = {
+    0xff, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x7d, 0x01, 0x01, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0xff, 0x01
+};
+    }
+
+    private common closeddata  {
+#define closed_width 9
+#define closed_height 9
+static unsigned char closed_bits[] = {
+    0xff, 0x01, 0x01, 0x01, 0x11, 0x01, 0x11, 0x01, 0x7d, 0x01, 0x11, 0x01,
+    0x11, 0x01, 0x01, 0x01, 0xff, 0x01
+};
+    }
+
+    # Font
+    private common font "-adobe-helvetica-medium-r-normal-*-11-80-100-100-p-56-iso8859-1"
+
+    # path hasta la rama seleccionada.
+    private variable selection ""
+
+    # nombre del widget que implementa la caja azul 
+    # utilizada para resaltar la seleccion actual.
+    private variable bluebox ""
+
+    # $nodes($path) es el objeto que implementa el nodo asociado a $path.
+    private variable nodes
+
+    # $pathw($w): Si $w es un widget que se ha creado para pintar graficamente
+    # algun nodo del arbol, entonces $pathw($w) es el path de ese nodo. 
+    private variable pathw
+
+    # Posicion y por donde voy pintando el arbol
+    private variable currenty
+
+    # Nodo raiz
+    private variable root
+
+    # widget de la izquierda
+    private variable wroot
+
+    # I am waiting for "Draw" to start
+    private variable drawPending 0
+
+    # User specified callback to execute when a selection is done.
+    # $path is added as argument.
+    private variable selectionCB
+
+    # User specified callback to execute when a branch is opened.
+    # $path is added as argument.
+    private variable openCB
+
+    # Widget state: normal or disabled.
+    # It only affects to the SetSelection method.
+    private variable state
+
+    # Text color for normal and disables states.
+    private common normalcolor   black
+    private common disabledcolor #aaaaaa
+
+    # Constructor.
+    # Arguments:
+    #    w: widget name
+    #    sCB: selection callback
+    #    oCB: open callback
+    #    args: args to build the internal canvas
+    constructor {w sCB oCB args} {}
+
+    destructor {}
+
+    # Add a new element to the tree.
+    # $name is the name of the node.
+    # $icon is the icon to display for this node.
+    # $tags are external tags for this node.
+    public method Add {path icon tags} {}
+
+    # Removes a node from the tree.
+    public method Del {path} {}
+
+    # Removes all the tree nodes.
+    public method DelAll {} {}
+
+    # Change the selection to the indicated path
+    public method SetSelection {path} {}
+
+    # Retrieve the current selected path
+    public method GetSelection {} {}
+
+    # Open a branch of a tree
+    public method Open {path} {}
+
+    # Close a branch of a tree
+    public method Close {path} {}
+
+    # Toggle betwen open and close in a branch of the tree.
+    public method ToggleOC {path} {}
+
+    # Set the state to normal or disabled
+    public method SetState {st} {}
+
+    # Draw the selection highlight
+    private method DrawSelection {} {}
+
+    # Draw the tree on the canvas
+    private method Draw {} {}
+
+    # Draw a single layer of the tree on the canvas.
+    # Indented by $xoffset pixels
+    private method DrawLayer {node xoffset} {}
+
+    # Compares the path names of the nodes.
+    private method CmpPathNodes {node1 node2} {}
+
+    # Call "Draw" when idle
+    private method DrawWhenIdle {} {}
+
+    private method Clean {path} {}
+
+    # Return the path of the widget that is located
+    # at real coordinates $x, $y
+    private method LabelAt {x y} {}
+
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::constructor {w sCB oCB args} {
+
+    set bg [IsabelColorsC::GetResource textBackground Background white]
+    set fg [IsabelColorsC::GetResource foreground     Foreground black]
+
+    image create bitmap openbm \
+	-data $opendata \
+	-maskdata $maskdata \
+	-foreground $fg \
+	-background $bg
+    image create bitmap closedbm \
+	-data $closeddata \
+	-maskdata $maskdata \
+	-foreground $fg \
+	-background $bg
+    
+    #-----------------
+
+    set selectionCB $sCB
+    set openCB      $oCB
+
+    set state normal
+    
+    #-----------------
+
+    frame $w -bg $bg
+
+    set wroot $w.c
+
+    canvas $wroot \
+	-bg $bg \
+	-highlightthickness 0  \
+	-yscrollcommand "$w.sb set" 
+
+
+    eval $wroot configure  $args
+
+    scrollbar $w.sb -orient vertical -command "$wroot yview" \
+	-width 10 \
+	-bg $bg
+
+
+    pack $w.sb -side right -fill y
+    pack $wroot -side left -fill both -expand 1 -padx 5 -pady 5
+
+    #-----------------
+
+    frame $wroot.destroy
+    bind $wroot.destroy <Destroy> "delete object $this"
+
+    $wroot bind x <1> "
+	$this SetSelection \[[code $this LabelAt %x %y]\]
+    "
+
+    $wroot bind x <Double-1> "
+	$this ToggleOC \[[code $this LabelAt %x %y]\]
+    "
+
+    #-----------------
+
+    set root [TreeNodeWidgetC #auto "/" "" ""]
+    set nodes(/) $root
+
+}
+
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::destructor {} {
+
+    catch {bind $wroot.destroy <Destroy> ""}
+    if {[winfo exists $wroot]} {
+        destroy $wroot
+    }
+
+    foreach n [array names nodes] {
+	delete object $nodes($n)
+    }
+}
+
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::Add {path icon tags} {
+
+    set dir [file dirname $path]
+    set n   [file tail $path]
+
+    if {![info exists nodes($dir)]} {
+	error "parent item \"$dir\" is missing"
+    }
+    
+    if {[info exists nodes($path)]} {
+	error "item \"$path\" already exists"
+    }
+    
+    set n [TreeNodeWidgetC #auto $path $icon $tags]
+    set nodes($path) $n
+
+    $nodes($dir) AddChild $n
+
+    DrawWhenIdle
+}
+
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::Del {path} {
+    
+    if {![info exists nodes($path)]} return
+    
+    if {$path == "/"} {
+	delete object $root
+	Clean /
+	set root [TreeNodeWidgetC #auto "/" "" ""]
+	set nodes(/) $root
+    } else {
+	set dir [file dirname $path]
+	$nodes($dir) DelChild $nodes($path)
+	Clean $path
+    }
+    DrawWhenIdle
+}
+
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::Clean {path} {
+
+    if {[string first $path $selection] == 0} {
+	set selection ""
+	set bluebox   ""
+    }
+
+    foreach i [array names nodes ${path}*] {
+	unset nodes($i)
+    }
+
+    foreach w [array names pathw] {
+	if {[string first $path $pathw($w)] == 0} {
+	    unset pathw($w)
+	}
+    }
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::DelAll {} {
+
+    Del "/"
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::SetSelection {path} {
+
+    if {$state != "normal"} return
+ 
+    set selection $path
+    DrawSelection
+
+    if {$path != ""} {
+	if {$selectionCB != ""} {
+	    if {[catch {uplevel #0 $selectionCB $path} error]} {
+		error "TreeWidgetC error: $error"
+	    }
+	}
+    }
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::GetSelection {} {
+
+  return $selection
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::DrawSelection {} {
+
+    if {$bluebox != ""} {
+	$wroot delete $bluebox
+    }
+    set path $selection
+    
+    if {$path == ""} return
+    
+    set wst [$nodes($path) cget -highlight_w]
+    if {$wst == ""} return
+
+    set bbox [$wroot bbox $wst]
+    if {[llength $bbox]==4} {
+	set i [eval $wroot create rectangle $bbox -fill skyblue -outline {{}}]
+	set bluebox $i
+	$wroot lower $i
+    } else {
+	set bluebox {}
+    }
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::Draw {} {
+
+    $wroot delete all
+    
+    set drawPending 0
+    
+    set currenty 15
+    
+    DrawLayer $root 10
+    
+    $wroot config -scrollregion [$wroot bbox all]
+    
+    DrawSelection
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::DrawLayer {node xoffset} {
+
+    set start [expr $currenty-10]
+    set y $currenty
+    foreach c [lsort -command CmpPathNodes [$node cget -children]] {
+	set y $currenty
+	incr currenty 17
+	$wroot create line $xoffset $y [expr $xoffset+10] $y -fill gray50 
+	set icon [$c cget -icon]
+	set taglist [$c cget -tags]
+	lappend taglist x
+	set x [expr $xoffset+12]
+	if {$icon != ""} {
+	    set k [$wroot create image $x $y -image $icon -anchor w -tags $taglist]
+	    incr x 20
+	    set pathw($k) [$c cget -path]
+	}
+	set j [$wroot create text $x $y -text [file tail [$c cget -path]] -font $font \
+		-anchor w -tags $taglist -fill [subst \$${state}color]]
+	set pathw($j) [$c cget -path]
+	$c configure -highlight_w $j
+
+	if {[$c cget -children] != ""} {
+	    if {[$c cget -open] == 1} {
+		set j [$wroot create image $xoffset $y -image openbm]
+		$wroot bind $j <1> [code $this Close [$c cget -path]]
+		DrawLayer $c [expr $xoffset+18]
+	    } else {
+		set j [$wroot create image $xoffset $y -image closedbm]
+		$wroot bind $j <1> [code $this Open [$c cget -path]]
+	    }
+	}
+    }
+    set j [$wroot create line $xoffset $start $xoffset [expr $y+1] -fill gray50 ]
+    $wroot lower $j
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::CmpPathNodes {node1 node2} {
+
+    set path1 [$node1 cget -path]
+    set path2 [$node2 cget -path]
+    string compare $path1 $path2
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::DrawWhenIdle {} {
+
+  if {$drawPending == 0} {
+    set drawPending 1
+    after idle [code $this Draw]
+  }
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::Open {path} {
+    
+    if {![info exists nodes($path)]} return
+
+    if {[$nodes($path) cget -open] == 1} return
+    if {[$nodes($path) cget -children] == ""} return
+
+    $nodes($path) configure -open 1
+
+    if {$path != ""} {
+	if {$openCB != ""} {
+	    if {[catch {uplevel #0 $openCB $path} error]} {
+		error "TreeWidgetC::openCB error: $error"
+	    }
+	}
+    }
+
+    DrawWhenIdle
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::Close {path} {
+
+    if {![info exists nodes($path)]} return
+    if {[$nodes($path) cget -open] == 0} return
+
+    $nodes($path) configure -open 0
+
+    DrawWhenIdle
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::ToggleOC {path} {
+
+    if {![info exists nodes($path)]} return
+
+    if {[$nodes($path) cget -open] == 1} {
+	Close $path
+    } else {
+	Open $path
+    }
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::LabelAt {x y} {
+
+    set x [$wroot canvasx $x]
+    set y [$wroot canvasy $y]
+    foreach m [$wroot find overlapping $x $y $x $y] {
+	if {[info exists pathw($m)]} {
+	    return $pathw($m)
+	}
+    }
+    return ""
+}
+
+#----------------------------------------------------------------
+
+body TreeWidgetC::SetState {st} {
+
+    if {$st != "normal" && $st != "disabled"} {
+	error "Invalid state: Should be \"normal\" or \"disabled\"."
+    }
+
+    set state $st
+    DrawWhenIdle
+}
+
+#----------------------------------------------------------------
+#----------------------------------------------------------------
+
+class TreeNodeWidgetC {
+
+    # Path de este nodo
+    public variable path
+
+    # Nodos hijos.
+    public variable children
+
+    # Abierto? 1 si deben pintarse sus hijos.
+    public variable open
+
+    # icono usado para pintar este nodo
+    public variable icon
+
+    # tags asociadas a este icono.
+    public variable tags
+
+    # widgets a iluminar si se selecciona este nodo
+    public variable highlight_w
+
+    constructor {_path _icon _tags} {}
+
+    destructor {} 
+
+    public method AddChild {node} {}
+    public method DelChild {node} {}
+}
+
+
+
+#----------------------------------------------------------------
+
+body TreeNodeWidgetC::constructor {_path _icon _tags} {
+
+    set path          $_path
+    set children      ""
+    set open          0
+    set icon          $_icon
+    set tags          $_tags
+    set highlight_w  ""
+}
+
+#----------------------------------------------------------------
+
+body TreeNodeWidgetC::destructor {} {
+
+    foreach n [array names children] {
+	delete object $root
+    }
+}
+
+#----------------------------------------------------------------
+
+body TreeNodeWidgetC::AddChild {node} {
+
+    set children [lappend children $node]
+}
+
+#----------------------------------------------------------------
+
+body TreeNodeWidgetC::DelChild {node} {
+
+    set i [lsearch -exact $children $node]
+    if {$i>=0} {
+	delete object $node
+	set children [lreplace $children $i $i]
+    }
+}
+
+#----------------------------------------------------------------

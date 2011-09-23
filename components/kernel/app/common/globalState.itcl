@@ -1,0 +1,275 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# globalState.itcl
+#
+# Defines the GlobalState class.
+#
+#########################################################################
+
+
+class GlobalState {
+
+    ### array, indexed by component name and site ids
+    # Stores the current state of each component for each site.
+    # Stopped  : The component has not been created and it's not being created.
+    # Waiting  : The component is being created but there isnt a confirmation of success.
+    # Running  : The component has been successfully created.
+    # Disabled : The component can't be created.
+    private common state
+
+    ### array, indexed by component name and site ids
+    # Stores the current value of "first" of each component for each site.
+    # 1 : First site executing thecomponent.
+    # 0 : other sites are executing this component.
+    private common first
+    
+    ### array, indexed by component name and site ids
+    # Stores the instance counter of each component for each site.
+    private common instance
+    
+    # Returns the component state.
+    public proc GetState {site_id compName}
+
+    # Returns the component instance counter.
+    public proc GetInstance {site_id compName}
+
+    # Returns the sites for "compName" in the state "state".
+    public proc GetSitesByState {compName stateList}
+
+    # Returns the components in one of the states from "stateList" for the given site.
+    public proc GetComponentsByState {site_id stateList} 
+
+    # Returns the components in one of the states from "stateList" for any user
+    public proc GetAllComponentsByState {stateList} 
+
+    # Updates a component state entry.
+    public proc SetState {site_id compName state_ {first_ ""} {instance_ ""}} 
+
+    # Returns 1 if the component is Runing or Waiting for ANY user
+    # Returns 0 otherwise.
+    public proc ComponentExists {compName}
+
+    # Registers a site in the Component Manager.
+    # Every Component for that site is set to "Stopped" or "Disabled".
+    public proc RegisterSite {site_id}
+
+    # unsets the state variable
+    public proc RemoveComponent {compName site_id}
+
+    # Dump the internal state.
+    public proc Dump {}
+
+    #-- Refresh the state in all the sites.
+
+    # Afer code of the last RefreshSiteConnections invocation.
+    private common afterCode_RefreshSiteConnections ""
+
+    # Send a synchonization msesage with all the connected sites to the isastate SeCo group.
+    # The message is not sent inmediatly. It is send using "after idle", and the after 
+    # code is saved in the afterCode_RefreshSiteConnections attribute. 
+    # If this method is invoked when there is a pending sent, the older is cancelled.
+    public proc RefreshSiteConnections {}
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::GetState {site_id compName} {
+
+    if {[info exists state($site_id,$compName)]} {
+	return $state($site_id,$compName)
+    } else {
+	return "Undefined"
+    }
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::GetInstance {site_id compName} {
+
+    if {[info exists instance($site_id,$compName)]} {
+	return $instance($site_id,$compName)
+    } else {
+	return 0
+    }
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::SetState {site_id compName state_ {first_ ""} {instance_ ""}} {
+
+    set state($site_id,$compName) $state_
+
+    if {$first_ != ""} {
+	set first($site_id,$compName)    $first_
+    }
+    
+    if {$instance_ != ""} {
+	set instance($site_id,$compName) $instance_
+    }
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::GetComponentsByState {site_id stateList} {
+
+    set res ""
+    foreach compName [session Activity GetComponents] {
+        if {[lsearch -exact $stateList [GetState $site_id $compName]] != -1} {
+            lappend res $compName 
+        }
+    }
+    return $res
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::GetAllComponentsByState {stateList} {
+
+    set res ""
+    foreach compName [session Activity GetComponents] {
+        foreach _site_id [SiteManager::GetSites] {
+           if {[lsearch -exact $stateList [GetState $_site_id $compName]] != -1} {
+              lappend res $compName
+              break
+           } 
+        }
+    }
+    return $res
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::GetSitesByState {compName stateList} {
+
+    set res ""
+    foreach _site_id [SiteManager::GetSites] {
+        if {[lsearch -exact $stateList [GetState $_site_id $compName]] != -1} {
+            lappend res $_site_id
+        }
+    }
+    return $res
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::ComponentExists {compName} {
+
+    if {[lsearch -exact [GetAllComponentsByState "Running Waiting"] $compName]==-1} {
+	return 0
+    } else {
+	return 1
+    }
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::RegisterSite {site_id} {
+
+    set usercomps [SiteManager::GetSiteInfo $site_id components]
+    foreach compName [session Activity GetComponents] {
+	if {[lsearch -exact $usercomps $compName] != -1} {
+	    SetState $site_id $compName Stopped
+	} else {
+	    SetState $site_id $compName Disabled
+	}
+	set first($site_id,$compName)    0
+	set instance($site_id,$compName) 0
+    }
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::RemoveComponent {compName site_id} {
+
+    unset state($site_id,$compName)
+    unset first($site_id,$compName)
+    unset instance($site_id,$compName)
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::Dump {} {
+
+    foreach i [lsort [array names state]] {
+	regexp {(.*),(.*)} $i all site_id compname
+	WriteTraceMsg "$compname ($site_id) == $state($i) $first($i) $instance($i)"	
+    }
+}
+
+#---------------------------------------------------------------
+
+body GlobalState::RefreshSiteConnections {} {
+
+    set _DELAY 500
+
+    if {$afterCode_RefreshSiteConnections == ""} {
+	set afterCode_RefreshSiteConnections [after $_DELAY [code GlobalState::RefreshSiteConnections]]
+	return 
+    }
+
+    if {[catch "after info $afterCode_RefreshSiteConnections"]} {
+	set afterCode_RefreshSiteConnections ""
+
+	set _connected_sites "UM ConnectedSitesState"
+
+	foreach _site_id [SiteManager::GetSites] {
+
+	    set _comp_states ""
+	    foreach i [array names state -glob  $_site_id,* ] {
+		regexp {(.*),(.*)} $i all site_id compname
+		lappend _comp_states [list $compname $state($i) $first($i) $instance($i)]
+	    }	
+	    
+	    lappend _connected_sites \
+		"[list [SiteManager::GetSiteInfo $_site_id tool]] \
+		[list [SiteManager::GetSiteInfo $_site_id chid]] \
+		[list $_site_id] \
+                [list [SiteManager::GetSiteInfo $_site_id isabelversion]] \
+                [list [SiteManager::GetSiteInfo $_site_id isabelrelease]] \
+		[list [SiteManager::GetSiteInfo $_site_id master]] \
+		[list [SiteManager::GetSiteInfo $_site_id host]] \
+		[list [SiteManager::GetSiteInfo $_site_id secoid]] \
+		[list [SiteManager::GetSiteInfo $_site_id name]] \
+		[list [SiteManager::GetSiteInfo $_site_id connectTo]] \
+		[list [SiteManager::GetSiteInfo $_site_id connectToIP]] \
+		[list [SiteManager::GetSiteInfo $_site_id useMulticast]] \
+		[list [SiteManager::GetSiteInfo $_site_id mcastbw]] \
+		[list [SiteManager::GetSiteInfo $_site_id useFlowserver]] \
+		[list [SiteManager::GetSiteInfo $_site_id fsupbw]] \
+		[list [SiteManager::GetSiteInfo $_site_id fsdownbw]] \
+		[list [SiteManager::GetSiteInfo $_site_id uname]] \
+		[list [SiteManager::GetSiteInfo $_site_id connectionTime] \
+                $_comp_states]"
+
+	}
+	network RDOSync isastate 1 $_connected_sites
+
+    } else {
+	after cancel $afterCode_RefreshSiteConnections
+	set afterCode_RefreshSiteConnections [after $_DELAY [code GlobalState::RefreshSiteConnections]]
+    }
+}
+
+#------------------------------------------------------------------

@@ -1,0 +1,5 @@
+Tool(isabel_scanner, main.cc scanner.cc scannerApp.cc \
+	ctrlProtocol.cc )
+
+UseICF(isabel_scanner)
+

@@ -1,0 +1,158 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# scene.itcl
+#
+# To create an object to set the scene information.
+#
+#########################################################################
+
+class TC_SceneC {
+
+    #------------------
+    # PUBLIC INTERFACE
+    #------------------
+
+    # Create the widget in $w
+    constructor {w} {}
+
+    # Returns the scene description.
+    public method GetScene {}
+
+    # Save the scene description.
+    public method SetScene {_scene}
+    
+    #-------------------
+    # PRIVATE INTERFACE
+    #-------------------
+    
+    # widget where it is packed
+    private variable topw
+
+    # String with the scene information. It is a list of ket/value pairs.
+    # Implemented keys and values:
+    #  -conference: conference name.
+    #  -session: session name.
+    #  -presentation: presentation name.
+    #  -chair: chair name, position, organization and site_id.
+    #  -author: author name, position, organization and site_id.
+    #  -site: site_id
+    #  -participant: participant name, position, organization and site_id.
+    private variable scene
+    
+    destructor {}
+
+    # Makes the GUI
+    private method MakeGUI {}
+}
+
+#---------------------------------------------------------------
+
+body TC_SceneC::constructor {w} {
+
+    set topw $w
+
+    MakeGUI
+
+SetScene hola
+}
+
+#---------------------------------------------------------------
+
+body TC_SceneC::destructor {} {
+
+    catch {bind $topw.destroy <Destroy> ""}
+    if {[winfo exists $topw]} {
+        destroy $topw
+    }
+}
+
+#---------------------------------------------------------------
+
+body TC_SceneC::MakeGUI {} {
+
+    frame $topw \
+	-relief groove \
+	-borderwidth 1
+
+    label $topw.title \
+	-text Scene \
+	-font [IsabelFontsC::GetFont medium medium]
+    pack $topw.title -anchor w
+ 
+    iwidgets::scrolledtext $topw.scene \
+	-textfont [IsabelFontsC::GetFont medium medium] \
+	-hscrollmode none \
+	-width 200 \
+	-height 1000 
+    pack $topw.scene -padx 2 -pady 2 -fill both
+
+    #--
+
+    [$topw.scene childsite] tag configure title \
+	-font -adobe-*-bold-r-*-*-14-*-*-*-*-*-*-* \
+	-foreground black
+    #--
+
+    frame $topw.destroy
+    bind $topw.destroy <Destroy> "delete object $this"
+}
+
+#---------------------------------------------------------------
+
+body TC_SceneC::GetScene {} {
+    
+    return $scene
+}
+
+#---------------------------------------------------------------
+
+body TC_SceneC::SetScene {_scene} {
+
+    set scene $_scene
+
+    [$topw.scene childsite] configure -state normal
+
+    $topw.scene clear
+
+    set _tag ""
+    
+    foreach _x $scene {
+	
+	if {$_tag == ""} {
+	    set _tag title
+	    [$topw.scene childsite] insert end "$_x\n" $_tag
+	} else {
+	    set _tag ""
+	    [$topw.scene childsite] insert end "  $_x\n" $_tag
+	}
+    }
+    
+    [$topw.scene childsite] configure -state disabled
+}
+
+#---------------------------------------------------------------
+
+
+
