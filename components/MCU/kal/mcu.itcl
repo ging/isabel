@@ -101,6 +101,14 @@ class MCUComponentC {
     # $iosClientInfo($siteId) - Object with informations about a iOS client
     private variable iosClientInfo
 
+    # Video Desktop Grabber Task object used to grab the desktop, and send it to the iOS clients.
+    private variable vdgtobj ""
+
+    # Channel ID used to:
+    #    send the video flow with the grabbed desktop.
+    #    send the audio mix.
+    private variable avIOSChId 5
+
     # iOS clients send me this message to configure the MCU to send them the audio and video flows.
     #
     # $_siteId is the siteId used by the iOS client in the Isabel session.
@@ -113,6 +121,12 @@ class MCUComponentC {
 
     # Called to finish sending flows to the client.
     public method DelIOSClient {_siteId}   
+
+    # Cleanup all the configurations of the indicated client.
+    private method CleanupIOSConfiguration {_siteId}
+
+    # Reapply the current state to the desktop grabbing video task.
+    private method DesktopGrabbingVideoReapplyState {}
 }
 
 #---------------------------------------------------------
@@ -168,6 +182,11 @@ body MCUComponentC::destructor {} {
     if {$ffmpegobj != ""} {
 	delete object $ffmpegobj
 	set fmpegobj ""
+    }
+
+    if {$vdgtobj != ""} {
+	delete object $vdgtobj
+	set vdgtobj ""
     }
 }
 
@@ -365,17 +384,37 @@ body MCUComponentC::ConfigureStreamingMCU {} {
 
 body MCUComponentC::NewIOSClient {_siteId _chId _host _audioPort _videoPort} {
 
-    echo =======================================================================================
-    
-    WriteTraceMsg "Mcu: Configuring MCU for a new iOS client \"$_siteId\"."
+    WriteTraceMsg "Mcu: Configuring MCU to connect to a new iOS client \"$_siteId\"."
 
     #-----
 
     # Delete old configurations
     
-    DelIOSClient $_siteId
+    CleanupIOSConfiguration $_siteId
     
-    #-----
+    #-- Video : Isabel to iOS ----
+
+    if {$vdgtobj == ""} {
+	set vdgtobj [VideoDesktopGrabberTaskC "#auto"]
+
+	$vdgtobj AddListener [code $this DesktopGrabbingVideoReapplyState] 
+
+	DesktopGrabbingVideoReapplyState
+    }
+
+    set _videoBindId [$vdgtobj RPC video_bind($avIOSChId,$_host,$_videoPort)]
+    if {[catch {set _videoBindId [expr $_videoBindId]} res]} {
+	ErrorTraceMsg "MCU Video: daemon is not working properly. Bind failure."
+	set _videoBindId ""
+    }
+
+    #-- Video : iOS to Isabel ----
+
+    set _icmd "irouter RDO ir7_define_gateway(::ffff:$_host)"
+    network RDOLocalGroup local_isabel_client [list irouter AddListener $_icmd]
+    network RDOLocalGroup local_isabel_client $_icmd
+
+    #-- Audio ----
 
     # Audio PT
     # I will use the none-8KHz, whose PT is 100.
@@ -393,11 +432,11 @@ body MCUComponentC::NewIOSClient {_siteId _chId _host _audioPort _videoPort} {
     $mcudtobj RDO receive_audio_mode(0,$_participantId,MIX_MODE,$_audioPT,-50)
     
     # The new client and audio will send flows between them.
-    $mcudtobj RDO receive_audio(0,$_participantId,$audioParticipant,5)
+    $mcudtobj RDO receive_audio(0,$_participantId,$audioParticipant,$avIOSChId)
     $mcudtobj RDO receive_audio(0,$audioParticipant,$_participantId,$_chId)
 
     # The new client and irouter will send flows between them.
-    $mcudtobj RDO receive_audio(0,$_participantId,$irouterParticipant,5)
+    $mcudtobj RDO receive_audio(0,$_participantId,$irouterParticipant,$avIOSChId)
     $mcudtobj RDO receive_audio(0,$irouterParticipant,$_participantId,$_chId)
 
     # The new iOS client and the already connected iOS clients will send flows between them.
@@ -415,12 +454,21 @@ body MCUComponentC::NewIOSClient {_siteId _chId _host _audioPort _videoPort} {
 
     # Create a iOS Client Info object to store information about the new client.
 
-    set iosClientInfo($_siteId) [IOSClientInfoC "#auto" $_siteId $_chId $_host $_audioPort $_videoPort $_participantId]
+    set iosClientInfo($_siteId) [IOSClientInfoC "#auto" $_siteId $_chId $_host $_audioPort $_videoPort $_participantId $_videoBindId]
 }
 
 #---------------------------------------------------------
 
 body MCUComponentC::DelIOSClient {_siteId} {
+
+    WriteTraceMsg "Mcu: Configuring MCU to disconnect from a old iOS client \"$_siteId\"."
+
+    CleanupIOSConfiguration $_siteId
+}
+
+#---------------------------------------------------------
+
+body MCUComponentC::CleanupIOSConfiguration {_siteId} {
 
     if { ! [info exists iosClientInfo($_siteId)]} {
 	return
@@ -429,9 +477,47 @@ body MCUComponentC::DelIOSClient {_siteId} {
     set _partId [$iosClientInfo($_siteId) cget -participantId]
     $mcudtobj RDO remove_participant(0,$_partId)
 
+    set _videoBindId [$iosClientInfo($_siteId) cget -videoBindId]
+    if {$_videoBindId != ""} {
+	$vdgtobj RDO video_unbind($avIOSChId,$_videoBindId)
+    }
+
     delete object $iosClientInfo($_siteId)
 
     unset iosClientInfo($_siteId)
+}
+
+#---------------------------------------------------------
+
+body MCUComponentC::DesktopGrabbingVideoReapplyState {} {
+
+    $vdgtobj RDO "video_rec_channel($avIOSChId,Window grabber)"
+
+    set _framerate 15
+    #set _grabsize 640x480
+    #set _grabsize 128x96
+    #set _grabsize 256x192
+    set _grabsize 320x240
+    set _codecname H263
+    set _fq 50
+    set _bw 150
+    $vdgtobj RDO video_configure_channel($avIOSChId,$_framerate,$_grabsize,$_codecname,$_fq,$_bw)
+
+    $vdgtobj RDO video_send($avIOSChId,1)
+
+    foreach _sid [array names iosClientInfo] {
+
+	set _host      [$iosClientInfo($_sid) cget -host]
+	set _videoPort [$iosClientInfo($_sid) cget -videoPort]
+
+	set _videoBindId [$vdgtobj RPC video_bind($avIOSChId,$_host,$_videoPort)]
+	if {[catch {set _videoBindId [expr $_videoBindId]} res]} {
+	    ErrorTraceMsg "MCU Video: daemon is not working properly. Bind failure."
+	    set _videoBindId ""
+	}
+
+	$iosClientInfo($_sid) configure -videoBindId $_videoBindId
+    }
 }
 
 #---------------------------------------------------------

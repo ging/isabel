@@ -13,7 +13,11 @@ ISABEL_MCU_SRC:=\
                 $(COMPONENTS)/MCU/kal/mcudaemontask.itcl \
                 $(COMPONENTS)/MCU/kal/ffmpeg/ffmpeg.itcl \
                 $(COMPONENTS)/MCU/kal/ffmpeg/streaming.itcl \
+                \
                 $(COMPONENTS)/MCU/kal/ios/iosclientinfo.itcl \
+                $(COMPONENTS)/MCU/kal/ios/desktop_grabber/videodesktopgrabd.itcl \
+                $(COMPONENTS)/MCU/kal/ios/desktop_grabber/videodesktopgrabtask.itcl \
+                \
                 $(COMPONENTS)/MCU/kal/mcu.itcl \
                 $(COMPONENTS)/MCU/kal/mcuCC.itcl
 

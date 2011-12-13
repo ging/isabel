@@ -31,7 +31,7 @@
 
 class IOSClientInfoC {
 
-    constructor {_siteId _chId _host _audioPort _videoPort _participantId} {}
+    constructor {_siteId _chId _host _audioPort _videoPort _participantId _videoBindId} {}
     destructor  {} 
 
     # SiteId used by this client in the Isabel session.
@@ -51,12 +51,15 @@ class IOSClientInfoC {
     
     # Participant ID assigned to this client by the MCU
     public variable participantId
+
+    # Bind Id returned by the desktop grabbing video
+    public variable videoBindId 
 }
 
 
 #---------------------------------------------------------
 
-body IOSClientInfoC::constructor {_siteId _chId _host _audioPort _videoPort _participantId} {
+body IOSClientInfoC::constructor {_siteId _chId _host _audioPort _videoPort _participantId _videoBindId} {
 
     set siteId        $_siteId
     set chId          $_chId
@@ -64,6 +67,7 @@ body IOSClientInfoC::constructor {_siteId _chId _host _audioPort _videoPort _par
     set audioPort     $_audioPort
     set videoPort     $_videoPort
     set participantId $_participantId
+    set videoBindId   $_videoBindId
 }
 
 #---------------------------------------------------------
