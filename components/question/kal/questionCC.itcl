@@ -88,7 +88,7 @@ body QuestionsComponentClass::AddMySite {} {
     set _me [SiteManager::MySiteId]
 
     set _tool [SiteManager::GetSiteInfo $_me tool]
-    if {[lsearch -exact "Interactive GatewayClient" $_tool] == -1} {
+    if {[lsearch -exact "Interactive GatewayClient IOSClient" $_tool] == -1} {
 	return
     }
 
@@ -105,7 +105,7 @@ body QuestionsComponentClass::AddMySite {} {
 body QuestionsComponentClass::AddRemoteSite {site_id new} {
 
     set _tool [SiteManager::GetSiteInfo $site_id tool]
-    if {[lsearch -exact "Interactive GatewayClient" $_tool] == -1} {
+    if {[lsearch -exact "Interactive GatewayClient IOSClient" $_tool] == -1} {
 	return
     }
 
@@ -124,7 +124,7 @@ body QuestionsComponentClass::DelMySite {} {
     set _me [SiteManager::MySiteId]
 
     set _tool [SiteManager::GetSiteInfo $_me tool]
-    if {[lsearch -exact "Interactive GatewayClient" $_tool] == -1} {
+    if {[lsearch -exact "Interactive GatewayClient IOSClient" $_tool] == -1} {
 	return
     }
 
@@ -140,7 +140,7 @@ body QuestionsComponentClass::DelMySite {} {
 body QuestionsComponentClass::DelRemoteSite {site_id} {
 
     set _tool [SiteManager::GetSiteInfo $site_id tool]
-    if {[lsearch -exact "Interactive GatewayClient" $_tool] == -1} {
+    if {[lsearch -exact "Interactive GatewayClient IOSClient" $_tool] == -1} {
 	return
     }
     

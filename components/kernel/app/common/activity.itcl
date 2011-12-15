@@ -446,7 +446,7 @@ body ActivityC::ReadFile {file} {
     #
 
     # Checks that all the roles referenced in roles.interactive, roles.watchpoint, roles.mcu, etc. exist.
-    foreach tool "Interactive MCU SipGateway FlashGateway GatewayClient Watchpoint" {
+    foreach tool "Interactive MCU SipGateway FlashGateway GatewayClient IOSClient Watchpoint" {
 	if { ! [info exists resources($name,roles.$tool)]} { 
 	    WarningTraceMsg "Warning in service file: resource \"$name.roles.$tool\" is not defined." 
 	} else {

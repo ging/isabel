@@ -380,7 +380,7 @@ body VideoLayoutMgrC::CalculateSlots {} {
 
 	# Check tool:
 	set _tool [SiteManager::GetSiteInfo $_siteid tool]
-	if {[lsearch -exact "Interactive GatewayClient" $_tool] == -1} {
+	if {[lsearch -exact "Interactive GatewayClient IOSClient" $_tool] == -1} {
 	    continue
 	}
 

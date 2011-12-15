@@ -40,6 +40,7 @@ TeleConference.overrideredirect: 0
 TeleConference.imode:        modeall * -scene {-conference TeleConference -sesion Session -presentation video}
 
 TeleConference.roles.Interactive:   Server Nobody Ctrl Everybody
+TeleConference.roles.IOSCllient:    IOSClient
 TeleConference.roles.FlashGateway:  FlashGateway
 TeleConference.roles.SipGateway:    SipGateway
 TeleConference.roles.GatewayClient: GatewayClient

@@ -41,6 +41,9 @@ FlashGateway.sites:  *
 GatewayClient.whatis:  role
 GatewayClient.sites:  *
 
+IOSClient.whatis:  role
+IOSClient.sites:  *
+
 Watchpoint.whatis:  role
 Watchpoint.sites:  __WATCHPOINT__
 
