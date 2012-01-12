@@ -247,7 +247,7 @@ body CameraComponentC::DelSite {site_id} {
 	    DebugTraceMsg "- Video ERROR: $emsg" 2
 	}
 
-	if {[catch {$vgObj DelChannel $_me} emsg]} {
+	if {[catch {$vgObj DelChannel $site_id} emsg]} {
 	    DebugTraceMsg "- Video ERROR: $emsg"
 	}
     }
