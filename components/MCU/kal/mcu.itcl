@@ -76,7 +76,7 @@ class MCUComponentC {
     # Streaming & Recording
     #------------------
     
-    public method StartStreamingAndRecording {url recfile frate halfsize}
+    public method StartStreamingAndRecording {url recfile frate halfsize {logfile ""}}
     public method StopStreaming {}
     
     private method ConfigureStreamingMCU {}
@@ -296,7 +296,7 @@ body MCUComponentC::ConfigureLseMCU {} {
 
 #---------------------------------------------------------
 
-body MCUComponentC::StartStreamingAndRecording {url recfile frate halfsize} {
+body MCUComponentC::StartStreamingAndRecording {url recfile frate halfsize {logfile ""}} {
 
     if {$mcudtobj == ""} return
     if {$ffmpegobj == ""} return
@@ -311,11 +311,11 @@ body MCUComponentC::StartStreamingAndRecording {url recfile frate halfsize} {
     
     if {$streamingState != "stopped"} return
 
-    WriteTraceMsg "Streaming: Sending the session audio to the isabel_fmpeg application."
+    WriteTraceMsg "Streaming: Sending the session audio to the isabel_ffmpeg application."
 
     ConfigureStreamingMCU
 
-    $ffmpegobj StartFFMpeg $url $recfile $frate $halfsize
+    $ffmpegobj StartFFMpeg $url $recfile $frate $halfsize $logfile
 
 }
 

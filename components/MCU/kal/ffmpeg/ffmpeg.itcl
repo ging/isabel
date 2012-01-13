@@ -42,7 +42,7 @@ class FFMpegStreamingMgrC {
     # Methods to start and stop the isabel_ffmpeg application.
     # $url - streaming
     # $recfile - recording
-    public method StartFFMpeg {url recfile frate _halfsize}
+    public method StartFFMpeg {url recfile frate _halfsize {logfile ""}}
     public method StopFFMpeg {}
 
     # Callback to execute when ffmpeg dies.
@@ -60,6 +60,9 @@ class FFMpegStreamingMgrC {
 
     # Recording filename
     private variable recording_filename
+
+    # Log filename
+    private variable log_filename
 
     # Framerate
     private variable framerate
@@ -96,7 +99,7 @@ body FFMpegStreamingMgrC::destructor {} {
 
 #------------------------------------------------------------
 
-body FFMpegStreamingMgrC::StartFFMpeg {url recfile frate _halfsize} {
+body FFMpegStreamingMgrC::StartFFMpeg {url recfile frate _halfsize {logfile ""}} {
     global env
 
     if {$ffmpegExtObj != ""} {
@@ -107,11 +110,16 @@ body FFMpegStreamingMgrC::StartFFMpeg {url recfile frate _halfsize} {
     set recording_filename $recfile
     set framerate $frate
     set halfSize  $_halfsize
+    set log_filename $logfile
 
     WriteTraceMsg "Streaming: Starting isabel_fmpeg application."
     WriteTraceMsg "Streaming to URL =  $targetURL"
     WriteTraceMsg "Recording to file = $recording_filename"
     WriteTraceMsg "Options: Framerate = $framerate fps / Grab Half Size = $halfSize"
+
+    if {$log_filename != ""} {
+	WriteTraceMsg "Log to file = $log_filename"
+    }
 
     if {$targetURL == ""} {
 	if {$recording_filename == ""} {
@@ -187,7 +195,11 @@ body FFMpegStreamingMgrC::RestartFFMpeg {} {
     set _output_opts_f_str "-f mpegts $_output_opts"
     set _output_opts_f_rec "-f avi    $_output_opts"
 
-    set _verbose_opt "-v 0"
+    if {$log_filename != ""} {
+	set _verbose_opt "-v 1"
+    } else {
+	set _verbose_opt "-v 0"
+    }
 
     if {$targetURL == ""} {
 	if {$recording_filename == ""} {
@@ -197,20 +209,23 @@ body FFMpegStreamingMgrC::RestartFFMpeg {} {
 	} else {
 	    
 	    #=== RECORDING
-	    set _cmd "$_FFMPEG_PATH $_verbose_opt $_input_opts_video $_input_opts_audio $_input_opts_map_sync $_output_opts_f_str pipe:1 | \
-                      $_FFMPEG_PATH $_verbose_opt -f mpegts -i pipe:0 -acodec copy -vcodec copy -f avi -y $env(HOME)/$recording_filename"
+	    set _cmd "$_FFMPEG_PATH $_verbose_opt -xerror $_input_opts_video $_input_opts_audio $_input_opts_map_sync $_output_opts_f_str pipe:1 | \
+                      $_FFMPEG_PATH $_verbose_opt -xerror -f mpegts -i pipe:0 -acodec copy -vcodec copy -f avi -y $env(HOME)/$recording_filename \
+                      2> $env(ISABEL_SESSION_LOGS_DIR)/$log_filename"
 	}
     } else {
 	if {$recording_filename == ""} {
 
 	    #=== STREAMING
-	    set _cmd "$_FFMPEG_PATH $_verbose_opt $_input_opts_video $_input_opts_audio $_input_opts_map_sync $_output_opts_f_str $targetURL"
+	    set _cmd "$_FFMPEG_PATH $_verbose_opt -xerror $_input_opts_video $_input_opts_audio $_input_opts_map_sync $_output_opts_f_str $targetURL \
+                      2> $env(ISABEL_SESSION_LOGS_DIR)/$log_filename"
 	    
 	} else {
 	    
 	    #=== STREAMING AND RECORDING
-	    set _cmd "$_FFMPEG_PATH $_verbose_opt $_input_opts_video $_input_opts_audio $_input_opts_map_sync $_output_opts_f_str pipe:1 | \
-                      $_FFMPEG_PATH $_verbose_opt -f mpegts -i pipe:0 -acodec copy -vcodec copy -f mpegts $targetURL -acodec copy -vcodec copy -f avi -y $env(HOME)/$recording_filename"
+	    set _cmd "$_FFMPEG_PATH $_verbose_opt -xerror $_input_opts_video $_input_opts_audio $_input_opts_map_sync $_output_opts_f_str pipe:1 | \
+                      $_FFMPEG_PATH $_verbose_opt -xerror -f mpegts -i pipe:0 -acodec copy -vcodec copy -f mpegts $targetURL -acodec copy -vcodec copy -f avi -y $env(HOME)/$recording_filename \
+                      2> $env(ISABEL_SESSION_LOGS_DIR)/$log_filename"
 
 	}
     }

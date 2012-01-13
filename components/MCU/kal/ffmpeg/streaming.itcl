@@ -336,6 +336,12 @@ body StreamingManagerC::AutoStart {} {
 body StreamingManagerC::Start {} {
     global env
 
+    #----- Common
+
+    set _date [clock format [clock seconds] -format "%Y-%m-%d-%H-%M-%S"]
+
+    set _log_filename isabel_ffmpeg_streaming_recording_$_date.log
+
     #----- Streaming
 
     set _stw  [$wroot.stream childsite]
@@ -366,7 +372,6 @@ body StreamingManagerC::Start {} {
     Save dorecord $doRecord
     
     if {$doRecord == "1"} {
-	set _date [clock format [clock seconds] -format "%Y-%m-%d-%H-%M-%S"]
 	set record_filename isabel_session_$_date.avi
 	UpdateRecSize
     } else {
@@ -387,13 +392,13 @@ body StreamingManagerC::Start {} {
 
     if {$doStream == "1"} {
 	if {$doRecord == "1"} {
-	    component Cmd StartStreamingAndRecording  $target_url $record_filename $_frate $halfSize
+	    component Cmd StartStreamingAndRecording  $target_url $record_filename $_frate $halfSize $_log_filename
 	} else {
-	    component Cmd StartStreamingAndRecording  $target_url "" $_frate $halfSize
+	    component Cmd StartStreamingAndRecording  $target_url "" $_frate $halfSize $_log_filename
 	}
     } else {
 	if {$doRecord == "1"} {
-	    component Cmd StartStreamingAndRecording  "" $record_filename $_frate $halfSize
+	    component Cmd StartStreamingAndRecording  "" $record_filename $_frate $halfSize $_log_filename
 	}
     }
 
