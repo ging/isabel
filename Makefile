@@ -57,6 +57,11 @@ uninstall::
             killall -q gnome-panel || true ; \
         fi
 
+devel::
+	@echo "Installed dev packages needed to compile isabel"
+	@cd $(PROJECT_ROOT_DIR)/admin ; sudo ./install_dev_packages.sh
+
+
 VERSION_FILE=$(PROJECT_ROOT_DIR)/admin/pkg.Isabel500/version
 VERSION=$(shell $(PROJECT_ROOT_DIR)/admin/version.mgr getVersion $(VERSION_FILE))
 RELEASE=$(shell $(PROJECT_ROOT_DIR)/admin/version.mgr getRelease $(VERSION_FILE))
