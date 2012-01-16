@@ -263,7 +263,11 @@ body AudioMixerC::AddChannel {site_id} {
 	$acdobj RDO audio_stop_sending()
 	
 	# Set mixer local values.
+	set _gain 60
 	if {[catch "exec $ISABEL_DIR/bin/pulse_isabel_audio.sh" _gain]} {
+	    set _gain 60
+	}
+	if {[regexp {^[0-9]+$} $_gain] != 1} {
 	    set _gain 60
 	}
 	set gain($site_id) $_gain
@@ -286,7 +290,6 @@ body AudioMixerC::AddChannel {site_id} {
     AudioConfigC::CreateSiteConfiguration $site_id
 
     CreateGUIChannel $site_id
-    
 }
 
 #---------------------------------------------------------
