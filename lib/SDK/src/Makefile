@@ -15,7 +15,11 @@ PNG_LDFLAGS=$(shell libpng12-config --static --ldflags)
 FMTS_LIB=-ltiff -ljpeg $(PNG_LDFLAGS)
 
 ifeq ($(HAVE_LIBV4L),yes)
-FMTS_LIB+= /usr/lib/libv4l2.a /usr/lib/libv4lconvert.a -lrt
+V4L_LIB_PATH=/usr/lib
+ifeq ($(LINUX.DISTRIB.CODENAME),oneiric)
+V4L_LIB_PATH= /usr/lib/i386-linux-gnu
+endif
+FMTS_LIB+= $(V4L_LIB_PATH)/libv4l2.a $(V4L_LIB_PATH)/libv4lconvert.a -lrt
 endif
 
 # Version number need to be changed whenever:
