@@ -1,0 +1,114 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2011 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+###############################################################
+#
+# videodesktopgrabd.itcl
+#      
+# Description:
+#
+#   Desktop grabber daemon.
+#
+################################################################
+
+
+class VideoDesktopGrabberDaemonC {
+    inherit DaemonC
+
+    # video data port.
+    public variable rtpPort 54017
+
+    # display
+    private variable display
+
+    constructor {no_cc_cb} {
+	DaemonC::constructor VideoDesktopGrabber 30000 video_quit() \
+	    video_nop() 1 $no_cc_cb isabel_video
+    } {
+    }
+    
+    destructor {}
+
+    private method Invoke {}
+
+    # kill the video daemons.
+    private method CleanUp {}
+
+    private variable pid 0
+}
+
+#------------------------------------------------------------
+
+body VideoDesktopGrabberDaemonC::constructor {no_cc_cb} {
+
+    set display [session Environ cget -scenary_display]
+}
+
+#------------------------------------------------------------
+
+body VideoDesktopGrabberDaemonC::destructor {} {
+
+    CleanUp
+}
+
+#------------------------------------------------------------
+
+body VideoDesktopGrabberDaemonC::Invoke {} {
+    global ISABEL_DIR env
+
+    if {$env(USER) == "ubuntu"} {
+	set notifyopt "-notify /dev/null"
+    } else {
+	set _logfn $env(ISABEL_SESSION_LOGS_DIR)/notify.VideoDesktopGrabber
+	if { ! [file exists $_logfn]} {
+	    exec touch $_logfn
+	}
+	set notifyopt "-notify $_logfn"
+    }
+
+    set cport 54001
+
+    set cmd "isabel_video $notifyopt \
+             -cport $cport \
+             -display $display \
+             -rtpPort $rtpPort "
+
+
+    set pid [eval exec $cmd &]
+    
+    WriteTraceMsg "VideoDesktopGrabberDaemonC::Invoke: \[$pid\] $cmd" MCU
+    catch {exec echo $pid >> $env(ISABEL_TMP_DIR)/VideoDesktopGrabber.pid}
+
+    DaemonC::Invoke
+}
+
+#------------------------------------------------------------
+
+body VideoDesktopGrabberDaemonC::CleanUp {} {
+
+    if {$pid != 0} {
+	after 100 after idle catch \\\"exec kill    $pid >& /dev/null\\\"
+	after 100 after idle catch \\\"exec kill -9 $pid >& /dev/null\\\"
+	set pid 0
+    }
+}
+
+#------------------------------------------------------------

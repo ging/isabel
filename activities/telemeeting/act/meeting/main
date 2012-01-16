@@ -38,6 +38,7 @@ TeleMeeting.logo:             ""
 TeleMeeting.imode:             chatmode *
 
 TeleMeeting.roles.Interactive: Server Nobody Ctrl Everybody
+TeleMeeting.roles.IOSClient:   IOSClient
 TeleMeeting.roles.MediaServer: Server Everybody Nobody Ctrl
 TeleMeeting.roles.SipGateway:  SipGateway
 TeleMeeting.roles.FlashGateway: FlashGateway

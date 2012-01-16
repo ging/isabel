@@ -109,15 +109,15 @@ process CAL_Main {} {
     # Virtual display sizes caculator
     DVirtualC dvirtual [session Environ cget -scenary_display]
 
-    # network join_group isacomp_$component_name
-    network join_local_group local_isabel_comp_$component_name
-
     # Launching the component
     WriteTraceMsg "Creating component object..."
     ${component_name}ComponentClass component
     WriteTraceMsg "Starting component..."
     component Start $first
-    
+
+    # network join_group isacomp_$component_name
+    network join_local_group local_isabel_comp_$component_name
+
     # join to the snmp monitor group
     network join_local_group isabel_snmp
 

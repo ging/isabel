@@ -347,7 +347,7 @@ body EnvironmentC::CheckValidRole {varname} {
 
     return 
 
-    if {[lsearch -exact "Interactive MCU SipGateway FlashGateway GatewayClient" $vn] == -1} {
+    if {[lsearch -exact "Interactive MCU SipGateway FlashGateway GatewayClient IOSClient" $vn] == -1} {
 	ErrorMsgC #auto quit "Invalid ISABEL role: $vn."
     }
 }

@@ -31,7 +31,7 @@ get_isabel_audio_source()
 {
    echo "list-source-outputs" | \
    pacmd | \
-   awk 'BEGIN { last_source_found = ""
+   /usr/bin/gawk 'BEGIN { last_source_found = ""
                 isabel_audio_found = 0
               }
         /^\W*index:/  { if (isabel_audio_found != 0) exit

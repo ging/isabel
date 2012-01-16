@@ -69,6 +69,17 @@ GatewayClient.menuitems:
 
 # --------------------------------------------------------------------
 
+IOSClient.components:  ConferenceCtrl \
+                       Audio \
+                       Questions Video \
+		       MCU
+
+IOSClient.actions:    
+
+IOSClient.menuitems:  
+
+# --------------------------------------------------------------------
+
 Ctrl.sites:      ISABEL_SITE_ID NoEmptyExternalDefinition(`ISABEL_CTRL_SITES',*)
 
 Ctrl.components:  

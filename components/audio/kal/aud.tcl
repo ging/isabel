@@ -258,7 +258,7 @@ body AudioComponentC::CreateMainWindow {} {
 #---------------------------------------------------------
 
 body AudioComponentC::AddMe {} {
-    
+
     set _mysiteid [SiteManager::MySiteId]
     
     $miobj AddChannel $_mysiteid
@@ -288,7 +288,6 @@ body AudioComponentC::AddMe {} {
 	-input_tone [$miobj GetInputTone $_mysiteid] \
 	-output_tone [$miobj GetOutputTone $_mysiteid]
     
-
     # Send an empty codec message
     # sms setState Audio_global add 
 }

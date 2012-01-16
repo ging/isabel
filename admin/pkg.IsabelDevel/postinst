@@ -1,8 +1,0 @@
-#!/bin/sh
-set -e
-
-mkdir -p /usr/tmp
-chmod ugo+rwx /usr/tmp
-
-
-

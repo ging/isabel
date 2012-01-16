@@ -38,6 +38,7 @@ TeleClass.logo:             ""
 TeleClass.imode:             chatmode * -scene {-conference TeleClass -sesion Session -presentation video}
 
 TeleClass.roles.Interactive:   Ctrl Chair Teacher Server Everybody Nobody
+TeleClass.roles.IOSClient:     IOSClient
 TeleClass.roles.MediaServer:   Server Everybody Nobody Ctrl
 TeleClass.roles.FlashGateway:  FlashGateway
 TeleClass.roles.SipGateway:    SipGateway

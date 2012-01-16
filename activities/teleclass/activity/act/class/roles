@@ -109,6 +109,17 @@ GatewayClient.menuitems:
 
 # --------------------------------------------------------------------
 
+IOSClient.components:  ClassCtrl \
+                       Audio \
+                       Questions Video \
+		       MCU
+
+IOSClient.actions:    
+
+IOSClient.menuitems:  
+
+# --------------------------------------------------------------------
+
 MCU.components:  Monitor \
 		 VNC
                        
