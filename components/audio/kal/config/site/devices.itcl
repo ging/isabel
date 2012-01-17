@@ -170,10 +170,12 @@ body AudioCDeviceConfigC::MakeGui {} {
     #-------------
     set _mySiteId [SiteManager::MySiteId]
     if { ! [AudioConfigC::ControlSite] && $siteId != $_mySiteId} {
-	$wroot.startp  configure -state disabled
-	$wroot.stopp   configure -state disabled
-	$wroot.startc  configure -state disabled
-	$wroot.stopc   configure -state disabled
+	$wroot.lplay    configure -state disabled
+	$wroot.startp   configure -state disabled
+	$wroot.stopp    configure -state disabled
+	$wroot.lcapture configure -state disabled
+	$wroot.startc   configure -state disabled
+	$wroot.stopc    configure -state disabled
     }
 
     #-------------
