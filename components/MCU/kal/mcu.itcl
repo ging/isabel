@@ -501,7 +501,32 @@ body MCUComponentC::DesktopGrabbingVideoReapplyState {} {
     set _codecname H263
     set _fq 50
     set _bw 150
+
     $vdgtobj RDO video_configure_channel($avIOSChId,$_framerate,$_grabsize,$_codecname,$_fq,$_bw)
+
+    catch {
+	set _an [session Activity GetName]
+	set _vwidth  [session Activity GetResource $_an virtualw]
+	set _vheight [session Activity GetResource $_an virtualh]
+    
+	toplevel .mcugrabdesktoptmp
+	wm withdraw .mcugrabdesktoptmp
+	set _rwidth  [winfo screenwidth  .mcugrabdesktoptmp]
+	set _rheight [winfo screenheight .mcugrabdesktoptmp]
+	destroy .mcugrabdesktoptmp
+    
+	set _crop_bottom [expr 100 - 100.0*$_vheight/$_rheight]
+	set _crop_right  [expr 100 - 100.0*$_vwidth/$_rwidth] 
+	
+	if {$_crop_bottom < 0} {
+	    set _crop_bottom 0
+	}
+	if {$_crop_right < 0} {
+	    set _crop_right  0
+	}
+	
+	$vdgtobj RDO video_crop($avIOSChId,0,0,$_crop_bottom,$_crop_right)
+    }
 
     $vdgtobj RDO video_send($avIOSChId,1)
 
