@@ -20,10 +20,3 @@
 #
 ########################################################################
 
-CtrlPanel.whatis:   menuitem
-CtrlPanel.title:    Control Panel
-CtrlPanel.icon:     camctrl.gif
-CtrlPanel.path:
-CtrlPanel.cmd:      CreateJoinHideShowComp %U ClassCtrl
-CtrlPanel.teacherctrl.layout: +210-0 0 1 SW
-

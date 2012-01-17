@@ -25,6 +25,14 @@
 #                    USER VIEWS DEFINITION
 # --------------------------------------------------------------------
 
+# --------- Control Panel ------------
+
+CtrlPanel.whatis:   action
+CtrlPanel.pos:      -row 0 -column 0
+CtrlPanel.title:    @camctrl.gif
+CtrlPanel.balloon:  Control Panel
+CtrlPanel.cmd:      CreateJoinHideShowComp %U ClassCtrl
+
 # --------- Set Chat mode ------------
 
 ChatMode.whatis:    action

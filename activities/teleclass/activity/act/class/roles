@@ -40,9 +40,10 @@ Everybody.menuitems:  AdminTool \
 # --------------------------------------------------------------------
 
 Chair.components:
-Chair.actions:
 
-Chair.menuitems: CtrlPanel    
+Chair.actions: CtrlPanel    
+
+Chair.menuitems: 
 
 # --------------------------------------------------------------------
 
@@ -63,10 +64,9 @@ Teacher.menuitems:
 
 Ctrl.components:  Monitor
 
-Ctrl.actions:   
+Ctrl.actions:   CtrlPanel
 
-Ctrl.menuitems: CtrlPanel \
-                VideoInfo \
+Ctrl.menuitems: VideoInfo \
                 MonitorStartOrStop
 
 # --------------------------------------------------------------------
