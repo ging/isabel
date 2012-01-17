@@ -80,8 +80,6 @@ IOSClient.menuitems:
 
 # --------------------------------------------------------------------
 
-Ctrl.sites:      ISABEL_SITE_ID NoEmptyExternalDefinition(`ISABEL_CTRL_SITES',*)
-
 Ctrl.components:  
 
 Ctrl.actions:   CtrlPanel 
@@ -90,6 +88,14 @@ Ctrl.menuitems: CreateSldFtp \
                 ifelse(ISABEL_IROUTER_DEBUG,1,`IrouterTrafficLogs IrouterReset',)
 
 #               IrouterConfig
+
+# --------------------------------------------------------------------
+
+Chair.components:  
+
+Chair.actions:  
+
+Chair.menuitems:
 
 # --------------------------------------------------------------------
 

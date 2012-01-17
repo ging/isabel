@@ -39,18 +39,12 @@ Everybody.menuitems:  AdminTool \
 
 # --------------------------------------------------------------------
 
-Chair.whatis:  role
-Chair.sites:   NoEmptyExternalDefinition(`ISABEL_CHAIR_SITES',*)
-
 Chair.components:
 Chair.actions:
 
 Chair.menuitems: CtrlPanel    
 
 # --------------------------------------------------------------------
-
-Teacher.whatis:  role
-Teacher.sites:   NoEmptyExternalDefinition(`ISABEL_TEACHER_SITES',*)
 
 Teacher.components:
 Teacher.actions:   ChatMode \
@@ -66,8 +60,6 @@ Teacher.actions:   ChatMode \
 Teacher.menuitems:    
 
 # --------------------------------------------------------------------
-
-Ctrl.sites:      NoEmptyExternalDefinition(`ISABEL_CTRL_SITES',*)
 
 Ctrl.components:  Monitor
 

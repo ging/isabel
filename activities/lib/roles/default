@@ -30,7 +30,13 @@ Nobody.whatis:    role
 Nobody.sites:      _no_body_
 
 Ctrl.whatis:      role
-Ctrl.sites:        *
+Ctrl.sites:      NoEmptyExternalDefinition(`ISABEL_CTRL_SITES',*)
+
+Chair.whatis:  role
+Chair.sites:   NoEmptyExternalDefinition(`ISABEL_CHAIR_SITES',*)
+
+Teacher.whatis:  role
+Teacher.sites:   NoEmptyExternalDefinition(`ISABEL_TEACHER_SITES',*)
 
 SipGateway.whatis:  role
 SipGateway.sites:  *
