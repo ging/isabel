@@ -208,7 +208,7 @@ class SmsManagerMaster {
     private method makeGUI {} {
 	global env
 	
-	if {[info exists env(ISABEL_SHOW_SMS)]} {
+	if {[info exists env(ISABEL_SHOW_SMS)] && $env(ISABEL_SHOW_SMS) == "1"} {
 	    
 	    set display [session Environ cget -ctrl_display]
 	    toplevel $toplevel -screen $display
