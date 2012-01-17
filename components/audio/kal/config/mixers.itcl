@@ -37,12 +37,14 @@ class AudioMixerConfigC {
     # Build the gui.
     public method MakeGui {}
 
-    # Methods to launch alsamixer and gamix
+    # Methods to launch alsamixer, gamix, etc
+    public method LaunchPulseAudioVolumeControl {}
     public method LaunchGnomeVolumeControl {}
     public method LaunchAlsamixer {}
     public method LaunchGamix {}
 
     # Callback to execute when alsamixer, gamix, etc. die.
+    public method QuitPulseAudioVolCtrlCB {}
     public method QuitGnomeVolCtrlCB {}
     public method QuitAlsamixerCB {}
     public method QuitGamixCB {}
@@ -55,6 +57,7 @@ class AudioMixerConfigC {
     private variable wroot
 
     # ExternalC objects created to launch alsamixer, gamix, etc.
+    private variable pulseaudiovolctrlExtObj
     private variable gnomevolctrlExtObj
     private variable alsamixerExtObj
     private variable gamixExtObj
@@ -78,6 +81,7 @@ body AudioMixerConfigC::constructor {w} {
     set alsamixerExtObj ""
     set gamixExtObj ""
     set gnomevolctrlExtObj ""
+    set pulseaudiovolctrlExtObj ""
 
 }
 
@@ -95,20 +99,26 @@ body AudioMixerConfigC::MakeGui {} {
 
     #-------------
 
+    button $wroot.pavc \
+	-text "Pulse Audio Volume Control" \
+	-pady 1 \
+	-command [code $this LaunchPulseAudioVolumeControl]
+    balloon add $wroot.pavc "Launch pulse Audio Volume Control" 
+
     button $wroot.gvc \
-	-text "gnome-volume-control" \
+	-text "Gnome Volume Control" \
 	-pady 1 \
 	-command [code $this LaunchGnomeVolumeControl]
     balloon add $wroot.gvc "Launch gnome-volume-control" 
 
     button $wroot.am \
-	-text "alsamixer" \
+	-text "Alsamixer" \
 	-pady 1 \
 	-command [code $this LaunchAlsamixer]
     balloon add $wroot.am "Launch alsamixer" 
 
     button $wroot.g \
-	-text "gamix"     \
+	-text "Gamix"     \
 	-pady 1 \
 	-command [code $this LaunchGamix]
     balloon add $wroot.g "Launch gamix" 
@@ -122,9 +132,10 @@ body AudioMixerConfigC::MakeGui {} {
 
     #--
 
-    grid $wroot.am  -row 0 -column 0 -sticky we
-    grid $wroot.g   -row 1 -column 0 -sticky we
-    grid $wroot.gvc -row 2 -column 0 -sticky we
+    grid $wroot.pavc -row 0 -column 0 -sticky we
+    grid $wroot.gvc  -row 1 -column 0 -sticky we
+    grid $wroot.g    -row 2 -column 0 -sticky we
+    grid $wroot.am   -row 3 -column 0 -sticky we
 
     grid $wroot.help   -row 1 -column 1 -pady 1 -ipadx 6 -sticky w
     
@@ -149,11 +160,18 @@ body AudioMixerConfigC::destructor {} {
     catch {delete object $alsamixerExtObj}
     catch {delete object $gamixExtObj}
     catch {delete object $gnomevolctrlExtObj}
+    catch {delete object $pulseaudiovolctrlExtObj}
 }
 
 #------------------------------------------------------------
 
 body AudioMixerConfigC::UpdateState {} {
+
+    if {[catch {exec which pavucontrol}]} {
+	$wroot.pavc configure -state disabled
+    } else {
+	$wroot.pavc configure -state normal
+    }
 
     if {[catch {exec which gnome-volume-control}]} {
 	$wroot.gvc configure -state disabled
@@ -195,6 +213,25 @@ body AudioMixerConfigC::LaunchGnomeVolumeControl {} {
 
 #------------------------------------------------------------
 
+body AudioMixerConfigC::LaunchPulseAudioVolumeControl {} {
+
+    if {$pulseaudiovolctrlExtObj != ""} {
+	return
+    }
+
+    set quitcb [code $this QuitPulseAudioVolCtrlCB]
+    set cmd "sh -c \"DISPLAY=$display pavucontrol\""
+    set pulseaudiovolctrlExtObj [ExternalC #auto pavucontrol $cmd $quitcb]
+
+    if {[catch {$pulseaudiovolctrlExtObj Start pid} errmsg]} {
+	ErrorTraceMsg "Trying to launch \"pavucontrol\", I get:\n$errmsg"
+	catch {delete object $pulseaudiovolctrlExtObj} 
+	set pulseaudiovolctrlExtObj ""
+    }
+}
+
+#------------------------------------------------------------
+
 body AudioMixerConfigC::LaunchAlsamixer {} {
 
     if {$alsamixerExtObj != ""} {
@@ -231,6 +268,14 @@ body AudioMixerConfigC::LaunchGamix {} {
 	catch {delete object $gamixExtObj} 
 	set gamixExtObj ""
     }
+}
+
+#------------------------------------------------------------
+
+body AudioMixerConfigC::QuitPulseAudioVolCtrlCB {} {
+
+    set pulseaudiovolctrlExtObj ""
+
 }
 
 #------------------------------------------------------------
