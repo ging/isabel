@@ -763,7 +763,7 @@ body AdminC::reset {site_id compName} {
 # Invokes the info command over site site_id.
 #---------------------------------------------------------------
 body AdminC::userinfo {site_id} {
-    global ISABEL_Version ISABEL_Release
+    global ISABEL_Version ISABEL_Release env
 
     set w $toplevel.userinfo
     
@@ -800,6 +800,26 @@ body AdminC::userinfo {site_id} {
 	$w.t insert end "ISABEL version = [session GetMasterInfo isabel_version]\n"
 	$w.t insert end "Service name = [session Activity GetName]\n"
 	$w.t insert end "Service quality = [session GetMasterInfo isaqlty]\n"
+	$w.t insert end "\n"
+
+	$w.t insert end "ISABEL_CTRL_SITES = "
+	if {[info exists env(ISABEL_CTRL_SITES)]} {
+	    $w.t insert end "$env(ISABEL_CTRL_SITES)"
+	}
+	$w.t insert end "\n"
+
+	$w.t insert end "ISABEL_CHAIR_SITES = "
+	if {[info exists env(ISABEL_CHAIR_SITES)]} {
+	    $w.t insert end "$env(ISABEL_CHAIR_SITES)"
+	}
+	$w.t insert end "\n"
+
+	$w.t insert end "ISABEL_TEACHER_SITES = "
+	if {[info exists env(ISABEL_TEACHER_SITES)]} {
+	    $w.t insert end "$env(ISABEL_TEACHER_SITES)"
+	}
+	$w.t insert end "\n"
+
 	$w.t insert end "\n"
 
 	$w.t insert end "SITE Information\n" title
