@@ -34,7 +34,7 @@ class VideoDesktopGrabberDaemonC {
     inherit DaemonC
 
     # video data port.
-    public variable rtpPort 54017
+    public variable rtpPort 53137
 
     # display
     private variable display
@@ -84,7 +84,7 @@ body VideoDesktopGrabberDaemonC::Invoke {} {
 	set notifyopt "-notify $_logfn"
     }
 
-    set cport 54001
+    set cport 51016
 
     set cmd "isabel_video $notifyopt \
              -cport $cport \
