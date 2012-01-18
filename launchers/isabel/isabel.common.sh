@@ -227,12 +227,12 @@ CleanUp()
    # Remove flag indicating that isabel is running
    /bin/rm -f $ISABEL_TMP_DIR/isabel_is_running
  
-   #$ISABEL_DIR/bin/isabel_openvpn clean_up
+   $ISABEL_DIR/bin/isabel_openvpn clean_up
 
    #/bin/kill $(cat $ISABEL_TMP_DIR/*.pid2 2> /dev/null ) > /dev/null 2>&1
    #/bin/rm -f $ISABEL_TMP_DIR/*.pid2 > /dev/null 2>&1
 
-   #/usr/bin/killall -q isabel_openvpn
+   /usr/bin/killall -q isabel_openvpn
 
    CleanUpDesktop
 

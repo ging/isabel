@@ -29,8 +29,6 @@ MENU_FILES=*.menu
 
 DIRECTORY_FILES=*.directory
 
-AUTOSTART_FILES=autostart/*.desktop
-
 distrib::
 	@echo "xdg - desktop files --> $(DISTRIB_DIR)/isabelcore/env/usr/share/applications"
 	@mkdir -p $(DISTRIB_DIR)/isabelcore/env/usr/share/applications/isabel
@@ -54,17 +52,5 @@ distrib::
 	  echo "$$i  --> $(DISTRIB_DIR)/isabelcore/env/usr/share/desktop-directories/isabel"  ;\
 	  cp -f $$i $(DISTRIB_DIR)/isabelcore/env/usr/share/desktop-directories/isabel/.  ;\
 	done
-
-distrib::
-	@echo "xdg autostart --> $(DISTRIB_DIR)/..."
-	@mkdir -p $(DISTRIB_DIR)/isabelcore/env/opt/kde3/share/autostart
-	@mkdir -p $(DISTRIB_DIR)/isabelcore/env/etc/xdg/autostart
-	@for i in  $(AUTOSTART_FILES) ; do \
-	  echo "$$i  --> $(DISTRIB_DIR)/isabelcore/env/opt/kde3/share/autostart" ;\
-	  cp -f $$i $(DISTRIB_DIR)/isabelcore/env/opt/kde3/share/autostart ;\
-	  echo "$$i  --> $(DISTRIB_DIR)/isabelcore/env/etc/xdg/autostart" ;\
-	  cp -f $$i $(DISTRIB_DIR)/isabelcore/env/etc/xdg/autostart ;\
-	done
-
 
 include $(PROJECT_ROOT_DIR)/Makefile.tail

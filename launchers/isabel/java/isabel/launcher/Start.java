@@ -1248,37 +1248,12 @@ public class Start {
 	    System.out.println("I am the master site.");
 	}
 
-        /*
-        // Start openvpn tunnels
-        String useopenvpn = (String)siteConfig.get("ISABEL_USE_OPENVPN");
-        if (useopenvpn==null || !useopenvpn.equals("0")) {
-            if (ISABEL_IS_MASTER) {
-                int res = ServerTunnel.launch();
-                if (res != 1) {
-                    error("I can not start openvpn server side.");
-                }
-                
-            } else {
-                
-                String ict2 = (String)siteConfig.get("ISABEL_CONNECT_TO");
-                
-                ClientTunnel clientTunnel = new ClientTunnel(ict2,"ISABEL");
-                
-                int res = clientTunnel.launch();
-                if (res != 1) {
-                    error("I can not start openvpn client side.");
-                }
-                
-                siteConfig.put("ISABEL_CONNECT_TO_IP",clientTunnel.getServerPrivateAddress());
-                saveConfigFile();
-                
-                res = ServerTunnel.launch();
-                if (res != 1) {
-                    error("I can not start openvpn server side.");
-                }
-            }
-        }
-        */
+        // Start openvpn server tunnel
+	int res = ServerTunnel.launch();
+	if (res != 1) {
+	    error("I can not start openvpn server side.");
+	}
+
 	if (! ISABEL_IS_MASTER) {
 
 	    String icti = (String)siteConfig.get("ISABEL_CONNECT_TO_IP");

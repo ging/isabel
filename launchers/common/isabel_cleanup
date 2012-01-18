@@ -79,6 +79,9 @@ $ISABEL_DIR/bin/isabel_fp -k9 \
 /bin/echo "Killing shared memory ..."
 $ISABEL_DIR/bin/shmkill
 
+/bin/echo "Closing openvpn tunnels ..."
+$ISABEL_DIR/bin/isabel_openvpn clean_up
+/usr/bin/killall -q isabel_openvpn
 
 /bin/echo "Cleaning tmp directory ..."
 /bin/rm -f $ISABEL_TMP_DIR/*.pid  > /dev/null 2>&1
@@ -100,24 +103,6 @@ __NO_RESTORE_DESKTOP=$(echo $* | grep "\-nodesktop\>")
 if [ -z "$__NO_RESTORE_DESKTOP" ] ; then 
    /bin/echo "Restoring desktop ..."
    CleanUpDesktop
-fi
-
-
-__RESTART_SERVICES=$(echo $* | grep "\-services\>")
-
-if [ -n "$__RESTART_SERVICES" ] ; then 
-	/bin/echo "Stopping NetworkManagerServer, the server for the tunnels ..."
-	$ISABEL_DIR/bin/isabel_fp -k networkManager.isabel.NetworkManagerServer
-
-	/bin/echo "Stopping xlim server ..."
-	$ISABEL_DIR/bin/isabel_fp -k app.isabel.Server
-
-	/bin/echo "Closing openvpn tunnels ..."
-	$ISABEL_DIR/bin/isabel_openvpn clean_up
-	/usr/bin/killall -q isabel_openvpn
-
-	/bin/echo "Launching again NetworkManagerServer and xlim server ..."
-	setsid $ISABEL_DIR/bin/isabel -unmap > /tmp/nohup.$$.out
 fi
 
 #----------------------------------------------------

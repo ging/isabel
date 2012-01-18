@@ -22,7 +22,6 @@ $(OBJDIR)/tunnel.jar: $(SRC)
               isabel/tunnel/ServerTunnel.java \
 	      isabel/tunnel/TunnelUtils.java \
 	      isabel/tunnel/Tunnelator.java \
-	      isabel/tunnel/TunnelHandler.java \
 	      isabel/tunnel/ActivePortTester.java \
 	      isabel/tunnel/ActivePortTesterLauncher.java
 	cp manifest.txt $(OBJDIR)/.

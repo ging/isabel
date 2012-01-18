@@ -83,30 +83,6 @@ AddDesktopDirSlave IsabelHelp.directory
 AddDesktopDirSlave IsabelUtls.directory 
 
 
-
-AddXdgAutoStartSlave()
-{
-   link=$1
-   envdir=/etc/xdg/autostart
-   mkdir -p $envdir
-   
-   fullcmd="$fullcmd --slave $envdir/$link xdg-$link $__pdir/env/$envdir/$link"
-}
-AddXdgAutoStartSlave xlim4isabel.desktop 
-
-
-
-AddKde3AutoStartSlave()
-{
-   link=$1
-   envdir=/opt/kde3/share/autostart
-   mkdir -p $envdir
-   
-   fullcmd="$fullcmd --slave $envdir/$link kde3-$link $__pdir/env/$envdir/$link"
-}
-AddKde3AutoStartSlave xlim4isabel.desktop 
-
-
 AddFirefoxSlave()
 {
    link=$1

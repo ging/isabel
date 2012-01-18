@@ -48,5 +48,5 @@ fi
 #
 #-----------------------------------------------------
 
-xterm -T CleanUp -e $ISABEL_DIR/bin/isabel_cleanup -services
+xterm -T CleanUp -e $ISABEL_DIR/bin/isabel_cleanup
 
