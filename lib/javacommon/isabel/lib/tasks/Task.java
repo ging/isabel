@@ -31,6 +31,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.*;
+import java.util.Map;
+import java.util.HashMap;
 
 
 /**
@@ -41,9 +43,6 @@ import java.util.logging.*;
  * registrados como Listeners.
  * Para crear una tarea mediante esta clase se crea el objeto, se le añaden los
  * listeners y se inicia mediante el método start().
- * @author  Fernando Escribano
- * @author  Santiago Pavon
- * @version 2.0
  */
 public class Task extends Thread {
     
@@ -271,7 +270,22 @@ public class Task extends Thread {
      */
     public Task(String name, String[] cmd, boolean keep) throws IOException {
 
-	this(name,cmd,keep,System.out,System.err);
+	this(name,cmd,keep,System.out,System.err,null);
+    }
+
+    /** 
+     *  Crea un nuevo objeto Task.
+     *  Al crear el objeto se arranca la ejecucion del programa, y en caso de que no se pueda
+     *  se lanza una IOException.
+     *  La salida normal y de error del programa se redirige a System.out y System.err.
+     *  @param name Identificador para el task creado.
+     *  @param cmd  comando necesario para lanzar el programa desde la shell.
+     *  @param keep boolean que indica si queremos relanzarlo en caso de muerte o no.
+     *  @throws <tt>IOException</tt> Si se produce algun error al lanzar el proceso.
+     */
+    public Task(String name, String[] cmd, boolean keep, Map<String,String> environment) throws IOException {
+
+	this(name,cmd,keep,System.out,System.err,environment);
     }
 
 
@@ -292,11 +306,37 @@ public class Task extends Thread {
     public Task(String name, String[] cmd, boolean keep, PrintStream out, PrintStream err) 
 	throws IOException {
 
+	this(name, cmd, keep, out, err, null); 
+    }
+
+    /** 
+     *  Crea un nuevo objeto Task.
+     *  Al crear el objeto se arranca la ejecucion del programa, y en caso de que no se pueda
+     *  se lanza una IOException.
+     *  La salida normal y de error del programa se redirige a out y a err.
+     *  Tambien toma un Map<variable,valor> para crear nuevas variables de entorno.
+     *  @param name Identificador para el task creado.
+     *  @param cmd  comando necesario para lanzar el programa desde la shell.
+     *  @param keep boolean que indica si queremos relanzarlo en caso de muerte o no.
+     *  @param out PrintStream al que se envia la salida normal del programa. Si este
+     *             parametro es null, se tira a la basura la salida.
+     *  @param err PrintStream al que se envia la salida normal del programa. Si este
+     *             parametro es null, se tira a la basura la salida.
+     *  @throws <tt>IOException</tt> Si se produce algun error al lanzar el proceso.
+     */
+    public Task(String name, String[] cmd, boolean keep, PrintStream out, PrintStream err, Map<String,String> environment) 
+	throws IOException {
+
 	mylogger = Logger.getLogger("isabel.lib.tasks.Task."+name);
 	mylogger.fine("Creando Task ("+name+") para: \""+cmd+"\".");
 
 	builder = new ProcessBuilder(cmd);
 
+	if (environment != null) {
+	    Map<String,String> pbenv = builder.environment();
+	    pbenv.putAll(environment);
+	}
+	
 	taskname  = name;
 
 	setName("Task "+name);
@@ -344,6 +384,8 @@ public class Task extends Thread {
 
 	cleanOutErrCont = 2;
 	
+
+
         process = builder.start();
         final Process p = process;
 
