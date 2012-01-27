@@ -1,7 +1,7 @@
 include $(PROJECT_ROOT_DIR)/Makefile.head
 
 SUBDIRS.PRE=\
-	vnc \
+        vnc \
 	gethostbyname \
 	error \
 	sum \

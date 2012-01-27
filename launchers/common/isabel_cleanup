@@ -50,7 +50,8 @@ $ISABEL_DIR/bin/isabel_fp -k \
     isabel_cftp \
     isabel_audio \
     isabel_vumeter \
-    isabel_vncreflector \
+    isabel_x11vnc \
+    isabel_inet4to6 \
     isabel_SNMPAgent \
     vncShmCapture \
     "Xvnc.*:89" \

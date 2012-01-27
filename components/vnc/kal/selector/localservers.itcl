@@ -417,7 +417,8 @@ body VNCLocalServersFrameC::PreviewVNCServer {} {
     set pos [$wroot.list curselection]
 
     if {$pos != ""} {
-	set server [$lbindex($pos) cget -server]
+	set server [list [$lbindex($pos) cget -server]]
+	set _server_root [$lbindex($pos) cget -server]
 	set passwd [$lbindex($pos) cget -passwd]
 
 	if {$previewerdaemon != ""} {
@@ -425,7 +426,7 @@ body VNCLocalServersFrameC::PreviewVNCServer {} {
 	    set previewerdaemon ""
 	}
 
-	if {[catch {VNCViewerTaskC "#auto" $server $server $passwd "" 0 -viewonly} res]} {
+	if {[catch {VNCViewerTaskC "#auto" $server $_server_root $passwd "" 0 1} res]} {
 	    ErrorTraceMsg "VNC: previewer can not be created."
 	    ErrorMsgC "#auto" close -timeout 15000 \
 		"VNC previewer ERROR:" ""  "VNC previewer can not be created." $res

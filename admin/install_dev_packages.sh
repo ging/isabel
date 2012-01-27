@@ -51,6 +51,8 @@ apt-get install -y freeglut3-dev libxfixes-dev libxvmc-dev libgsm1-dev libmp3lam
 
 apt-get install -y  $LIBXVID $HAVE_LIBV4L
 
+# Needed by x11vnc
+apt-get install -y libxtst-dev
 
 exit 0
 

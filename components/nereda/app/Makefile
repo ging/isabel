@@ -1,4 +1,4 @@
-USE.LIBS= JARS
+USE.LIBS=JARS
 include $(PROJECT_ROOT_DIR)/Makefile.head
 
 SUBDIRS.PRE=

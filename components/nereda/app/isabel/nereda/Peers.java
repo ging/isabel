@@ -94,7 +94,7 @@ class Peers {
 
 	currentSource = null;
 	currentNsec   = 0;
-
+	
 	refMgr = new ReflectorManager(rfbPort);
     }
 
@@ -147,7 +147,7 @@ class Peers {
      *  The local reflector display is created using my IP address and the
      *  refDisplayNum value.
      *  Note: my IP address to send is obtained from the DataAttendant sockets.
-     *  It also starts the isabel_vncreflector program.
+     *  It also starts the vnc reflector (isabel_x11vnc) program.
      *  Note: If the given nsec value is less or equal than currentNsec, then nothing is done.
      *  @param source The DataAttendant or ControlAttendant object which call
      *                to this method. The message must be send to all the 
@@ -166,7 +166,7 @@ class Peers {
 	currentSource = source;
 	currentNsec = nsec;
 	sendStart(source);
-	refMgr.setDisplay(display,password);
+	refMgr.setDisplay(display,password,""+nsec);
     }
 
 
@@ -187,7 +187,7 @@ class Peers {
 	currentSource = null;
 	currentNsec = nsec;
 	sendStop(source);
-	refMgr.setDisplay("");
+	refMgr.unsetDisplay();
     }
 
 

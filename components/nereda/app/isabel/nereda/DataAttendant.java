@@ -105,7 +105,7 @@ class DataAttendant extends Thread implements Attendant {
 		if (st.hasMoreTokens()) {
 		    String disp = st.nextToken();
 		    mylogger.fine("Requesting Start to Peers ("+nsec+","+disp+")");
-		    NeReDa.peers.start(this,nsec,disp,null);
+		    NeReDa.peers.start(this,nsec,disp,""+nsec);
 		} else {
 		    mylogger.fine("Requesting Stop to Peers ("+nsec+")");
 		    NeReDa.peers.stop(this,nsec);

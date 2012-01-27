@@ -217,7 +217,7 @@ CleanUp()
    /bin/kill $(cat $ISABEL_TMP_DIR/*.pid 2> /dev/null ) > /dev/null 2>&1
    /bin/rm -f $ISABEL_TMP_DIR/*.pid > /dev/null 2>&1
 
-   /usr/bin/killall -q isabel_vncreflector
+   /usr/bin/killall -q isabel_x11vnc isabel_inet4to6
 
    $ISABEL_DIR/bin/isabel_fp -k vncShmCapture $ISABEL_DIR/lib/isatcl/isacomp_
 

@@ -340,18 +340,18 @@ body VNCMainC::Start {} {
 	    
 	    if {$speaker == $_my_site_id} {
 		# I am the speaker
-		set _viewonly_opt ""
+		set _viewonly_opt 0
 	    } elseif {[lsearch -exact "FlashGateway" $_tool] != -1} {
 		# [SiteManager::GetSiteInfo $speaker tool] == "GatewayClient"
 		# I am the gateway, and
 		# the speaker is a gateway client (Esta parte esta comentada de momento)
-		set _viewonly_opt ""
+		set _viewonly_opt 0
 	    } else {
 		# I am a receiver site		
-		set _viewonly_opt -viewonly
+		set _viewonly_opt 1
 	    }
 	    
-	    if {[catch {VNCViewerTaskC "#auto" :53021 $server "" $viewerlayout 0 $_viewonly_opt} res]} {
+	    if {[catch {VNCViewerTaskC "#auto" :53021 $server $nsec $viewerlayout 0 $_viewonly_opt} res]} {
 		ErrorTraceMsg "VNC: viewer can not be created."
 		ErrorMsgC "#auto" close -timeout 15000 \
 		    "VNC viewer ERROR:" ""  "VNC viewer application can not be created." $res
@@ -371,7 +371,7 @@ body VNCMainC::Start {} {
 	    if {$speaker == $_my_site_id} {
 		# Starts vncviewer in speaker site:
 		
-		if {[catch {VNCViewerTaskC "#auto" $server $server $passwd $viewerlayout 1} res]} {
+		if {[catch {VNCViewerTaskC "#auto" $server $server $passwd $viewerlayout 1 0} res]} {
 		    ErrorTraceMsg "VNC: ShmCapture can not be created."
 		    ErrorMsgC "#auto" close -timeout 15000 \
 			"VNC ShmCapture ERROR:" ""  "VNC ShmCapture application can not be created." $res

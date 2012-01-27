@@ -80,7 +80,7 @@ body NeReDaDaemonC::Invoke {} {
 
     # Pre clean up:
     catch {exec $env(ISABEL_DIR)/bin/isabel_fp -k isabel.nereda.NeReDa}
-    catch {exec killall -q isabel_vncreflector}
+    catch {exec killall -q isabel_x11vnc}
 
     set _ccto $env(ISABEL_CONNECT_TO_IP)
 
@@ -88,6 +88,7 @@ body NeReDaDaemonC::Invoke {} {
     set _jarlib    "$env(ISABEL_DIR)/libexec/isabel_lib.jar"
     set _jars      "${_jarlib}:${_jarnereda}"
 
+    set _logsdir "-Disabel.logs.dir=$env(ISABEL_SESSION_LOGS_DIR)"
     set _logconf "-Djava.util.logging.config.file=$env(ISABEL_CONFIG_DIR)/logging.properties"
 
     set cport 51010
@@ -95,10 +96,10 @@ body NeReDaDaemonC::Invoke {} {
 
     if {$_ccto == ""} {
 	WriteTraceMsg "I am the root NeReDa node."
-	set pid [exec java -cp $_jars $_logconf isabel.nereda.NeReDa $_rfbPort -cport $cport &]
+	set pid [exec java -cp $_jars $_logconf $_logsdir isabel.nereda.NeReDa $_rfbPort -cport $cport &]
     } else {
 	WriteTraceMsg "NeReDa node will connect to \"$_ccto\"."
-	set pid [exec java -cp $_jars $_logconf isabel.nereda.NeReDa $_rfbPort -tohost $_ccto -cport $cport &]
+	set pid [exec java -cp $_jars $_logconf $_logsdir isabel.nereda.NeReDa $_rfbPort -tohost $_ccto -cport $cport &]
     }	    
     
     catch {exec echo $pid >> $env(ISABEL_TMP_DIR)/NeReDa.pid}
@@ -118,7 +119,7 @@ body NeReDaDaemonC::CleanUp {} {
     }
 
     after 100 after idle catch \\\"exec $env(ISABEL_DIR)/bin/isabel_fp -k isabel.nereda.NeReDa\\\"
-    after 100 after idle catch \\\"exec killall -q isabel_vncreflector\\\"
+    after 100 after idle catch \\\"exec killall -q isabel_x11vnc\\\"
 }
 
 #------------------------------------------------------------

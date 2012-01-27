@@ -32,8 +32,8 @@ class VNCViewerTaskC {
     # $_passwd: password
     # $_vlayout: virtual layout where the vnc viewer must be placed
     # $_shmmode: 1 if I must copy images to shared memory, else 0.
-    # $_options: vncviewer options
-    constructor {_serverdisp _serverroot _passwd _vlayout _shmmode {_options ""}} {}
+    # $_viewonly: 1 to add the viewonly option, esle 0
+    constructor {_serverdisp _serverroot _passwd _vlayout _shmmode _viewonly} {}
     
     destructor {}
 
@@ -55,8 +55,8 @@ class VNCViewerTaskC {
     # Shared memory mode
     private variable shmmode
 
-    # Extra options
-    private variable options
+    # View only option
+    private variable viewonly
 
     # When a viewer is created, I create a info window with this message:
     #    Waiting for Application Sharing Server
@@ -80,10 +80,10 @@ class VNCViewerTaskC {
 
 #---------------------------------------------------------------
 
-body VNCViewerTaskC::constructor {_serverdisp _serverroot _passwd _vlayout _shmmode {_options ""}} {
+body VNCViewerTaskC::constructor {_serverdisp _serverroot _passwd _vlayout _shmmode _viewonly} {
     global env
     
-    set serverdisplay $_serverdisp
+    set serverdisplay [list $_serverdisp]
     set serverroot    $_serverroot
 
     set passwd $_passwd
@@ -99,7 +99,7 @@ body VNCViewerTaskC::constructor {_serverdisp _serverroot _passwd _vlayout _shmm
 
     set shmmode $_shmmode
 
-    set options $_options
+    set viewonly $_viewonly
 
     set vncViewerObj ""
 
@@ -132,9 +132,9 @@ body VNCViewerTaskC::CreateVncViewerDaemon {} {
     global ISABEL_DIR env 
 
     set quit_cb [code $this CreateVncViewerDaemon]
-
+    
     after cancel $aftercdg_kill_waiting_msg
-  
+    
     if {[session Activity GetResource VNC showinfowin 1] != "0" } {
 	if {$infowinobj == ""} {
 	    set infowinobj [ErrorMsgC "::#auto" close -logo gif/vnc2.gif \
@@ -149,16 +149,26 @@ body VNCViewerTaskC::CreateVncViewerDaemon {} {
     
     set passwdopt ""
     if {$passwdfile != ""} {
-	set passwdopt "-passwd $passwdfile"
+	set passwdopt [list -passwd $passwdfile]
     }
-
+    
     if {$shmmode == "1"} {
 	set shmopts "-shmCapture -idShMemory 1250 -sizeShMemory 12582912"
     } else {
 	set shmopts ""
     }
-
-    set cmd "vncShmCapture $shmopts $passwdopt -title \"Application Sharing\" -display $env(ADISPLAY) -geometry $rgeometry -encodings tight -compresslevel 9 $options $serverdisplay"
+    
+    if {$viewonly} {
+	set _viewonly_opt -viewonly
+    } else {
+	set _viewonly_opt ""
+    }
+    
+    if {$shmmode == "1"} {
+	set cmd "vncShmCapture $shmopts $passwdopt -title \"Application Sharing\" -display $env(ADISPLAY) -geometry $rgeometry -encodings tight -compresslevel 9 $_viewonly_opt $serverdisplay"
+    } else {
+	set cmd "/usr/bin/xtightvncviewer  $passwdopt -title \"Application Sharing\" -display $env(ADISPLAY) -geometry $rgeometry -encodings tight -compresslevel 9 $_viewonly_opt $serverdisplay"
+    }
 
     set vncViewerObj [ExternalC "#auto" vncviewer $cmd $quit_cb]
     
@@ -183,9 +193,9 @@ body VNCViewerTaskC::GenPasswdFile {} {
 	
 	set passwdfile $env(ISABEL_TMP_DIR)/vncpasswd.[clock clicks]
 	
-	if {[catch {exec isabel_vncpasswdgen $passwd $passwdfile} emsg]} {
+	if {[catch {exec -ignorestderr isabel_x11vnc -storepasswd $passwd $passwdfile} emsg]} {
 	    set res "I can't generate password file: $emsg" 
-	    ErrorTraceMsg "VNC can't not be created. vncpasswdgen produces: $emsg."
+	    ErrorTraceMsg "VNC can't not be created. x11vnc -storepasswd produces: $emsg."
 	    error $res
 	}
     }
