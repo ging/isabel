@@ -60,6 +60,8 @@ uninstall::
 devel::
 	@echo "Installed dev packages needed to compile isabel"
 	@cd $(PROJECT_ROOT_DIR)/admin ; sudo ./install_dev_packages.sh
+	@echo "Creating directory /usr/tmp for objects and distribution"
+	@sudo mkdir -m 777 -p /usr/tmp
 
 
 VERSION_FILE=$(PROJECT_ROOT_DIR)/admin/pkg.Isabel500/version
