@@ -40,7 +40,6 @@ apt-get install -y xutils-dev make gcc g++  libc6-dev libx11-dev nasm yasm m4
 apt-get install -y libxmu-dev libxaw7-dev zlib1g-dev libjpeg62-dev libssl-dev
 
 if [ "$LINUX_DISTRIB" = "Ubuntu_oneiric" ] ; then
-   add-apt-repository -r -y ppa:ferramroberto/java
    add-apt-repository -y ppa:ferramroberto/java
    apt-get update -y
 fi
