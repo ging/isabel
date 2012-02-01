@@ -238,10 +238,8 @@ body AudioMixerConfigC::LaunchAlsamixer {} {
 	return
     }
 
-    set _cap_device [AudioDeviceSelectorC::GetCurrentCaptureDevice]
-
     set quitcb [code $this QuitAlsamixerCB]
-    set cmd "xterm -T alsamixer -geometry +100+200 -display $display -e alsamixer -V all -c $_cap_device"
+    set cmd "xterm -T alsamixer -geometry +100+200 -display $display -e alsamixer -V all"
     set alsamixerExtObj [ExternalC #auto alsamixer $cmd $quitcb]
 
     if {[catch {$alsamixerExtObj Start pid} errmsg]} {
