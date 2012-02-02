@@ -63,10 +63,14 @@ class DAudioC {
 body DAudioC::constructor {timeout no_cc_cb} {
     global env
 
-    set _using_mcu 1
+    set _using_mcu 0
 
-    if {[info exists env(ISABEL_STREAMING_DISABLED)] && $env(ISABEL_STREAMING_DISABLED) == "1"} {
-	set _using_mcu 0
+    if {[info exists env(ISABEL_STREAMING_ENABLED)] && $env(ISABEL_STREAMING_ENABLED) == "1"} {
+	set _using_mcu 1
+    }
+
+    if {[info exists env(ISABEL_IOS_GATEWAY_ENABLED)] && $env(ISABEL_IOS_GATEWAY_ENABLED) == "1"} {
+	set _using_mcu 1
     }
 
     if {[info exists env(ISABEL_LSE_SERVER_HOST)] && $env(ISABEL_LSE_SERVER_HOST) != ""} {
