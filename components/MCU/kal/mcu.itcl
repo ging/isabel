@@ -428,7 +428,9 @@ body MCUComponentC::NewIOSClient {_siteId _chId _host _audioPort _videoPort} {
 
     # Audio PT
     # I will use the none-8KHz, whose PT is 100.
-    set _audioPT 100
+    # set _audioPT 100
+    # I will use the mp3-48KHz, whose PT is 18.
+    set _audioPT 18
 
     # participant Id
     set _res [$mcudtobj RPC "new_participant(0,$_host,53135)"]
