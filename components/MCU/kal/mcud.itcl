@@ -33,24 +33,6 @@
 class DMcuC {
     inherit DaemonC
 
-    # Port used by the audio daemon to receive the audio packets sent by the mcu daemon.
-    private variable aPort 51025
-    
-    # Port used by the mcu daemon to receive the audio packets sent by the audio daemon.
-    private variable maPort 51026
-
-    # Port used by the mcu daemon to receive the audio packets sent by the irouter daemon.
-    private variable miPort 51001
-
-    # Port used by the irouter daemon to receive the audio packets sent by the mcu daemon.
-    private variable iPort 51002
-    
-
-    # Bind host and port:
-    # I must send all the audio packet to this host and port.
-    public variable bindHost ""
-    public variable bindPort ""
-    
     constructor {no_cc_cb} {
 	DaemonC::constructor MCU 30000 quit() \
 	    nop() 1 $no_cc_cb isabel_mcu

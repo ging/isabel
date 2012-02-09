@@ -132,46 +132,25 @@ class MCUComponentC {
 #---------------------------------------------------------
 
 body MCUComponentC::constructor {} {
-    global env
 
-    set _using_mcu 0
-    set _streaming 0
-    
-    if {[info exists env(ISABEL_STREAMING_ENABLED)] && $env(ISABEL_STREAMING_ENABLED) == "1"} {
-	set _using_mcu 1
-	set _streaming 1
-    }
-
-    if {[info exists env(ISABEL_IOS_GATEWAY_ENABLED)] && $env(ISABEL_IOS_GATEWAY_ENABLED) == "1"} {
-	set _using_mcu 1
-    }
-
-    if {[info exists env(ISABEL_LSE_SERVER_HOST)] && $env(ISABEL_LSE_SERVER_HOST) != ""} {
-	set _using_mcu 1
+    if {[catch {
+	set mcudtobj [McuDaemonTaskC "#auto"]
+	$mcudtobj AddListener [code $this ConfigureMCU]
+	$mcudtobj Start
+    } _err]} {
+	set mcudtobj ""
+	set _emsg "MCU: daemon task creation aborted. $_err"
+	ErrorTraceMsg $_emsg
+	error $_emsg
     }
     
-    if {$_using_mcu} {
-	if {[catch {
-	    set mcudtobj [McuDaemonTaskC "#auto"]
-	    $mcudtobj AddListener [code $this ConfigureMCU]
-	    $mcudtobj Start
-	} _err]} {
-	    set mcudtobj ""
-	    set _emsg "MCU: daemon task creation aborted. $_err"
-	    ErrorTraceMsg $_emsg
-	    error $_emsg
-	}
+    if {[catch {FFMpegStreamingMgrC "#auto"} ffmpegobj]} {
+	set _emsg "FFMpeg Streaming: creation aborted."
+	ErrorTraceMsg $_emsg
+	error $_emsg
     }
-
-    if {$_streaming} {
-	if {[catch {FFMpegStreamingMgrC "#auto"} ffmpegobj]} {
-	    set _emsg "FFMpeg Streaming: creation aborted."
-	    ErrorTraceMsg $_emsg
-	    error $_emsg
-	}
-	
-	after 2000 after idle StreamingManagerC::AutoStart
-    }
+    
+    after 2000 after idle StreamingManagerC::AutoStart
 }
 
 #---------------------------------------------------------
@@ -197,7 +176,6 @@ body MCUComponentC::destructor {} {
 #---------------------------------------------------------------
 
 body MCUComponentC::ConfigureMCU {} {
-    global env
 
     WriteTraceMsg "Mcu: Configuring MCU."
 
@@ -277,7 +255,6 @@ body MCUComponentC::SetLseServer {_host _port} {
 #---------------------------------------------------------------
 
 body MCUComponentC::ConfigureLseMCU {} {
-    global env
 
     if {$lsehost == ""} return
 
@@ -352,7 +329,6 @@ body MCUComponentC::StopStreaming {} {
 #---------------------------------------------------------
 
 body MCUComponentC::ConfigureStreamingMCU {} {
-    global env
 
     set streamingState "starting"
 
@@ -387,12 +363,6 @@ body MCUComponentC::ConfigureStreamingMCU {} {
 #---------------------------------------------------------
 
 body MCUComponentC::NewIOSClient {_siteId _chId _host _audioPort _videoPort} {
-    global env
-
-    if {![info exists env(ISABEL_IOS_GATEWAY_ENABLED)] || $env(ISABEL_IOS_GATEWAY_ENABLED) != "1"} {
-	WriteTraceMsg "Mcu: This site is not a gateway for iOS clients."
-	return
-    }
 
     WriteTraceMsg "Mcu: Configuring MCU to connect to a new iOS client \"$_siteId\"."
 
@@ -472,12 +442,6 @@ body MCUComponentC::NewIOSClient {_siteId _chId _host _audioPort _videoPort} {
 #---------------------------------------------------------
 
 body MCUComponentC::DelIOSClient {_siteId} {
-    global env
-
-    if {![info exists env(ISABEL_IOS_GATEWAY_ENABLED)] || $env(ISABEL_IOS_GATEWAY_ENABLED) != "1"} {
-	WriteTraceMsg "Mcu: This site is not a gateway for iOS clients."
-	return
-    }
 
     WriteTraceMsg "Mcu: Configuring MCU to disconnect from a old iOS client \"$_siteId\"."
 

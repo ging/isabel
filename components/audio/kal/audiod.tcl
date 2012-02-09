@@ -32,13 +32,13 @@ class DAudioC {
     inherit DaemonC
 
     # My local address (host). It is used in the data socket to make the bind.
-    private variable myHost 127.0.0.1
+    private variable myHost 127.0.0.2
 
     # The port where this audio daemon will receive rtp data packets.
-    private variable adport 51001
+    private variable adport 51025
 
     # The host and the port where this audio daemon will send rtp data packets.
-    private variable bindPort 51002
+    private variable bindPort 51026
     private variable bindHost 127.0.0.1
 
     constructor {timeout no_cc_cb} {
@@ -61,27 +61,7 @@ class DAudioC {
 #------------------------------------------------------------
 
 body DAudioC::constructor {timeout no_cc_cb} {
-    global env
 
-    set _using_mcu 0
-
-    if {[info exists env(ISABEL_STREAMING_ENABLED)] && $env(ISABEL_STREAMING_ENABLED) == "1"} {
-	set _using_mcu 1
-    }
-
-    if {[info exists env(ISABEL_IOS_GATEWAY_ENABLED)] && $env(ISABEL_IOS_GATEWAY_ENABLED) == "1"} {
-	set _using_mcu 1
-    }
-
-    if {[info exists env(ISABEL_LSE_SERVER_HOST)] && $env(ISABEL_LSE_SERVER_HOST) != ""} {
-	set _using_mcu 1
-    }
-
-    if {$_using_mcu} {
-	set adport 51025
-	set bindPort 51026
-	set myHost 127.0.0.2
-    }
 }
 
 #------------------------------------------------------------

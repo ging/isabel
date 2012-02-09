@@ -22,11 +22,11 @@
 
 #########################################################################
 #
-# videodaemontask.itcl
+# mcudaemontask.itcl
 #
 # Description
 #
-#   Task to start and access to the C video daemon.
+#   Task to start and access to the C MCU daemon.
 #
 #########################################################################
 

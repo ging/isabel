@@ -427,21 +427,6 @@ body StreamingManagerC::SetState {state} {
 
     Save state $mgr_state
     
-    if {![info exists env(ISABEL_STREAMING_ENABLED)] || $env(ISABEL_STREAMING_ENABLED) != "1"} {
-	$_stw.dostr   configure -state disabled
-	$_stw.target  configure -state disabled
-	$_rew.dorec   configure -state disabled
-	$wroot.frate  configure -state disabled
-	$wroot.half   configure -state disabled
-	$wroot.start  configure -state disabled
-	$wroot.stop   configure -state disabled
-
-	$_stw.status configure \
-	    -text "Streaming is disabled.\n\nEdit the Isabel Local Configuration and add:\n\n    ISABEL_STREAMING_ENABLED = 1\n\nto enable streaming."
-	
-	return
-    }
-
     if {$mgr_state == "started"} {
 	
 	$_stw.dostr   configure -state disabled
