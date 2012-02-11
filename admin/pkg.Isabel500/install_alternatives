@@ -23,7 +23,7 @@ mkdir -p /etc/xdg/menus/applications-merged
 export fullcmd="update-alternatives \
                     --install /usr/local/bin/isabel \
                               isabel \
-                              $__pdir/bin/isabel \
+                              $__pdir/bin/isrv_ConnectTo.sh \
                               $PKG_PRIORITY \
                     --slave   /usr/local/isabel \
                               isabeldir \
@@ -31,12 +31,6 @@ export fullcmd="update-alternatives \
                     --slave   /etc/isabel/vers/version.Isabel \
                               version.Isabel \
                               $__pdir/lib/version.Isabel \
-                    --slave   /usr/local/bin/xedl_launcher \
-                              xedl_launcher \
-                              $__pdir/bin/xedl_launcher \
-                    --slave   /usr/local/bin/icto_launcher \
-                              icto_launcher \
-                              $__pdir/bin/icto_launcher \
                     --slave   /usr/local/bin/isabel_launch \
                               isabel_launch \
                               $__pdir/bin/isabel_launch \
@@ -81,18 +75,6 @@ AddDesktopDirSlave()
 AddDesktopDirSlave Isabel.directory     
 AddDesktopDirSlave IsabelHelp.directory 
 AddDesktopDirSlave IsabelUtls.directory 
-
-
-AddFirefoxSlave()
-{
-   link=$1
-   envdir=/etc/firefox/pref
-   mkdir -p $envdir
-   
-   fullcmd="$fullcmd --slave $envdir/$link firefox-$link $__pdir/env/$envdir/$link"
-}
-AddFirefoxSlave isabel.js 
-
 
 
 $fullcmd

@@ -38,8 +38,6 @@ http://www.agora-2000.com
 %files
 %attr(755,root,bin)  /$ISA_RELDIR
 %attr(755,root,bin)  /usr/local/bin/isabel
-%attr(755,root,bin)  /usr/local/bin/xedl_launcher
-%attr(755,root,bin)  /usr/local/bin/icto_launcher
 %attr(755,root,bin)  /usr/local/bin/isabel_launch
 %attr(755,root,bin)  /usr/local/bin/fp
 %attr(755,root,bin)  /etc/xdg/menus/applications-merged

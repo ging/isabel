@@ -4,8 +4,6 @@ SUBDIRS.PRE=java
 SUBDIRS.POST=
 
 SCRIPTS:=\
-	isabel \
-	xlim_launcher \
 	isabel_launch \
         isabel.common.sh \
 	isabel.environ.sh

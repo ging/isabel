@@ -1,11 +1,4 @@
 #!/bin/sh
 set -e
 
-#
-# Cleanup /etc/mailcap
-#
-#/bin/ed /etc/mailcap > /dev/null 2>&1 <<EOF
-#g@icto_launcher@d
-#wq
-#EOF
 

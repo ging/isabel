@@ -43,18 +43,6 @@ test -f /usr/X11R6/lib/rgb.txt     || ln -s /etc/X11/rgb.txt /usr/X11R6/lib/rgb.
 test -f /usr/X11R6/lib/X11/rgb.txt || ln -s /etc/X11/rgb.txt /usr/X11R6/lib/X11/rgb.txt || true
 test -f /usr/share/X11/rgb.txt     || ln -s /etc/X11/rgb.txt /usr/share/X11/rgb.txt     || true
 
-#
-# Update /etc/mailcap
-#
-/bin/ed /etc/mailcap > /dev/null 2>&1 <<EOF
-g@icto_launcher@d
-/ User Section Begins /
-a
-application/icto; /usr/local/bin/bin/icto_launcher %s
-.
-wq
-EOF
-
 oldisabeldir=$(find /usr/local -maxdepth 1 -name isabel -type d)
 if [ "$oldisabeldir" != "" ] ; then 
     echo "Warning: There is an isabel directory of an old isabel version. Stopping configuration."
@@ -63,7 +51,7 @@ fi
 
 $pdir/bin/install_alternatives
 update-alternatives --set java /usr/lib/jvm/java-6-sun/jre/bin/java
-update-alternatives --set isabel $pdir/bin/isabel
+update-alternatives --set isabel $pdir/bin/isrv_ConnectTo.sh
 
 update-desktop-database || true
 

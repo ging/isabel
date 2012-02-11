@@ -239,34 +239,10 @@ public class Isabel_connect_to {
 			boolean url_present = false;
 			String the_url = "";
 			if (args.length==3 && args[1].equals("--url_file")) {
-				System.out.println("LLAMADA A ICTO_LAUNCHER");
-				String url_file_path = args[2];
-				System.out.println("argumento pasado: " + url_file_path); 
-
-
-				//hay dos posibilidades para el icto_launcher o lanzado automatico desde explorador
-				//que sea un fichero .icto o que sea la propia url
-				if(url_file_path.endsWith(".icto"))
-				{
-					System.out.println("Es un fichero .icto, lo leemos");
-					LineNumberReader urlLine = null;
-					try {
-						urlLine = new LineNumberReader(new FileReader(url_file_path));    			
-						the_url = urlLine.readLine();
-					} catch (FileNotFoundException e) {
-						e.printStackTrace();
-					}
-					catch (IOException e) {
-						e.printStackTrace();
-					}
-					url_present = true;
-				}
-				else
-				{
-					System.out.println("Es la url, la cogemos");
-					url_present = true;
-					the_url = url_file_path;
-				}
+			    System.out.println("LLAMADA con una URL");
+			    url_present = true;
+			    the_url = args[2];
+			    System.out.println("argumento pasado: " + the_url); 
 			} 
 			XlimServicePanel xlimServicePanel = null;
 			if (url_present){
