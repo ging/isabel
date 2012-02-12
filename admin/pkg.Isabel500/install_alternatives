@@ -23,7 +23,7 @@ mkdir -p /etc/xdg/menus/applications-merged
 export fullcmd="update-alternatives \
                     --install /usr/local/bin/isabel \
                               isabel \
-                              $__pdir/bin/isrv_ConnectTo.sh \
+                              $__pdir/bin/isabel \
                               $PKG_PRIORITY \
                     --slave   /usr/local/isabel \
                               isabeldir \

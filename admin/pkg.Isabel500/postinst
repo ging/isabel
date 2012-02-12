@@ -51,7 +51,7 @@ fi
 
 $pdir/bin/install_alternatives
 update-alternatives --set java /usr/lib/jvm/java-6-sun/jre/bin/java
-update-alternatives --set isabel $pdir/bin/isrv_ConnectTo.sh
+update-alternatives --set isabel $pdir/bin/isabel
 
 update-desktop-database || true
 
