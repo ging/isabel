@@ -27,28 +27,32 @@
 
 IdleMode.whatis:    action
 IdleMode.pos:       -row 0 -column 1
-IdleMode.title:     @psmall2.gif
+IdleMode.title:     Idle mode
+IdleMode.icon:      psmall2.gif
 IdleMode.balloon:   Idle mode
 IdleMode.cmd:       SetIMode idlemode ""
 
 
 ChatMode.whatis:    action
 ChatMode.pos:       -row 0 -column 2
-ChatMode.title:     @pall.gif
+ChatMode.title:     Chat mode
+ChatMode.icon:      pall.gif
 ChatMode.balloon:   Chat mode
 ChatMode.cmd:       SetIMode chatmode "" *
 
 
 OneMode.whatis:    action
 OneMode.pos:        -row 0 -column 3
-OneMode.title:     @gc1.gif
+OneMode.title:     One mode
+OneMode.icon:      gc1.gif
 OneMode.balloon:   One mode
 OneMode.cmd:       SetIMode onemode "" %U
 
 
 QuestionsMode.whatis:  action
 QuestionsMode.pos:     -row 0 -column 4
-QuestionsMode.title:   @pques3.gif
+QuestionsMode.title:   Questions mode
+QuestionsMode.icon:    pques3.gif
 QuestionsMode.balloon: Questions mode
 QuestionsMode.cmd:     SetIMode quesmode "" %U  -ctrlsites *
 
@@ -77,13 +81,15 @@ SelectVncServer.cmd:       VNC VNCServersEditorC::ToggleMap
 
 WhiteboardMode.whatis:  action
 WhiteboardMode.pos:     -row 0 -column 11
-WhiteboardMode.title:   @pwb2.gif
+WhiteboardMode.title:   Whiteboard mode
+WhiteboardMode.icon:    pwb2.gif
 WhiteboardMode.balloon: Whiteboard mode
 WhiteboardMode.cmd:     SetIMode whiteboardmode "" %U
 
 NotepadMode.whatis:  action
 NotepadMode.pos:     -row 0 -column 12
-NotepadMode.title:   @pcamdoc.gif
+NotepadMode.title:   Notepad mode
+NotepadMode.icon:    pcamdoc.gif
 NotepadMode.balloon: Notepad mode
 NotepadMode.cmd:     SetIMode notepadmode "" %U
 

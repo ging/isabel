@@ -51,7 +51,7 @@ body ActivityC::ExecAction {siteId action} {
 
    set _cmd [GetResource $action cmd]
 
-   regsub -all %U $_cmd $siteId cmd
+   regsub -all %U $_cmd $siteId _cmd
 
    set _primitive [lindex $_cmd 0]
 
@@ -75,7 +75,7 @@ body ActivityC::ExecMenuitem {siteId menuitem} {
 
    set _cmd [GetResource $menuitem cmd]
 
-   regsub -all %U $_cmd $siteId cmd
+   regsub -all %U $_cmd $siteId _cmd
 
    set _primitive [lindex $_cmd 0]
 

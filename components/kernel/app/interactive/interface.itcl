@@ -297,10 +297,12 @@ body UserInterfaceC::UpdateUserActionButtons {} {
 		bind $bname <Leave> "+$bname conf -image $_icon"
 	    }
 
-	    if {$_title != ""} {
-		$bname conf \
-		    -compound top \
-		    -text $_title
+	    if 0 {
+		if {$_title != ""} {
+		    $bname conf \
+			-compound top \
+			-text $_title
+		}
 	    }
 	} else {
 	    $bname conf -text $_title
