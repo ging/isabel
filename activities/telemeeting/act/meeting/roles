@@ -83,7 +83,12 @@ IOSClient.components:  Audio \
                        Questions Video \
 		       MCU
 
-IOSClient.actions:    
+IOSClient.actions:    IdleMode \
+                      OneMode \
+                      ChatMode \
+                      QuestionsMode \
+                      WhiteboardMode \
+                      NotepadMode
 
 IOSClient.menuitems:  
 

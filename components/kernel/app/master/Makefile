@@ -33,6 +33,7 @@ ISABEL_MASTER_SRC:=\
                 $(KERNEL_MASTER)/autoquit.itcl \
                 $(KERNEL_COMMON)/siteInfo.itcl \
                 $(KERNEL_COMMON)/activity.itcl \
+                $(KERNEL_MASTER)/activity.itcl \
                 $(KERNEL_COMMON)/sessionInfo.itcl \
                 $(KERNEL_COMMON)/../sms/SmsStateCounter.itcl \
                 $(KERNEL_COMMON)/../sms/SmsState.itcl \

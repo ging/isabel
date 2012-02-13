@@ -28,7 +28,7 @@
 #
 #########################################################################
 
-class ActivityC {
+class ActivityBaseC {
 
     # Service name.
     private variable name ""
@@ -148,7 +148,7 @@ class ActivityC {
     
 #----------------------------------------------
 
-body ActivityC::Load {file} {
+body ActivityBaseC::Load {file} {
 
     WriteTraceMsg "Reading Service definition file."
     
@@ -165,7 +165,7 @@ body ActivityC::Load {file} {
 
 #----------------------------------------------
 
-body ActivityC::SetValues {_name _actions _menuitems _roles _components _imodes _resources} {
+body ActivityBaseC::SetValues {_name _actions _menuitems _roles _components _imodes _resources} {
 
     set name       $_name
     set actions    $_actions
@@ -183,50 +183,50 @@ body ActivityC::SetValues {_name _actions _menuitems _roles _components _imodes 
 
 #----------------------------------------------
 
-body ActivityC::GetName {} {
+body ActivityBaseC::GetName {} {
     return $name
 }
 
 #----------------------------------------------
 
-body ActivityC::GetActions {} {
+body ActivityBaseC::GetActions {} {
     return $actions
 }
 
 #----------------------------------------------
 
-body ActivityC::GetMenuItems {} {
+body ActivityBaseC::GetMenuItems {} {
     return $menuitems
 }
 
 #----------------------------------------------
 
-body ActivityC::GetRoles {} {
+body ActivityBaseC::GetRoles {} {
     return $roles
 }
 
 #----------------------------------------------
 
-body ActivityC::GetToolRoles {tool} {
+body ActivityBaseC::GetToolRoles {tool} {
 
     return [GetResource $name roles.$tool ""]
 }
 
 #----------------------------------------------
 
-body ActivityC::GetScenaries {} {
+body ActivityBaseC::GetScenaries {} {
     return $imodes
 }
 
 #----------------------------------------------
 
-body ActivityC::GetComponents {} {
+body ActivityBaseC::GetComponents {} {
     return $components
 }
 
 #----------------------------------------------
 
-body ActivityC::GetResources {} {
+body ActivityBaseC::GetResources {} {
     
     foreach n [array names resources] {
 	lappend res [list $n $resources($n)]
@@ -236,7 +236,7 @@ body ActivityC::GetResources {} {
 
 #----------------------------------------------
 
-body ActivityC::GetResource {con res {default ""} {check ""}} {
+body ActivityBaseC::GetResource {con res {default ""} {check ""}} {
     
     if {$check != ""} {
 	echo ---------------------------------------
@@ -263,7 +263,7 @@ body ActivityC::GetResource {con res {default ""} {check ""}} {
 
 #----------------------------------------------
 
-body ActivityC::SetResource {c r value} {
+body ActivityBaseC::SetResource {c r value} {
 
     set resources($c,$r) $value
 }
@@ -271,7 +271,7 @@ body ActivityC::SetResource {c r value} {
 
 #----------------------------------------------
 
-body ActivityC::Dump {} {
+body ActivityBaseC::Dump {} {
     
     WriteTraceMsg "- SERVICE ----------------------------------"
     WriteTraceMsg "Name = $name"
@@ -353,7 +353,7 @@ body ActivityC::Dump {} {
 
 #----------------------------------------------
 
-body ActivityC::ReadFile {file} {
+body ActivityBaseC::ReadFile {file} {
     global ISABEL_WORKDIR ISABEL_DIR
     
     if {![file exists $file]} {
@@ -542,7 +542,7 @@ body ActivityC::ReadFile {file} {
 
 #----------------------------------------------
 
-body ActivityC::MultiGets {fd line} {
+body ActivityBaseC::MultiGets {fd line} {
     upvar $line l
 
     set l ""
@@ -568,7 +568,7 @@ body ActivityC::MultiGets {fd line} {
 
 #----------------------------------------------
 
-body ActivityC::SetResDefaults {c r value} {
+body ActivityBaseC::SetResDefaults {c r value} {
 
     if {![info exist resources($c,$r)]} {
 	set resources($c,$r) $value 
@@ -577,7 +577,7 @@ body ActivityC::SetResDefaults {c r value} {
 
 #----------------------------------------------
 
-body ActivityC::SetComponentDefaults {c} {
+body ActivityBaseC::SetComponentDefaults {c} {
 
     SetResDefaults $c proc        ""
     SetResDefaults $c source      ""
@@ -586,7 +586,7 @@ body ActivityC::SetComponentDefaults {c} {
 
 #----------------------------------------------
 
-body ActivityC::SetRoleDefaults {r} {
+body ActivityBaseC::SetRoleDefaults {r} {
 
     SetResDefaults $r sites       ""
     SetResDefaults $r except     ""
@@ -597,7 +597,7 @@ body ActivityC::SetRoleDefaults {r} {
 
 #----------------------------------------------
 
-body ActivityC::SetActionDefaults {v} {
+body ActivityBaseC::SetActionDefaults {v} {
 
     SetResDefaults $v title    $v
     SetResDefaults $v balloon  $v
@@ -608,7 +608,7 @@ body ActivityC::SetActionDefaults {v} {
 
 #----------------------------------------------
 
-body ActivityC::SetMenuItemDefaults {v} {
+body ActivityBaseC::SetMenuItemDefaults {v} {
 
     SetResDefaults $v title    $v
     SetResDefaults $v balloon  $v
@@ -618,7 +618,7 @@ body ActivityC::SetMenuItemDefaults {v} {
 
 #----------------------------------------------
 
-body ActivityC::SetIModeDefaults {s} {
+body ActivityBaseC::SetIModeDefaults {s} {
 
     SetResDefaults $s order    ""
 
@@ -626,7 +626,7 @@ body ActivityC::SetIModeDefaults {s} {
 
 #----------------------------------------------
 
-body ActivityC::SetServiceDefaults {a} {
+body ActivityBaseC::SetServiceDefaults {a} {
 
    SetResDefaults $a server [exec hostname]
    SetResDefaults $a isatcl ""
@@ -634,7 +634,7 @@ body ActivityC::SetServiceDefaults {a} {
 
 #----------------------------------------------
 
-body ActivityC::CheckRPM {} {
+body ActivityBaseC::CheckRPM {} {
     global env
 
     if {[info exists env(ISABEL_SKIP_REQUIRED_RPMS)]} {
@@ -662,7 +662,7 @@ body ActivityC::CheckRPM {} {
 
 #----------------------------------------------
 
-body ActivityC::CheckVersions {} {
+body ActivityBaseC::CheckVersions {} {
     global env ISABEL_DIR
 
     if {[info exists env(ISABEL_SKIP_REQUIRED_VERSIONS)]} {
@@ -693,7 +693,7 @@ body ActivityC::CheckVersions {} {
 
 #----------------------------------------------
 
-body ActivityC::LoadSourceFiles {} {
+body ActivityBaseC::LoadSourceFiles {} {
     global ISABEL_DIR ISABEL_WORKDIR
     
     set sources ""
@@ -732,7 +732,7 @@ body ActivityC::LoadSourceFiles {} {
 
 #----------------------------------------------
 
-body ActivityC::LoadIsaTclFiles {} {
+body ActivityBaseC::LoadIsaTclFiles {} {
     global ISABEL_DIR
 
     if {![info exists resources($name,isatcl)]} return
@@ -762,7 +762,7 @@ body ActivityC::LoadIsaTclFiles {} {
 
 #----------------------------------------------
 
-body ActivityC::WaitForServiceDefinition {} {
+body ActivityBaseC::WaitForServiceDefinition {} {
 
 
     while {$name == ""} {
@@ -773,7 +773,7 @@ body ActivityC::WaitForServiceDefinition {} {
 }
 
 #----------------------------------------------
-body ActivityC::ServiceDefinition {name actions menuitems roles components imodes resources sourceslist} {
+body ActivityBaseC::ServiceDefinition {name actions menuitems roles components imodes resources sourceslist} {
 
     SetValues $name $actions $menuitems $roles $components $imodes $resources
 
@@ -793,7 +793,7 @@ body ActivityC::ServiceDefinition {name actions menuitems roles components imode
 
 #----------------------------------------------
 
-body ActivityC::PublishService {} {
+body ActivityBaseC::PublishService {} {
     global ISABEL_DIR ISABEL_WORKDIR 
     
     # Create a list with the souce files referenced in the service.

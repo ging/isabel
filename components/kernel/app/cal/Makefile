@@ -34,6 +34,7 @@ ISABEL_CAL_SRC:=\
                 $(KERNEL_COMMON)/siteInfo.itcl \
                 $(KERNEL_COMMON)/sessionInfo.itcl \
                 $(KERNEL_COMMON)/activity.itcl \
+                $(KERNEL_CAL)/activity.itcl \
                 $(KERNEL_COMMON)/../sms/SmsStateCounter.itcl \
                 $(KERNEL_COMMON)/../sms/SmsManagerClient.itcl \
                 $(TCL_COMMON)/external.itcl \

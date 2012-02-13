@@ -38,6 +38,7 @@ ISABEL_INTERACTIVE_SRC:=\
                 $(KERNEL_INTERACTIVE)/componentStub.itcl \
                 $(KERNEL_COMMON)/sessionInfo.itcl \
                 $(KERNEL_COMMON)/activity.itcl \
+                $(KERNEL_INTERACTIVE)/activity.itcl \
                 $(KERNEL_COMMON)/../sms/SmsStateCounter.itcl \
                 $(KERNEL_COMMON)/../sms/SmsManagerClient.itcl \
                 $(KERNEL_INTERACTIVE)/admin.itcl \

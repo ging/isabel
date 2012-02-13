@@ -1,0 +1,116 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2012 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#########################################################################
+#
+# activity.itcl
+#
+# Common/ActivityBaseC: Base class used to store the services.
+# Master/ActivityC: Extension with methods used by master site.
+#
+#########################################################################
+
+class ActivityC {
+    inherit ActivityBaseC
+
+    constructor {} {ActivityBaseC::constructor} {}
+
+    # Execute the service action requested by the given iOS client.
+    public method ExecAction {siteId action} 
+
+    # Execute the service menuitem requested by the given iOS client.
+    public method ExecMenuitem {siteId menuitem} 
+
+    # Apply an interaction mode.
+    private method SetIMode {siteId imname {order ""} {site_id_list ""} args}
+    
+}
+
+#----------------------------------------------
+
+body ActivityC::ExecAction {siteId action} {
+
+   set _cmd [GetResource $action cmd]
+
+   regsub -all %U $_cmd $siteId cmd
+
+   set _primitive [lindex $_cmd 0]
+
+   switch -exact $_primitive {
+       SetIMode {
+	   set _imodename [lindex $_cmd 1]
+	   set _order     [lindex $_cmd 2]
+	   set _sites     [lindex $_cmd 3]
+	   set _args      [lrange $_cmd 4 end]
+	   SetIMode $siteId $_imodename $_order $_sites $_args
+       }
+       default {
+	   ErrorTraceMsg "Unsupported iOS request: \"$siteId\" has invoked an unsupported action \"$action\""
+       }
+   }
+}
+
+#---------------------------------------------------------
+
+body ActivityC::ExecMenuitem {siteId menuitem} {
+
+   set _cmd [GetResource $menuitem cmd]
+
+   regsub -all %U $_cmd $siteId cmd
+
+   set _primitive [lindex $_cmd 0]
+
+   switch -exact $_primitive {
+       SetIMode {
+	   set _imodename [lindex $_cmd 1]
+	   set _order     [lindex $_cmd 2]
+	   set _sites     [lindex $_cmd 3]
+	   set _args      [lrange $_cmd 4 end]
+	   SetIMode $siteId $_imodename $_order $_sites $_args
+       }
+       default {
+	   ErrorTraceMsg "Unsupported iOS request: \"$siteId\" has invoked an unsupported menuitem \"$menuitem\""
+       }
+   }
+
+}
+
+#---------------------------------------------------------
+
+body ActivityC::SetIMode {siteId imname {order ""} {site_id_list ""} args} {
+    
+    set _my_site_id $siteId 
+    set _my_name [SiteManager::GetSiteInfo $_my_site_id name] 
+    
+    ComponentManager::InteractionModeRequest \
+	[list $imname] [list $site_id_list] $args \
+	[list -scene [list \
+			  -conference [GetName] \
+			  -session  Session \
+			  -presentation [GetResource $imname scene.name $imname] \
+			  -site ${_my_site_id} \
+			  -participant ${_my_name} \
+			 ] \
+	    ]
+}
+
+#---------------------------------------------------------
