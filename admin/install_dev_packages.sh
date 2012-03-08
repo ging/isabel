@@ -39,11 +39,13 @@ apt-get install -y itcl3 itk3 iwidgets4
 apt-get install -y xutils-dev make gcc g++  libc6-dev libx11-dev nasm yasm m4
 apt-get install -y libxmu-dev libxaw7-dev zlib1g-dev libjpeg62-dev libssl-dev
 
-if [ "$LINUX_DISTRIB" = "Ubuntu_oneiric" ] ; then
-   add-apt-repository -y ppa:ferramroberto/java
-   apt-get update -y
-fi
-apt-get install -y sun-java6-jdk
+#if [ "$LINUX_DISTRIB" = "Ubuntu_oneiric" ] ; then
+#   add-apt-repository -y ppa:ferramroberto/java
+#   apt-get update -y
+#fi
+#apt-get install -y sun-java6-jdk
+
+apt-get install -y default-jdk
 
 apt-get install -y libbogl-dev libpng12-dev libtiff4-dev openssh-server liblcms1-dev libasound2-dev libgl1-mesa-dev libglu1-mesa-dev
 apt-get install -y freeglut3-dev libxfixes-dev libxvmc-dev libgsm1-dev libmp3lame-dev libspeex-dev libopencore-amrnb-dev libopencore-amrwb-dev libx264-dev portaudio19-dev

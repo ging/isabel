@@ -31,7 +31,7 @@ Version: $VERSION.$RELEASE
 Section: collaboration
 Priority: extra
 Architecture: i386
-Pre-Depends: sun-java6-jre
+Pre-Depends: default-jre
 Depends: iwidgets4, m4, gawk, tightvncserver, twm, openvpn, freeglut3, libgsm1, libmp3lame0, libspeex1, libopencore-amrnb0, libopencore-amrwb0, libx264-dev, libxvidcore4, libportaudio2, libpng12-0, jwm, sharutils, gamix, xtightvncviewer, libio-socket-inet6-perl, pavucontrol
 Essential: no
 Installed-Size: 7 MB
