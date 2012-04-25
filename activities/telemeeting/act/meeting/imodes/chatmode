@@ -40,9 +40,9 @@ Video.layout.chat2: \
 
 
 Video.layout.chat3: \
- {video 256x192+358+039 _ISERV_VID_CHAT4_BW} \
- {video 256x192+154+371 _ISERV_VID_CHAT4_BW} \
- {video 256x192+564+371 _ISERV_VID_CHAT4_BW}
+ {video 256x192+358+039 _ISERV_VID_CHAT3_BW} \
+ {video 256x192+154+371 _ISERV_VID_CHAT3_BW} \
+ {video 256x192+564+371 _ISERV_VID_CHAT3_BW}
 
 
 Video.layout.chat4: \
