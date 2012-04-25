@@ -49,8 +49,8 @@ Video.lse.enabled:    0
 #--------------------------------------------------------------------
 
 Video.conftable.video: \
-  {geometry=64x48   bw=0    {codec=MPEG-4 -qlty=0} grabsize=0       framerate=25} \
-  {geometry=640x480 bw=0    {codec=MPEG-4 -qlty=0} grabsize=640x480 framerate=25}
+  {geometry=64x48   bw=0    {codec=MPEG-4 -qlty=0} grabsize=0 framerate=25} \
+  {geometry=640x480 bw=0    {codec=MPEG-4 -qlty=0} grabsize=0 framerate=25}
 
 #--------------------------------------------------------------------
 
