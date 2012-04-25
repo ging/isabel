@@ -1,0 +1,104 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+
+# --------------------------------------------------------------------
+#                    USER ACTIONS DEFINITION
+# --------------------------------------------------------------------
+
+IdleMode.whatis:    action
+IdleMode.pos:       -row 0 -column 1
+IdleMode.title:     Idle mode
+IdleMode.icon:      psmall2.gif
+IdleMode.balloon:   Idle mode
+IdleMode.cmd:       SetIMode idlemode ""
+
+
+ChatMode.whatis:    action
+ChatMode.pos:       -row 0 -column 2
+ChatMode.title:     Chat mode
+ChatMode.icon:      pall.gif
+ChatMode.balloon:   Chat mode
+ChatMode.cmd:       SetIMode chatmode "" *
+
+
+OneMode.whatis:    action
+OneMode.pos:        -row 0 -column 3
+OneMode.title:     One mode
+OneMode.icon:      gc1.gif
+OneMode.balloon:   One mode
+OneMode.cmd:       SetIMode onemode "" %U
+
+
+QuestionsMode.whatis:  action
+QuestionsMode.pos:     -row 0 -column 4
+QuestionsMode.title:   Questions mode
+QuestionsMode.icon:    pques3.gif
+QuestionsMode.balloon: Questions mode
+QuestionsMode.cmd:     SetIMode quesmode "" %U  -ctrlsites *
+
+
+VgaMode.whatis:   action
+VgaMode.pos:      -row 0 -column 6
+VgaMode.title:    @pvdemo.gif
+VgaMode.balloon:  VGA mode
+VgaMode.cmd:      SetIMode vgamode "" %U -vgasite %U
+
+
+AppSharingMode.whatis:   action
+AppSharingMode.pos:      -row 0 -column 8
+AppSharingMode.title:    @pvnc.gif
+AppSharingMode.balloon:  Application sharing mode
+AppSharingMode.cmd:      SetIMode appsharingmode "" %U
+AppSharingMode.cmd:      VNC SelectServerAndRequestInteractionMode appsharingmode %U ""
+
+
+SelectVncServer.whatis:    action
+SelectVncServer.pos:       -row 0 -column 8
+SelectVncServer.title:     @pvnc.gif
+SelectVncServer.balloon:   Select local VNC server
+SelectVncServer.cmd:       VNC VNCServersEditorC::ToggleMap
+
+
+WhiteboardMode.whatis:  action
+WhiteboardMode.pos:     -row 0 -column 11
+WhiteboardMode.title:   Whiteboard mode
+WhiteboardMode.icon:    pwb2.gif
+WhiteboardMode.balloon: Whiteboard mode
+WhiteboardMode.cmd:     SetIMode whiteboardmode "" %U
+
+NotepadMode.whatis:  action
+NotepadMode.pos:     -row 0 -column 12
+NotepadMode.title:   Notepad mode
+NotepadMode.icon:    pcamdoc.gif
+NotepadMode.balloon: Notepad mode
+NotepadMode.cmd:     SetIMode notepadmode "" %U
+
+
+Admon.whatis:    action
+Admon.pos:       -row 0 -column 19
+Admon.title:     @tools.gif
+Admon.balloon:   Open administration menu
+Admon.cmd:       interface OpenMenuitemsMenu
+
+
+

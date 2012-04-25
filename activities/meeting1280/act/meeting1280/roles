@@ -1,0 +1,126 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+# --------------------------------------------------------------------
+#                    ROLES DEFINITION
+# --------------------------------------------------------------------
+
+Everybody.components:  Audio Ftp Monitor Notepad Wallpaper \
+                       Questions Video Whiteboard \
+		       VNC MCU
+                       
+Everybody.actions:     IdleMode \
+                       OneMode \
+                       ChatMode \
+                       QuestionsMode \
+                       VgaMode \
+                       AppSharingMode \
+                       WhiteboardMode \
+                       NotepadMode \
+                       Admon
+
+Everybody.menuitems:  AdminTool \
+                      VideoInfo VideoSource \
+                      StreamControl \
+                      MonitorStartOrStop \
+                      CreateAudio \
+                      QuitIsabel
+
+
+# --------------------------------------------------------------------
+
+SipGateway.components: Ftp Notepad Wallpaper \
+                       Questions Video Whiteboard \
+		       VNC
+                       
+SipGateway.actions:    Admon
+
+SipGateway.menuitems: AdminTool  \
+                      QuitIsabel
+
+# --------------------------------------------------------------------
+
+FlashGateway.components: Ftp Notepad Wallpaper \
+                       Questions Video Whiteboard \
+		       VNC
+                       
+FlashGateway.actions:  Admon
+
+FlashGateway.menuitems: AdminTool  \
+                        QuitIsabel
+
+
+# --------------------------------------------------------------------
+
+GatewayClient.components:  Audio Questions Video
+                       
+GatewayClient.actions:
+
+GatewayClient.menuitems:
+
+# --------------------------------------------------------------------
+
+IOSClient.components:  Audio \
+                       Questions Video \
+		       MCU
+
+IOSClient.actions:    IdleMode \
+                      OneMode \
+                      ChatMode \
+                      QuestionsMode \
+                      WhiteboardMode \
+                      NotepadMode
+
+IOSClient.menuitems:  
+
+# --------------------------------------------------------------------
+
+Ctrl.components:  
+
+Ctrl.actions:   
+
+Ctrl.menuitems: ifelse(ISABEL_IROUTER_DEBUG,1,`IrouterTrafficLogs IrouterReset',)
+
+# --------------------------------------------------------------------
+
+MCU.components:  Monitor \
+		 VNC
+                       
+MCU.actions:     Admon \
+                 SelectVncServer
+
+MCU.menuitems:   AdminTool \
+                 MonitorStartOrStop  \
+                 QuitIsabel
+
+# --------------------------------------------------------------------
+
+Watchpoint.components: Audio Ftp Monitor Notepad Wallpaper \
+                       Questions Video Whiteboard \
+		       VNC
+                       
+Watchpoint.actions:    Admon
+
+Watchpoint.menuitems: CreateAudio  \
+                      QuitIsabel
+
+# --------------------------------------------------------------------

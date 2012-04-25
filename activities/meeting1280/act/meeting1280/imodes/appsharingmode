@@ -1,0 +1,52 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#--------------------------------------------------------------------
+# INTERACTION MODE: appsharingmode
+#--------------------------------------------------------------------
+
+appsharingmode.whatis: imode
+appsharingmode.scene.name: application sharing
+
+appsharingmode.Audio: -active 1
+
+appsharingmode.Video:  -active 1 \
+                   -layout lappsharingmode \
+                   -otherlayout {ol2lq ol3lq ol4lq ol5lq ol10lq ol25lq ol36lq}
+
+appsharingmode.VNC: -active 1 \
+                    -layout lappsharingmode \
+                    -shdisplaycodec  "_ISERV_SHDIS_CODEC -qlty _ISERV_SHDIS_QLTY" \
+                    -bw     _ISERV_SHDIS_BW \
+                    -capturearea _ISERV_VNCVIEWER_SHDISP_CAPTURE_AREA
+
+# --------------------------------------------------------------------
+
+Video.layout.lappsharingmode: \
+ {video 256x192+000+000 _ISERV_VID_APPSHARING_BW}
+
+# --------------------------------------------------------------------
+
+VNC.viewerlayout.lappsharingmode:    _ISERV_VNCVIEWER_APPSHARING_LAYOUT
+
+# --------------------------------------------------------------------
+

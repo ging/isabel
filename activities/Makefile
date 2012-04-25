@@ -1,6 +1,6 @@
 include $(PROJECT_ROOT_DIR)/Makefile.head
 
-SUBDIRS.PRE=lib localtest telemeeting teleclass teleconference
+SUBDIRS.PRE=lib localtest telemeeting teleclass teleconference meeting1280
 SUBDIRS.POST=
 
 distrib::

@@ -1,0 +1,48 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+#--------------------------------------------------------------------
+# INTERACTION MODE: quesmode
+#--------------------------------------------------------------------
+
+quesmode.whatis:      imode
+quesmode.scene.name:  questions
+
+quesmode.Audio:       -active 1 -skip 1
+
+quesmode.Questions:   -active 1 \
+                      -resetlayout lresetquestions -resetothermap 0 \
+                      -layout lquestions -othermap 0 \
+                      -setaudio 0
+
+quesmode.Video:       -active 1 -skip 1
+
+#--------------------------------------------------------------------
+
+Video.layout.lresetquestions: \
+ {video 448x336+269+312 _ISERV_VID_QUESTIONS_BW}
+
+Video.layout.lquestions: \
+ {video 448x336+775+312 _ISERV_VID_QUESTIONS_BW} \
+ {video 448x336+269+312 _ISERV_VID_QUESTIONS_BW}
+
+#--------------------------------------------------------------------

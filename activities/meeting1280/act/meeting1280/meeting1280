@@ -1,0 +1,94 @@
+########################################################################
+#
+#  ISABEL: A group collaboration tool for the Internet
+#  Copyright (C) 2009 Agora System S.A.
+#  
+#  This file is part of Isabel.
+#  
+#  Isabel is free software: you can redistribute it and/or modify
+#  it under the terms of the Affero GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  
+#  Isabel is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  Affero GNU General Public License for more details.
+# 
+#  You should have received a copy of the Affero GNU General Public License
+#  along with Isabel.  If not, see <http://www.gnu.org/licenses/>.
+#
+########################################################################
+
+# SERVICE PARAMETERS AND CTES
+sinclude(act/lib/vars/defmacros)
+sinclude(act/lib/vars/qos.var)
+sinclude(act/meeting1280/vars/qos)
+sinclude(act/lib/vars/audio.var)
+sinclude(act/lib/vars/video.var)
+sinclude(act/meeting1280/vars/ctes)
+
+# ACTIVITY DEFINITION
+sinclude(act/meeting1280/main)
+
+# ROLES DEFINITION
+sinclude(act/lib/roles/default)
+sinclude(act/meeting1280/roles)
+
+# USER VIEWS DEFINITION
+sinclude(act/meeting1280/actions)
+
+# MENUITEMS DEFINITION
+sinclude(act/lib/menuitems/admin)
+sinclude(act/lib/menuitems/monitor)
+sinclude(act/lib/menuitems/video)
+sinclude(act/lib/menuitems/audio)
+sinclude(act/lib/menuitems/mcu)
+sinclude(act/lib/menuitems/vnc)
+sinclude(act/lib/menuitems/irouter)
+
+sinclude(act/meeting1280/menuitems)
+
+# COMPONENTS
+sinclude(act/lib/comps/ftp)
+
+sinclude(act/lib/comps/mcu)
+
+sinclude(act/lib/comps/audio)
+Audio.tonesites:     Ctrl
+
+sinclude(act/lib/comps/wallpaper)
+
+sinclude(act/lib/comps/vnc)
+
+sinclude(act/lib/comps/notepad)
+sinclude(act/lib/comps/whiteboard)
+
+sinclude(act/lib/comps/video)
+Video.vga.enabled: 1
+Video.othermap:    1
+Video.otherlayout: ol2hq ol3hq ol4hq ol5hq ol10hq ol25hq ol36hq
+
+Video.camera.overrideredirect: 1
+Video.vga.overrideredirect:    1
+Video.lse.overrideredirect:    1
+
+sinclude(act/lib/comps/questions)
+Questions.layout:        220x940+5+10 1 1
+
+sinclude(act/lib/comps/monitor)
+
+# INTERACTION MODES DEFINITION
+sinclude(act/meeting1280/imodes/idlemode)    
+sinclude(act/meeting1280/imodes/onemode)   
+sinclude(act/meeting1280/imodes/chatmode)
+sinclude(act/meeting1280/imodes/quesmode)
+sinclude(act/meeting1280/imodes/vgamode)
+sinclude(act/meeting1280/imodes/doccameramode)
+sinclude(act/meeting1280/imodes/notepadmode)
+sinclude(act/meeting1280/imodes/whiteboardmode)
+sinclude(act/meeting1280/imodes/appsharingmode)
+
+
+
+
