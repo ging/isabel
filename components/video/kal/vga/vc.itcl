@@ -181,6 +181,10 @@ class VgaLocalC {
 
     public method CreateChannel {}
 
+    # Place the video window under TCL windows.
+    private method MoveDown {}
+    private method MoveDownCB {_videoWinId}
+
     public method SetGeometry {geom}
 
     # Send video flow to the irouter daemon
@@ -226,6 +230,13 @@ body VgaLocalC::CreateChannel {} {
     
     $vdObj RDO video_window_title($chId,$stitle,$ltitle)
 
+    set _orr [session Activity GetResource Video vga.overrideredirect 0]
+    if {$_orr != "0"} {
+	$vdObj RDO video_window_overrideredirect($chId,1)
+
+	after idle [code $this MoveDown]
+    }
+
     if {[info exists env(ISABEL_VGA_AVATAR_FILENAME)] && $env(ISABEL_VGA_AVATAR_FILENAME) != ""} {
 	set _afn $env(ISABEL_VGA_AVATAR_FILENAME)
     } else {
@@ -234,6 +245,34 @@ body VgaLocalC::CreateChannel {} {
     $vdObj RDO video_avatar($chId,$_afn)
 
     $vdObj RDO video_avatar_timeout($chId,5)
+}
+
+#--------------------------------------------------------------
+
+body VgaLocalC::MoveDown {} {
+
+    $vdObj RCB video_get_winid($chId) [code $this MoveDownCB]
+
+    toplevel .winunderauxvga$chId
+
+    label .winunderauxvga$chId.msg -text "Moving Video VGA window to bottom"
+    pack .winunderauxvga$chId.msg
+
+    lower .winunderauxvga$chId
+}
+
+#---------------------------------------------------------------
+
+body VgaLocalC::MoveDownCB {_videoWinId} {
+    global ISABEL_DIR
+
+    set _id1 [expr [winfo id .winunderauxvga$chId]]
+
+    if {[catch "exec $ISABEL_DIR/bin/isabel_winunder -winOver $_id1 -winUnder $_videoWinId" _err]} {
+	WarningTraceMsg "Video VGA: I can not move VGA window to bottom: $_err"
+    }
+
+    destroy  .winunderauxvga$chId
 }
 
 #--------------------------------------------------------------
@@ -338,6 +377,10 @@ class VgaRemoteC {
 
     private method CreateChannel {}
 
+    # Place the video window under TCL windows.
+    private method MoveDown {}
+    private method MoveDownCB {_videoWinId}
+
     # Send all the needed commands to configure the vga C daemon state.
     # Used when the vga C daemon state is restarted.
     public method ReapplyState {} 
@@ -365,6 +408,13 @@ body VgaRemoteC::CreateChannel {} {
     $vdObj RDO video_play_channel($chId)
     $vdObj RDO video_window_title($chId,$stitle,$ltitle)
 
+    set _orr [session Activity GetResource Video vga.overrideredirect 0]
+    if {$_orr != "0"} {
+	$vdObj RDO video_window_overrideredirect($chId,1)
+
+	after idle [code $this MoveDown]
+    }
+
     if {[info exists env(ISABEL_VGA_AVATAR_FILENAME)] && $env(ISABEL_VGA_AVATAR_FILENAME) != ""} {
 	set _afn $env(ISABEL_VGA_AVATAR_FILENAME)
     } else {
@@ -373,6 +423,34 @@ body VgaRemoteC::CreateChannel {} {
     $vdObj RDO video_avatar($chId,$_afn)
 
     $vdObj RDO video_avatar_timeout($chId,5)
+}
+
+#--------------------------------------------------------------
+
+body VgaRemoteC::MoveDown {} {
+
+    $vdObj RCB video_get_winid($chId) [code $this MoveDownCB]
+
+    toplevel .winunderauxvga$chId
+
+    label .winunderauxvga$chId.msg -text "Moving Video VGA window to bottom"
+    pack .winunderauxvga$chId.msg
+
+    lower .winunderauxvga$chId
+}
+
+#---------------------------------------------------------------
+
+body VgaRemoteC::MoveDownCB {_videoWinId} {
+    global ISABEL_DIR
+
+    set _id1 [expr [winfo id .winunderauxvga$chId]]
+
+    if {[catch "exec $ISABEL_DIR/bin/isabel_winunder -winOver $_id1 -winUnder $_videoWinId" _err]} {
+	WarningTraceMsg "Video VGA: I can not move VGA window to bottom: $_err"
+    }
+
+    destroy  .winunderauxvga$chId
 }
 
 #--------------------------------------------------------------

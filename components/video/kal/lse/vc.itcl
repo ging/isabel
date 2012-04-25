@@ -238,8 +238,11 @@ body LseLocalC::CreateChannel {} {
     $vdObj RDO video_avatar($chId,$_afn)
 
     $vdObj RDO video_avatar_timeout($chId,5)
-
-    #$vdObj RDO video_window_overrideredirect($chId,1)
+ 
+    set _orr [session Activity GetResource Video lse.overrideredirect 0]
+    if {$_orr != "0"} {
+	$vdObj RDO video_window_overrideredirect($chId,1)
+    }
 }
 
 #--------------------------------------------------------------

@@ -226,6 +226,10 @@ class VideoLocalC {
 
     public method CreateChannel {}
 
+    # Place the video window under TCL windows.
+    private method MoveDown {}
+    private method MoveDownCB {_videoWinId}
+
     public method SetGeometry {geom}
 
     # Send local channel to the partner userid
@@ -272,6 +276,13 @@ body VideoLocalC::CreateChannel {} {
     $vdObj RDO video_rec_channel($chId,$_source)
     
     $vdObj RDO video_window_title($chId,$stitle,$ltitle)
+    
+    set _orr [session Activity GetResource Video camera.overrideredirect 0]
+    if {$_orr != "0"} {
+	$vdObj RDO video_window_overrideredirect($chId,1)
+
+	after idle [code $this MoveDown]
+    }
 
     if {[info exists env(ISABEL_VIDEO_CROP)]} {
 	set _top    [lindex $env(ISABEL_VIDEO_CROP) 0]
@@ -280,6 +291,34 @@ body VideoLocalC::CreateChannel {} {
 	set _right  [lindex $env(ISABEL_VIDEO_CROP) 3]
 	$vdObj RDO video_crop($chId,$_top,$_left,$_bottom,$_right)
     }
+}
+
+#--------------------------------------------------------------
+
+body VideoLocalC::MoveDown {} {
+
+    $vdObj RCB video_get_winid($chId) [code $this MoveDownCB]
+
+    toplevel .winunderauxvideo$chId
+
+    label .winunderauxvideo$chId.msg -text "Moving Video Camera window to bottom"
+    pack .winunderauxvideo$chId.msg
+
+    lower .winunderauxvideo$chId
+}
+
+#---------------------------------------------------------------
+
+body VideoLocalC::MoveDownCB {_videoWinId} {
+    global ISABEL_DIR
+
+    set _id1 [expr [winfo id .winunderauxvideo$chId]]
+
+    if {[catch "exec $ISABEL_DIR/bin/isabel_winunder -winOver $_id1 -winUnder $_videoWinId" _err]} {
+	WarningTraceMsg "Video Camera: I can not move Camera window to bottom: $_err"
+    }
+
+    destroy  .winunderauxvideo$chId
 }
 
 #--------------------------------------------------------------
@@ -383,6 +422,10 @@ class VideoRemoteC {
 
     private method CreateChannel {}
 
+    # Place the video window under TCL windows.
+    private method MoveDown {}
+    private method MoveDownCB {_videoWinId}
+
     # Send all the needed commands to configure the video C daemon state.
     # Used when the video C daemon state is restarted.
     public method ReapplyState {} 
@@ -408,6 +451,41 @@ body VideoRemoteC::CreateChannel {} {
     
     $vdObj RDO video_play_channel($chId)
     $vdObj RDO video_window_title($chId,$stitle,$ltitle)
+
+    set _orr [session Activity GetResource Video camera.overrideredirect 0]
+    if {$_orr != "0"} {
+	$vdObj RDO video_window_overrideredirect($chId,1)
+
+	after idle [code $this MoveDown]
+    }
+}
+
+#--------------------------------------------------------------
+
+body VideoRemoteC::MoveDown {} {
+
+    $vdObj RCB video_get_winid($chId) [code $this MoveDownCB]
+
+    toplevel .winunderauxvideo$chId
+
+    label .winunderauxvideo$chId.msg -text "Moving Video Camera window to bottom"
+    pack .winunderauxvideo$chId.msg
+
+    lower .winunderauxvideo$chId
+}
+
+#---------------------------------------------------------------
+
+body VideoRemoteC::MoveDownCB {_videoWinId} {
+    global ISABEL_DIR
+
+    set _id1 [expr [winfo id .winunderauxvideo$chId]]
+
+    if {[catch "exec $ISABEL_DIR/bin/isabel_winunder -winOver $_id1 -winUnder $_videoWinId" _err]} {
+	WarningTraceMsg "Video Camera: I can not move Camera window to bottom: $_err"
+    }
+
+    destroy  .winunderauxvideo$chId
 }
 
 #--------------------------------------------------------------
