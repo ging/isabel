@@ -19,7 +19,10 @@ V4L_LIB_PATH=/usr/lib
 ifeq ($(LINUX.DISTRIB.CODENAME),oneiric)
 V4L_LIB_PATH= /usr/lib/i386-linux-gnu
 endif
-FMTS_LIB+= $(V4L_LIB_PATH)/libv4l2.a $(V4L_LIB_PATH)/libv4lconvert.a -lrt
+ifeq ($(LINUX.DISTRIB.CODENAME),precise)
+V4L_LIB_PATH= /usr/lib/i386-linux-gnu
+endif
+FMTS_LIB+= -L$(V4L_LIB_PATH) -lv4l2 -lv4lconvert -lrt
 endif
 
 # Version number need to be changed whenever:
