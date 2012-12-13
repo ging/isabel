@@ -768,6 +768,274 @@ colorspace_t::YUV411PtoBGR24(unsigned char *dst,
 #define FIX(x)          ((int) ((x) * (1L<<SCALEBITS) + 0.5))
 
 void
+RGB16toRGB24(unsigned char *dst, unsigned char *src, int npixels, bool do555)
+{
+    // RGB565: rrrrrggg gggbbbbb
+    // RGB555: xrrrrrgg gggbbbbb
+    unsigned char R, G, B;
+
+    unsigned char Rmask= 0xf8,
+                  Gmask= do555 ? 0xf8 : 0xfc,
+                  Bmask= 0xf8;
+    unsigned char Rbits= do555 ? 7 : 8,
+                  Gbits= do555 ? 2 : 3,
+                  Bbits= 3;
+    unsigned char Rdup= 5,
+                  Gdup= do555 ? 5 : 6,
+                  Bdup= 5;
+
+    for ( int i = 0 ; i < npixels; i++ )
+    {
+        unsigned short tmp= *(unsigned short *)src;
+
+        R= Rmask & (tmp >> Rbits);
+        R |= R >> Rdup; // fill lower bits repeating higher ones
+        *dst++ = R;
+        G= Gmask & (tmp >> Gbits);
+        G |= G >> Gdup; // fill lower bits repeating higher ones
+        *dst++ = G;
+        B= Bmask & (tmp << Bbits);
+        B |= B >> Bdup; // fill lower bits repeating higher ones
+        *dst++ = B;
+
+        src+= 2;
+    }
+}
+
+void
+colorspace_t::RGB565toRGB24(unsigned char *dst,
+                            int &dstWidth,
+                            int &dstHeight,
+                            unsigned char *src,
+                            int srcWidth,
+                            int srcHeight
+                           )
+{
+    assert( (srcWidth > 0) && (srcHeight > 0) && " failed at RGB565toRGB24");
+
+    dstWidth = srcWidth;
+    dstHeight= srcHeight;
+
+    int dstSize = dstWidth * dstHeight;
+
+    RGB16toRGB24(dst, src, dstSize, false);
+}
+
+void
+RGB16toYUV420P(unsigned char *dst,
+               int &dstWidth,
+               int &dstHeight,
+               unsigned char *src,
+               int srcWidth,
+               int srcHeight,
+               bool do555
+              )
+{
+    dstWidth = srcWidth  & ~0x1; // even
+    dstHeight= srcHeight & ~0x1; // even
+    int dstSize = dstWidth * dstHeight;
+
+    unsigned char *Y= dst;
+    unsigned char *U= dst + dstSize;
+    unsigned char *V= dst + dstSize + dstSize / 4;
+
+    int wrap= srcWidth - dstWidth;
+
+    unsigned short RGB;
+    unsigned char R, G, B;
+    unsigned int Rsum, Gsum, Bsum;
+
+    unsigned char Rmask= 0xf8,
+                  Gmask= do555 ? 0xf8 : 0xfc,
+                  Bmask= 0xf8;
+    unsigned char Rbits= do555 ? 7 : 8,
+                  Gbits= do555 ? 2 : 3,
+                  Bbits= 3;
+    unsigned char Rdup= 5,
+                  Gdup= do555 ? 5 : 6,
+                  Bdup= 5;
+
+    for ( int j = 0 ; j < dstHeight; j+= 2 )
+    {
+        for ( int i = 0 ; i < dstWidth; i+= 2 )
+        {
+            RGB= *(unsigned short*)src;
+            R = RGB >> Rbits & Rmask; R |= R >> Rdup; 
+            G = RGB >> Gbits & Gmask; G |= G >> Gdup; 
+            B = RGB << Bbits & Bmask; B |= B >> Bdup; 
+
+            Y[0]= (FIX(0.29900) * R +
+                   FIX(0.58700) * G +
+                   FIX(0.11400) * B +
+                   ONE_HALF) >> SCALEBITS;
+
+            Rsum= R; Gsum= G; Bsum= B;
+
+            RGB= *(unsigned short*)(src+2);
+            R = RGB >> Rbits & Rmask; R |= R >> Rdup; 
+            G = RGB >> Gbits & Gmask; G |= G >> Gdup; 
+            B = RGB << Bbits & Bmask; B |= B >> Bdup; 
+
+            Y[1]= (FIX(0.29900) * R +
+                   FIX(0.58700) * G +
+                   FIX(0.11400) * B +
+                   ONE_HALF) >> SCALEBITS;
+
+            Rsum+= R; Gsum+= G; Bsum+= B;
+
+            src += 2*srcWidth;
+            Y += dstWidth;
+
+            RGB= *(unsigned short*)src;
+            R = RGB >> Rbits & Rmask; R |= R >> Rdup; 
+            G = RGB >> Gbits & Gmask; G |= G >> Gdup; 
+            B = RGB << Bbits & Bmask; B |= B >> Bdup; 
+
+            Y[0]= (FIX(0.29900) * R +
+                   FIX(0.58700) * G +
+                   FIX(0.11400) * B +
+                   ONE_HALF) >> SCALEBITS;
+
+            Rsum+= R; Gsum+= G; Bsum+= B;
+
+            RGB= *(unsigned short*)(src+2);
+            R = RGB >> Rbits & Rmask; R |= R >> Rdup; 
+            G = RGB >> Gbits & Gmask; G |= G >> Gdup; 
+            B = RGB << Bbits & Bmask; B |= B >> Bdup; 
+
+            Y[1]= (FIX(0.29900) * R +
+                   FIX(0.58700) * G +
+                   FIX(0.11400) * B +
+                   ONE_HALF) >> SCALEBITS;
+
+            Rsum+= R; Gsum+= G; Bsum+= B;
+
+            src += (-2*srcWidth + 2 * 2);
+            Y += (-dstWidth + 2);
+
+            U[0] = ((- FIX(0.16874) * Rsum
+                     - FIX(0.33126) * Gsum +
+                       FIX(0.50000) * Bsum +
+                       4 * ONE_HALF - 1) >> (SCALEBITS + 2)) + 128;
+
+            V[0] = ((  FIX(0.50000) * Rsum
+                     - FIX(0.41869) * Gsum
+                     - FIX(0.08131) * Bsum +
+                       4 * ONE_HALF - 1) >> (SCALEBITS + 2)) + 128;
+
+            U++; V++;
+        }
+        src += 2*(srcWidth+wrap);
+        Y += dstWidth;
+    }
+}
+
+void
+colorspace_t::RGB565toYUV420P(unsigned char *dst,
+                              int &dstWidth,
+                              int &dstHeight,
+                              unsigned char *src,
+                              int srcWidth,
+                              int srcHeight
+                             )
+{
+    assert( (srcWidth > 0) && (srcHeight > 0) && " failed at RGBR565toYUV42oP");
+
+    RGB16toYUV420P(dst, dstWidth, dstHeight, src, srcWidth, srcHeight, false);
+}
+
+void
+colorspace_t::RGB555toRGB24(unsigned char *dst,
+                            int &dstWidth,
+                            int &dstHeight,
+                            unsigned char *src,
+                            int srcWidth,
+                            int srcHeight
+                           )
+{
+    assert( (srcWidth > 0) && (srcHeight > 0) && " failed at RGB555toRGB24");
+
+    dstWidth = srcWidth;
+    dstHeight= srcHeight;
+
+    int dstSize = dstWidth * dstHeight;
+
+    RGB16toRGB24(dst, src, dstSize, true);
+}
+
+void
+colorspace_t::RGB555toYUV420P(unsigned char *dst,
+                              int &dstWidth,
+                              int &dstHeight,
+                              unsigned char *src,
+                              int srcWidth,
+                              int srcHeight
+                             )
+{
+    assert( (srcWidth > 0) && (srcHeight > 0) && " failed at RGBR565toYUV42oP");
+
+    RGB16toYUV420P(dst, dstWidth, dstHeight, src, srcWidth, srcHeight, true);
+}
+
+void
+colorspace_t::RGB24toRGB555(unsigned char *dst,
+                            int &dstWidth,
+                            int &dstHeight,
+                            unsigned char *src,
+                            int srcWidth,
+                            int srcHeight
+                           )
+{
+    assert( (srcWidth > 0) && (srcHeight > 0) && " failed at RGBR24toRGB555");
+
+    dstWidth = srcWidth ;
+    dstHeight= srcHeight;
+
+    int dstSize= dstWidth * dstHeight;
+
+    unsigned short *dst16= (unsigned short *)dst;
+
+    for ( int i = 0 ; i < dstSize; i++)
+    {
+        // RGB555: xrrrrrgg gggbbbbb
+        unsigned short R= (unsigned short)(0xf8 & *src++);
+        unsigned short G= (unsigned short)(0xf8 & *src++);
+        unsigned short B= (unsigned short)(0xf8 & *src++);
+
+        *dst16++=   (R << 10) | (G << 3) | B ;
+    }
+}
+
+void
+colorspace_t::RGB24toRGB565(unsigned char *dst,
+                            int &dstWidth,
+                            int &dstHeight,
+                            unsigned char *src,
+                            int srcWidth,
+                            int srcHeight
+                           )
+{
+    assert( (srcWidth > 0) && (srcHeight > 0) && " failed at RGBR24toRGB565");
+
+    dstWidth = srcWidth ;
+    dstHeight= srcHeight;
+
+    int dstSize= dstWidth * dstHeight;
+
+    unsigned short *dst16= (unsigned short *)dst;
+
+    for ( int i = 0 ; i < dstSize; i++)
+    {
+        // rrrrrggg gggbbbbb
+        unsigned short R= (unsigned short)(0xf8 & *src++);
+        unsigned short G= (unsigned short)(0xfc & *src++);
+        unsigned short B= (unsigned short)(0xf8 & *src++);
+
+        *dst16++=   (R << 11) | (G << 3) | B ;
+    }
+}
+
+void
 colorspace_t::RGB24toYUV422i(unsigned char *dst,
                              int &dstWidth,
                              int &dstHeight,
@@ -2883,6 +3151,8 @@ colorspace_t::RAW24swap(unsigned char *dst,
                         int srcHeight
                        )
 {
+    assert( (srcWidth > 0) && (srcHeight > 0) && " failed at RAW24swap");
+
     dstWidth = srcWidth;
     dstHeight= srcHeight;
 

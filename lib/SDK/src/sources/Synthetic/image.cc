@@ -41,6 +41,50 @@ static int numSeq=0;
 
 
 image_t*
+genImageRGB16(u8 *buffer,
+              unsigned width,
+              unsigned height,
+              unsigned &posX,
+              unsigned &posY,
+              unsigned side,
+              int &signoX,
+              int &signoY,
+              bool do555,
+              u32 timestamp
+             )
+{
+    memset(buffer, 0, width*height*2);
+
+    u16 *buf16= (u16*)buffer;
+
+    for (unsigned i= posX; i < posX+side; i++)
+    {
+        for (unsigned j= posY; j < posY+side; j++)
+        {
+            buf16[i+j*width]= 0x0FF0;
+        }
+    }
+
+    if (posX+side >= width)  signoX= -1;
+    if (posX <= 0) signoX= 1;
+    if (posY+side >= height) signoY= -1;
+    if (posY <= 0) signoY= 1;
+
+    posX+= signoX;
+    posY+= signoY;
+
+    image_t *img= new image_t(buffer,
+                              2 * width * height,
+                              do555 ? RGB555_FORMAT : RGB565_FORMAT,
+                              width,
+                              height,
+                              timestamp
+                             );
+
+    return img;
+}
+
+image_t*
 genImageRAW24(u8 *buffer,
               unsigned width,
               unsigned height,

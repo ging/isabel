@@ -191,6 +191,7 @@ getFCCByV4LId(int i)
 {
     switch (i)
     {
+    case VIDEO_PALETTE_RGB565  : return RGB565_FORMAT;
     case VIDEO_PALETTE_RGB24   : return BGR24_FORMAT; // CARE!!
     case VIDEO_PALETTE_YUV422  : return I422i_FORMAT;
     case VIDEO_PALETTE_YUV422P : return I422P_FORMAT;
@@ -205,10 +206,10 @@ getV4LIdByFCC(u32 fmt)
 {
     switch (fmt)
     {
+    //case RGB16_555_FORMAT : return VIDEO_PALETTE_RGB555;
+    case RGB565_FORMAT     : return VIDEO_PALETTE_RGB565;
     case RGB24_FORMAT      : return VIDEO_PALETTE_RGB24;
     case BGR24_FORMAT      : return VIDEO_PALETTE_RGB24;
-    //case RGB16_565_FORMAT : return VIDEO_PALETTE_RGB565;
-    //case RGB16_555_FORMAT : return VIDEO_PALETTE_RGB555;
     case I422i_FORMAT      : return VIDEO_PALETTE_YUYV;
     case I422P_FORMAT      : return VIDEO_PALETTE_YUV422P;
     case I411P_FORMAT      : return VIDEO_PALETTE_YUV411P;
@@ -494,6 +495,7 @@ getFCCByV4L2Id(u32 i)
 {
     switch (i)
     {
+    case V4L2_PIX_FMT_RGB565  : return RGB565_FORMAT;
     case V4L2_PIX_FMT_RGB24   : return RGB24_FORMAT;
     case V4L2_PIX_FMT_BGR24   : return BGR24_FORMAT;
     case V4L2_PIX_FMT_YUYV    : return I422i_FORMAT;
@@ -511,7 +513,7 @@ getV4L2IdByFCC(u32 fmt)
     {
     //case RGB8_332_FORMAT  : return V4L2_PIX_FMT_RGB332;
     //case RGB16_555_FORMAT : return V4L2_PIX_FMT_RGB555;
-    //case RGB16_565_FORMAT : return V4L2_PIX_FMT_RGB565;
+    case RGB565_FORMAT    : return V4L2_PIX_FMT_RGB565;
     case RGB24_FORMAT     : return V4L2_PIX_FMT_RGB24;
     case BGR24_FORMAT     : return V4L2_PIX_FMT_BGR24;
     case I422i_FORMAT     : return V4L2_PIX_FMT_YUYV;

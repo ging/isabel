@@ -66,6 +66,9 @@
 // colorspaces and pixel format names
 //-----------------------------------
 
+const u32 RGB555_FORMAT= FOURCC('R','B','G','O');
+const u32 RGB565_FORMAT= FOURCC('R','B','G','P');
+
 const u32 RGB24_FORMAT= FOURCC('R','B','G','3');
 const u32 BGR24_FORMAT= FOURCC('B','G','R','3');
 const u32 I422i_FORMAT= FOURCC('Y','U','Y','V');

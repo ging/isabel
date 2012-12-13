@@ -922,6 +922,13 @@ if ( (strcmp((char*)vcap.driver, "saa7134") == 0) && (fmt == I420P_FORMAT) )
     return false;
 }
 #endif
+#if 1
+if ( (strcmp((char*)vcap.driver, "Vision Driver") == 0) && (fmt != RGB565_FORMAT) )
+{
+    NOTIFY("WARNING: grab format set to RGB565 for Vision Driver\n");
+    fmt= RGB565_FORMAT;
+}
+#endif
 
     try
     {
@@ -986,7 +993,8 @@ if ( (strcmp((char*)vcap.driver, "saa7134") == 0) && (fmt == I420P_FORMAT) )
     }
     else
     {
-        NOTIFY("setGrabFormat: accepted params:\n"
+        NOTIFY("setGrabFormat: "
+               "VIDIOC_TRY_FMT accepted params:\n"
                "\ttype=%s,width=%d,height=%d,\n"
                "\tpixelformat=%c%c%c%c,field=%s,bytesperline=%d,\n"
                "\tsizeimage=%d,colorspace=%s\n",
@@ -1022,6 +1030,26 @@ if ( (strcmp((char*)vcap.driver, "saa7134") == 0) && (fmt == I420P_FORMAT) )
         NOTIFY("v4l2DS_t::setGrabFormat: "
                "VIDIOC_G_FMT failed: error %d %s\n",
                errno, strerror(errno)
+              );
+    }
+    else
+    {
+        NOTIFY("setGrabFormat: "
+               "VIDIOC_G_FMT returned params:\n"
+               "\ttype=%s,width=%d,height=%d,\n"
+               "\tpixelformat=%c%c%c%c,field=%s,bytesperline=%d,\n"
+               "\tsizeimage=%d,colorspace=%s\n",
+               parseV4L2BufType(format.type),
+               format.fmt.pix.width,
+               format.fmt.pix.height,
+               (format.fmt.pix.pixelformat      ) & 0xFF,
+               (format.fmt.pix.pixelformat >>  8) & 0xFF,
+               (format.fmt.pix.pixelformat >> 16) & 0xFF,
+               (format.fmt.pix.pixelformat >> 24) & 0xFF,
+               parseV4L2Field(format.fmt.pix.field),
+               format.fmt.pix.bytesperline,
+               format.fmt.pix.sizeimage,
+               parseV4L2Colorspace(format.fmt.pix.colorspace)
               );
     }
 

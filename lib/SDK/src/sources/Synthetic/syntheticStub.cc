@@ -110,6 +110,12 @@ public:
 
         switch (fcc)
         {
+        case RGB555_FORMAT:
+            theImgGen= new syntheticRGB16Src_t(true);
+            break;
+        case RGB565_FORMAT:
+            theImgGen= new syntheticRGB16Src_t;
+            break;
         case RGB24_FORMAT:
             theImgGen= new syntheticRAW24Src_t;
             break;

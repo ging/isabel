@@ -33,6 +33,19 @@
 #include <vUtils/image.h>
 
 image_t*
+genImageRGB16(u8 *buffer,
+              unsigned width,
+              unsigned height,
+              unsigned &posX,
+              unsigned &posY,
+              unsigned side,
+              int &signoX,
+              int &signoY,
+              bool do555,
+              u32 timestamp
+             );
+
+image_t*
 genImageRAW24(u8 *buffer,
               unsigned width,
               unsigned height,

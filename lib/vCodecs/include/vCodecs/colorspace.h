@@ -116,6 +116,54 @@ public:
                         int srcHeight
                        );
 
+    void RGB555toRGB24(unsigned char *dst,
+                       int &dstWidth,
+                       int &dstHeight,
+                       unsigned char *src,
+                       int srcWidth,
+                       int srcHeight
+                      );
+
+    void RGB555toYUV420P(unsigned char *dst,
+                         int &dstWidth,
+                         int &dstHeight,
+                         unsigned char *src,
+                         int srcWidth,
+                         int srcHeight
+                        );
+
+    void RGB565toRGB24(unsigned char *dst,
+                       int &dstWidth,
+                       int &dstHeight,
+                       unsigned char *src,
+                       int srcWidth,
+                       int srcHeight
+                      );
+
+    void RGB565toYUV420P(unsigned char *dst,
+                         int &dstWidth,
+                         int &dstHeight,
+                         unsigned char *src,
+                         int srcWidth,
+                         int srcHeight
+                        );
+
+    void RGB24toRGB555(unsigned char *dst,
+                       int &dstWidth,
+                       int &dstHeight,
+                       unsigned char *src,
+                       int srcWidth,
+                       int srcHeight
+                      );
+
+    void RGB24toRGB565(unsigned char *dst,
+                       int &dstWidth,
+                       int &dstHeight,
+                       unsigned char *src,
+                       int srcWidth,
+                       int srcHeight
+                      );
+
     void RGB24toYUV422i(unsigned char *dst,
                         int &dstWidth,
                         int &dstHeight,

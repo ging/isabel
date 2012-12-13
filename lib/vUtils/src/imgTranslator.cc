@@ -34,6 +34,26 @@
 
 imgTranslator_t::transformation_t imgTranslator_t::conversion[]=
 {
+     {RGB555_FORMAT,  RGB555_FORMAT, NULL                           },
+     {RGB555_FORMAT,  RGB565_FORMAT, NULL                           },
+     {RGB555_FORMAT,  RGB24_FORMAT,  &colorspace_t::RGB555toRGB24   },
+     {RGB555_FORMAT,  BGR24_FORMAT,  NULL                           },
+     {RGB555_FORMAT,  I422i_FORMAT,  NULL                           },
+     {RGB555_FORMAT,  I422P_FORMAT,  NULL                           },
+     {RGB555_FORMAT,  I420P_FORMAT,  &colorspace_t::RGB555toYUV420P },
+     {RGB555_FORMAT,  I411P_FORMAT,  NULL                           },
+
+     {RGB555_FORMAT,  RGB555_FORMAT, NULL                           },
+     {RGB565_FORMAT,  RGB565_FORMAT, NULL                           },
+     {RGB565_FORMAT,  RGB24_FORMAT,  &colorspace_t::RGB565toRGB24   },
+     {RGB565_FORMAT,  BGR24_FORMAT,  NULL                           },
+     {RGB565_FORMAT,  I422i_FORMAT,  NULL                           },
+     {RGB565_FORMAT,  I422P_FORMAT,  NULL                           },
+     {RGB565_FORMAT,  I420P_FORMAT,  &colorspace_t::RGB565toYUV420P },
+     {RGB565_FORMAT,  I411P_FORMAT,  NULL                           },
+
+     {RGB24_FORMAT,  RGB555_FORMAT, &colorspace_t::RGB24toRGB555    },
+     {RGB24_FORMAT,  RGB565_FORMAT, &colorspace_t::RGB24toRGB565    },
      {RGB24_FORMAT,  RGB24_FORMAT,  NULL                            },
      {RGB24_FORMAT,  BGR24_FORMAT,  &colorspace_t::RAW24swap        },
      {RGB24_FORMAT,  I422i_FORMAT,  &colorspace_t::RGB24toYUV422i   },
@@ -41,6 +61,8 @@ imgTranslator_t::transformation_t imgTranslator_t::conversion[]=
      {RGB24_FORMAT,  I420P_FORMAT,  &colorspace_t::RGB24toYUV420P   },
      {RGB24_FORMAT,  I411P_FORMAT,  &colorspace_t::RGB24toYUV411P   },
 
+     {BGR24_FORMAT,  RGB555_FORMAT, NULL                            },
+     {BGR24_FORMAT,  RGB565_FORMAT, NULL                            },
      {BGR24_FORMAT,  RGB24_FORMAT,  &colorspace_t::RAW24swap        },
      {BGR24_FORMAT,  BGR24_FORMAT,  NULL                            },
      {BGR24_FORMAT,  I422i_FORMAT,  &colorspace_t::BGR24toYUV422i   },
@@ -48,6 +70,8 @@ imgTranslator_t::transformation_t imgTranslator_t::conversion[]=
      {BGR24_FORMAT,  I420P_FORMAT,  &colorspace_t::BGR24toYUV420P   },
      {BGR24_FORMAT,  I411P_FORMAT,  &colorspace_t::BGR24toYUV411P   },
 
+     {I422i_FORMAT,  RGB555_FORMAT, NULL                            },
+     {I422i_FORMAT,  RGB565_FORMAT, NULL                            },
      {I422i_FORMAT,  RGB24_FORMAT,  &colorspace_t::YUV422itoRGB24   },
      {I422i_FORMAT,  BGR24_FORMAT,  &colorspace_t::YUV422itoBGR24   },
      {I422i_FORMAT,  I422i_FORMAT,  NULL                            },
@@ -55,6 +79,8 @@ imgTranslator_t::transformation_t imgTranslator_t::conversion[]=
      {I422i_FORMAT,  I420P_FORMAT,  &colorspace_t::YUV422itoYUV420P },
      {I422i_FORMAT,  I411P_FORMAT,  NULL                            },
 
+     {I422P_FORMAT,  RGB555_FORMAT, NULL                            },
+     {I422P_FORMAT,  RGB565_FORMAT, NULL                            },
      {I422P_FORMAT,  RGB24_FORMAT,  &colorspace_t::YUV422PtoRGB24   },
      {I422P_FORMAT,  BGR24_FORMAT,  &colorspace_t::YUV422PtoBGR24   },
      {I422P_FORMAT,  I422i_FORMAT,  &colorspace_t::YUV422PtoYUV422i },
@@ -62,6 +88,8 @@ imgTranslator_t::transformation_t imgTranslator_t::conversion[]=
      {I422P_FORMAT,  I420P_FORMAT,  &colorspace_t::YUV422PtoYUV420P },
      {I422P_FORMAT,  I411P_FORMAT,  &colorspace_t::YUV422PtoYUV411P },
 
+     {I420P_FORMAT,  RGB555_FORMAT, NULL                            },
+     {I420P_FORMAT,  RGB565_FORMAT, NULL                            },
      {I420P_FORMAT,  RGB24_FORMAT,  &colorspace_t::YUV420PtoRGB24   },
      {I420P_FORMAT,  BGR24_FORMAT,  &colorspace_t::YUV420PtoBGR24   },
      {I420P_FORMAT,  I422i_FORMAT,  &colorspace_t::YUV420PtoYUV422i },
@@ -69,6 +97,8 @@ imgTranslator_t::transformation_t imgTranslator_t::conversion[]=
      {I420P_FORMAT,  I420P_FORMAT,  NULL                            },
      {I420P_FORMAT,  I411P_FORMAT,  &colorspace_t::YUV420PtoYUV411P },
 
+     {I411P_FORMAT,  RGB555_FORMAT, NULL                            },
+     {I411P_FORMAT,  RGB565_FORMAT, NULL                            },
      {I411P_FORMAT,  RGB24_FORMAT,  &colorspace_t::YUV411PtoRGB24   },
      {I411P_FORMAT,  BGR24_FORMAT,  &colorspace_t::YUV411PtoBGR24   },
      {I411P_FORMAT,  I422i_FORMAT,  NULL                            },

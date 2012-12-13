@@ -73,6 +73,30 @@ public:
     virtual void getImageSize(unsigned *width, unsigned *height);
 };
 
+class syntheticRGB16Src_t: public virtual syntheticSrc_t
+{
+private:
+    bool  __do555;
+
+    // pass 'false' for RGB565, 'true' for RGB555
+    syntheticRGB16Src_t(bool do555= false);
+
+    virtual ~syntheticRGB16Src_t(void);
+
+protected:
+    virtual void mallocBuffers(void);
+    virtual void reallocBuffers(void);
+    virtual void freeBuffers(void);
+
+    virtual u32 getGrabFormat(void);
+    virtual image_t *genImage(u32 timestamp);
+
+public:
+    virtual bool setImageSize(unsigned width, unsigned height);
+
+    friend class syntheticGrabber_t;
+};
+
 class syntheticRAW24Src_t: public virtual syntheticSrc_t
 {
 private:

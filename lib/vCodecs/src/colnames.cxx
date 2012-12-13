@@ -37,12 +37,14 @@ struct colorSpaceMap_t
 
 colorSpaceMap_t colorSpaceMap[] =
 {
-    {"RAW::RGB24", RGB24_FORMAT  },
-    {"RAW::BGR24", BGR24_FORMAT  },
-    {"YUV::422i",  I422i_FORMAT  },
-    {"YUV::422P",  I422P_FORMAT  },
-    {"YUV::420P",  I420P_FORMAT  },
-    {"YUV::411P",  I411P_FORMAT  },
+    {"RAW::RGB555", RGB555_FORMAT },
+    {"RAW::RGB565", RGB565_FORMAT },
+    {"RAW::RGB24",  RGB24_FORMAT  },
+    {"RAW::BGR24",  BGR24_FORMAT  },
+    {"YUV::422i",   I422i_FORMAT  },
+    {"YUV::422P",   I422P_FORMAT  },
+    {"YUV::420P",   I420P_FORMAT  },
+    {"YUV::411P",   I411P_FORMAT  },
 
     // {"GIF::GIF", PNG_FORMAT    },
     // {"GIF::GIF", TIFF_FORMAT   },
@@ -98,6 +100,9 @@ vFrameSize(int width, int height, u32 fmt)
     int base = height * width;
     switch (fmt)
     {
+        case RGB555_FORMAT:
+        case RGB565_FORMAT:
+            return base*2;
         case RGB24_FORMAT:
         case BGR24_FORMAT:
             return base*3;

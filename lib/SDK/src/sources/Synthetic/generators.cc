@@ -94,6 +94,91 @@ syntheticSrc_t::getImageSize(unsigned *width, unsigned *height)
 
 
 //
+// syntheticRGB16Src_t implementation
+//    pass 'false' for RGB24, 'true' for BGR24
+//
+syntheticRGB16Src_t::syntheticRGB16Src_t(bool do555)
+: syntheticSrc_t(), __do555(do555)
+{
+    mallocBuffers();
+}
+
+syntheticRGB16Src_t::~syntheticRGB16Src_t(void)
+{
+    freeBuffers();
+}
+
+bool
+syntheticRGB16Src_t::setImageSize(unsigned width, unsigned height)
+{
+    bool res= ::syntheticSrc_t::setImageSize(width, height);
+
+    reallocBuffers();
+
+    return res;
+}
+
+u32
+syntheticRGB16Src_t::getGrabFormat(void)
+{
+    return __do555 ? RGB555_FORMAT : RGB565_FORMAT;
+}
+
+image_t*
+syntheticRGB16Src_t::genImage(u32 timestamp)
+{
+    image_t *img=
+        genImageRGB16(__buffer[__grabState.grab_number],
+                      __grabState.width,
+                      __grabState.height,
+                      posX,
+                      posY,
+                      __grabState.side,
+                      signoX,
+                      signoY,
+                      __do555,
+                      timestamp
+                     );
+
+    __grabState.grab_number= (__grabState.grab_number+1)%NUMBUFFS;
+
+    return img;
+}
+
+void
+syntheticRGB16Src_t::mallocBuffers(void)
+{
+    __maxBufSize= __grabState.width  * __grabState.height * 2;
+    for(int nb= 0; nb < NUMBUFFS; nb++)
+        __buffer[nb]= (u8*)malloc(__maxBufSize);
+}
+
+void
+syntheticRGB16Src_t::reallocBuffers(void)
+{
+    // calculates new buffers size
+    unsigned newSize= __grabState.width  * __grabState.height * 2;
+
+    // realloc buffers if needed
+    if(newSize > __maxBufSize) {
+        for(int nb= 0; nb < NUMBUFFS; nb++) {
+            if(__buffer[nb]) free(__buffer[nb]);
+            __buffer[nb]= (u8*)malloc(newSize);
+        }
+        __maxBufSize= newSize;
+    }
+}
+
+void
+syntheticRGB16Src_t::freeBuffers(void)
+{
+    for(int nb= 0; nb < NUMBUFFS; nb++) {
+        if(__buffer[nb]) free(__buffer[nb]);
+        __buffer[nb]= NULL;
+    }
+}
+
+//
 // syntheticRAW24Src_t implementation
 //    pass 'false' for RGB24, 'true' for BGR24
 //
