@@ -178,13 +178,15 @@ mixProcessor_t::setPT(u8 PT)
             {
             case AF_INET:
                 {
-                    sockaddr_in *IP4 = (sockaddr_in *)(&tgt1->getIP());
+                    sockaddr_storage tgt1IP= tgt1->getIP();
+                    sockaddr_in *IP4 = (sockaddr_in *)(&tgt1IP);
                     inet_ntop(IP4->sin_family,(u8 *)&IP4->sin_addr.s_addr,IP,128);
                     break;
                 }
             case AF_INET6:
                 {
-                    sockaddr_in6 *IP6 = (sockaddr_in6 *)(&tgt1->getIP());
+                    sockaddr_storage tgt1IP= tgt1->getIP();
+                    sockaddr_in6 *IP6 = (sockaddr_in6 *)(&tgt1IP);
                     inet_ntop(IP6->sin6_family,(u8 *)&(IP6->sin6_addr),IP,128);
                     break;
                 }
