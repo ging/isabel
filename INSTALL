@@ -10,10 +10,20 @@ Note: if you want to compile just a piece of code, it is mandatory
       to set the PROJECT_ROOT_DIR environment variable to point
       to the directory in which the ISABEL sources are located.
 
-0) Before trying to compile, be sure that latest 'isabel-devel'
-   is installed
+0) This step should be only done for Linux, Darwin, SunOS and other
+   linux bases Operating Systems. Ignore it for Windows.
+   Before attempting to compile, you must set the build environment for
+   the ISABEL package.
+   First, you must to create a directory for objects and distribution.
+   "/usr/tmp" for Linux, SunOS and "/var/tmp" for Darwin.
+   Type 'sudo mkdir -m 777 -p /usr/tmp' if you are in a Linux, SunOS system.
+   Type 'sudo mkdir -m 777 -p /usr/tmp' if you work under Darwin.
 
-1) Type 'make' to create the object files.
+   Type 'make devel' to install the required libraries and tools.
+   A priviledged user's password will be required for this step.
+   This step should be done only once (although repeating it causes no harm).
+
+1) Type 'make' compile ISABEL.
    First time, a 'Makefile.user' is created, edit as your convenience.
    The compilation process is usually place at
    '/usr/tmp/WHATEVER/objects-Linux' in Linux systems,
